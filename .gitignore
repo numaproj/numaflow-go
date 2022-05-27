@@ -1,0 +1,15 @@
+.vscode/
+.DS_Store
+vendor/
+dist/
+# delve debug binaries
+cmd/**/debug
+hack/**/debug
+debug.test
+*.iml
+.coverage
+*.out
+test/*.cov
+site/
+/go-diagrams/
+*.idea/
