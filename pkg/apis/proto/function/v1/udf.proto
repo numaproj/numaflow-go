@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+option go_package = "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1";
+
+import "google/protobuf/timestamp.proto";
+
+package function.v1;
+
+service FunctionService {
+    // Per-element processing function
+    rpc DoFn(Datum) returns (DatumList);
+    
+    // Reduce funtion which accepts datum stream
+    rpc ReduceFn(stream Datum) returns (DatumList);
+}
+
+/**
+* Datum represents a datum element.
+*/
+message Datum {
+    string Key = 1;
+    bytes Value = 2;
+    PaneInfo PaneInfo = 3;
+}
+
+message PaneInfo {
+    google.protobuf.Timestamp EventTime = 1;
+    google.protobuf.Timestamp IngestTime = 2;
+}
+
+
+/**
+* DatumList represents a list of datum elements.
+*/
+message DatumList {
+    repeated Datum Items = 1;
+}
+
