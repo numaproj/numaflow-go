@@ -6,7 +6,7 @@ import "google/protobuf/timestamp.proto";
 
 package function.v1;
 
-service Service {
+service UserDefinedFunction {
   // Applies a function to each datum element
   rpc DoFn(Datum) returns (DatumList);
 

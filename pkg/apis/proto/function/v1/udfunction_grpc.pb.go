@@ -18,57 +18,57 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// ServiceClient is the client API for Service service.
+// UserDefinedFunctionClient is the client API for UserDefinedFunction service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type ServiceClient interface {
+type UserDefinedFunctionClient interface {
 	// Applies a function to each datum element
 	DoFn(ctx context.Context, in *Datum, opts ...grpc.CallOption) (*DatumList, error)
 	// Applies a reduce fuction to a datum stream
-	ReduceFn(ctx context.Context, opts ...grpc.CallOption) (Service_ReduceFnClient, error)
+	ReduceFn(ctx context.Context, opts ...grpc.CallOption) (UserDefinedFunction_ReduceFnClient, error)
 }
 
-type serviceClient struct {
+type userDefinedFunctionClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewServiceClient(cc grpc.ClientConnInterface) ServiceClient {
-	return &serviceClient{cc}
+func NewUserDefinedFunctionClient(cc grpc.ClientConnInterface) UserDefinedFunctionClient {
+	return &userDefinedFunctionClient{cc}
 }
 
-func (c *serviceClient) DoFn(ctx context.Context, in *Datum, opts ...grpc.CallOption) (*DatumList, error) {
+func (c *userDefinedFunctionClient) DoFn(ctx context.Context, in *Datum, opts ...grpc.CallOption) (*DatumList, error) {
 	out := new(DatumList)
-	err := c.cc.Invoke(ctx, "/function.v1.Service/DoFn", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/function.v1.UserDefinedFunction/DoFn", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *serviceClient) ReduceFn(ctx context.Context, opts ...grpc.CallOption) (Service_ReduceFnClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Service_ServiceDesc.Streams[0], "/function.v1.Service/ReduceFn", opts...)
+func (c *userDefinedFunctionClient) ReduceFn(ctx context.Context, opts ...grpc.CallOption) (UserDefinedFunction_ReduceFnClient, error) {
+	stream, err := c.cc.NewStream(ctx, &UserDefinedFunction_ServiceDesc.Streams[0], "/function.v1.UserDefinedFunction/ReduceFn", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &serviceReduceFnClient{stream}
+	x := &userDefinedFunctionReduceFnClient{stream}
 	return x, nil
 }
 
-type Service_ReduceFnClient interface {
+type UserDefinedFunction_ReduceFnClient interface {
 	Send(*Datum) error
 	CloseAndRecv() (*DatumList, error)
 	grpc.ClientStream
 }
 
-type serviceReduceFnClient struct {
+type userDefinedFunctionReduceFnClient struct {
 	grpc.ClientStream
 }
 
-func (x *serviceReduceFnClient) Send(m *Datum) error {
+func (x *userDefinedFunctionReduceFnClient) Send(m *Datum) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *serviceReduceFnClient) CloseAndRecv() (*DatumList, error) {
+func (x *userDefinedFunctionReduceFnClient) CloseAndRecv() (*DatumList, error) {
 	if err := x.ClientStream.CloseSend(); err != nil {
 		return nil, err
 	}
@@ -79,77 +79,77 @@ func (x *serviceReduceFnClient) CloseAndRecv() (*DatumList, error) {
 	return m, nil
 }
 
-// ServiceServer is the server API for Service service.
-// All implementations must embed UnimplementedServiceServer
+// UserDefinedFunctionServer is the server API for UserDefinedFunction service.
+// All implementations must embed UnimplementedUserDefinedFunctionServer
 // for forward compatibility
-type ServiceServer interface {
+type UserDefinedFunctionServer interface {
 	// Applies a function to each datum element
 	DoFn(context.Context, *Datum) (*DatumList, error)
 	// Applies a reduce fuction to a datum stream
-	ReduceFn(Service_ReduceFnServer) error
-	mustEmbedUnimplementedServiceServer()
+	ReduceFn(UserDefinedFunction_ReduceFnServer) error
+	mustEmbedUnimplementedUserDefinedFunctionServer()
 }
 
-// UnimplementedServiceServer must be embedded to have forward compatible implementations.
-type UnimplementedServiceServer struct {
+// UnimplementedUserDefinedFunctionServer must be embedded to have forward compatible implementations.
+type UnimplementedUserDefinedFunctionServer struct {
 }
 
-func (UnimplementedServiceServer) DoFn(context.Context, *Datum) (*DatumList, error) {
+func (UnimplementedUserDefinedFunctionServer) DoFn(context.Context, *Datum) (*DatumList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DoFn not implemented")
 }
-func (UnimplementedServiceServer) ReduceFn(Service_ReduceFnServer) error {
+func (UnimplementedUserDefinedFunctionServer) ReduceFn(UserDefinedFunction_ReduceFnServer) error {
 	return status.Errorf(codes.Unimplemented, "method ReduceFn not implemented")
 }
-func (UnimplementedServiceServer) mustEmbedUnimplementedServiceServer() {}
+func (UnimplementedUserDefinedFunctionServer) mustEmbedUnimplementedUserDefinedFunctionServer() {}
 
-// UnsafeServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to ServiceServer will
+// UnsafeUserDefinedFunctionServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to UserDefinedFunctionServer will
 // result in compilation errors.
-type UnsafeServiceServer interface {
-	mustEmbedUnimplementedServiceServer()
+type UnsafeUserDefinedFunctionServer interface {
+	mustEmbedUnimplementedUserDefinedFunctionServer()
 }
 
-func RegisterServiceServer(s grpc.ServiceRegistrar, srv ServiceServer) {
-	s.RegisterService(&Service_ServiceDesc, srv)
+func RegisterUserDefinedFunctionServer(s grpc.ServiceRegistrar, srv UserDefinedFunctionServer) {
+	s.RegisterService(&UserDefinedFunction_ServiceDesc, srv)
 }
 
-func _Service_DoFn_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _UserDefinedFunction_DoFn_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Datum)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ServiceServer).DoFn(ctx, in)
+		return srv.(UserDefinedFunctionServer).DoFn(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/function.v1.Service/DoFn",
+		FullMethod: "/function.v1.UserDefinedFunction/DoFn",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ServiceServer).DoFn(ctx, req.(*Datum))
+		return srv.(UserDefinedFunctionServer).DoFn(ctx, req.(*Datum))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Service_ReduceFn_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(ServiceServer).ReduceFn(&serviceReduceFnServer{stream})
+func _UserDefinedFunction_ReduceFn_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(UserDefinedFunctionServer).ReduceFn(&userDefinedFunctionReduceFnServer{stream})
 }
 
-type Service_ReduceFnServer interface {
+type UserDefinedFunction_ReduceFnServer interface {
 	SendAndClose(*DatumList) error
 	Recv() (*Datum, error)
 	grpc.ServerStream
 }
 
-type serviceReduceFnServer struct {
+type userDefinedFunctionReduceFnServer struct {
 	grpc.ServerStream
 }
 
-func (x *serviceReduceFnServer) SendAndClose(m *DatumList) error {
+func (x *userDefinedFunctionReduceFnServer) SendAndClose(m *DatumList) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *serviceReduceFnServer) Recv() (*Datum, error) {
+func (x *userDefinedFunctionReduceFnServer) Recv() (*Datum, error) {
 	m := new(Datum)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -157,22 +157,22 @@ func (x *serviceReduceFnServer) Recv() (*Datum, error) {
 	return m, nil
 }
 
-// Service_ServiceDesc is the grpc.ServiceDesc for Service service.
+// UserDefinedFunction_ServiceDesc is the grpc.ServiceDesc for UserDefinedFunction service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var Service_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "function.v1.Service",
-	HandlerType: (*ServiceServer)(nil),
+var UserDefinedFunction_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "function.v1.UserDefinedFunction",
+	HandlerType: (*UserDefinedFunctionServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "DoFn",
-			Handler:    _Service_DoFn_Handler,
+			Handler:    _UserDefinedFunction_DoFn_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "ReduceFn",
-			Handler:       _Service_ReduceFn_Handler,
+			Handler:       _UserDefinedFunction_ReduceFn_Handler,
 			ClientStreams: true,
 		},
 	},
