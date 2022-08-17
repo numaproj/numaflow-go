@@ -2,6 +2,8 @@ package function
 
 import "time"
 
+// TODO: this options file is currently only a placeholder
+
 type handleOptions struct {
 	eventTime time.Time
 }
