@@ -24,7 +24,7 @@ const _ = grpc.SupportPackageIsVersion7
 type UserDefinedFunctionClient interface {
 	// Applies a function to each datum element
 	DoFn(ctx context.Context, in *Datum, opts ...grpc.CallOption) (*DatumList, error)
-	// Applies a reduce fuction to a datum stream
+	// Applies a reduce function to a datum stream
 	ReduceFn(ctx context.Context, opts ...grpc.CallOption) (UserDefinedFunction_ReduceFnClient, error)
 }
 
@@ -85,7 +85,7 @@ func (x *userDefinedFunctionReduceFnClient) CloseAndRecv() (*DatumList, error) {
 type UserDefinedFunctionServer interface {
 	// Applies a function to each datum element
 	DoFn(context.Context, *Datum) (*DatumList, error)
-	// Applies a reduce fuction to a datum stream
+	// Applies a reduce function to a datum stream
 	ReduceFn(UserDefinedFunction_ReduceFnServer) error
 	mustEmbedUnimplementedUserDefinedFunctionServer()
 }

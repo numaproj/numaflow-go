@@ -10,8 +10,24 @@ service UserDefinedFunction {
   // Applies a function to each datum element
   rpc DoFn(Datum) returns (DatumList);
 
-  // Applies a reduce fuction to a datum stream
+  // Applies a reduce function to a datum stream
   rpc ReduceFn(stream Datum) returns (DatumList);
+}
+
+message EventTime {
+  google.protobuf.Timestamp EventTime = 1;
+  // future we can add an enum to represent whether the event time is
+  // based on INGEST_TIME or EVENT_TIME or PROCESSING_TIME
+}
+
+message IntervalWindow {
+  google.protobuf.Timestamp StartTime = 1;
+  google.protobuf.Timestamp EndTime = 2;
+}
+
+message PaneInfo {
+  google.protobuf.Timestamp Watermark = 1;
+  // future we can add LATE, ON_TIME etc.
 }
 
 /**
@@ -20,14 +36,10 @@ service UserDefinedFunction {
 message Datum {
   string Key = 1;
   bytes Value = 2;
-  PaneInfo PaneInfo = 3;
+  EventTime EventTime = 3;
+  IntervalWindow IntervalWindow = 4;
+  PaneInfo PaneInfo = 5;
 }
-
-message PaneInfo {
-  google.protobuf.Timestamp EventTime = 1;
-  google.protobuf.Timestamp ProcessingTime = 2;
-}
-
 
 /**
  * DatumList represents a list of datum elements.
