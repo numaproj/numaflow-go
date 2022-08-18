@@ -42,12 +42,12 @@ func (s *server) Start() {
 
 	lis, err := net.Listen(function.Protocol, function.Addr)
 	if err != nil {
-		log.Fatalf("net.Listen(%q, %q) failed: %v", function.Protocol, function.Addr, err)
+		log.Fatalf("failed to execute net.Listen(%q, %q): %v", function.Protocol, function.Addr, err)
 	}
 	grpcSvr := grpc.NewServer()
 	functionpb.RegisterUserDefinedFunctionServer(grpcSvr, s.svc)
-	log.Println("Starting gRPC server with abstract unix domain socket...")
+	log.Println("starting the gRPC server with unix domain socket...")
 	if err := grpcSvr.Serve(lis); err != nil {
-		log.Fatalf("Failed to start gRPC server: %v", err)
+		log.Fatalf("failed to start the gRPC server: %v", err)
 	}
 }

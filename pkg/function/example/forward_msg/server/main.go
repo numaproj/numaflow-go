@@ -8,7 +8,7 @@ import (
 )
 
 func handle(ctx context.Context, key string, msg []byte) (functionsdk.Messages, error) {
-	return functionsdk.MessagesBuilder().Append(functionsdk.MessageToAll(msg)), nil
+	return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(key, msg)), nil
 }
 
 func main() {

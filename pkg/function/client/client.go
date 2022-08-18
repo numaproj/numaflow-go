@@ -13,55 +13,65 @@ import (
 )
 
 type client struct {
+	conn    *grpc.ClientConn
 	grpcClt functionpb.UserDefinedFunctionClient
 }
 
-func NewClient() *client {
+func NewClient() (*client, error) {
 	c := new(client)
 	sockAddr := fmt.Sprintf("%s:%s", function.Protocol, function.Addr)
 	conn, err := grpc.Dial(sockAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("grpc.Dial(%q) failed: %v", sockAddr, err)
+		return nil, fmt.Errorf("failed to execute grpc.Dial(%q): %w", sockAddr, err)
 	}
-	defer conn.Close()
+	c.conn = conn
 	c.grpcClt = functionpb.NewUserDefinedFunctionClient(conn)
-	return c
+	return c, nil
 }
 
-func (c *client) DoFn(ctx context.Context) {
+func (c *client) CloseConn(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, time.Minute)
+	defer cancel()
+	go func() {
+		<-ctx.Done()
+		if ctx.Err() == context.DeadlineExceeded {
+			log.Println("closing connection timed out.. forcing exit.")
+		}
+	}()
+	return c.conn.Close()
+}
+
+func (c *client) DoFn(ctx context.Context, datum *functionpb.Datum) ([]*functionpb.Datum, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	var datum *functionpb.Datum
 	mappedDatumList, err := c.grpcClt.DoFn(ctx, datum)
 	if err != nil {
-		log.Fatalf("client.ReduceFn failed: %v", err)
+		return nil, fmt.Errorf("failed to execute c.grpcClt.DoFn(): %w", err)
 	}
 
-	// TODO: how do we handle the returned result?
-	_ = mappedDatumList
+	return mappedDatumList.Elements, nil
 }
 
-func (c *client) ReduceFn(ctx context.Context) {
+// TODO: use a channel to accept datumStream?
+
+func (c *client) ReduceFn(ctx context.Context, datumStream []*functionpb.Datum) ([]*functionpb.Datum, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	var datumStream []*functionpb.Datum
 	stream, err := c.grpcClt.ReduceFn(ctx)
 	if err != nil {
-		log.Fatalf("client.ReduceFn failed: %v", err)
+		log.Fatalf("failed to execute c.grpcClt.ReduceFn(): %v", err)
 	}
 	for _, datum := range datumStream {
 		if err := stream.Send(datum); err != nil {
-			log.Fatalf("client.ReduceFn: stream.Send(%v) failed: %v", datum, err)
+			log.Fatalf("failed to execute stream.Send(%v): %v", datum, err)
 		}
 	}
 	reducedDatumList, err := stream.CloseAndRecv()
 	if err != nil {
-		log.Fatalf("client.ReduceFn failed: %v", err)
+		log.Fatalf("failed to execute stream.CloseAndRecv(): %v", err)
 	}
 
-	// TODO: how do we handle the returned result?
-	_ = reducedDatumList
-
+	return reducedDatumList.Elements, nil
 }
