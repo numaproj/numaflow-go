@@ -3,6 +3,7 @@ module github.com/numaproj/numaflow-go
 go 1.18
 
 require (
+    github.com/golang/mock v1.6.0
 	github.com/stretchr/testify v1.7.1
 	github.com/vmihailenco/msgpack/v5 v5.3.5
 	google.golang.org/grpc v1.48.0
