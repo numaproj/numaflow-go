@@ -12,7 +12,10 @@ import (
 func main() {
 	var ctx = context.Background()
 	c, err := client.NewClient()
-	defer c.CloseConn(ctx)
+	defer func() {
+		err = c.CloseConn(ctx)
+		log.Printf("CloseConn() got an err %v\n", err)
+	}()
 	if err != nil {
 		log.Fatalf("Failed to create gRPC client: %v", err)
 	}
