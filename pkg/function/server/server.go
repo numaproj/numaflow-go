@@ -40,6 +40,8 @@ func (s *server) Start() {
 	}
 	cleanup()
 
+	// TODO: create the socket file if not exists?
+
 	lis, err := net.Listen(function.Protocol, function.Addr)
 	if err != nil {
 		log.Fatalf("failed to execute net.Listen(%q, %q): %v", function.Protocol, function.Addr, err)
