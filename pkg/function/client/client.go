@@ -13,13 +13,13 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-type client struct {
+type Client struct {
 	conn    *grpc.ClientConn
 	grpcClt functionpb.UserDefinedFunctionClient
 }
 
-func NewClient() (*client, error) {
-	c := new(client)
+func NewClient() (*Client, error) {
+	c := new(Client)
 	sockAddr := fmt.Sprintf("%s:%s", function.Protocol, function.Addr)
 	conn, err := grpc.Dial(sockAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -30,13 +30,13 @@ func NewClient() (*client, error) {
 	return c, nil
 }
 
-func (c *client) IsReady(ctx context.Context) bool {
+func (c *Client) IsReady(ctx context.Context) bool {
 	// Notice: This API is EXPERIMENTAL and may be changed or removed in a later
 	// release.
 	return c.conn.GetState() == connectivity.Ready
 }
 
-func (c *client) CloseConn(ctx context.Context) error {
+func (c *Client) CloseConn(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 	go func() {
@@ -48,7 +48,7 @@ func (c *client) CloseConn(ctx context.Context) error {
 	return c.conn.Close()
 }
 
-func (c *client) DoFn(ctx context.Context, datum *functionpb.Datum) ([]*functionpb.Datum, error) {
+func (c *Client) DoFn(ctx context.Context, datum *functionpb.Datum) ([]*functionpb.Datum, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
@@ -62,7 +62,7 @@ func (c *client) DoFn(ctx context.Context, datum *functionpb.Datum) ([]*function
 
 // TODO: use a channel to accept datumStream?
 
-func (c *client) ReduceFn(ctx context.Context, datumStream []*functionpb.Datum) ([]*functionpb.Datum, error) {
+func (c *Client) ReduceFn(ctx context.Context, datumStream []*functionpb.Datum) ([]*functionpb.Datum, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
