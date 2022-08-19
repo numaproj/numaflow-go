@@ -9,6 +9,7 @@ import (
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	"github.com/numaproj/numaflow-go/pkg/function"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
@@ -27,6 +28,12 @@ func NewClient() (*client, error) {
 	c.conn = conn
 	c.grpcClt = functionpb.NewUserDefinedFunctionClient(conn)
 	return c, nil
+}
+
+func (c *client) IsReady(ctx context.Context) bool {
+	// Notice: This API is EXPERIMENTAL and may be changed or removed in a later
+	// release.
+	return c.conn.GetState() == connectivity.Ready
 }
 
 func (c *client) CloseConn(ctx context.Context) error {
