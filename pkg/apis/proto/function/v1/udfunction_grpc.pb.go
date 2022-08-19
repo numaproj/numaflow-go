@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -26,6 +27,7 @@ type UserDefinedFunctionClient interface {
 	DoFn(ctx context.Context, in *Datum, opts ...grpc.CallOption) (*DatumList, error)
 	// Applies a reduce function to a datum stream
 	ReduceFn(ctx context.Context, opts ...grpc.CallOption) (UserDefinedFunction_ReduceFnClient, error)
+	IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReadyResponse, error)
 }
 
 type userDefinedFunctionClient struct {
@@ -79,6 +81,15 @@ func (x *userDefinedFunctionReduceFnClient) CloseAndRecv() (*DatumList, error) {
 	return m, nil
 }
 
+func (c *userDefinedFunctionClient) IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReadyResponse, error) {
+	out := new(ReadyResponse)
+	err := c.cc.Invoke(ctx, "/function.v1.UserDefinedFunction/IsReady", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserDefinedFunctionServer is the server API for UserDefinedFunction service.
 // All implementations must embed UnimplementedUserDefinedFunctionServer
 // for forward compatibility
@@ -87,6 +98,7 @@ type UserDefinedFunctionServer interface {
 	DoFn(context.Context, *Datum) (*DatumList, error)
 	// Applies a reduce function to a datum stream
 	ReduceFn(UserDefinedFunction_ReduceFnServer) error
+	IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error)
 	mustEmbedUnimplementedUserDefinedFunctionServer()
 }
 
@@ -99,6 +111,9 @@ func (UnimplementedUserDefinedFunctionServer) DoFn(context.Context, *Datum) (*Da
 }
 func (UnimplementedUserDefinedFunctionServer) ReduceFn(UserDefinedFunction_ReduceFnServer) error {
 	return status.Errorf(codes.Unimplemented, "method ReduceFn not implemented")
+}
+func (UnimplementedUserDefinedFunctionServer) IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IsReady not implemented")
 }
 func (UnimplementedUserDefinedFunctionServer) mustEmbedUnimplementedUserDefinedFunctionServer() {}
 
@@ -157,6 +172,24 @@ func (x *userDefinedFunctionReduceFnServer) Recv() (*Datum, error) {
 	return m, nil
 }
 
+func _UserDefinedFunction_IsReady_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserDefinedFunctionServer).IsReady(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/function.v1.UserDefinedFunction/IsReady",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserDefinedFunctionServer).IsReady(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserDefinedFunction_ServiceDesc is the grpc.ServiceDesc for UserDefinedFunction service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -167,6 +200,10 @@ var UserDefinedFunction_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DoFn",
 			Handler:    _UserDefinedFunction_DoFn_Handler,
+		},
+		{
+			MethodName: "IsReady",
+			Handler:    _UserDefinedFunction_IsReady_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

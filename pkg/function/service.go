@@ -4,6 +4,7 @@ import (
 	"context"
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type Service struct {
@@ -11,6 +12,10 @@ type Service struct {
 
 	Mapper  MapHandler
 	Reducer ReduceHandler
+}
+
+func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*functionpb.ReadyResponse, error) {
+	return &functionpb.ReadyResponse{Ready: true}, nil
 }
 
 func (fs *Service) DoFn(ctx context.Context, d *functionpb.Datum) (*functionpb.DatumList, error) {

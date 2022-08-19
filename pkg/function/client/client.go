@@ -9,8 +9,8 @@ import (
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	"github.com/numaproj/numaflow-go/pkg/function"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type Client struct {
@@ -30,12 +30,6 @@ func NewClient() (*Client, error) {
 	return c, nil
 }
 
-func (c *Client) IsReady(ctx context.Context) bool {
-	// Notice: This API is EXPERIMENTAL and may be changed or removed in a later
-	// release.
-	return c.conn.GetState() == connectivity.Ready
-}
-
 func (c *Client) CloseConn(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
@@ -48,6 +42,14 @@ func (c *Client) CloseConn(ctx context.Context) error {
 	return c.conn.Close()
 }
 
+func (c *Client) IsReady(ctx context.Context, in *emptypb.Empty) bool {
+	resp, err := c.grpcClt.IsReady(ctx, in)
+	if err != nil {
+		return false
+	}
+	return resp.GetReady()
+}
+
 func (c *Client) DoFn(ctx context.Context, datum *functionpb.Datum) ([]*functionpb.Datum, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
@@ -57,7 +59,7 @@ func (c *Client) DoFn(ctx context.Context, datum *functionpb.Datum) ([]*function
 		return nil, fmt.Errorf("failed to execute c.grpcClt.DoFn(): %w", err)
 	}
 
-	return mappedDatumList.Elements, nil
+	return mappedDatumList.GetElements(), nil
 }
 
 // TODO: use a channel to accept datumStream?
@@ -80,5 +82,5 @@ func (c *Client) ReduceFn(ctx context.Context, datumStream []*functionpb.Datum) 
 		log.Fatalf("failed to execute stream.CloseAndRecv(): %v", err)
 	}
 
-	return reducedDatumList.Elements, nil
+	return reducedDatumList.GetElements(), nil
 }

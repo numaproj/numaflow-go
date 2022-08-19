@@ -3,6 +3,7 @@ syntax = "proto3";
 option go_package = "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1";
 
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
 
 package function.v1;
 
@@ -12,6 +13,8 @@ service UserDefinedFunction {
 
   // Applies a reduce function to a datum stream
   rpc ReduceFn(stream Datum) returns (DatumList);
+
+  rpc IsReady(google.protobuf.Empty) returns (ReadyResponse);
 }
 
 message EventTime {
@@ -46,4 +49,8 @@ message Datum {
  */
 message DatumList {
   repeated Datum Elements = 1;
+}
+
+message ReadyResponse {
+  bool ready = 1;
 }
