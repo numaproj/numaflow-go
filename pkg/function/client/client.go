@@ -27,7 +27,7 @@ func NewClient(inputOptions ...Option) (*Client, error) {
 		o.apply(opts)
 	}
 
-	if opts.mockClient.isMock {
+	if opts.mockClient.mockClnt != nil {
 		return &Client{nil, opts.mockClient.mockClnt}, nil
 
 	}
