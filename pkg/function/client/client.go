@@ -18,7 +18,20 @@ type Client struct {
 	grpcClt functionpb.UserDefinedFunctionClient
 }
 
-func NewClient() (*Client, error) {
+func NewClient(inputOptions ...Option) (*Client, error) {
+	var opts = &options{
+		mockClient: gRPClientOption{},
+	}
+
+	for _, o := range inputOptions {
+		o.apply(opts)
+	}
+
+	if opts.mockClient.isMock {
+		return &Client{nil, opts.mockClient.mockClnt}, nil
+
+	}
+
 	c := new(Client)
 	sockAddr := fmt.Sprintf("%s:%s", function.Protocol, function.Addr)
 	conn, err := grpc.Dial(sockAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
