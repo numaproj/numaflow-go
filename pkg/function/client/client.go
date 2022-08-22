@@ -42,12 +42,12 @@ func (c *Client) CloseConn(ctx context.Context) error {
 	return c.conn.Close()
 }
 
-func (c *Client) IsReady(ctx context.Context, in *emptypb.Empty) bool {
+func (c *Client) IsReady(ctx context.Context, in *emptypb.Empty) (bool, error) {
 	resp, err := c.grpcClt.IsReady(ctx, in)
 	if err != nil {
-		return false
+		return false, err
 	}
-	return resp.GetReady()
+	return resp.GetReady(), nil
 }
 
 func (c *Client) DoFn(ctx context.Context, datum *functionpb.Datum) ([]*functionpb.Datum, error) {
