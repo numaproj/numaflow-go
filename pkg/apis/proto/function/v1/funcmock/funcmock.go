@@ -11,6 +11,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	grpc "google.golang.org/grpc"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // MockUserDefinedFunctionClient is a mock of UserDefinedFunctionClient interface.
@@ -54,6 +55,26 @@ func (mr *MockUserDefinedFunctionClientMockRecorder) DoFn(arg0, arg1 interface{}
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DoFn", reflect.TypeOf((*MockUserDefinedFunctionClient)(nil).DoFn), varargs...)
+}
+
+// IsReady mocks base method.
+func (m *MockUserDefinedFunctionClient) IsReady(arg0 context.Context, arg1 *emptypb.Empty, arg2 ...grpc.CallOption) (*v1.ReadyResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "IsReady", varargs...)
+	ret0, _ := ret[0].(*v1.ReadyResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsReady indicates an expected call of IsReady.
+func (mr *MockUserDefinedFunctionClientMockRecorder) IsReady(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsReady", reflect.TypeOf((*MockUserDefinedFunctionClient)(nil).IsReady), varargs...)
 }
 
 // ReduceFn mocks base method.
@@ -112,6 +133,21 @@ func (m *MockUserDefinedFunctionServer) DoFn(arg0 context.Context, arg1 *v1.Datu
 func (mr *MockUserDefinedFunctionServerMockRecorder) DoFn(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DoFn", reflect.TypeOf((*MockUserDefinedFunctionServer)(nil).DoFn), arg0, arg1)
+}
+
+// IsReady mocks base method.
+func (m *MockUserDefinedFunctionServer) IsReady(arg0 context.Context, arg1 *emptypb.Empty) (*v1.ReadyResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsReady", arg0, arg1)
+	ret0, _ := ret[0].(*v1.ReadyResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsReady indicates an expected call of IsReady.
+func (mr *MockUserDefinedFunctionServerMockRecorder) IsReady(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsReady", reflect.TypeOf((*MockUserDefinedFunctionServer)(nil).IsReady), arg0, arg1)
 }
 
 // ReduceFn mocks base method.
