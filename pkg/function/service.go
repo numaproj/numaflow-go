@@ -28,9 +28,9 @@ func (fs *Service) DoFn(ctx context.Context, d *functionpb.Datum) (*functionpb.D
 		elements = append(elements, &functionpb.Datum{
 			Key:            m.Key,
 			Value:          m.Value,
-			EventTime:      d.EventTime, // should provide a way for the user to update the event time
-			PaneInfo:       d.PaneInfo,
-			IntervalWindow: d.IntervalWindow,
+			EventTime:      d.GetEventTime(), // should provide a way for the user to update the event time
+			PaneInfo:       d.GetPaneInfo(),
+			IntervalWindow: d.GetIntervalWindow(),
 		})
 	}
 	datumList := &functionpb.DatumList{
