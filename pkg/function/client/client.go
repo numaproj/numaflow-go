@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"time"
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	"github.com/numaproj/numaflow-go/pkg/function"
@@ -44,14 +43,6 @@ func NewClient(inputOptions ...Option) (*Client, error) {
 }
 
 func (c *Client) CloseConn(ctx context.Context) error {
-	ctx, cancel := context.WithTimeout(ctx, time.Minute)
-	defer cancel()
-	go func() {
-		<-ctx.Done()
-		if ctx.Err() == context.DeadlineExceeded {
-			log.Println("closing connection timed out.. forcing exit.")
-		}
-	}()
 	return c.conn.Close()
 }
 
@@ -64,9 +55,6 @@ func (c *Client) IsReady(ctx context.Context, in *emptypb.Empty) (bool, error) {
 }
 
 func (c *Client) DoFn(ctx context.Context, datum *functionpb.Datum) ([]*functionpb.Datum, error) {
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
-
 	mappedDatumList, err := c.grpcClt.DoFn(ctx, datum)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute c.grpcClt.DoFn(): %w", err)
@@ -78,9 +66,6 @@ func (c *Client) DoFn(ctx context.Context, datum *functionpb.Datum) ([]*function
 // TODO: use a channel to accept datumStream?
 
 func (c *Client) ReduceFn(ctx context.Context, datumStream []*functionpb.Datum) ([]*functionpb.Datum, error) {
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
-
 	stream, err := c.grpcClt.ReduceFn(ctx)
 	if err != nil {
 		log.Fatalf("failed to execute c.grpcClt.ReduceFn(): %v", err)
