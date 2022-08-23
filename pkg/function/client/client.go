@@ -27,7 +27,7 @@ func NewClient(inputOptions ...Option) (*Client, error) {
 	}
 
 	if opts.mockClient.mockClnt != nil {
-		return &Client{nil, opts.mockClient.mockClnt}, nil
+		return &Client{&grpc.ClientConn{}, opts.mockClient.mockClnt}, nil
 
 	}
 
