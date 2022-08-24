@@ -8,6 +8,7 @@ import (
 )
 
 func handle(ctx context.Context, key string, msg []byte) (functionsdk.Messages, error) {
+	// directly forward the input to the output
 	return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(key, msg)), nil
 }
 
