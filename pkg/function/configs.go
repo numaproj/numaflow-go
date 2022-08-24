@@ -2,5 +2,5 @@ package function
 
 const (
 	Protocol = "unix"
-	Addr     = "/var/run/numaflow/grpc.sock"
+	Addr     = "/var/run/numaflow/function.sock"
 )

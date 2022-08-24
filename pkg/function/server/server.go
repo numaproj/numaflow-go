@@ -14,7 +14,7 @@ type server struct {
 	svc *function.Service
 }
 
-func NewServer() *server {
+func New() *server {
 	s := new(server)
 	s.svc = new(function.Service)
 	return s

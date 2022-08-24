@@ -33,10 +33,10 @@ func Test_server_Start(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// note: using actual UDS connection
 
-			go NewServer().RegisterMapper(tt.fields.mapHandler).Start()
+			go New().RegisterMapper(tt.fields.mapHandler).Start()
 
 			var ctx = context.Background()
-			c, err := client.NewClient()
+			c, err := client.New()
 			assert.NoError(t, err)
 			defer func() {
 				err = c.CloseConn(ctx)

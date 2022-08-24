@@ -3,7 +3,6 @@ package client
 import (
 	"context"
 	"fmt"
-	"log"
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	"github.com/numaproj/numaflow-go/pkg/function"
@@ -17,7 +16,7 @@ type Client struct {
 	grpcClt functionpb.UserDefinedFunctionClient
 }
 
-func NewClient(inputOptions ...Option) (*Client, error) {
+func New(inputOptions ...Option) (*Client, error) {
 	var opts = &options{
 		mockClient: gRPClientOption{},
 	}
@@ -68,16 +67,16 @@ func (c *Client) DoFn(ctx context.Context, datum *functionpb.Datum) ([]*function
 func (c *Client) ReduceFn(ctx context.Context, datumStream []*functionpb.Datum) ([]*functionpb.Datum, error) {
 	stream, err := c.grpcClt.ReduceFn(ctx)
 	if err != nil {
-		log.Fatalf("failed to execute c.grpcClt.ReduceFn(): %v", err)
+		return nil, fmt.Errorf("failed to execute c.grpcClt.ReduceFn(): %w", err)
 	}
 	for _, datum := range datumStream {
 		if err := stream.Send(datum); err != nil {
-			log.Fatalf("failed to execute stream.Send(%v): %v", datum, err)
+			return nil, fmt.Errorf("failed to execute stream.Send(%v): %w", datum, err)
 		}
 	}
 	reducedDatumList, err := stream.CloseAndRecv()
 	if err != nil {
-		log.Fatalf("failed to execute stream.CloseAndRecv(): %v", err)
+		return nil, fmt.Errorf("failed to execute stream.CloseAndRecv(): %w", err)
 	}
 
 	return reducedDatumList.GetElements(), nil

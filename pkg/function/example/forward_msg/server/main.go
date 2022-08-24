@@ -13,5 +13,5 @@ func handle(ctx context.Context, key string, msg []byte) (functionsdk.Messages, 
 }
 
 func main() {
-	server.NewServer().RegisterMapper(functionsdk.DoFunc(handle)).Start()
+	server.New().RegisterMapper(functionsdk.DoFunc(handle)).Start()
 }
