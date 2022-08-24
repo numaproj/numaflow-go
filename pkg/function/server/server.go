@@ -34,7 +34,7 @@ func (s *server) RegisterReducer(r function.ReduceHandler) *server {
 }
 
 // Start starts the gRPC server via unix domain socket at configs.Addr.
-func (s *server) Start() {
+func (s *server) Start(inputOptions ...Option) {
 	cleanup := func() {
 		if _, err := os.Stat(function.Addr); err == nil {
 			if err := os.RemoveAll(function.Addr); err != nil {
@@ -44,7 +44,15 @@ func (s *server) Start() {
 	}
 	cleanup()
 
-	lis, err := net.Listen(function.Protocol, function.Addr)
+	var opts = &options{
+		sockAddr: function.Addr,
+	}
+
+	for _, inputOption := range inputOptions {
+		inputOption(opts)
+	}
+
+	lis, err := net.Listen(function.Protocol, opts.sockAddr)
 	if err != nil {
 		log.Fatalf("failed to execute net.Listen(%q, %q): %v", function.Protocol, function.Addr, err)
 	}

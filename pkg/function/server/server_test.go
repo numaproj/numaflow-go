@@ -33,7 +33,7 @@ func Test_server_Start(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// note: using actual UDS connection
 
-			go New().RegisterMapper(tt.fields.mapHandler).Start()
+			go New().RegisterMapper(tt.fields.mapHandler).Start(WithSockAddr("/tmp/uds/numaflow.sock"))
 
 			var ctx = context.Background()
 			c, err := client.New()
