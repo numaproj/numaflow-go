@@ -14,6 +14,6 @@ site/
 /go-diagrams/
 *.idea/
 
-#client code for local testing only
+# client code for local testing only
 pkg/function/example/forward_msg/client/
 
