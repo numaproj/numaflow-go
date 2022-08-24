@@ -31,7 +31,7 @@ func (fs *Service) DoFn(ctx context.Context, d *functionpb.Datum) (*functionpb.D
 		elements = append(elements, &functionpb.Datum{
 			Key:            m.Key,
 			Value:          m.Value,
-			EventTime:      d.GetEventTime(), // should provide a way for the user to update the event time
+			EventTime:      d.GetEventTime(),
 			PaneInfo:       d.GetPaneInfo(),
 			IntervalWindow: d.GetIntervalWindow(),
 		})
