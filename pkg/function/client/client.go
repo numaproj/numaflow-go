@@ -11,11 +11,13 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
+// Client contains the grpc connection and the grpc client.
 type Client struct {
 	conn    *grpc.ClientConn
 	grpcClt functionpb.UserDefinedFunctionClient
 }
 
+// New creates a new client object.
 func New(inputOptions ...Option) (*Client, error) {
 	var opts = &options{
 		mockClient: gRPClientOption{},
@@ -41,10 +43,12 @@ func New(inputOptions ...Option) (*Client, error) {
 	return c, nil
 }
 
+// CloseConn closes the grpc client connection.
 func (c *Client) CloseConn(ctx context.Context) error {
 	return c.conn.Close()
 }
 
+// IsReady returns true if the grpc connection is ready to use.
 func (c *Client) IsReady(ctx context.Context, in *emptypb.Empty) (bool, error) {
 	resp, err := c.grpcClt.IsReady(ctx, in)
 	if err != nil {
@@ -53,6 +57,7 @@ func (c *Client) IsReady(ctx context.Context, in *emptypb.Empty) (bool, error) {
 	return resp.GetReady(), nil
 }
 
+// DoFn applies a function to each datum element.
 func (c *Client) DoFn(ctx context.Context, datum *functionpb.Datum) ([]*functionpb.Datum, error) {
 	mappedDatumList, err := c.grpcClt.DoFn(ctx, datum)
 	if err != nil {
@@ -62,8 +67,8 @@ func (c *Client) DoFn(ctx context.Context, datum *functionpb.Datum) ([]*function
 	return mappedDatumList.GetElements(), nil
 }
 
-// TODO: use a channel to accept datumStream?
-
+// ReduceFn applies a reduce function to a datum stream.
+// TODO: use a channel to accept datumStream
 func (c *Client) ReduceFn(ctx context.Context, datumStream []*functionpb.Datum) ([]*functionpb.Datum, error) {
 	stream, err := c.grpcClt.ReduceFn(ctx)
 	if err != nil {

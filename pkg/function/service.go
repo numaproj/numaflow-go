@@ -7,6 +7,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
+// Service implements the proto gen server interface and contains the map operation handler and the reduce operation handler.
 type Service struct {
 	functionpb.UnimplementedUserDefinedFunctionServer
 
@@ -14,10 +15,12 @@ type Service struct {
 	Reducer ReduceHandler
 }
 
+// IsReady returns true to indicate the gRPC connection is ready.
 func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*functionpb.ReadyResponse, error) {
 	return &functionpb.ReadyResponse{Ready: true}, nil
 }
 
+// DoFn applies a function to each datum element
 func (fs *Service) DoFn(ctx context.Context, d *functionpb.Datum) (*functionpb.DatumList, error) {
 	messages, err := fs.Mapper.HandleDo(ctx, d.GetKey(), d.GetValue())
 	if err != nil {
@@ -39,6 +42,8 @@ func (fs *Service) DoFn(ctx context.Context, d *functionpb.Datum) (*functionpb.D
 	return datumList, nil
 }
 
+// ReduceFn applies a reduce function to a datum stream.
+// TODO: implement ReduceFn
 func (fs *Service) ReduceFn(fnServer functionpb.UserDefinedFunction_ReduceFnServer) error {
 	return nil
 }

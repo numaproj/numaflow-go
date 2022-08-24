@@ -8,6 +8,7 @@ type options struct {
 	mockClient gRPClientOption
 }
 
+// Option is the interface to apply options.
 type Option interface {
 	apply(*options)
 }
@@ -22,6 +23,7 @@ func (c gRPClientOption) apply(opts *options) {
 	}
 }
 
+// WithMockGRPCClient creates a new client object with the given mock client for mock testing.
 func WithMockGRPCClient(c *funcmock.MockUserDefinedFunctionClient) Option {
 	return gRPClientOption{mockClnt: c}
 }

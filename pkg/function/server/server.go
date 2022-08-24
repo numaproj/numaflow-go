@@ -14,22 +14,26 @@ type server struct {
 	svc *function.Service
 }
 
+// New creates a new server object.
 func New() *server {
 	s := new(server)
 	s.svc = new(function.Service)
 	return s
 }
 
+// RegisterMapper registers the map operation handler to the server.
 func (s *server) RegisterMapper(m function.MapHandler) *server {
 	s.svc.Mapper = m
 	return s
 }
 
+// RegisterReducer registers the reduce operation handler.
 func (s *server) RegisterReducer(r function.ReduceHandler) *server {
 	s.svc.Reducer = r
 	return s
 }
 
+// Start starts the gRPC server via unix domain socket at configs.Addr.
 func (s *server) Start() {
 	cleanup := func() {
 		if _, err := os.Stat(function.Addr); err == nil {
@@ -39,8 +43,6 @@ func (s *server) Start() {
 		}
 	}
 	cleanup()
-
-	// TODO: create the socket file if not exists?
 
 	lis, err := net.Listen(function.Protocol, function.Addr)
 	if err != nil {
