@@ -20,15 +20,15 @@ type Client struct {
 // New creates a new client object.
 func New(inputOptions ...Option) (*Client, error) {
 	var opts = &options{
-		mockClient: gRPClientOption{},
+		mockClient: nil,
 	}
 
-	for _, o := range inputOptions {
-		o.apply(opts)
+	for _, inputOption := range inputOptions {
+		inputOption(opts)
 	}
 
-	if opts.mockClient.mockClnt != nil {
-		return &Client{&grpc.ClientConn{}, opts.mockClient.mockClnt}, nil
+	if opts.mockClient != nil {
+		return &Client{&grpc.ClientConn{}, opts.mockClient}, nil
 
 	}
 
