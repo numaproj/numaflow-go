@@ -1,6 +1,18 @@
 package function
 
-import "context"
+import (
+	"context"
+
+	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
+	"google.golang.org/protobuf/types/known/emptypb"
+)
+
+type Client interface {
+	CloseConn(ctx context.Context) error
+	IsReady(ctx context.Context, in *emptypb.Empty) (bool, error)
+	DoFn(ctx context.Context, datum *v1.Datum) ([]*v1.Datum, error)
+	ReduceFn(ctx context.Context, datumStream []*v1.Datum) ([]*v1.Datum, error)
+}
 
 // MapHandler is the interface of map function implementation.
 type MapHandler interface {

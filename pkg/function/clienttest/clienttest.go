@@ -1,47 +1,27 @@
-package client
+package clienttest
 
 import (
 	"context"
 	"fmt"
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
-	"github.com/numaproj/numaflow-go/pkg/function"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+	"github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1/funcmock"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-// client contains the grpc connection and the grpc client.
+// client contains the grpc client for testing.
 type client struct {
-	conn    *grpc.ClientConn
 	grpcClt functionpb.UserDefinedFunctionClient
 }
 
-// New creates a new client object.
-func New(inputOptions ...Option) (*client, error) {
-
-	var opts = &options{
-		sockAddr: function.Addr,
-	}
-
-	for _, inputOption := range inputOptions {
-		inputOption(opts)
-	}
-
-	c := new(client)
-	sockAddr := fmt.Sprintf("%s:%s", function.Protocol, opts.sockAddr)
-	conn, err := grpc.Dial(sockAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute grpc.Dial(%q): %w", sockAddr, err)
-	}
-	c.conn = conn
-	c.grpcClt = functionpb.NewUserDefinedFunctionClient(conn)
-	return c, nil
+// New creates a new mock client object.
+func New(c *funcmock.MockUserDefinedFunctionClient) (*client, error) {
+	return &client{c}, nil
 }
 
 // CloseConn closes the grpc client connection.
 func (c *client) CloseConn(ctx context.Context) error {
-	return c.conn.Close()
+	return nil
 }
 
 // IsReady returns true if the grpc connection is ready to use.

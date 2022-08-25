@@ -10,6 +10,7 @@ import (
 	"github.com/golang/mock/gomock"
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	"github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1/funcmock"
+	"github.com/numaproj/numaflow-go/pkg/function/clienttest"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
@@ -33,47 +34,6 @@ func (r *rpcMsg) String() string {
 	return fmt.Sprintf("is %s", r.msg)
 }
 
-func TestNewMock(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockClient := funcmock.NewMockUserDefinedFunctionClient(ctrl)
-
-	type args struct {
-		c *funcmock.MockUserDefinedFunctionClient
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    *Client
-		wantErr bool
-	}{
-		{
-			name: "new_mock_client",
-			args: args{
-				c: mockClient,
-			},
-			want: &Client{
-				conn:    &grpc.ClientConn{},
-				grpcClt: mockClient,
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewMock(tt.args.c)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("NewMock() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewMock() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestIsReady(t *testing.T) {
 	var ctx = context.Background()
 
@@ -84,9 +44,9 @@ func TestIsReady(t *testing.T) {
 	mockClient.EXPECT().IsReady(gomock.Any(), gomock.Any()).Return(&functionpb.ReadyResponse{Ready: true}, nil)
 	mockClient.EXPECT().IsReady(gomock.Any(), gomock.Any()).Return(&functionpb.ReadyResponse{Ready: false}, fmt.Errorf("mock connection refused"))
 
-	testClient, err := NewMock(mockClient)
+	testClient, err := clienttest.New(mockClient)
 	assert.NoError(t, err)
-	reflect.DeepEqual(testClient, &Client{
+	reflect.DeepEqual(testClient, &client{
 		conn:    &grpc.ClientConn{},
 		grpcClt: mockClient,
 	})
@@ -124,9 +84,9 @@ func TestDoFn(t *testing.T) {
 			nil,
 		},
 	}, fmt.Errorf("mock DoFn error"))
-	testClient, err := NewMock(mockClient)
+	testClient, err := clienttest.New(mockClient)
 	assert.NoError(t, err)
-	reflect.DeepEqual(testClient, &Client{
+	reflect.DeepEqual(testClient, &client{
 		conn:    &grpc.ClientConn{},
 		grpcClt: mockClient,
 	})

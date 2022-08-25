@@ -12,6 +12,7 @@ import (
 )
 
 func Test_server_Start(t *testing.T) {
+	testSock := "/tmp/uds/numaflow.sock"
 	type fields struct {
 		mapHandler    functionsdk.MapHandler
 		reduceHandler functionsdk.ReduceHandler
@@ -33,10 +34,10 @@ func Test_server_Start(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// note: using actual UDS connection
 
-			go New().RegisterMapper(tt.fields.mapHandler).Start(WithSockAddr("/tmp/uds/numaflow.sock"))
+			go New().RegisterMapper(tt.fields.mapHandler).Start(WithSockAddr(testSock))
 
 			var ctx = context.Background()
-			c, err := client.New()
+			c, err := client.New(client.WithSockAddr(testSock))
 			assert.NoError(t, err)
 			defer func() {
 				err = c.CloseConn(ctx)
