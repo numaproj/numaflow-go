@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
+	"github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1/funcmock"
 	"github.com/numaproj/numaflow-go/pkg/function"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -17,21 +18,13 @@ type Client struct {
 	grpcClt functionpb.UserDefinedFunctionClient
 }
 
+// NewMock creates a new mock client object.
+func NewMock(c *funcmock.MockUserDefinedFunctionClient) (*Client, error) {
+	return &Client{&grpc.ClientConn{}, c}, nil
+}
+
 // New creates a new client object.
-func New(inputOptions ...Option) (*Client, error) {
-	var opts = &options{
-		mockClient: nil,
-	}
-
-	for _, inputOption := range inputOptions {
-		inputOption(opts)
-	}
-
-	if opts.mockClient != nil {
-		return &Client{&grpc.ClientConn{}, opts.mockClient}, nil
-
-	}
-
+func New() (*Client, error) {
 	c := new(Client)
 	sockAddr := fmt.Sprintf("%s:%s", function.Protocol, function.Addr)
 	conn, err := grpc.Dial(sockAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
