@@ -1,4 +1,4 @@
-package client
+package clienttest
 
 import (
 	"context"
@@ -10,9 +10,7 @@ import (
 	"github.com/golang/mock/gomock"
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	"github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1/funcmock"
-	"github.com/numaproj/numaflow-go/pkg/function/clienttest"
 	"github.com/stretchr/testify/assert"
-	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -44,10 +42,9 @@ func TestIsReady(t *testing.T) {
 	mockClient.EXPECT().IsReady(gomock.Any(), gomock.Any()).Return(&functionpb.ReadyResponse{Ready: true}, nil)
 	mockClient.EXPECT().IsReady(gomock.Any(), gomock.Any()).Return(&functionpb.ReadyResponse{Ready: false}, fmt.Errorf("mock connection refused"))
 
-	testClient, err := clienttest.New(mockClient)
+	testClient, err := New(mockClient)
 	assert.NoError(t, err)
 	reflect.DeepEqual(testClient, &client{
-		conn:    &grpc.ClientConn{},
 		grpcClt: mockClient,
 	})
 
@@ -84,10 +81,9 @@ func TestDoFn(t *testing.T) {
 			nil,
 		},
 	}, fmt.Errorf("mock DoFn error"))
-	testClient, err := clienttest.New(mockClient)
+	testClient, err := New(mockClient)
 	assert.NoError(t, err)
 	reflect.DeepEqual(testClient, &client{
-		conn:    &grpc.ClientConn{},
 		grpcClt: mockClient,
 	})
 
