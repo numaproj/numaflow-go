@@ -13,9 +13,7 @@ import (
 )
 
 func Test_server_Start(t *testing.T) {
-	testSock := "/tmp/numaflow-test-XXXX.sock"
-
-	file, err := os.CreateTemp("", "numaflow-test-XXXX.sock")
+	file, err := os.CreateTemp("/tmp", "numaflow-test-XXXX.sock")
 	assert.NoError(t, err)
 	defer func() {
 		err = os.Remove(file.Name())
@@ -43,10 +41,10 @@ func Test_server_Start(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// note: using actual UDS connection
 
-			go New().RegisterMapper(tt.fields.mapHandler).Start(WithSockAddr(testSock))
+			go New().RegisterMapper(tt.fields.mapHandler).Start(WithSockAddr(file.Name()))
 
 			var ctx = context.Background()
-			c, err := client.New(client.WithSockAddr(testSock))
+			c, err := client.New(client.WithSockAddr(file.Name()))
 			assert.NoError(t, err)
 			defer func() {
 				err = c.CloseConn(ctx)
