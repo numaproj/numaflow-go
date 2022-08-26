@@ -1,10 +1,12 @@
 package server
 
 import (
+	"context"
 	"log"
 	"net"
 	"os"
 
+	httpfuncsdk "github.com/numaproj/numaflow-go/function"
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	"github.com/numaproj/numaflow-go/pkg/function"
 	"google.golang.org/grpc"
@@ -62,4 +64,19 @@ func (s *server) Start(inputOptions ...Option) {
 	if err := grpcSvr.Serve(lis); err != nil {
 		log.Fatalf("failed to start the gRPC server: %v", err)
 	}
+
+	httpfuncsdk.Start(context.Background(), func(ctx context.Context, key, msg []byte) (httpfuncsdk.Messages, error) {
+		var httpFuncSDKMessages []httpfuncsdk.Message
+		msgs, err := s.svc.Mapper.HandleDo(ctx, string(key), msg)
+		if err != nil {
+			return httpfuncsdk.Messages{}, err
+		}
+		for _, m := range msgs {
+			httpFuncSDKMessages = append(httpFuncSDKMessages, httpfuncsdk.Message{
+				Key:   []byte(m.Key),
+				Value: m.Value,
+			})
+		}
+		return httpFuncSDKMessages, err
+	})
 }
