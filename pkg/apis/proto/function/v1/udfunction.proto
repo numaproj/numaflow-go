@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+option go_package = "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+package function.v1;
+
+service UserDefinedFunction {
+  // Applies a function to each datum element
+  rpc DoFn(Datum) returns (DatumList);
+
+  // Applies a reduce function to a datum stream
+  rpc ReduceFn(stream Datum) returns (DatumList);
+
+  rpc IsReady(google.protobuf.Empty) returns (ReadyResponse);
+}
+
+message EventTime {
+  google.protobuf.Timestamp EventTime = 1;
+  // future we can add an enum to represent whether the event time is
+  // based on INGEST_TIME or EVENT_TIME or PROCESSING_TIME
+}
+
+message IntervalWindow {
+  google.protobuf.Timestamp StartTime = 1;
+  google.protobuf.Timestamp EndTime = 2;
+}
+
+message PaneInfo {
+  google.protobuf.Timestamp Watermark = 1;
+  // future we can add LATE, ON_TIME etc.
+}
+
+/**
+ * Datum represents a datum element.
+ */
+message Datum {
+  string Key = 1;
+  bytes Value = 2;
+  EventTime EventTime = 3;
+  IntervalWindow IntervalWindow = 4;
+  PaneInfo PaneInfo = 5;
+}
+
+/**
+ * DatumList represents a list of datum elements.
+ */
+message DatumList {
+  repeated Datum Elements = 1;
+}
+
+message ReadyResponse {
+  bool ready = 1;
+}
