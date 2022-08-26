@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
@@ -12,7 +13,15 @@ import (
 )
 
 func Test_server_Start(t *testing.T) {
-	testSock := "/tmp/uds/numaflow.sock"
+	testSock := "/tmp/numaflow-test-XXXX.sock"
+
+	file, err := os.CreateTemp("", "numaflow-test-XXXX.sock")
+	assert.NoError(t, err)
+	defer func() {
+		err = os.Remove(file.Name())
+		assert.NoError(t, err)
+	}()
+
 	type fields struct {
 		mapHandler    functionsdk.MapHandler
 		reduceHandler functionsdk.ReduceHandler
