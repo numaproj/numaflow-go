@@ -13,7 +13,7 @@ import (
 )
 
 func Test_server_Start(t *testing.T) {
-	file, err := os.CreateTemp("/tmp", "numaflow-test-XXXX.sock")
+	file, err := os.CreateTemp("/tmp", "numaflow-test.sock")
 	assert.NoError(t, err)
 	defer func() {
 		err = os.Remove(file.Name())
