@@ -1,9 +1,12 @@
 package server
 
 import (
+	"context"
 	"log"
 	"net"
 	"os"
+	"os/signal"
+	"syscall"
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	"github.com/numaproj/numaflow-go/pkg/function"
@@ -34,7 +37,7 @@ func (s *server) RegisterReducer(r function.ReduceHandler) *server {
 }
 
 // Start starts the gRPC server via unix domain socket at configs.Addr.
-func (s *server) Start(inputOptions ...Option) {
+func (s *server) Start(ctx context.Context, inputOptions ...Option) {
 	var opts = &options{
 		sockAddr: function.Addr,
 	}
@@ -52,14 +55,27 @@ func (s *server) Start(inputOptions ...Option) {
 	}
 	cleanup()
 
+	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
 	lis, err := net.Listen(function.Protocol, opts.sockAddr)
 	if err != nil {
 		log.Fatalf("failed to execute net.Listen(%q, %q): %v", function.Protocol, function.Addr, err)
 	}
 	grpcSvr := grpc.NewServer()
 	functionpb.RegisterUserDefinedFunctionServer(grpcSvr, s.svc)
-	log.Println("starting the gRPC server with unix domain socket...")
-	if err := grpcSvr.Serve(lis); err != nil {
-		log.Fatalf("failed to start the gRPC server: %v", err)
-	}
+
+	// start the grpc server
+	go func() {
+		log.Println("starting the gRPC server with unix domain socket...")
+		err = grpcSvr.Serve(lis)
+		if err != nil {
+			log.Fatalf("failed to start the gRPC server: %v", err)
+		}
+	}()
+
+	<-ctxWithSignal.Done()
+	log.Println("Got a signal: terminating gRPC server...")
+	defer log.Println("Successfully stopped the gRPC server")
+	grpcSvr.GracefulStop()
 }
