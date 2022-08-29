@@ -77,7 +77,7 @@ func (s *server) Start(inputOptions ...Option) {
 	case s := <-sigterm:
 		log.Printf("Got a signal [%s] Terminating gRPC server...\n", s)
 
-		grpcSvr.Stop()
+		grpcSvr.GracefulStop()
 		log.Println("Successfully Stopped the gRPC server")
 	}
 }
