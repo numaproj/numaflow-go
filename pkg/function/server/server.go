@@ -75,7 +75,7 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) {
 	}()
 
 	<-ctxWithSignal.Done()
-	log.Printf("Got a signal: terminating gRPC server...")
-	defer log.Println("Successfully Stopped the gRPC server")
+	log.Println("Got a signal: terminating gRPC server...")
+	defer log.Println("Successfully stopped the gRPC server")
 	grpcSvr.GracefulStop()
 }
