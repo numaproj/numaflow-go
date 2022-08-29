@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"log"
 	"net"
 	"os"
@@ -36,7 +37,7 @@ func (s *server) RegisterReducer(r function.ReduceHandler) *server {
 }
 
 // Start starts the gRPC server via unix domain socket at configs.Addr.
-func (s *server) Start(inputOptions ...Option) {
+func (s *server) Start(ctx context.Context, inputOptions ...Option) {
 	var opts = &options{
 		sockAddr: function.Addr,
 	}
@@ -54,6 +55,9 @@ func (s *server) Start(inputOptions ...Option) {
 	}
 	cleanup()
 
+	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
 	lis, err := net.Listen(function.Protocol, opts.sockAddr)
 	if err != nil {
 		log.Fatalf("failed to execute net.Listen(%q, %q): %v", function.Protocol, function.Addr, err)
@@ -70,14 +74,8 @@ func (s *server) Start(inputOptions ...Option) {
 		}
 	}()
 
-	sigterm := make(chan os.Signal, 1)
-	signal.Notify(sigterm, syscall.SIGINT, syscall.SIGTERM)
-	select {
-	// wait until we get a signal
-	case s := <-sigterm:
-		log.Printf("Got a signal [%s] Terminating gRPC server...\n", s)
-
-		grpcSvr.GracefulStop()
-		log.Println("Successfully Stopped the gRPC server")
-	}
+	<-ctxWithSignal.Done()
+	log.Printf("Got a signal: terminating gRPC server...")
+	defer log.Println("Successfully Stopped the gRPC server")
+	grpcSvr.GracefulStop()
 }
