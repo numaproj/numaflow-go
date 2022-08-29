@@ -75,9 +75,9 @@ func (s *server) Start(inputOptions ...Option) {
 	select {
 	// wait until we get a signal
 	case s := <-sigterm:
-		log.Printf("Got a signal [%s] Terminating...\n", s)
+		log.Printf("Got a signal [%s] Terminating gRPC server...\n", s)
 
 		grpcSvr.Stop()
-		log.Println("Successfully Stopped the CPD gRPC server")
+		log.Println("Successfully Stopped the gRPC server")
 	}
 }
