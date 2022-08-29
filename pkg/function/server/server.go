@@ -4,6 +4,8 @@ import (
 	"log"
 	"net"
 	"os"
+	"os/signal"
+	"syscall"
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	"github.com/numaproj/numaflow-go/pkg/function"
@@ -58,8 +60,24 @@ func (s *server) Start(inputOptions ...Option) {
 	}
 	grpcSvr := grpc.NewServer()
 	functionpb.RegisterUserDefinedFunctionServer(grpcSvr, s.svc)
-	log.Println("starting the gRPC server with unix domain socket...")
-	if err := grpcSvr.Serve(lis); err != nil {
-		log.Fatalf("failed to start the gRPC server: %v", err)
+
+	// start the grpc server
+	go func() {
+		log.Println("starting the gRPC server with unix domain socket...")
+		err = grpcSvr.Serve(lis)
+		if err != nil {
+			log.Fatalf("failed to start the gRPC server: %v", err)
+		}
+	}()
+
+	sigterm := make(chan os.Signal, 1)
+	signal.Notify(sigterm, syscall.SIGINT, syscall.SIGTERM)
+	select {
+	// wait until we get a signal
+	case s := <-sigterm:
+		log.Printf("Got a signal [%s] Terminating...\n", s)
+
+		grpcSvr.Stop()
+		log.Println("Successfully Stopped the CPD gRPC server")
 	}
 }
