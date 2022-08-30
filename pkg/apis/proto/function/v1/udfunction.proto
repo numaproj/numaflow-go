@@ -8,28 +8,26 @@ import "google/protobuf/empty.proto";
 package function.v1;
 
 service UserDefinedFunction {
-  // Applies a function to each datum element
-  rpc DoFn(Datum) returns (DatumList);
+  // Applies a function to each datum element.
+  rpc MapFn(Datum) returns (DatumList);
 
-  // Applies a reduce function to a datum stream
+  // Applies a reduce function to a datum stream.
   rpc ReduceFn(stream Datum) returns (DatumList);
 
+  // IsReady is the heartbeat endpoint for gRPC.
   rpc IsReady(google.protobuf.Empty) returns (ReadyResponse);
 }
 
 message EventTime {
-  google.protobuf.Timestamp EventTime = 1;
+  // event_time is the time associated with each datum.
+  google.protobuf.Timestamp event_time = 1;
   // future we can add an enum to represent whether the event time is
   // based on INGEST_TIME or EVENT_TIME or PROCESSING_TIME
 }
 
-message IntervalWindow {
-  google.protobuf.Timestamp StartTime = 1;
-  google.protobuf.Timestamp EndTime = 2;
-}
-
-message PaneInfo {
-  google.protobuf.Timestamp Watermark = 1;
+message Watermark {
+  // watermark is the monotonically increasing time which denotes completeness for the given time for the given vertex.
+  google.protobuf.Timestamp watermark = 1;
   // future we can add LATE, ON_TIME etc.
 }
 
@@ -37,20 +35,22 @@ message PaneInfo {
  * Datum represents a datum element.
  */
 message Datum {
-  string Key = 1;
-  bytes Value = 2;
-  EventTime EventTime = 3;
-  IntervalWindow IntervalWindow = 4;
-  PaneInfo PaneInfo = 5;
+  string key = 1;
+  bytes value = 2;
+  EventTime event_time = 3;
+  Watermark watermark = 4;
 }
 
 /**
  * DatumList represents a list of datum elements.
  */
 message DatumList {
-  repeated Datum Elements = 1;
+  repeated Datum elements = 1;
 }
 
+/**
+ * ReadyResponse is the health check result.
+ */
 message ReadyResponse {
   bool ready = 1;
 }

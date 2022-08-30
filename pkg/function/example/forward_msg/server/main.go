@@ -7,11 +7,10 @@ import (
 	"github.com/numaproj/numaflow-go/pkg/function/server"
 )
 
-func handle(ctx context.Context, key string, msg []byte) (functionsdk.Messages, error) {
-	// directly forward the input to the output
+func map_handle(_ context.Context, key string, msg []byte) (functionsdk.Messages, error) {
 	return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(key, msg)), nil
 }
 
 func main() {
-	server.New().RegisterMapper(functionsdk.DoFunc(handle)).Start(context.Background())
+	server.New().RegisterMapper(functionsdk.DoFunc(map_handle)).Start(context.Background())
 }

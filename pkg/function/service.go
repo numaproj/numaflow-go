@@ -29,11 +29,9 @@ func (fs *Service) DoFn(ctx context.Context, d *functionpb.Datum) (*functionpb.D
 	var elements []*functionpb.Datum
 	for _, m := range messages.Items() {
 		elements = append(elements, &functionpb.Datum{
-			Key:            m.Key,
-			Value:          m.Value,
-			EventTime:      d.GetEventTime(),
-			PaneInfo:       d.GetPaneInfo(),
-			IntervalWindow: d.GetIntervalWindow(),
+			Key:       m.Key,
+			Value:     m.Value,
+			EventTime: d.GetEventTime(),
 		})
 	}
 	datumList := &functionpb.DatumList{
@@ -45,5 +43,7 @@ func (fs *Service) DoFn(ctx context.Context, d *functionpb.Datum) (*functionpb.D
 // ReduceFn applies a reduce function to a datum stream.
 // TODO: implement ReduceFn
 func (fs *Service) ReduceFn(fnServer functionpb.UserDefinedFunction_ReduceFnServer) error {
+	ctx := fnServer.Context()
+	_ = ctx
 	return nil
 }
