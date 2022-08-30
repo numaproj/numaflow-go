@@ -37,26 +37,6 @@ func (m *MockUserDefinedFunctionClient) EXPECT() *MockUserDefinedFunctionClientM
 	return m.recorder
 }
 
-// DoFn mocks base method.
-func (m *MockUserDefinedFunctionClient) DoFn(arg0 context.Context, arg1 *v1.Datum, arg2 ...grpc.CallOption) (*v1.DatumList, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "DoFn", varargs...)
-	ret0, _ := ret[0].(*v1.DatumList)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// DoFn indicates an expected call of DoFn.
-func (mr *MockUserDefinedFunctionClientMockRecorder) DoFn(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DoFn", reflect.TypeOf((*MockUserDefinedFunctionClient)(nil).DoFn), varargs...)
-}
-
 // IsReady mocks base method.
 func (m *MockUserDefinedFunctionClient) IsReady(arg0 context.Context, arg1 *emptypb.Empty, arg2 ...grpc.CallOption) (*v1.ReadyResponse, error) {
 	m.ctrl.T.Helper()
@@ -75,6 +55,26 @@ func (mr *MockUserDefinedFunctionClientMockRecorder) IsReady(arg0, arg1 interfac
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsReady", reflect.TypeOf((*MockUserDefinedFunctionClient)(nil).IsReady), varargs...)
+}
+
+// MapFn mocks base method.
+func (m *MockUserDefinedFunctionClient) MapFn(arg0 context.Context, arg1 *v1.Datum, arg2 ...grpc.CallOption) (*v1.DatumList, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "MapFn", varargs...)
+	ret0, _ := ret[0].(*v1.DatumList)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MapFn indicates an expected call of MapFn.
+func (mr *MockUserDefinedFunctionClientMockRecorder) MapFn(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MapFn", reflect.TypeOf((*MockUserDefinedFunctionClient)(nil).MapFn), varargs...)
 }
 
 // ReduceFn mocks base method.
