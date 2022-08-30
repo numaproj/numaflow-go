@@ -30,7 +30,9 @@ func TestService_DoFn(t *testing.T) {
 		{
 			name: "do_fn_forward_msg",
 			fields: fields{
-				Mapper: DoFunc(func(ctx context.Context, key string, msg []byte) (Messages, error) {
+				Mapper: MapFunc(func(ctx context.Context, datum Datum) (Messages, error) {
+					key := datum.Key()
+					msg := datum.Value()
 					return MessagesBuilder().Append(MessageTo(key+"_test", msg)), nil
 				}),
 				Reducer: nil,
@@ -43,11 +45,7 @@ func TestService_DoFn(t *testing.T) {
 					EventTime: &functionpb.EventTime{
 						EventTime: timestamppb.New(time.Unix(1661169600, 0)),
 					},
-					IntervalWindow: &functionpb.IntervalWindow{
-						StartTime: timestamppb.New(time.Unix(1661169600, 0)),
-						EndTime:   timestamppb.New(time.Unix(1661169660, 0)),
-					},
-					PaneInfo: &functionpb.PaneInfo{
+					Watermark: &functionpb.Watermark{
 						// TODO: need to update once we've finalized the datum data type
 						Watermark: timestamppb.New(time.Time{}),
 					},
@@ -61,11 +59,7 @@ func TestService_DoFn(t *testing.T) {
 						EventTime: &functionpb.EventTime{
 							EventTime: timestamppb.New(time.Unix(1661169600, 0)),
 						},
-						IntervalWindow: &functionpb.IntervalWindow{
-							StartTime: timestamppb.New(time.Unix(1661169600, 0)),
-							EndTime:   timestamppb.New(time.Unix(1661169660, 0)),
-						},
-						PaneInfo: &functionpb.PaneInfo{
+						Watermark: &functionpb.Watermark{
 							// TODO: need to update once we've finalized the datum data type
 							Watermark: timestamppb.New(time.Time{}),
 						},
@@ -81,13 +75,13 @@ func TestService_DoFn(t *testing.T) {
 				Mapper:  tt.fields.Mapper,
 				Reducer: tt.fields.Reducer,
 			}
-			got, err := fs.DoFn(tt.args.ctx, tt.args.d)
+			got, err := fs.MapFn(tt.args.ctx, tt.args.d)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("DoFn() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("MapFn() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("DoFn() got = %v, want %v", got, tt.want)
+				t.Errorf("MapFn() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

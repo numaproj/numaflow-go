@@ -2,10 +2,46 @@ package function
 
 import (
 	"context"
+	"time"
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
+
+type handlerDatum struct {
+	key       string
+	value     []byte
+	eventTime time.Time
+	watermark time.Time
+}
+
+func (h *handlerDatum) Key() string { // TODO: better name??...
+	if h != nil {
+		return h.key
+	}
+	return ""
+}
+
+func (h *handlerDatum) Value() []byte {
+	if h != nil {
+		return h.value
+	}
+	return nil
+}
+
+func (h *handlerDatum) EventTime() time.Time {
+	if h != nil {
+		return h.eventTime
+	}
+	return time.Time{}
+}
+
+func (h *handlerDatum) Watermark() time.Time {
+	if h != nil {
+		return h.watermark
+	}
+	return time.Time{}
+}
 
 // Service implements the proto gen server interface and contains the map operation handler and the reduce operation handler.
 type Service struct {
@@ -20,9 +56,19 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*functionpb.ReadyRe
 	return &functionpb.ReadyResponse{Ready: true}, nil
 }
 
-// DoFn applies a function to each datum element
-func (fs *Service) DoFn(ctx context.Context, d *functionpb.Datum) (*functionpb.DatumList, error) {
-	messages, err := fs.Mapper.HandleDo(ctx, d.GetKey(), d.GetValue())
+// MapFn applies a function to each datum element
+func (fs *Service) MapFn(ctx context.Context, d *functionpb.Datum) (*functionpb.DatumList, error) {
+	var hd = handlerDatum{
+		key:   d.GetKey(),
+		value: d.GetValue(),
+	}
+	if d.GetEventTime() != nil {
+		hd.eventTime = d.GetEventTime().EventTime.AsTime()
+	}
+	if d.GetWatermark() != nil {
+		hd.eventTime = d.GetWatermark().Watermark.AsTime()
+	}
+	messages, err := fs.Mapper.HandleDo(ctx, &hd)
 	if err != nil {
 		return nil, err
 	}
@@ -32,6 +78,7 @@ func (fs *Service) DoFn(ctx context.Context, d *functionpb.Datum) (*functionpb.D
 			Key:       m.Key,
 			Value:     m.Value,
 			EventTime: d.GetEventTime(),
+			Watermark: d.GetWatermark(),
 		})
 	}
 	datumList := &functionpb.DatumList{

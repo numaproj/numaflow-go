@@ -31,7 +31,9 @@ func Test_server_Start(t *testing.T) {
 		{
 			name: "server_start",
 			fields: fields{
-				mapHandler: functionsdk.DoFunc(func(ctx context.Context, key string, msg []byte) (functionsdk.Messages, error) {
+				mapHandler: functionsdk.MapFunc(func(ctx context.Context, d functionsdk.Datum) (functionsdk.Messages, error) {
+					key := d.Key()
+					msg := d.Value()
 					return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(key+"_test", msg)), nil
 				}),
 			},
@@ -52,7 +54,7 @@ func Test_server_Start(t *testing.T) {
 			}()
 			for i := 0; i < 10; i++ {
 				key := fmt.Sprintf("client_%d", i)
-				list, err := c.DoFn(ctx, &functionpb.Datum{
+				list, err := c.MapFn(ctx, &functionpb.Datum{
 					Key:   key,
 					Value: []byte(`server_test`),
 				})
