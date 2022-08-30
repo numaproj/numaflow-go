@@ -4,15 +4,15 @@ import (
 	"context"
 	"time"
 
-	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
+	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type Client interface {
 	CloseConn(ctx context.Context) error
 	IsReady(ctx context.Context, in *emptypb.Empty) (bool, error)
-	MapFn(ctx context.Context, datum *v1.Datum) ([]*v1.Datum, error)
-	ReduceFn(ctx context.Context, datumStream []*v1.Datum) ([]*v1.Datum, error)
+	MapFn(ctx context.Context, datum *functionpb.Datum) ([]*functionpb.Datum, error)
+	ReduceFn(ctx context.Context, datumStreamCh <-chan *functionpb.Datum) ([]*functionpb.Datum, error)
 }
 
 type Datum interface {
@@ -50,8 +50,10 @@ func (mf MapFunc) HandleDo(ctx context.Context, datum Datum) (Messages, error) {
 	return mf(ctx, datum)
 }
 
+// ReduceFunc is utility type used to convert a HandleDo function to a ReduceHandler.
 type ReduceFunc func(ctx context.Context, reduceCh <-chan Datum, md Metadata) (Messages, error)
 
+// HandleDo implements the function of reduce function.
 func (rf ReduceFunc) HandleDo(ctx context.Context, reduceCh <-chan Datum, md Metadata) (Messages, error) {
 	return rf(ctx, reduceCh, md)
 }

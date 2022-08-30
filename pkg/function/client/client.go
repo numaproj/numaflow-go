@@ -65,12 +65,12 @@ func (c *client) MapFn(ctx context.Context, datum *functionpb.Datum) ([]*functio
 
 // ReduceFn applies a reduce function to a datum stream.
 // TODO: use a channel to accept datumStream
-func (c *client) ReduceFn(ctx context.Context, datumStream []*functionpb.Datum) ([]*functionpb.Datum, error) {
+func (c *client) ReduceFn(ctx context.Context, datumStreamCh <-chan *functionpb.Datum) ([]*functionpb.Datum, error) {
 	stream, err := c.grpcClt.ReduceFn(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute c.grpcClt.ReduceFn(): %w", err)
 	}
-	for _, datum := range datumStream {
+	for datum := range datumStreamCh {
 		if err := stream.Send(datum); err != nil {
 			return nil, fmt.Errorf("failed to execute stream.Send(%v): %w", datum, err)
 		}

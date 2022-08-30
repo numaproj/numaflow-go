@@ -8,14 +8,15 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-type handlerDatum struct {
+// handlerDatum implements the Datum interface and is used in the map and reduce handlers.
+type handlerDatum struct { // TODO: better name??...
 	key       string
 	value     []byte
 	eventTime time.Time
 	watermark time.Time
 }
 
-func (h *handlerDatum) Key() string { // TODO: better name??...
+func (h *handlerDatum) Key() string {
 	if h != nil {
 		return h.key
 	}
