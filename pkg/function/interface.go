@@ -24,7 +24,7 @@ type Datum interface {
 
 type Metadata interface {
 	IntervalWindow() IntervalWindow
-	NonKey() bool
+	NonKeyed() bool
 }
 
 type IntervalWindow interface {
