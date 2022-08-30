@@ -17,31 +17,19 @@ type handlerDatum struct { // TODO: better name??...
 }
 
 func (h *handlerDatum) Key() string {
-	if h != nil {
-		return h.key
-	}
-	return ""
+	return h.key
 }
 
 func (h *handlerDatum) Value() []byte {
-	if h != nil {
-		return h.value
-	}
-	return nil
+	return h.value
 }
 
 func (h *handlerDatum) EventTime() time.Time {
-	if h != nil {
-		return h.eventTime
-	}
-	return time.Time{}
+	return h.eventTime
 }
 
 func (h *handlerDatum) Watermark() time.Time {
-	if h != nil {
-		return h.watermark
-	}
-	return time.Time{}
+	return h.watermark
 }
 
 // Service implements the proto gen server interface and contains the map operation handler and the reduce operation handler.
@@ -60,14 +48,10 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*functionpb.ReadyRe
 // MapFn applies a function to each datum element
 func (fs *Service) MapFn(ctx context.Context, d *functionpb.Datum) (*functionpb.DatumList, error) {
 	var hd = handlerDatum{
-		key:   d.GetKey(),
-		value: d.GetValue(),
-	}
-	if d.GetEventTime() != nil {
-		hd.eventTime = d.GetEventTime().EventTime.AsTime()
-	}
-	if d.GetWatermark() != nil {
-		hd.eventTime = d.GetWatermark().Watermark.AsTime()
+		key:       d.GetKey(),
+		value:     d.GetValue(),
+		eventTime: d.GetEventTime().EventTime.AsTime(),
+		watermark: d.GetWatermark().Watermark.AsTime(),
 	}
 	messages, err := fs.Mapper.HandleDo(ctx, &hd)
 	if err != nil {

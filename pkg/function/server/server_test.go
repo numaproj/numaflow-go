@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
 	"github.com/numaproj/numaflow-go/pkg/function/client"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func Test_server_Start(t *testing.T) {
@@ -57,6 +59,13 @@ func Test_server_Start(t *testing.T) {
 				list, err := c.MapFn(ctx, &functionpb.Datum{
 					Key:   key,
 					Value: []byte(`server_test`),
+					EventTime: &functionpb.EventTime{
+						EventTime: timestamppb.New(time.Unix(1661169600, 0)),
+					},
+					Watermark: &functionpb.Watermark{
+						// TODO: need to update once we've finalized the datum data type
+						Watermark: timestamppb.New(time.Time{}),
+					},
 				})
 				assert.NoError(t, err)
 				for _, e := range list {
