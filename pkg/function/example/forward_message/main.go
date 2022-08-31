@@ -7,9 +7,8 @@ import (
 	"github.com/numaproj/numaflow-go/pkg/function/server"
 )
 
-func mapHandle(_ context.Context, d functionsdk.Datum) (functionsdk.Messages, error) {
+func mapHandle(_ context.Context, key string, d functionsdk.Datum) (functionsdk.Messages, error) {
 	// directly forward the input to the output
-	key := d.Key()
 	val := d.Value()
 	eventTime := d.EventTime()
 	_ = eventTime

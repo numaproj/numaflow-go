@@ -30,8 +30,7 @@ func TestService_DoFn(t *testing.T) {
 		{
 			name: "do_fn_forward_msg",
 			fields: fields{
-				Mapper: MapFunc(func(ctx context.Context, datum Datum) (Messages, error) {
-					key := datum.Key()
+				Mapper: MapFunc(func(ctx context.Context, key string, datum Datum) (Messages, error) {
 					msg := datum.Value()
 					return MessagesBuilder().Append(MessageTo(key+"_test", msg)), nil
 				}),

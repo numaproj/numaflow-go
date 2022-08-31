@@ -12,6 +12,7 @@ import (
 	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
 	"github.com/numaproj/numaflow-go/pkg/function/client"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -34,8 +35,7 @@ func Test_server_map(t *testing.T) {
 		{
 			name: "server_map",
 			fields: fields{
-				mapHandler: functionsdk.MapFunc(func(ctx context.Context, d functionsdk.Datum) (functionsdk.Messages, error) {
-					key := d.Key()
+				mapHandler: functionsdk.MapFunc(func(ctx context.Context, key string, d functionsdk.Datum) (functionsdk.Messages, error) {
 					msg := d.Value()
 					return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(key+"_test", msg)), nil
 				}),
@@ -86,6 +86,8 @@ func Test_server_reduce(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
+	var testKey = "reduce_key"
+
 	type fields struct {
 		mapHandler    functionsdk.MapHandler
 		reduceHandler functionsdk.ReduceHandler
@@ -97,24 +99,17 @@ func Test_server_reduce(t *testing.T) {
 		{
 			name: "server_reduce",
 			fields: fields{
-				reduceHandler: functionsdk.ReduceFunc(func(ctx context.Context, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) (functionsdk.Messages, error) {
+				reduceHandler: functionsdk.ReduceFunc(func(ctx context.Context, key string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) (functionsdk.Messages, error) {
 					// sum up values for the same key
 
 					// in this test case, md is nil
 					// intervalWindow := md.IntervalWindow()
 					// _ = intervalWindow
-					var resultKey string
+					var resultKey = key
 					var resultVal []byte
 					var sum = 0
-					var firstDatum = true
 					// sum up the values
 					for d := range reduceCh {
-						if firstDatum {
-							// key is the same for this sum use case
-							key := d.Key()
-							resultKey = key
-							firstDatum = !firstDatum
-						}
 						val := d.Value()
 						eventTime := d.EventTime()
 						_ = eventTime
@@ -150,7 +145,7 @@ func Test_server_reduce(t *testing.T) {
 
 			for i := 0; i < 10; i++ {
 				reduceDatumCh <- &functionpb.Datum{
-					Key:   "reduce_test",
+					Key:   testKey,
 					Value: []byte(strconv.Itoa(i)),
 					EventTime: &functionpb.EventTime{
 						EventTime: timestamppb.New(time.Unix(1661169600, 0)),
@@ -163,10 +158,12 @@ func Test_server_reduce(t *testing.T) {
 			}
 			close(reduceDatumCh)
 
+			// set the key in metadata for reduce function
+			ctx = metadata.AppendToOutgoingContext(ctx, "key", testKey)
 			list, err := c.ReduceFn(ctx, reduceDatumCh)
 			assert.NoError(t, err)
 			assert.Equal(t, 1, len(list))
-			assert.Equal(t, "reduce_test", list[0].GetKey())
+			assert.Equal(t, testKey, list[0].GetKey())
 			assert.Equal(t, []byte(`45`), list[0].GetValue())
 		})
 	}

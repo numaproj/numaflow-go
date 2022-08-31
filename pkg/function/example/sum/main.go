@@ -8,22 +8,15 @@ import (
 	"github.com/numaproj/numaflow-go/pkg/function/server"
 )
 
-func reduceHandle(ctx context.Context, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) (functionsdk.Messages, error) {
+func reduceHandle(ctx context.Context, key string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) (functionsdk.Messages, error) {
 	// sum up values for the same key
 	intervalWindow := md.IntervalWindow()
 	_ = intervalWindow
-	var resultKey string
+	var resultKey = key
 	var resultVal []byte
 	var sum = 0
-	var firstDatum = true
 	// sum up the values
 	for d := range reduceCh {
-		if firstDatum {
-			// key is the same for this sum use case
-			key := d.Key()
-			resultKey = key
-			firstDatum = !firstDatum
-		}
 		val := d.Value()
 		eventTime := d.EventTime()
 		_ = eventTime
