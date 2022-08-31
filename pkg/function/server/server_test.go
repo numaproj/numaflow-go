@@ -159,7 +159,7 @@ func Test_server_reduce(t *testing.T) {
 			close(reduceDatumCh)
 
 			// set the key in metadata for reduce function
-			ctx = metadata.AppendToOutgoingContext(ctx, "key", testKey)
+			ctx = metadata.AppendToOutgoingContext(ctx, functionsdk.DatumKey, testKey)
 			list, err := c.ReduceFn(ctx, reduceDatumCh)
 			assert.NoError(t, err)
 			assert.Equal(t, 1, len(list))

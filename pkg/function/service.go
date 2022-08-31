@@ -83,7 +83,7 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 	//   we can use grpc metadata instead? for example:
 	if grpcMD, ok := metadata.FromIncomingContext(stream.Context()); ok {
 		// get Key
-		keyValue := grpcMD.Get("key")
+		keyValue := grpcMD.Get(DatumKey)
 		if len(keyValue) != 1 {
 			// TODO: or if there's multiple values we directly use the first one?
 			return fmt.Errorf("unsupport key")
