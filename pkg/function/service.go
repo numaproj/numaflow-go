@@ -85,7 +85,7 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 		// get Key
 		keyValue := grpcMD.Get("key")
 		if len(keyValue) != 1 {
-			// TODO: or if there's multiple value we directly use the first one?
+			// TODO: or if there's multiple values we directly use the first one?
 			return fmt.Errorf("unsupport key")
 		} else if len(keyValue) == 0 {
 			return fmt.Errorf("missing key")
