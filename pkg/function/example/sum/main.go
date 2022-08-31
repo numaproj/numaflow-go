@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 
 	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
@@ -25,6 +26,7 @@ func reduceHandle(ctx context.Context, key string, reduceCh <-chan functionsdk.D
 
 		v, err := strconv.Atoi(string(val))
 		if err != nil {
+			fmt.Printf("unable to convert the value to int: %v\n", err)
 			continue
 		}
 		sum += v
