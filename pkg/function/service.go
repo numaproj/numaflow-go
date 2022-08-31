@@ -80,7 +80,7 @@ func (fs *Service) MapFn(ctx context.Context, d *functionpb.Datum) (*functionpb.
 func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer) error {
 	var ctx = context.Background() // TODO: revisit ctx
 	var reduceCh = make(chan Datum)
-	var md Metadata
+	var md Metadata // TODO: populate the metadata
 
 	var datumList []*functionpb.Datum
 	var wg sync.WaitGroup
