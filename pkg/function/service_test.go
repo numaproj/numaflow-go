@@ -140,34 +140,3 @@ func TestService_IsReady(t *testing.T) {
 		})
 	}
 }
-
-func TestService_ReduceFn(t *testing.T) {
-	type fields struct {
-		UnimplementedUserDefinedFunctionServer functionpb.UnimplementedUserDefinedFunctionServer
-		Mapper                                 MapHandler
-		Reducer                                ReduceHandler
-	}
-	type args struct {
-		fnServer functionpb.UserDefinedFunction_ReduceFnServer
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			fs := &Service{
-				UnimplementedUserDefinedFunctionServer: tt.fields.UnimplementedUserDefinedFunctionServer,
-				Mapper:                                 tt.fields.Mapper,
-				Reducer:                                tt.fields.Reducer,
-			}
-			if err := fs.ReduceFn(tt.args.fnServer); (err != nil) != tt.wantErr {
-				t.Errorf("ReduceFn() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
