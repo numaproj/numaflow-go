@@ -57,7 +57,7 @@ func Test_server_map(t *testing.T) {
 			}()
 			for i := 0; i < 10; i++ {
 				key := fmt.Sprintf("client_%d", i)
-				// set the key in metadata for reduce function
+				// set the key in metadata for map function
 				md := metadata.New(map[string]string{functionsdk.DatumKey: key})
 				ctx = metadata.NewOutgoingContext(ctx, md)
 				list, err := c.MapFn(ctx, &functionpb.Datum{
@@ -146,6 +146,7 @@ func Test_server_reduce(t *testing.T) {
 			}()
 			var reduceDatumCh = make(chan *functionpb.Datum, 10)
 
+			// the sum of the numbers from 0 to 9
 			for i := 0; i < 10; i++ {
 				reduceDatumCh <- &functionpb.Datum{
 					Key:   testKey,
@@ -161,7 +162,7 @@ func Test_server_reduce(t *testing.T) {
 			}
 			close(reduceDatumCh)
 
-			// set the key in metadata for reduce function
+			// set the key in gPRC metadata for reduce function
 			md := metadata.New(map[string]string{functionsdk.DatumKey: testKey})
 			ctx = metadata.NewOutgoingContext(ctx, md)
 			list, err := c.ReduceFn(ctx, reduceDatumCh)

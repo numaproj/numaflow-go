@@ -48,6 +48,8 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*functionpb.ReadyRe
 // MapFn applies a function to each datum element
 func (fs *Service) MapFn(ctx context.Context, d *functionpb.Datum) (*functionpb.DatumList, error) {
 	var key string
+
+	// get key from gPRC metadata
 	if grpcMD, ok := metadata.FromIncomingContext(ctx); ok {
 		keyValue := grpcMD.Get(DatumKey)
 		if len(keyValue) > 1 {
@@ -82,12 +84,15 @@ func (fs *Service) MapFn(ctx context.Context, d *functionpb.Datum) (*functionpb.
 }
 
 // ReduceFn applies a reduce function to a datum stream.
-// TODO: implement ReduceFn
 func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer) error {
-	var ctx = stream.Context()
-	var reduceCh = make(chan Datum)
-	var md Metadata // TODO: populate the metadata
-	var key string
+	var (
+		ctx      = stream.Context()
+		key      string
+		reduceCh = make(chan Datum)
+		md       Metadata
+	)
+
+	// get key and metadata from gPRC metadata
 	if grpcMD, ok := metadata.FromIncomingContext(ctx); ok {
 		// get Key
 		keyValue := grpcMD.Get(DatumKey)
@@ -100,13 +105,17 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 		// TODO: get metadata
 	}
 
-	var datumList []*functionpb.Datum
-	var wg sync.WaitGroup
+	var (
+		datumList []*functionpb.Datum
+		wg        sync.WaitGroup
+	)
+
 	go func() {
 		wg.Add(1)
 		defer wg.Done()
 		messages, err := fs.Reducer.HandleDo(ctx, key, reduceCh, md)
 		if err != nil {
+			// TODO: deal with err
 			// will return an empty datumList
 			return
 		}
@@ -129,7 +138,6 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 				Elements: datumList,
 			})
 		}
-
 		var hd = &handlerDatum{
 			value:     datum.GetValue(),
 			eventTime: datum.GetEventTime().EventTime.AsTime(),
