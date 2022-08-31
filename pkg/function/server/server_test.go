@@ -57,6 +57,9 @@ func Test_server_map(t *testing.T) {
 			}()
 			for i := 0; i < 10; i++ {
 				key := fmt.Sprintf("client_%d", i)
+				// set the key in metadata for reduce function
+				md := metadata.New(map[string]string{functionsdk.DatumKey: key})
+				ctx = metadata.NewOutgoingContext(ctx, md)
 				list, err := c.MapFn(ctx, &functionpb.Datum{
 					Key:   key,
 					Value: []byte(`server_test`),
@@ -159,7 +162,8 @@ func Test_server_reduce(t *testing.T) {
 			close(reduceDatumCh)
 
 			// set the key in metadata for reduce function
-			ctx = metadata.AppendToOutgoingContext(ctx, functionsdk.DatumKey, testKey)
+			md := metadata.New(map[string]string{functionsdk.DatumKey: testKey})
+			ctx = metadata.NewOutgoingContext(ctx, md)
 			list, err := c.ReduceFn(ctx, reduceDatumCh)
 			assert.NoError(t, err)
 			assert.Equal(t, 1, len(list))

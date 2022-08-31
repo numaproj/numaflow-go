@@ -7,11 +7,12 @@ import (
 	"time"
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func TestService_DoFn(t *testing.T) {
+func TestService_MapFn(t *testing.T) {
 	type fields struct {
 		Mapper  MapHandler
 		Reducer ReduceHandler
@@ -28,7 +29,7 @@ func TestService_DoFn(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "do_fn_forward_msg",
+			name: "map_fn_forward_msg",
 			fields: fields{
 				Mapper: MapFunc(func(ctx context.Context, key string, datum Datum) (Messages, error) {
 					msg := datum.Value()
@@ -37,7 +38,7 @@ func TestService_DoFn(t *testing.T) {
 				Reducer: nil,
 			},
 			args: args{
-				ctx: nil,
+				ctx: context.Background(),
 				d: &functionpb.Datum{
 					Key:   "client",
 					Value: []byte(`test`),
@@ -74,7 +75,11 @@ func TestService_DoFn(t *testing.T) {
 				Mapper:  tt.fields.Mapper,
 				Reducer: tt.fields.Reducer,
 			}
-			got, err := fs.MapFn(tt.args.ctx, tt.args.d)
+			// here's a trick for testing:
+			// because we are not using gRPC, we directly set a new incoming ctx
+			// instead of the regular outgoing context in the real gRPC connection.
+			ctx := metadata.NewIncomingContext(context.Background(), metadata.New(map[string]string{DatumKey: "client"}))
+			got, err := fs.MapFn(ctx, tt.args.d)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("MapFn() error = %v, wantErr %v", err, tt.wantErr)
 				return

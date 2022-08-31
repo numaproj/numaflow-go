@@ -47,12 +47,22 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*functionpb.ReadyRe
 
 // MapFn applies a function to each datum element
 func (fs *Service) MapFn(ctx context.Context, d *functionpb.Datum) (*functionpb.DatumList, error) {
+	var key string
+	if grpcMD, ok := metadata.FromIncomingContext(ctx); ok {
+		keyValue := grpcMD.Get(DatumKey)
+		if len(keyValue) > 1 {
+			return nil, fmt.Errorf("expect one key but got multiple keys")
+		} else if len(keyValue) == 0 {
+			return nil, fmt.Errorf("missing key")
+		}
+		key = keyValue[0]
+	}
 	var hd = handlerDatum{
 		value:     d.GetValue(),
 		eventTime: d.GetEventTime().EventTime.AsTime(),
 		watermark: d.GetWatermark().Watermark.AsTime(),
 	}
-	messages, err := fs.Mapper.HandleDo(ctx, d.GetKey(), &hd)
+	messages, err := fs.Mapper.HandleDo(ctx, key, &hd)
 	if err != nil {
 		return nil, err
 	}
@@ -74,19 +84,15 @@ func (fs *Service) MapFn(ctx context.Context, d *functionpb.Datum) (*functionpb.
 // ReduceFn applies a reduce function to a datum stream.
 // TODO: implement ReduceFn
 func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer) error {
-	var ctx = context.Background() // TODO: revisit ctx
+	var ctx = stream.Context()
 	var reduceCh = make(chan Datum)
 	var md Metadata // TODO: populate the metadata
-	var key string  // TODO: populate the key
-	// TODO: metadata and key are the same for a given reduce function...
-	//   retrieving it from the datum may not be the best solution?
-	//   we can use grpc metadata instead? for example:
-	if grpcMD, ok := metadata.FromIncomingContext(stream.Context()); ok {
+	var key string
+	if grpcMD, ok := metadata.FromIncomingContext(ctx); ok {
 		// get Key
 		keyValue := grpcMD.Get(DatumKey)
-		if len(keyValue) != 1 {
-			// TODO: or if there's multiple values we directly use the first one?
-			return fmt.Errorf("unsupport key")
+		if len(keyValue) > 1 {
+			return fmt.Errorf("expect exact one key but got multiple keys")
 		} else if len(keyValue) == 0 {
 			return fmt.Errorf("missing key")
 		}
