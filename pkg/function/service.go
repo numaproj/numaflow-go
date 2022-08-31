@@ -2,10 +2,13 @@ package function
 
 import (
 	"context"
+	"io"
+	"sync"
 	"time"
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // handlerDatum implements the Datum interface and is used in the map and reduce handlers.
@@ -74,8 +77,47 @@ func (fs *Service) MapFn(ctx context.Context, d *functionpb.Datum) (*functionpb.
 
 // ReduceFn applies a reduce function to a datum stream.
 // TODO: implement ReduceFn
-func (fs *Service) ReduceFn(fnServer functionpb.UserDefinedFunction_ReduceFnServer) error {
-	ctx := fnServer.Context()
-	_ = ctx
-	return nil
+func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer) error {
+	var ctx = context.Background() // TODO: revisit ctx
+	var reduceCh = make(chan Datum)
+	var md Metadata
+
+	var datumList []*functionpb.Datum
+	var wg sync.WaitGroup
+	go func() {
+		wg.Add(1)
+		defer wg.Done()
+		messages, err := fs.Reducer.HandleDo(ctx, reduceCh, md)
+		if err != nil {
+			// will return an empty datumList
+			return
+		}
+		for _, msg := range messages {
+			datumList = append(datumList, &functionpb.Datum{
+				Key:       msg.Key,
+				Value:     msg.Value,
+				EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})}, // TODO: what's the correct value?...
+				Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
+			})
+		}
+	}()
+
+	for {
+		datum, err := stream.Recv()
+		if err == io.EOF {
+			close(reduceCh)
+			wg.Wait()
+			return stream.SendAndClose(&functionpb.DatumList{
+				Elements: datumList,
+			})
+		}
+
+		var hd = &handlerDatum{
+			key:       datum.GetKey(),
+			value:     datum.GetValue(),
+			eventTime: datum.GetEventTime().EventTime.AsTime(),
+			watermark: datum.GetWatermark().Watermark.AsTime(),
+		}
+		reduceCh <- hd
+	}
 }
