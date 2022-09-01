@@ -125,6 +125,7 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 			break
 		}
 		if err != nil {
+			close(reduceCh)
 			// TODO: research on gRPC errors and revisit the error handler
 			return err
 		}
