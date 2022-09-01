@@ -122,10 +122,7 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 		datum, err := stream.Recv()
 		if err == io.EOF {
 			close(reduceCh)
-			wg.Wait()
-			return stream.SendAndClose(&functionpb.DatumList{
-				Elements: datumList,
-			})
+			break
 		}
 		if err != nil {
 			return err
@@ -137,4 +134,9 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 		}
 		reduceCh <- hd
 	}
+
+	wg.Wait()
+	return stream.SendAndClose(&functionpb.DatumList{
+		Elements: datumList,
+	})
 }
