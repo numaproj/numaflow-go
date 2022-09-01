@@ -10,7 +10,6 @@ import (
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // handlerDatum implements the Datum interface and is used in the map and reduce handlers.
@@ -72,10 +71,8 @@ func (fs *Service) MapFn(ctx context.Context, d *functionpb.Datum) (*functionpb.
 	var elements []*functionpb.Datum
 	for _, m := range messages.Items() {
 		elements = append(elements, &functionpb.Datum{
-			Key:       m.Key,
-			Value:     m.Value,
-			EventTime: d.GetEventTime(),
-			Watermark: d.GetWatermark(),
+			Key:   m.Key,
+			Value: m.Value,
 		})
 	}
 	datumList := &functionpb.DatumList{
@@ -124,10 +121,8 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 		}
 		for _, msg := range messages {
 			datumList = append(datumList, &functionpb.Datum{
-				Key:       msg.Key,
-				Value:     msg.Value,
-				EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})}, // TODO: what's the correct value?...
-				Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
+				Key:   msg.Key,
+				Value: msg.Value,
 			})
 		}
 	}()

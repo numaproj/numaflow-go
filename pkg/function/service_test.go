@@ -56,13 +56,6 @@ func TestService_MapFn(t *testing.T) {
 					{
 						Key:   "client_test",
 						Value: []byte(`test`),
-						EventTime: &functionpb.EventTime{
-							EventTime: timestamppb.New(time.Unix(1661169600, 0)),
-						},
-						Watermark: &functionpb.Watermark{
-							// TODO: need to update once we've finalized the datum data type
-							Watermark: timestamppb.New(time.Time{}),
-						},
 					},
 				},
 			},

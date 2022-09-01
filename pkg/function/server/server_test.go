@@ -61,20 +61,17 @@ func Test_server_map(t *testing.T) {
 				md := metadata.New(map[string]string{functionsdk.DatumKey: key})
 				ctx = metadata.NewOutgoingContext(ctx, md)
 				list, err := c.MapFn(ctx, &functionpb.Datum{
-					Key:   key,
-					Value: []byte(`server_test`),
-					EventTime: &functionpb.EventTime{
-						EventTime: timestamppb.New(time.Unix(1661169600, 0)),
-					},
-					Watermark: &functionpb.Watermark{
-						// TODO: need to update once we've finalized the datum data type
-						Watermark: timestamppb.New(time.Time{}),
-					},
+					Key:       key,
+					Value:     []byte(`server_test`),
+					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				})
 				assert.NoError(t, err)
 				for _, e := range list {
-					assert.Equal(t, key+"_test", e.Key)
-					assert.Equal(t, []byte(`server_test`), e.Value)
+					assert.Equal(t, key+"_test", e.GetKey())
+					assert.Equal(t, []byte(`server_test`), e.GetValue())
+					assert.Nil(t, e.GetEventTime())
+					assert.Nil(t, e.GetWatermark())
 				}
 			}
 		})
@@ -149,15 +146,10 @@ func Test_server_reduce(t *testing.T) {
 			// the sum of the numbers from 0 to 9
 			for i := 0; i < 10; i++ {
 				reduceDatumCh <- &functionpb.Datum{
-					Key:   testKey,
-					Value: []byte(strconv.Itoa(i)),
-					EventTime: &functionpb.EventTime{
-						EventTime: timestamppb.New(time.Unix(1661169600, 0)),
-					},
-					Watermark: &functionpb.Watermark{
-						// TODO: need to update once we've finalized the datum data type
-						Watermark: timestamppb.New(time.Time{}),
-					},
+					Key:       testKey,
+					Value:     []byte(strconv.Itoa(i)),
+					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				}
 			}
 			close(reduceDatumCh)
@@ -170,6 +162,8 @@ func Test_server_reduce(t *testing.T) {
 			assert.Equal(t, 1, len(list))
 			assert.Equal(t, testKey, list[0].GetKey())
 			assert.Equal(t, []byte(`45`), list[0].GetValue())
+			assert.Nil(t, list[0].GetEventTime())
+			assert.Nil(t, list[0].GetWatermark())
 		})
 	}
 }
