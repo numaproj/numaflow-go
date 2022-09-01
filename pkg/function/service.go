@@ -53,11 +53,12 @@ func (fs *Service) MapFn(ctx context.Context, d *functionpb.Datum) (*functionpb.
 	if grpcMD, ok := metadata.FromIncomingContext(ctx); ok {
 		keyValue := grpcMD.Get(DatumKey)
 		if len(keyValue) > 1 {
-			return nil, fmt.Errorf("expect one key but got multiple keys")
-		} else if len(keyValue) == 0 {
-			return nil, fmt.Errorf("missing key")
+			return nil, fmt.Errorf("expect extact one key but got %d keys", len(keyValue))
+		} else if len(keyValue) == 1 {
+			key = keyValue[0]
+		} else {
+			// do nothing: the length equals zero is valid, meaning the key is an empty string ""
 		}
-		key = keyValue[0]
 	}
 	var hd = handlerDatum{
 		value:     d.GetValue(),
@@ -97,11 +98,12 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 		// get Key
 		keyValue := grpcMD.Get(DatumKey)
 		if len(keyValue) > 1 {
-			return fmt.Errorf("expect exact one key but got multiple keys")
-		} else if len(keyValue) == 0 {
-			return fmt.Errorf("missing key")
+			return fmt.Errorf("expect extact one key but got %d keys", len(keyValue))
+		} else if len(keyValue) == 1 {
+			key = keyValue[0]
+		} else {
+			// do nothing: the length equals zero is valid, meaning the key is an empty string ""
 		}
-		key = keyValue[0]
 		// TODO: get metadata
 	}
 
