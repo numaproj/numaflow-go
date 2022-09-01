@@ -8,6 +8,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
+// Client contains methods to call a gRPC client.
 type Client interface {
 	CloseConn(ctx context.Context) error
 	IsReady(ctx context.Context, in *emptypb.Empty) (bool, error)
@@ -15,16 +16,19 @@ type Client interface {
 	ReduceFn(ctx context.Context, datumStreamCh <-chan *functionpb.Datum) ([]*functionpb.Datum, error)
 }
 
+// Datum contains methods to get the information from the payload.
 type Datum interface {
 	Value() []byte
 	EventTime() time.Time
 	Watermark() time.Time
 }
 
+// Metadata contains methods to get the metadata for the reduce operation.
 type Metadata interface {
 	IntervalWindow() IntervalWindow
 }
 
+// IntervalWindow contains methods to get the information for a given interval window.
 type IntervalWindow interface {
 	StartTime() time.Time
 	EndTime() time.Time
@@ -37,7 +41,6 @@ type MapHandler interface {
 }
 
 // ReduceHandler is the interface of reduce function implementation.
-// TODO: yet to be implemented
 type ReduceHandler interface {
 	HandleDo(ctx context.Context, key string, reduceCh <-chan Datum, md Metadata) (Messages, error)
 }
