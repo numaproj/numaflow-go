@@ -13,7 +13,7 @@ import (
 )
 
 // handlerDatum implements the Datum interface and is used in the map and reduce handlers.
-type handlerDatum struct { // TODO: better name??...
+type handlerDatum struct {
 	value     []byte
 	eventTime time.Time
 	watermark time.Time
