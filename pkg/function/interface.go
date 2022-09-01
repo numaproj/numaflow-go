@@ -38,7 +38,7 @@ type MapHandler interface {
 
 // ReduceHandler is the interface of reduce function implementation.
 type ReduceHandler interface {
-	HandleDo(ctx context.Context, key string, reduceCh <-chan Datum, md Metadata) (Messages, error) // TODO
+	HandleDo(ctx context.Context, key string, reduceCh <-chan Datum, md Metadata) (Messages, error)
 }
 
 // MapFunc is utility type used to convert a HandleDo function to a MapHandler.
