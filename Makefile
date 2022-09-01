@@ -1,6 +1,8 @@
+.PHONY: all
+all: proto generate test
 
 .PHONY: test
-test: proto generate
+test:
 	go test -race -v ./...
 
 .PHONY: proto

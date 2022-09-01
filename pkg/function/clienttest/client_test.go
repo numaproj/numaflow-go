@@ -57,7 +57,7 @@ func TestIsReady(t *testing.T) {
 	assert.EqualError(t, err, "mock connection refused")
 }
 
-func TestDoFn(t *testing.T) {
+func TestMapFn(t *testing.T) {
 	var ctx = context.Background()
 
 	ctrl := gomock.NewController(t)
@@ -65,33 +65,31 @@ func TestDoFn(t *testing.T) {
 
 	mockClient := funcmock.NewMockUserDefinedFunctionClient(ctrl)
 	testDatum := &functionpb.Datum{
-		Key:            "test_success_key",
-		Value:          []byte(`forward_message`),
-		EventTime:      &functionpb.EventTime{EventTime: timestamppb.New(time.Unix(1661169600, 0))},
-		IntervalWindow: &functionpb.IntervalWindow{StartTime: timestamppb.New(time.Unix(1661169600, 0)), EndTime: timestamppb.New(time.Unix(1661169660, 0))},
-		PaneInfo:       &functionpb.PaneInfo{Watermark: timestamppb.New(time.Time{})},
+		Key:       "test_success_key",
+		Value:     []byte(`forward_message`),
+		EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Unix(1661169600, 0))},
+		Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 	}
-	mockClient.EXPECT().DoFn(gomock.Any(), &rpcMsg{msg: testDatum}).Return(&functionpb.DatumList{
+	mockClient.EXPECT().MapFn(gomock.Any(), &rpcMsg{msg: testDatum}).Return(&functionpb.DatumList{
 		Elements: []*functionpb.Datum{
 			testDatum,
 		},
 	}, nil)
-	mockClient.EXPECT().DoFn(gomock.Any(), &rpcMsg{msg: testDatum}).Return(&functionpb.DatumList{
+	mockClient.EXPECT().MapFn(gomock.Any(), &rpcMsg{msg: testDatum}).Return(&functionpb.DatumList{
 		Elements: []*functionpb.Datum{
 			nil,
 		},
-	}, fmt.Errorf("mock DoFn error"))
+	}, fmt.Errorf("mock MapFn error"))
 	testClient, err := New(mockClient)
 	assert.NoError(t, err)
 	reflect.DeepEqual(testClient, &client{
 		grpcClt: mockClient,
 	})
-
-	got, err := testClient.DoFn(ctx, testDatum)
+	got, err := testClient.MapFn(ctx, testDatum)
 	reflect.DeepEqual(got, testDatum)
 	assert.NoError(t, err)
 
-	got, err = testClient.DoFn(ctx, testDatum)
+	got, err = testClient.MapFn(ctx, testDatum)
 	assert.Nil(t, got)
-	assert.EqualError(t, err, "failed to execute c.grpcClt.DoFn(): mock DoFn error")
+	assert.EqualError(t, err, "failed to execute c.grpcClt.MapFn(): mock MapFn error")
 }

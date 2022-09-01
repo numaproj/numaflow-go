@@ -53,24 +53,23 @@ func (c *client) IsReady(ctx context.Context, in *emptypb.Empty) (bool, error) {
 	return resp.GetReady(), nil
 }
 
-// DoFn applies a function to each datum element.
-func (c *client) DoFn(ctx context.Context, datum *functionpb.Datum) ([]*functionpb.Datum, error) {
-	mappedDatumList, err := c.grpcClt.DoFn(ctx, datum)
+// MapFn applies a function to each datum element.
+func (c *client) MapFn(ctx context.Context, datum *functionpb.Datum) ([]*functionpb.Datum, error) {
+	mappedDatumList, err := c.grpcClt.MapFn(ctx, datum)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute c.grpcClt.DoFn(): %w", err)
+		return nil, fmt.Errorf("failed to execute c.grpcClt.MapFn(): %w", err)
 	}
 
 	return mappedDatumList.GetElements(), nil
 }
 
 // ReduceFn applies a reduce function to a datum stream.
-// TODO: use a channel to accept datumStream
-func (c *client) ReduceFn(ctx context.Context, datumStream []*functionpb.Datum) ([]*functionpb.Datum, error) {
+func (c *client) ReduceFn(ctx context.Context, datumStreamCh <-chan *functionpb.Datum) ([]*functionpb.Datum, error) {
 	stream, err := c.grpcClt.ReduceFn(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute c.grpcClt.ReduceFn(): %w", err)
 	}
-	for _, datum := range datumStream {
+	for datum := range datumStreamCh {
 		if err := stream.Send(datum); err != nil {
 			return nil, fmt.Errorf("failed to execute stream.Send(%v): %w", datum, err)
 		}

@@ -7,11 +7,12 @@ import (
 	"time"
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func TestService_DoFn(t *testing.T) {
+func TestService_MapFn(t *testing.T) {
 	type fields struct {
 		Mapper  MapHandler
 		Reducer ReduceHandler
@@ -28,29 +29,21 @@ func TestService_DoFn(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "do_fn_forward_msg",
+			name: "map_fn_forward_msg",
 			fields: fields{
-				Mapper: DoFunc(func(ctx context.Context, key string, msg []byte) (Messages, error) {
-					return MessagesBuilder().Append(MessageTo(key+"_test", msg)), nil
+				Mapper: MapFunc(func(ctx context.Context, key string, datum Datum) Messages {
+					msg := datum.Value()
+					return MessagesBuilder().Append(MessageTo(key+"_test", msg))
 				}),
 				Reducer: nil,
 			},
 			args: args{
-				ctx: nil,
+				ctx: context.Background(),
 				d: &functionpb.Datum{
-					Key:   "client",
-					Value: []byte(`test`),
-					EventTime: &functionpb.EventTime{
-						EventTime: timestamppb.New(time.Unix(1661169600, 0)),
-					},
-					IntervalWindow: &functionpb.IntervalWindow{
-						StartTime: timestamppb.New(time.Unix(1661169600, 0)),
-						EndTime:   timestamppb.New(time.Unix(1661169660, 0)),
-					},
-					PaneInfo: &functionpb.PaneInfo{
-						// TODO: need to update once we've finalized the datum data type
-						Watermark: timestamppb.New(time.Time{}),
-					},
+					Key:       "client",
+					Value:     []byte(`test`),
+					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 			},
 			want: &functionpb.DatumList{
@@ -58,17 +51,6 @@ func TestService_DoFn(t *testing.T) {
 					{
 						Key:   "client_test",
 						Value: []byte(`test`),
-						EventTime: &functionpb.EventTime{
-							EventTime: timestamppb.New(time.Unix(1661169600, 0)),
-						},
-						IntervalWindow: &functionpb.IntervalWindow{
-							StartTime: timestamppb.New(time.Unix(1661169600, 0)),
-							EndTime:   timestamppb.New(time.Unix(1661169660, 0)),
-						},
-						PaneInfo: &functionpb.PaneInfo{
-							// TODO: need to update once we've finalized the datum data type
-							Watermark: timestamppb.New(time.Time{}),
-						},
 					},
 				},
 			},
@@ -81,13 +63,17 @@ func TestService_DoFn(t *testing.T) {
 				Mapper:  tt.fields.Mapper,
 				Reducer: tt.fields.Reducer,
 			}
-			got, err := fs.DoFn(tt.args.ctx, tt.args.d)
+			// here's a trick for testing:
+			// because we are not using gRPC, we directly set a new incoming ctx
+			// instead of the regular outgoing context in the real gRPC connection.
+			ctx := metadata.NewIncomingContext(context.Background(), metadata.New(map[string]string{DatumKey: "client"}))
+			got, err := fs.MapFn(ctx, tt.args.d)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("DoFn() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("MapFn() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("DoFn() got = %v, want %v", got, tt.want)
+				t.Errorf("MapFn() got = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -138,37 +124,6 @@ func TestService_IsReady(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("IsReady() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestService_ReduceFn(t *testing.T) {
-	type fields struct {
-		UnimplementedUserDefinedFunctionServer functionpb.UnimplementedUserDefinedFunctionServer
-		Mapper                                 MapHandler
-		Reducer                                ReduceHandler
-	}
-	type args struct {
-		fnServer functionpb.UserDefinedFunction_ReduceFnServer
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			fs := &Service{
-				UnimplementedUserDefinedFunctionServer: tt.fields.UnimplementedUserDefinedFunctionServer,
-				Mapper:                                 tt.fields.Mapper,
-				Reducer:                                tt.fields.Reducer,
-			}
-			if err := fs.ReduceFn(tt.args.fnServer); (err != nil) != tt.wantErr {
-				t.Errorf("ReduceFn() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
