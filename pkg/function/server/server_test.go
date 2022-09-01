@@ -35,9 +35,9 @@ func Test_server_map(t *testing.T) {
 		{
 			name: "server_map",
 			fields: fields{
-				mapHandler: functionsdk.MapFunc(func(ctx context.Context, key string, d functionsdk.Datum) (functionsdk.Messages, error) {
+				mapHandler: functionsdk.MapFunc(func(ctx context.Context, key string, d functionsdk.Datum) functionsdk.Messages {
 					msg := d.Value()
-					return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(key+"_test", msg)), nil
+					return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(key+"_test", msg))
 				}),
 			},
 		},
@@ -99,7 +99,7 @@ func Test_server_reduce(t *testing.T) {
 		{
 			name: "server_reduce",
 			fields: fields{
-				reduceHandler: functionsdk.ReduceFunc(func(ctx context.Context, key string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) (functionsdk.Messages, error) {
+				reduceHandler: functionsdk.ReduceFunc(func(ctx context.Context, key string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) functionsdk.Messages {
 					// sum up values for the same key
 
 					// in this test case, md is nil
@@ -123,7 +123,7 @@ func Test_server_reduce(t *testing.T) {
 						sum += v
 					}
 					resultVal = []byte(strconv.Itoa(sum))
-					return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(resultKey, resultVal)), nil
+					return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(resultKey, resultVal))
 				}),
 			},
 		},

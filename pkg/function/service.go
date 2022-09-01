@@ -64,10 +64,7 @@ func (fs *Service) MapFn(ctx context.Context, d *functionpb.Datum) (*functionpb.
 		eventTime: d.GetEventTime().EventTime.AsTime(),
 		watermark: d.GetWatermark().Watermark.AsTime(),
 	}
-	messages, err := fs.Mapper.HandleDo(ctx, key, &hd)
-	if err != nil {
-		return nil, err
-	}
+	messages := fs.Mapper.HandleDo(ctx, key, &hd)
 	var elements []*functionpb.Datum
 	for _, m := range messages.Items() {
 		elements = append(elements, &functionpb.Datum{
@@ -112,13 +109,7 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 	go func() {
 		wg.Add(1)
 		defer wg.Done()
-		messages, err := fs.Reducer.HandleDo(ctx, key, reduceCh, md)
-		if err != nil {
-			// TODO: deal with err
-			// will return an empty datumList
-			fmt.Errorf("failed to execute the reducer handler: %w", err)
-			return
-		}
+		messages := fs.Reducer.HandleDo(ctx, key, reduceCh, md)
 		for _, msg := range messages {
 			datumList = append(datumList, &functionpb.Datum{
 				Key:   msg.Key,

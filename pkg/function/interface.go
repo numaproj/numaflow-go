@@ -37,26 +37,26 @@ type IntervalWindow interface {
 // MapHandler is the interface of map function implementation.
 type MapHandler interface {
 	// HandleDo is the function to process each coming message
-	HandleDo(ctx context.Context, key string, datum Datum) (Messages, error)
+	HandleDo(ctx context.Context, key string, datum Datum) Messages
 }
 
 // ReduceHandler is the interface of reduce function implementation.
 type ReduceHandler interface {
-	HandleDo(ctx context.Context, key string, reduceCh <-chan Datum, md Metadata) (Messages, error)
+	HandleDo(ctx context.Context, key string, reduceCh <-chan Datum, md Metadata) Messages
 }
 
 // MapFunc is utility type used to convert a HandleDo function to a MapHandler.
-type MapFunc func(ctx context.Context, key string, datum Datum) (Messages, error)
+type MapFunc func(ctx context.Context, key string, datum Datum) Messages
 
 // HandleDo implements the function of map function.
-func (mf MapFunc) HandleDo(ctx context.Context, key string, datum Datum) (Messages, error) {
+func (mf MapFunc) HandleDo(ctx context.Context, key string, datum Datum) Messages {
 	return mf(ctx, key, datum)
 }
 
 // ReduceFunc is utility type used to convert a HandleDo function to a ReduceHandler.
-type ReduceFunc func(ctx context.Context, key string, reduceCh <-chan Datum, md Metadata) (Messages, error)
+type ReduceFunc func(ctx context.Context, key string, reduceCh <-chan Datum, md Metadata) Messages
 
 // HandleDo implements the function of reduce function.
-func (rf ReduceFunc) HandleDo(ctx context.Context, key string, reduceCh <-chan Datum, md Metadata) (Messages, error) {
+func (rf ReduceFunc) HandleDo(ctx context.Context, key string, reduceCh <-chan Datum, md Metadata) Messages {
 	return rf(ctx, key, reduceCh, md)
 }

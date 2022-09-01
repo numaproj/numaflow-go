@@ -31,9 +31,9 @@ func TestService_MapFn(t *testing.T) {
 		{
 			name: "map_fn_forward_msg",
 			fields: fields{
-				Mapper: MapFunc(func(ctx context.Context, key string, datum Datum) (Messages, error) {
+				Mapper: MapFunc(func(ctx context.Context, key string, datum Datum) Messages {
 					msg := datum.Value()
-					return MessagesBuilder().Append(MessageTo(key+"_test", msg)), nil
+					return MessagesBuilder().Append(MessageTo(key+"_test", msg))
 				}),
 				Reducer: nil,
 			},

@@ -9,7 +9,7 @@ import (
 	"github.com/numaproj/numaflow-go/pkg/function/server"
 )
 
-func reduceHandle(ctx context.Context, key string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) (functionsdk.Messages, error) {
+func reduceHandle(ctx context.Context, key string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) functionsdk.Messages {
 	// sum up values for the same key
 	intervalWindow := md.IntervalWindow()
 	_ = intervalWindow
@@ -32,7 +32,7 @@ func reduceHandle(ctx context.Context, key string, reduceCh <-chan functionsdk.D
 		sum += v
 	}
 	resultVal = []byte(strconv.Itoa(sum))
-	return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(resultKey, resultVal)), nil
+	return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(resultKey, resultVal))
 }
 
 func main() {
