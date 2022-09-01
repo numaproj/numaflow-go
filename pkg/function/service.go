@@ -119,6 +119,7 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 		if err != nil {
 			// TODO: deal with err
 			// will return an empty datumList
+			fmt.Errorf("failed to execute the reducer handler: %w", err)
 			return
 		}
 		for _, msg := range messages {
@@ -139,6 +140,9 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 			return stream.SendAndClose(&functionpb.DatumList{
 				Elements: datumList,
 			})
+		}
+		if err != nil {
+			return err
 		}
 		var hd = &handlerDatum{
 			value:     datum.GetValue(),
