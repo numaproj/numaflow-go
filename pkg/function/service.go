@@ -106,8 +106,8 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 		wg        sync.WaitGroup
 	)
 
+	wg.Add(1)
 	go func() {
-		wg.Add(1)
 		defer wg.Done()
 		messages := fs.Reducer.HandleDo(ctx, key, reduceCh, md)
 		for _, msg := range messages {
