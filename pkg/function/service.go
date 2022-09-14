@@ -8,6 +8,7 @@ import (
 	"time"
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
+	"github.com/numaproj/numaflow-go/pkg/datum"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -83,7 +84,7 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 	var (
 		ctx      = stream.Context()
 		key      string
-		reduceCh = make(chan Datum)
+		reduceCh = make(chan datum.Datum)
 		md       Metadata
 	)
 
@@ -119,7 +120,7 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 	}()
 
 	for {
-		datum, err := stream.Recv()
+		d, err := stream.Recv()
 		if err == io.EOF {
 			close(reduceCh)
 			break
@@ -130,9 +131,9 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 			return err
 		}
 		var hd = &handlerDatum{
-			value:     datum.GetValue(),
-			eventTime: datum.GetEventTime().EventTime.AsTime(),
-			watermark: datum.GetWatermark().Watermark.AsTime(),
+			value:     d.GetValue(),
+			eventTime: d.GetEventTime().EventTime.AsTime(),
+			watermark: d.GetWatermark().Watermark.AsTime(),
 		}
 		reduceCh <- hd
 	}
