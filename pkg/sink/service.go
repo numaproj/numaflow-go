@@ -5,15 +5,19 @@ import (
 	"time"
 
 	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
-	"github.com/numaproj/numaflow-go/pkg/datum"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // handlerDatum implements the Datum interface and is used in the map and reduce handlers.
 type handlerDatum struct {
+	id        string
 	value     []byte
 	eventTime time.Time
 	watermark time.Time
+}
+
+func (h *handlerDatum) ID() string {
+	return h.id
 }
 
 func (h *handlerDatum) Value() []byte {
@@ -42,7 +46,7 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*sinkpb.ReadyRespon
 
 // SinkFn applies a function to a list of datum element.
 func (fs *Service) SinkFn(ctx context.Context, datumList *sinkpb.DatumList) (*sinkpb.ResponseList, error) {
-	var hdList []datum.Datum
+	var hdList []Datum
 	for _, d := range datumList.GetElements() {
 		hdList = append(hdList, &handlerDatum{
 			value:     d.GetValue(),

@@ -118,7 +118,7 @@ func (x *Watermark) GetWatermark() *timestamppb.Timestamp {
 	return nil
 }
 
-// *
+//*
 // Datum represents a datum element.
 type Datum struct {
 	state         protoimpl.MessageState
@@ -191,7 +191,7 @@ func (x *Datum) GetWatermark() *Watermark {
 	return nil
 }
 
-// *
+//*
 // DatumList represents a list of datum elements.
 type DatumList struct {
 	state         protoimpl.MessageState
@@ -240,7 +240,7 @@ func (x *DatumList) GetElements() []*Datum {
 	return nil
 }
 
-// *
+//*
 // ReadyResponse is the health check result.
 type ReadyResponse struct {
 	state         protoimpl.MessageState

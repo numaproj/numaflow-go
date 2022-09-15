@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/numaproj/numaflow-go/pkg/datum"
 	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
 	"github.com/numaproj/numaflow-go/pkg/function/server"
 )
 
-func reduceHandle(_ context.Context, key string, reduceCh <-chan datum.Datum, md functionsdk.Metadata) functionsdk.Messages {
+func reduceHandle(_ context.Context, key string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) functionsdk.Messages {
 	// sum up values for the same key
 	intervalWindow := md.IntervalWindow()
 	_ = intervalWindow
