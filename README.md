@@ -10,16 +10,22 @@ package main
 import (
 	"context"
 
-	funcsdk "github.com/numaproj/numaflow-go/function"
+	"github.com/numaproj/numaflow-go/pkg/datum"
+	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
+	"github.com/numaproj/numaflow-go/pkg/function/server"
 )
 
-func handle(ctx context.Context, key, msg []byte) (funcsdk.Messages, error) {
-	return funcsdk.MessagesBuilder().Append(funcsdk.MessageToAll(msg)), nil
+// Simply return the same msg
+func handle(ctx context.Context, key string, data datum.Datum) functionsdk.Messages {
+	_ = data.EventTime() // Event time is available
+	_ = data.Watermark() // Watermark is available
+	return functionsdk.MessagesBuilder().Append(functionsdk.MessageToAll(data.Value()))
 }
 
 func main() {
-	funcsdk.Start(context.Background(), handle)
+	server.New().RegisterMapper(functionsdk.MapFunc(handle)).Start(context.Background())
 }
+
 ```
 
 ## Implement User Defined Sinks

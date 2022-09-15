@@ -11,10 +11,8 @@ import (
 
 func handle(_ context.Context, key string, d datum.Datum) functionsdk.Messages {
 	msg := d.Value()
-	eventTime := d.EventTime() // Event time is available
-	_ = eventTime
-	watermark := d.Watermark() // Watermark is available
-	_ = watermark
+	_ = d.EventTime() // Event time is available
+	_ = d.Watermark() // Watermark is available
 	// If msg is not an integer, drop it, otherwise return it with "even" or "odd" key.
 	if num, err := strconv.Atoi(string(msg)); err != nil {
 		return functionsdk.MessagesBuilder().Append(functionsdk.MessageToDrop())

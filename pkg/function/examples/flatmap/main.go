@@ -11,10 +11,8 @@ import (
 
 func handle(_ context.Context, key string, d datum.Datum) functionsdk.Messages {
 	msg := d.Value()
-	eventTime := d.EventTime() // Event time is available
-	_ = eventTime
-	watermark := d.Watermark() // Watermark is available
-	_ = watermark
+	_ = d.EventTime() // Event time is available
+	_ = d.Watermark() // Watermark is available
 	// Split the msg into an array with comma.
 	strs := strings.Split(string(msg), ",")
 	results := functionsdk.MessagesBuilder()
