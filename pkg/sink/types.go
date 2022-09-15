@@ -3,6 +3,7 @@ package sink
 // Message is used to wrap the message written to the user defined sink
 type Message struct {
 	// Each message has an ID
+	// TODO: how do deal with the ID from the client?
 	ID      string `json:"id"`
 	Payload []byte `json:"payload"`
 }

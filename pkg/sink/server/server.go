@@ -8,32 +8,26 @@ import (
 	"os/signal"
 	"syscall"
 
-	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
+	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
 	"github.com/numaproj/numaflow-go/pkg/configs"
-	"github.com/numaproj/numaflow-go/pkg/function"
+	"github.com/numaproj/numaflow-go/pkg/sink"
 	"google.golang.org/grpc"
 )
 
 type server struct {
-	svc *function.Service
+	svc *sink.Service
 }
 
 // New creates a new server object.
 func New() *server {
 	s := new(server)
-	s.svc = new(function.Service)
+	s.svc = new(sink.Service)
 	return s
 }
 
-// RegisterMapper registers the map operation handler to the server.
-func (s *server) RegisterMapper(m function.MapHandler) *server {
-	s.svc.Mapper = m
-	return s
-}
-
-// RegisterReducer registers the reduce operation handler.
-func (s *server) RegisterReducer(r function.ReduceHandler) *server {
-	s.svc.Reducer = r
+// RegisterSinker registers the sink operation handler to the server.
+func (s *server) RegisterSinker(h sink.SinkHandler) *server {
+	s.svc.Sinker = h
 	return s
 }
 
@@ -64,7 +58,7 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) {
 		log.Fatalf("failed to execute net.Listen(%q, %q): %v", configs.Protocol, configs.Addr, err)
 	}
 	grpcSvr := grpc.NewServer()
-	functionpb.RegisterUserDefinedFunctionServer(grpcSvr, s.svc)
+	sinkpb.RegisterUserDefinedSinkServer(grpcSvr, s.svc)
 
 	// start the grpc server
 	go func() {

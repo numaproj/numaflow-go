@@ -9,6 +9,7 @@ import (
 	"time"
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
+	"github.com/numaproj/numaflow-go/pkg/configs"
 	"github.com/numaproj/numaflow-go/pkg/datum"
 	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
 	"github.com/numaproj/numaflow-go/pkg/function/client"
@@ -59,7 +60,7 @@ func Test_server_map(t *testing.T) {
 			for i := 0; i < 10; i++ {
 				key := fmt.Sprintf("client_%d", i)
 				// set the key in metadata for map function
-				md := metadata.New(map[string]string{functionsdk.DatumKey: key})
+				md := metadata.New(map[string]string{configs.DatumKey: key})
 				ctx = metadata.NewOutgoingContext(ctx, md)
 				list, err := c.MapFn(ctx, &functionpb.Datum{
 					Key:       key,
@@ -156,7 +157,7 @@ func Test_server_reduce(t *testing.T) {
 			close(reduceDatumCh)
 
 			// set the key in gPRC metadata for reduce function
-			md := metadata.New(map[string]string{functionsdk.DatumKey: testKey})
+			md := metadata.New(map[string]string{configs.DatumKey: testKey})
 			ctx = metadata.NewOutgoingContext(ctx, md)
 			list, err := c.ReduceFn(ctx, reduceDatumCh)
 			assert.NoError(t, err)

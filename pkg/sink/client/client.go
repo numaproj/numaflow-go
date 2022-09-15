@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
+	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
 	"github.com/numaproj/numaflow-go/pkg/configs"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -14,7 +14,7 @@ import (
 // client contains the grpc connection and the grpc client.
 type client struct {
 	conn    *grpc.ClientConn
-	grpcClt functionpb.UserDefinedFunctionClient
+	grpcClt sinkpb.UserDefinedSinkClient
 }
 
 // New creates a new client object.
@@ -35,7 +35,7 @@ func New(inputOptions ...Option) (*client, error) {
 		return nil, fmt.Errorf("failed to execute grpc.Dial(%q): %w", sockAddr, err)
 	}
 	c.conn = conn
-	c.grpcClt = functionpb.NewUserDefinedFunctionClient(conn)
+	c.grpcClt = sinkpb.NewUserDefinedSinkClient(conn)
 	return c, nil
 }
 
@@ -53,31 +53,12 @@ func (c *client) IsReady(ctx context.Context, in *emptypb.Empty) (bool, error) {
 	return resp.GetReady(), nil
 }
 
-// MapFn applies a function to each datum element.
-func (c *client) MapFn(ctx context.Context, datum *functionpb.Datum) ([]*functionpb.Datum, error) {
-	mappedDatumList, err := c.grpcClt.MapFn(ctx, datum)
+// SinkFn applies a function to a list of datum elements.
+func (c *client) SinkFn(ctx context.Context, datumList []*sinkpb.Datum) ([]*sinkpb.Response, error) {
+	responseList, err := c.grpcClt.SinkFn(ctx, &sinkpb.DatumList{Elements: datumList})
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute c.grpcClt.MapFn(): %w", err)
 	}
 
-	return mappedDatumList.GetElements(), nil
-}
-
-// ReduceFn applies a reduce function to a datum stream.
-func (c *client) ReduceFn(ctx context.Context, datumStreamCh <-chan *functionpb.Datum) ([]*functionpb.Datum, error) {
-	stream, err := c.grpcClt.ReduceFn(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute c.grpcClt.ReduceFn(): %w", err)
-	}
-	for datum := range datumStreamCh {
-		if err := stream.Send(datum); err != nil {
-			return nil, fmt.Errorf("failed to execute stream.Send(%v): %w", datum, err)
-		}
-	}
-	reducedDatumList, err := stream.CloseAndRecv()
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute stream.CloseAndRecv(): %w", err)
-	}
-
-	return reducedDatumList.GetElements(), nil
+	return responseList.GetResponses(), nil
 }

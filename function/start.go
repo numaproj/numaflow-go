@@ -1,5 +1,7 @@
 // Package function provides an interface to write UDF in golang which will be exposed over HTTP. It accepts a handler of the following definition
-//  func(ctx context.Context, key, msg []byte) (messages Messages, err error)
+//
+//	func(ctx context.Context, key, msg []byte) (messages Messages, err error)
+//
 // which will be invoked for message. If error is returned, the HTTP StatusCode will be set to 500.
 package function
 

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
+	"github.com/numaproj/numaflow-go/pkg/configs"
 	"github.com/numaproj/numaflow-go/pkg/datum"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -51,7 +52,7 @@ func (fs *Service) MapFn(ctx context.Context, d *functionpb.Datum) (*functionpb.
 
 	// get key from gPRC metadata
 	if grpcMD, ok := metadata.FromIncomingContext(ctx); ok {
-		keyValue := grpcMD.Get(DatumKey)
+		keyValue := grpcMD.Get(configs.DatumKey)
 		if len(keyValue) > 1 {
 			return nil, fmt.Errorf("expect extact one key but got %d keys", len(keyValue))
 		} else if len(keyValue) == 1 {
@@ -91,7 +92,7 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 	// get key and metadata from gPRC metadata
 	if grpcMD, ok := metadata.FromIncomingContext(ctx); ok {
 		// get Key
-		keyValue := grpcMD.Get(DatumKey)
+		keyValue := grpcMD.Get(configs.DatumKey)
 		if len(keyValue) > 1 {
 			return fmt.Errorf("expect extact one key but got %d keys", len(keyValue))
 		} else if len(keyValue) == 1 {
