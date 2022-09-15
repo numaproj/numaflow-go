@@ -147,7 +147,7 @@ func startWithContext(ctx context.Context, handler func(ctx context.Context, msg
 	})
 
 	path := "/var/run/numaflow/udsink.sock"
-	if err := os.Remove(path); !os.IsNotExist(err) && err != nil {
+	if err := os.RemoveAll(path); !os.IsNotExist(err) && err != nil {
 		return err
 	}
 	udsinkServer := &http.Server{}

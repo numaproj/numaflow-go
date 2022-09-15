@@ -21,7 +21,7 @@ func Test_server_map(t *testing.T) {
 	file, err := os.CreateTemp("/tmp", "numaflow-test.sock")
 	assert.NoError(t, err)
 	defer func() {
-		err = os.Remove(file.Name())
+		err = os.RemoveAll(file.Name())
 		assert.NoError(t, err)
 	}()
 
@@ -83,7 +83,7 @@ func Test_server_reduce(t *testing.T) {
 	file, err := os.CreateTemp("/tmp", "numaflow-test.sock")
 	assert.NoError(t, err)
 	defer func() {
-		err = os.Remove(file.Name())
+		err = os.RemoveAll(file.Name())
 		assert.NoError(t, err)
 	}()
 
