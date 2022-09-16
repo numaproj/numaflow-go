@@ -14,7 +14,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func Test_server_map(t *testing.T) {
+func Test_server_sink(t *testing.T) {
 	file, err := os.CreateTemp("/tmp", "numaflow-test.sock")
 	assert.NoError(t, err)
 	defer func() {
