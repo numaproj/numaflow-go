@@ -12,7 +12,7 @@ RUN chmod +x /bin/go-udsink-example
 ####################################################################################################
 # flatmap
 ####################################################################################################
-FROM scratch as flatmap
+FROM scratch as udsink
 ARG ARCH
 COPY --from=base /usr/share/zoneinfo /usr/share/zoneinfo
 COPY --from=base /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt

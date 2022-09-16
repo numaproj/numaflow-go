@@ -4,7 +4,7 @@ build:
 
 .PHONY: image
 image: build
-	docker build -t "quay.io/numaio/go-udsink-example:latest" --target flatmap .
+	docker build -t "quay.io/numaio/go-udsink-example:latest" --target udsink .
 
 clean:
 	-rm -rf ./dist
