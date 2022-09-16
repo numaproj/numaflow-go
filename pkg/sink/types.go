@@ -1,6 +1,14 @@
 package sink
 
 // Message is used to wrap the message written to the user defined sink
+// TODO: The numaflow project use sinksdk.Message as the input argument for Apply function.
+//
+//	Therefore, since the Message type doesn't have event time and watermark, these two fields
+//	won't be populated into the Datum.event_time and Datum.watermark.
+//	In short:
+//	  Add EventTime and Watermark in the Message type
+//	  or
+//	  Delete event_time and watermark in the sink proto file.
 type Message struct {
 	// Each message has an ID
 	ID      string `json:"id"`
