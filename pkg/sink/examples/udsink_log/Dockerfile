@@ -10,7 +10,7 @@ COPY dist/go-udsink-example /bin/go-udsink-example
 RUN chmod +x /bin/go-udsink-example
 
 ####################################################################################################
-# flatmap
+# udsink
 ####################################################################################################
 FROM scratch as udsink
 ARG ARCH
