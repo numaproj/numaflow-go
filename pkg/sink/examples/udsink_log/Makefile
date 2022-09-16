@@ -4,7 +4,7 @@ build:
 
 .PHONY: image
 image: build
-	docker build -t "quay.io/numaio/go-udsink-example:latest" --target udsink .
+	docker build -t "quay.io/numaio/go-udsink-example:latest" --target udsink . && k3d image import quay.io/numaio/go-udsink-example:latest
 
 clean:
 	-rm -rf ./dist
