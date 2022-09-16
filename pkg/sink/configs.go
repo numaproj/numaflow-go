@@ -2,5 +2,5 @@ package sink
 
 const (
 	Protocol = "unix"
-	Addr     = "/var/run/numaflow/function.sock"
+	Addr     = "/var/run/numaflow/udsink.sock"
 )
