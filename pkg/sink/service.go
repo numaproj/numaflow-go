@@ -8,7 +8,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-// handlerDatum implements the Datum interface and is used in the map and reduce handlers.
+// handlerDatum implements the Datum interface and is used in the sink handlers.
 type handlerDatum struct {
 	id        string
 	value     []byte
