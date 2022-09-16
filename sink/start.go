@@ -13,7 +13,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/numaproj/numaflow-go/pkg/sink"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
@@ -22,7 +21,7 @@ const (
 	contentTypeMsgPack = "application/msgpack"
 )
 
-type Handle func(context.Context, []sink.Message) (sink.Responses, error)
+type Handle func(context.Context, []Message) (Responses, error)
 
 // options for starting the http udf server
 type options struct {
@@ -56,7 +55,7 @@ func Start(ctx context.Context, handler Handle, opts ...Option) {
 	}
 }
 
-func udsink(ctx context.Context, w http.ResponseWriter, r *http.Request, handler func(ctx context.Context, msgs []sink.Message) (sink.Responses, error)) {
+func udsink(ctx context.Context, w http.ResponseWriter, r *http.Request, handler func(ctx context.Context, msgs []Message) (Responses, error)) {
 	contentType := r.Header.Get("Content-Type")
 	if contentType == "" { // defaults to application/msgpack
 		contentType = contentTypeMsgPack
@@ -67,7 +66,7 @@ func udsink(ctx context.Context, w http.ResponseWriter, r *http.Request, handler
 		return
 	}
 
-	msgResponses, err := func() (sink.Responses, error) {
+	msgResponses, err := func() (Responses, error) {
 		in, err := ioutil.ReadAll(r.Body)
 		_ = r.Body.Close()
 		if err != nil {
@@ -103,8 +102,8 @@ func udsink(ctx context.Context, w http.ResponseWriter, r *http.Request, handler
 	}
 }
 
-func unmarshalMessages(data []byte, contentType string) ([]sink.Message, error) {
-	msgs := []sink.Message{}
+func unmarshalMessages(data []byte, contentType string) ([]Message, error) {
+	msgs := []Message{}
 	switch contentType {
 	case contentTypeJson:
 		if err := json.Unmarshal(data, &msgs); err != nil {
@@ -120,7 +119,7 @@ func unmarshalMessages(data []byte, contentType string) ([]sink.Message, error) 
 	return msgs, nil
 }
 
-func marshalMessageResponses(respones []sink.Response, contentType string) ([]byte, error) {
+func marshalMessageResponses(respones []Response, contentType string) ([]byte, error) {
 	switch contentType {
 	case contentTypeJson:
 		b, err := json.Marshal(&respones)
@@ -139,7 +138,7 @@ func marshalMessageResponses(respones []sink.Response, contentType string) ([]by
 	}
 }
 
-func startWithContext(ctx context.Context, handler func(ctx context.Context, msgs []sink.Message) (sink.Responses, error), opts *options) error {
+func startWithContext(ctx context.Context, handler func(ctx context.Context, msgs []Message) (Responses, error), opts *options) error {
 	http.HandleFunc("/ready", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(204)
 	})

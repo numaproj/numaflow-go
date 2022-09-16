@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/numaproj/numaflow-go/pkg/sink"
 	"github.com/stretchr/testify/assert"
 	"github.com/vmihailenco/msgpack/v5"
 )
@@ -27,7 +26,7 @@ func TestStart_simpleStop(t *testing.T) {
 func TestStart_testReady(t *testing.T) {
 	// 200
 	ctx := context.Background()
-	msgs := []sink.Message{{ID: "abc", Payload: []byte("message")}}
+	msgs := []Message{{ID: "abc", Payload: []byte("message")}}
 	b, err := msgpack.Marshal(msgs)
 	assert.NoError(t, err)
 	input := bytes.NewBuffer(b)
@@ -40,7 +39,7 @@ func TestStart_testReady(t *testing.T) {
 	var data []byte
 	data, err = ioutil.ReadAll(res.Body)
 	assert.NoError(t, err)
-	responses := sink.Responses{}
+	responses := Responses{}
 	err = msgpack.Unmarshal(data, &responses)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(responses.Items()))
@@ -50,7 +49,7 @@ func TestStart_testReady(t *testing.T) {
 	// 50X
 	req = httptest.NewRequest(http.MethodPost, "/messages", nil)
 	w = httptest.NewRecorder()
-	udsink(ctx, w, req, func(ctx context.Context, msgs []sink.Message) (sink.Responses, error) {
+	udsink(ctx, w, req, func(ctx context.Context, msgs []Message) (Responses, error) {
 		return nil, fmt.Errorf("test error")
 	})
 	res = w.Result()
@@ -60,9 +59,9 @@ func TestStart_testReady(t *testing.T) {
 	assert.Equal(t, 500, res.StatusCode)
 }
 
-func dummyTestHandler(_ context.Context, msgs []sink.Message) (sink.Responses, error) {
+func dummyTestHandler(_ context.Context, msgs []Message) (Responses, error) {
 	if len(msgs) == 0 {
 		return nil, nil
 	}
-	return sink.ResponsesBuilder().Append(sink.ResponseOK("abc")), nil
+	return ResponsesBuilder().Append(ResponseOK("abc")), nil
 }
