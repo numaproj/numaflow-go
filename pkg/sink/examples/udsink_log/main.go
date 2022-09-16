@@ -11,6 +11,8 @@ import (
 func handle(ctx context.Context, datumList []sinksdk.Datum) sinksdk.Responses {
 	result := sinksdk.ResponsesBuilder()
 	for _, d := range datumList {
+		_ = d.EventTime()
+		_ = d.Watermark()
 		fmt.Println("User Defined Sink:", string(d.Value()))
 		id := d.ID()
 		result = result.Append(sinksdk.ResponseOK(id))
