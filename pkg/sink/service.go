@@ -32,7 +32,7 @@ func (h *handlerDatum) Watermark() time.Time {
 	return h.watermark
 }
 
-// Service implements the proto gen server interface and contains the map operation handler and the reduce operation handler.
+// Service implements the proto gen server interface and contains the sink operation handler.
 type Service struct {
 	sinkpb.UnimplementedUserDefinedSinkServer
 

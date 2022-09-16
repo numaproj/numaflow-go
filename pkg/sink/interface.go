@@ -31,7 +31,7 @@ type SinkHandler interface {
 // SinkFunc is utility type used to convert a HandleDo function to a SinkHandler.
 type SinkFunc func(ctx context.Context, datumList []Datum) Responses
 
-// HandleDo implements the function of map function.
+// HandleDo implements the function of sink function.
 func (sf SinkFunc) HandleDo(ctx context.Context, datumList []Datum) Responses {
 	return sf(ctx, datumList)
 }
