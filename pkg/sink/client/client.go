@@ -57,7 +57,7 @@ func (c *client) IsReady(ctx context.Context, in *emptypb.Empty) (bool, error) {
 func (c *client) SinkFn(ctx context.Context, datumList []*sinkpb.Datum) ([]*sinkpb.Response, error) {
 	responseList, err := c.grpcClt.SinkFn(ctx, &sinkpb.DatumList{Elements: datumList})
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute c.grpcClt.MapFn(): %w", err)
+		return nil, fmt.Errorf("failed to execute c.grpcClt.SinkFn(): %w", err)
 	}
 
 	return responseList.GetResponses(), nil

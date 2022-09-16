@@ -49,6 +49,7 @@ func (fs *Service) SinkFn(ctx context.Context, datumList *sinkpb.DatumList) (*si
 	var hdList []Datum
 	for _, d := range datumList.GetElements() {
 		hdList = append(hdList, &handlerDatum{
+			id:        d.GetId(),
 			value:     d.GetValue(),
 			eventTime: d.GetEventTime().EventTime.AsTime(),
 			watermark: d.GetWatermark().Watermark.AsTime(),
