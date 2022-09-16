@@ -1,4 +1,4 @@
-package configs
+package function
 
 const (
 	Protocol = "unix"

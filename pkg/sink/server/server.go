@@ -9,7 +9,7 @@ import (
 	"syscall"
 
 	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
-	"github.com/numaproj/numaflow-go/pkg/configs"
+	"github.com/numaproj/numaflow-go/pkg/function"
 	"github.com/numaproj/numaflow-go/pkg/sink"
 	"google.golang.org/grpc"
 )
@@ -34,7 +34,7 @@ func (s *server) RegisterSinker(h sink.SinkHandler) *server {
 // Start starts the gRPC server via unix domain socket at configs.Addr.
 func (s *server) Start(ctx context.Context, inputOptions ...Option) {
 	var opts = &options{
-		sockAddr: configs.Addr,
+		sockAddr: function.Addr,
 	}
 
 	for _, inputOption := range inputOptions {
@@ -53,9 +53,9 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) {
 	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	lis, err := net.Listen(configs.Protocol, opts.sockAddr)
+	lis, err := net.Listen(function.Protocol, opts.sockAddr)
 	if err != nil {
-		log.Fatalf("failed to execute net.Listen(%q, %q): %v", configs.Protocol, configs.Addr, err)
+		log.Fatalf("failed to execute net.Listen(%q, %q): %v", function.Protocol, function.Addr, err)
 	}
 	grpcSvr := grpc.NewServer()
 	sinkpb.RegisterUserDefinedSinkServer(grpcSvr, s.svc)

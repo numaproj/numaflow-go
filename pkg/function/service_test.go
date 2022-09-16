@@ -7,7 +7,6 @@ import (
 	"time"
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
-	"github.com/numaproj/numaflow-go/pkg/configs"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -67,7 +66,7 @@ func TestService_MapFn(t *testing.T) {
 			// here's a trick for testing:
 			// because we are not using gRPC, we directly set a new incoming ctx
 			// instead of the regular outgoing context in the real gRPC connection.
-			ctx := metadata.NewIncomingContext(context.Background(), metadata.New(map[string]string{configs.DatumKey: "client"}))
+			ctx := metadata.NewIncomingContext(context.Background(), metadata.New(map[string]string{DatumKey: "client"}))
 			got, err := fs.MapFn(ctx, tt.args.d)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("MapFn() error = %v, wantErr %v", err, tt.wantErr)
