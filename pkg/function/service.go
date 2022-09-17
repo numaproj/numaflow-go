@@ -8,7 +8,6 @@ import (
 	"time"
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
-	"github.com/numaproj/numaflow-go/pkg/datum"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -84,7 +83,7 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 	var (
 		ctx      = stream.Context()
 		key      string
-		reduceCh = make(chan datum.Datum)
+		reduceCh = make(chan Datum)
 		md       Metadata
 	)
 

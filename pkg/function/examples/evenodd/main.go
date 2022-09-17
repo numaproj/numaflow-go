@@ -4,12 +4,11 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/numaproj/numaflow-go/pkg/datum"
 	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
 	"github.com/numaproj/numaflow-go/pkg/function/server"
 )
 
-func handle(_ context.Context, key string, d datum.Datum) functionsdk.Messages {
+func handle(_ context.Context, key string, d functionsdk.Datum) functionsdk.Messages {
 	msg := d.Value()
 	_ = d.EventTime() // Event time is available
 	_ = d.Watermark() // Watermark is available

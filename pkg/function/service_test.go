@@ -7,7 +7,6 @@ import (
 	"time"
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
-	"github.com/numaproj/numaflow-go/pkg/datum"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -32,7 +31,7 @@ func TestService_MapFn(t *testing.T) {
 		{
 			name: "map_fn_forward_msg",
 			fields: fields{
-				Mapper: MapFunc(func(ctx context.Context, key string, datum datum.Datum) Messages {
+				Mapper: MapFunc(func(ctx context.Context, key string, datum Datum) Messages {
 					msg := datum.Value()
 					return MessagesBuilder().Append(MessageTo(key+"_test", msg))
 				}),

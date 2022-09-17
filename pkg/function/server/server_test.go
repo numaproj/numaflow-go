@@ -9,7 +9,6 @@ import (
 	"time"
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
-	"github.com/numaproj/numaflow-go/pkg/datum"
 	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
 	"github.com/numaproj/numaflow-go/pkg/function/client"
 	"github.com/stretchr/testify/assert"
@@ -21,7 +20,7 @@ func Test_server_map(t *testing.T) {
 	file, err := os.CreateTemp("/tmp", "numaflow-test.sock")
 	assert.NoError(t, err)
 	defer func() {
-		err = os.Remove(file.Name())
+		err = os.RemoveAll(file.Name())
 		assert.NoError(t, err)
 	}()
 
@@ -36,7 +35,7 @@ func Test_server_map(t *testing.T) {
 		{
 			name: "server_map",
 			fields: fields{
-				mapHandler: functionsdk.MapFunc(func(ctx context.Context, key string, d datum.Datum) functionsdk.Messages {
+				mapHandler: functionsdk.MapFunc(func(ctx context.Context, key string, d functionsdk.Datum) functionsdk.Messages {
 					msg := d.Value()
 					return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(key+"_test", msg))
 				}),
@@ -83,7 +82,7 @@ func Test_server_reduce(t *testing.T) {
 	file, err := os.CreateTemp("/tmp", "numaflow-test.sock")
 	assert.NoError(t, err)
 	defer func() {
-		err = os.Remove(file.Name())
+		err = os.RemoveAll(file.Name())
 		assert.NoError(t, err)
 	}()
 
@@ -100,7 +99,7 @@ func Test_server_reduce(t *testing.T) {
 		{
 			name: "server_reduce",
 			fields: fields{
-				reduceHandler: functionsdk.ReduceFunc(func(ctx context.Context, key string, reduceCh <-chan datum.Datum, md functionsdk.Metadata) functionsdk.Messages {
+				reduceHandler: functionsdk.ReduceFunc(func(ctx context.Context, key string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) functionsdk.Messages {
 					// sum up values for the same key
 
 					// in this test case, md is nil
