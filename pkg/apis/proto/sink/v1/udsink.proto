@@ -34,7 +34,7 @@ message Datum {
   bytes value = 2;
   EventTime event_time = 3;
   Watermark watermark = 4;
-  string id=5;
+  string id = 5;
 }
 
 /**
@@ -56,7 +56,7 @@ message ReadyResponse {
  */
 message Response {
   // id is the ID of the message, can be used to uniquely identify the message.
-  string id=1;
+  string id = 1;
   // success denotes the status of persisting to disk. if set to false, it means writing to sink for the message failed.
   bool success = 2;
   // err_msg is the error message, set it if success is set to false.

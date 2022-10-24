@@ -46,7 +46,7 @@ func handle(ctx context.Context, datumList []sinksdk.Datum) sinksdk.Responses {
 		fmt.Println(string(datum.Value()))
 		result = result.Append(sinksdk.ResponseOK(datum.ID()))
 	}
-	return result, nil
+	return result
 }
 
 func main() {
