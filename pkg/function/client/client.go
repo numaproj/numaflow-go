@@ -21,8 +21,7 @@ type client struct {
 func New(inputOptions ...Option) (*client, error) {
 
 	var opts = &options{
-		sockAddr:       function.Addr,
-		maxMessageSize: function.DefaultMaxMessageSize,
+		sockAddr: function.Addr,
 	}
 
 	for _, inputOption := range inputOptions {
@@ -31,10 +30,7 @@ func New(inputOptions ...Option) (*client, error) {
 
 	c := new(client)
 	sockAddr := fmt.Sprintf("%s:%s", function.Protocol, opts.sockAddr)
-	conn, err := grpc.Dial(sockAddr,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(opts.maxMessageSize), grpc.MaxCallSendMsgSize(opts.maxMessageSize)),
-	)
+	conn, err := grpc.Dial(sockAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute grpc.Dial(%q): %w", sockAddr, err)
 	}
