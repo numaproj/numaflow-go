@@ -39,7 +39,8 @@ func (s *server) RegisterReducer(r function.ReduceHandler) *server {
 // Start starts the gRPC server via unix domain socket at configs.Addr.
 func (s *server) Start(ctx context.Context, inputOptions ...Option) {
 	var opts = &options{
-		sockAddr: function.Addr,
+		sockAddr:       function.Addr,
+		maxMessageSize: function.DefaultMaxMessageSize,
 	}
 
 	for _, inputOption := range inputOptions {
@@ -62,7 +63,10 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) {
 	if err != nil {
 		log.Fatalf("failed to execute net.Listen(%q, %q): %v", function.Protocol, function.Addr, err)
 	}
-	grpcSvr := grpc.NewServer()
+	grpcSvr := grpc.NewServer(
+		grpc.MaxRecvMsgSize(opts.maxMessageSize),
+		grpc.MaxSendMsgSize(opts.maxMessageSize),
+	)
 	functionpb.RegisterUserDefinedFunctionServer(grpcSvr, s.svc)
 
 	// start the grpc server
