@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strconv"
 	"sync"
 	"time"
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
-	"google.golang.org/grpc/metadata"
+	grpcmd "google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -31,6 +32,41 @@ func (h *handlerDatum) Watermark() time.Time {
 	return h.watermark
 }
 
+// intervalWindow implements IntervalWindow interface which will be passed as metadata
+// to reduce handlers
+type intervalWindow struct {
+	startTime time.Time
+	endTime   time.Time
+}
+
+func NewIntervalWindow(startTime time.Time, endTime time.Time) IntervalWindow {
+	return &intervalWindow{
+		startTime: startTime,
+		endTime:   endTime,
+	}
+}
+
+func (i *intervalWindow) StartTime() time.Time {
+	return i.startTime
+}
+
+func (i *intervalWindow) EndTime() time.Time {
+	return i.endTime
+}
+
+// metadata implements Metadata interface which will be passed to reduce handlers
+type metadata struct {
+	intervalWindow IntervalWindow
+}
+
+func NewMetadata(window IntervalWindow) Metadata {
+	return &metadata{intervalWindow: window}
+}
+
+func (m *metadata) IntervalWindow() IntervalWindow {
+	return m.intervalWindow
+}
+
 // Service implements the proto gen server interface and contains the map operation handler and the reduce operation handler.
 type Service struct {
 	functionpb.UnimplementedUserDefinedFunctionServer
@@ -49,7 +85,7 @@ func (fs *Service) MapFn(ctx context.Context, d *functionpb.Datum) (*functionpb.
 	var key string
 
 	// get key from gPRC metadata
-	if grpcMD, ok := metadata.FromIncomingContext(ctx); ok {
+	if grpcMD, ok := grpcmd.FromIncomingContext(ctx); ok {
 		keyValue := grpcMD.Get(DatumKey)
 		if len(keyValue) > 1 {
 			return nil, fmt.Errorf("expect extact one key but got %d keys", len(keyValue))
@@ -81,25 +117,46 @@ func (fs *Service) MapFn(ctx context.Context, d *functionpb.Datum) (*functionpb.
 // ReduceFn applies a reduce function to a datum stream.
 func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer) error {
 	var (
-		ctx      = stream.Context()
-		key      string
-		reduceCh = make(chan Datum)
-		md       Metadata
+		key       string
+		md        Metadata
+		err       error
+		startTime int64
+		endTime   int64
+		reduceCh  = make(chan Datum)
+		ctx       = stream.Context()
 	)
 
-	// get key and metadata from gPRC metadata
-	if grpcMD, ok := metadata.FromIncomingContext(ctx); ok {
-		// get Key
-		keyValue := grpcMD.Get(DatumKey)
-		if len(keyValue) > 1 {
-			return fmt.Errorf("expect extact one key but got %d keys", len(keyValue))
-		} else if len(keyValue) == 1 {
-			key = keyValue[0]
-		} else {
-			// do nothing: the length equals zero is valid, meaning the key is an empty string ""
-		}
-		// TODO: get metadata
+	grpcMD, ok := grpcmd.FromIncomingContext(ctx)
+	if !ok {
+		return fmt.Errorf("key and window information are not passed in grpc metadata")
 	}
+
+	// get key from gPRC metadata
+	key, err = getValueForKey(grpcMD, DatumKey)
+	if err != nil {
+		return err
+	}
+
+	// get window start and end time from grpc metadata
+	var st, et string
+	st, err = getValueForKey(grpcMD, WinStartTime)
+	if err != nil {
+		return err
+	}
+
+	et, err = getValueForKey(grpcMD, WinEndTime)
+	if err != nil {
+		return err
+	}
+
+	startTime, _ = strconv.ParseInt(st, 10, 64)
+	endTime, _ = strconv.ParseInt(et, 10, 64)
+
+	// create interval window interface using the start and end time
+	iw := NewIntervalWindow(time.UnixMilli(startTime), time.UnixMilli(endTime))
+
+	// create metadata using interval window interface
+	md = NewMetadata(iw)
 
 	var (
 		datumList []*functionpb.Datum
@@ -141,4 +198,22 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 	return stream.SendAndClose(&functionpb.DatumList{
 		Elements: datumList,
 	})
+}
+
+func getValueForKey(md grpcmd.MD, key string) (string, error) {
+	var value string
+
+	keyValue := md.Get(key)
+
+	if len(keyValue) > 1 {
+		return value, fmt.Errorf("expected extactly one value for key %s in metadata but got %d values, %s", key, len(keyValue), keyValue)
+	} else if len(keyValue) == 1 {
+		value = keyValue[0]
+	} else {
+		// the length equals zero is invalid for reduce
+		// since we are using a global key, and start and end time
+		// cannot be empty
+		return value, fmt.Errorf("expected non empty value for key %s in metadata but got an empty value", key)
+	}
+	return value, nil
 }

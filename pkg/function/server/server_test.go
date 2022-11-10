@@ -12,7 +12,7 @@ import (
 	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
 	"github.com/numaproj/numaflow-go/pkg/function/client"
 	"github.com/stretchr/testify/assert"
-	"google.golang.org/grpc/metadata"
+	grpcmd "google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -58,8 +58,8 @@ func Test_server_map(t *testing.T) {
 			for i := 0; i < 10; i++ {
 				key := fmt.Sprintf("client_%d", i)
 				// set the key in metadata for map function
-				md := metadata.New(map[string]string{functionsdk.DatumKey: key})
-				ctx = metadata.NewOutgoingContext(ctx, md)
+				md := grpcmd.New(map[string]string{functionsdk.DatumKey: key})
+				ctx = grpcmd.NewOutgoingContext(ctx, md)
 				list, err := c.MapFn(ctx, &functionpb.Datum{
 					Key:       key,
 					Value:     []byte(`server_test`),
@@ -155,8 +155,8 @@ func Test_server_reduce(t *testing.T) {
 			close(reduceDatumCh)
 
 			// set the key in gPRC metadata for reduce function
-			md := metadata.New(map[string]string{functionsdk.DatumKey: testKey})
-			ctx = metadata.NewOutgoingContext(ctx, md)
+			md := grpcmd.New(map[string]string{functionsdk.DatumKey: testKey, functionsdk.WinStartTime: "60000", functionsdk.WinEndTime: "120000"})
+			ctx = grpcmd.NewOutgoingContext(ctx, md)
 			list, err := c.ReduceFn(ctx, reduceDatumCh)
 			assert.NoError(t, err)
 			assert.Equal(t, 1, len(list))
