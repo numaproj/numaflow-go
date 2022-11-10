@@ -120,8 +120,8 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 		key       string
 		md        Metadata
 		err       error
-		startTime int
-		endTime   int
+		startTime int64
+		endTime   int64
 		reduceCh  = make(chan Datum)
 		ctx       = stream.Context()
 	)
@@ -149,11 +149,11 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 		return err
 	}
 
-	startTime, _ = strconv.Atoi(st)
-	endTime, _ = strconv.Atoi(et)
+	startTime, _ = strconv.ParseInt(st, 10, 64)
+	endTime, _ = strconv.ParseInt(et, 10, 64)
 
 	// create interval window interface using the start and end time
-	iw := NewIntervalWindow(time.UnixMilli(int64(startTime)), time.UnixMilli(int64(endTime)))
+	iw := NewIntervalWindow(time.UnixMilli(startTime), time.UnixMilli(endTime))
 
 	// create metadata using interval window interface
 	md = NewMetadata(iw)
@@ -206,7 +206,7 @@ func getValueForKey(md grpcmd.MD, key string) (string, error) {
 	keyValue := md.Get(key)
 
 	if len(keyValue) > 1 {
-		return value, fmt.Errorf("expected extactly one value for key %s in metadata but got %d values", key, len(keyValue))
+		return value, fmt.Errorf("expected extactly one value for key %s in metadata but got %d values, %s", key, len(keyValue), keyValue)
 	} else if len(keyValue) == 1 {
 		value = keyValue[0]
 	} else {
