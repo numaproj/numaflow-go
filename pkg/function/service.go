@@ -210,7 +210,7 @@ func getValueForKey(md grpcmd.MD, key string) (string, error) {
 	} else if len(keyValue) == 1 {
 		value = keyValue[0]
 	} else {
-		// do nothing: the length equals zero is invalid for reduce
+		// the length equals zero is invalid for reduce
 		// since we are using a global key, and start and end time
 		// cannot be empty
 		return value, fmt.Errorf("expected non empty value for key %s in metadata but got an empty value", key)
