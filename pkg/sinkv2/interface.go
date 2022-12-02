@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
+	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v2"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -25,13 +25,13 @@ type Client interface {
 // SinkHandler is the interface of sink function implementation.
 type SinkHandler interface {
 	// HandleDo is the function to process a list of incoming messages
-	HandleDo(ctx context.Context, datumList []Datum) Responses
+	HandleDo(ctx context.Context, reduceCh <-chan Datum) Responses
 }
 
 // SinkFunc is utility type used to convert a HandleDo function to a SinkHandler.
-type SinkFunc func(ctx context.Context, datumList []Datum) Responses
+type SinkFunc func(ctx context.Context, reduceCh <-chan Datum) Responses
 
 // HandleDo implements the function of sink function.
-func (sf SinkFunc) HandleDo(ctx context.Context, datumList []Datum) Responses {
-	return sf(ctx, datumList)
+func (sf SinkFunc) HandleDo(ctx context.Context, reduceCh <-chan Datum) Responses {
+	return sf(ctx, reduceCh)
 }

@@ -2,9 +2,11 @@ package sink
 
 import (
 	"context"
+	"io"
+	"sync"
 	"time"
 
-	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
+	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v2"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -45,27 +47,49 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*sinkpb.ReadyRespon
 }
 
 // SinkFn applies a function to a list of datum element.
-func (fs *Service) SinkFn(ctx context.Context, datumList *sinkpb.DatumList) (*sinkpb.ResponseList, error) {
-	var hdList []Datum
-	for _, d := range datumList.GetElements() {
-		hdList = append(hdList, &handlerDatum{
+func (fs *Service) SinkFn(stream sinkpb.UserDefinedSink_SinkFnServer) error {
+	var (
+		responseList []*sinkpb.Response
+		wg           sync.WaitGroup
+		sinkCh       = make(chan Datum)
+		ctx          = stream.Context()
+	)
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		messages := fs.Sinker.HandleDo(ctx, sinkCh)
+		for _, msg := range messages {
+			responseList = append(responseList, &sinkpb.Response{
+				Id:      msg.ID,
+				Success: msg.Success,
+				ErrMsg:  msg.Err,
+			})
+		}
+	}()
+
+	for {
+		d, err := stream.Recv()
+		if err == io.EOF {
+			close(sinkCh)
+			break
+		}
+		if err != nil {
+			close(sinkCh)
+			// TODO: research on gRPC errors and revisit the error handler
+			return err
+		}
+		var hd = &handlerDatum{
 			id:        d.GetId(),
 			value:     d.GetValue(),
 			eventTime: d.GetEventTime().EventTime.AsTime(),
 			watermark: d.GetWatermark().Watermark.AsTime(),
-		})
+		}
+		sinkCh <- hd
 	}
-	messages := fs.Sinker.HandleDo(ctx, hdList)
-	var responses []*sinkpb.Response
-	for _, m := range messages.Items() {
-		responses = append(responses, &sinkpb.Response{
-			Id:      m.ID,
-			Success: m.Success,
-			ErrMsg:  m.Err,
-		})
-	}
-	responseList := &sinkpb.ResponseList{
-		Responses: responses,
-	}
-	return responseList, nil
+
+	wg.Wait()
+	return stream.SendAndClose(&sinkpb.ResponseList{
+		Responses: responseList,
+	})
 }

@@ -8,8 +8,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
-	"github.com/numaproj/numaflow-go/pkg/sink"
+	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v2"
+	"github.com/numaproj/numaflow-go/pkg/sinkv2"
 	"google.golang.org/grpc"
 )
 
