@@ -22,8 +22,6 @@ func Test_server_sink(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	time.Sleep(time.Second)
-
 	type fields struct {
 		sinkHandler sinksdk.SinkHandler
 	}
