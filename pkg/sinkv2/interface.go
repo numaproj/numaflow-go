@@ -19,7 +19,7 @@ type Datum interface {
 type Client interface {
 	CloseConn(ctx context.Context) error
 	IsReady(ctx context.Context, in *emptypb.Empty) (bool, error)
-	SinkFn(ctx context.Context, datumList []*sinkpb.Datum) ([]*sinkpb.Response, error)
+	SinkFn(ctx context.Context, datumStreamCh <-chan *sinkpb.Datum) ([]*sinkpb.Response, error)
 }
 
 // SinkHandler is the interface of sink function implementation.
