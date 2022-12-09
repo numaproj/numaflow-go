@@ -119,17 +119,17 @@ func TestSinkFn(t *testing.T) {
 		grpcClt: mockClient,
 	})
 
-	var reduceDatumCh = make(chan *sinkpb.Datum, 10)
+	var sinkDatumCh = make(chan *sinkpb.Datum, 10)
 	for _, datum := range testDatumList {
-		reduceDatumCh <- datum
+		sinkDatumCh <- datum
 	}
-	close(reduceDatumCh)
+	close(sinkDatumCh)
 
-	got, err := testClient.SinkFn(ctx, reduceDatumCh)
+	got, err := testClient.SinkFn(ctx, sinkDatumCh)
 	reflect.DeepEqual(got, testResponseList)
 	assert.NoError(t, err)
 
-	got, err = testClient.SinkFn(ctx, reduceDatumCh)
+	got, err = testClient.SinkFn(ctx, sinkDatumCh)
 	assert.Nil(t, got)
 	assert.EqualError(t, err, "failed to execute c.grpcClt.SinkFn(): mock SinkFn error")
 }
