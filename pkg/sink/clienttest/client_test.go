@@ -7,8 +7,6 @@ import (
 	"testing"
 	"time"
 
-	// "time"
-
 	"github.com/golang/mock/gomock"
 	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
 	"github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1/sinkmock"
@@ -16,7 +14,6 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	// "google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type rpcMsg struct {
