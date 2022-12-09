@@ -32,9 +32,9 @@ func Test_server_sink(t *testing.T) {
 		{
 			name: "server_sink",
 			fields: fields{
-				sinkHandler: sinksdk.SinkFunc(func(ctx context.Context, reduceCh <-chan sinksdk.Datum) sinksdk.Responses {
+				sinkHandler: sinksdk.SinkFunc(func(ctx context.Context, datumStreamCh <-chan sinksdk.Datum) sinksdk.Responses {
 					result := sinksdk.ResponsesBuilder()
-					for d := range reduceCh {
+					for d := range datumStreamCh {
 						id := d.ID()
 						if strings.Contains(string(d.Value()), "err") {
 							result = result.Append(sinksdk.ResponseFailure(id, "mock sink message error"))
