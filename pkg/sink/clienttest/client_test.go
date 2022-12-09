@@ -10,8 +10,8 @@ import (
 	// "time"
 
 	"github.com/golang/mock/gomock"
-	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v2"
-	"github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v2/sinkmock"
+	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
+	"github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1/sinkmock"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"

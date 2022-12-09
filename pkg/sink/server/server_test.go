@@ -32,9 +32,9 @@ func Test_server_sink(t *testing.T) {
 		{
 			name: "server_sink",
 			fields: fields{
-				sinkHandler: sinksdk.SinkFunc(func(ctx context.Context, datumList []sinksdk.Datum) sinksdk.Responses {
+				sinkHandler: sinksdk.SinkFunc(func(ctx context.Context, reduceCh <-chan sinksdk.Datum) sinksdk.Responses {
 					result := sinksdk.ResponsesBuilder()
-					for _, d := range datumList {
+					for d := range reduceCh {
 						id := d.ID()
 						if strings.Contains(string(d.Value()), "err") {
 							result = result.Append(sinksdk.ResponseFailure(id, "mock sink message error"))
@@ -75,7 +75,12 @@ func Test_server_sink(t *testing.T) {
 					Watermark: &sinkpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 			}
-			responseList, err := c.SinkFn(ctx, testDatumList)
+			var reduceDatumCh = make(chan *sinkpb.Datum, 10)
+			for _, datum := range testDatumList {
+				reduceDatumCh <- datum
+			}
+			close(reduceDatumCh)
+			responseList, err := c.SinkFn(ctx, reduceDatumCh)
 			assert.NoError(t, err)
 			expectedResponseList := []*sinkpb.Response{
 				{

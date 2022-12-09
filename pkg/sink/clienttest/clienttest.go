@@ -34,10 +34,19 @@ func (c *client) IsReady(ctx context.Context, in *emptypb.Empty) (bool, error) {
 }
 
 // SinkFn applies a function to a list of datum elements.
-func (c *client) SinkFn(ctx context.Context, datumList []*sinkpb.Datum) ([]*sinkpb.Response, error) {
-	responseList, err := c.grpcClt.SinkFn(ctx, &sinkpb.DatumList{Elements: datumList})
+func (c *client) SinkFn(ctx context.Context, datumStreamCh <-chan *sinkpb.Datum) ([]*sinkpb.Response, error) {
+	stream, err := c.grpcClt.SinkFn(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute c.grpcClt.SinkFn(): %w", err)
+	}
+	for datum := range datumStreamCh {
+		if err := stream.Send(datum); err != nil {
+			return nil, fmt.Errorf("failed to execute stream.Send(%v): %w", datum, err)
+		}
+	}
+	responseList, err := stream.CloseAndRecv()
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute stream.CloseAndRecv(): %w", err)
 	}
 
 	return responseList.GetResponses(), nil

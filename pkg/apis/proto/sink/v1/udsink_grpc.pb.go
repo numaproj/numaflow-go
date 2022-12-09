@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v3.21.5
-// source: pkg/apis/proto/sink/v1/udsink.proto
+// source: pkg/apis/proto/sink/v2/udsink.proto
 
 package v1
 
@@ -24,7 +24,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type UserDefinedSinkClient interface {
 	// SinkFn writes the Datum to a user defined sink.
-	SinkFn(ctx context.Context, in *DatumList, opts ...grpc.CallOption) (*ResponseList, error)
+	SinkFn(ctx context.Context, opts ...grpc.CallOption) (UserDefinedSink_SinkFnClient, error)
 	// IsReady is the heartbeat endpoint for gRPC.
 	IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReadyResponse, error)
 }
@@ -37,18 +37,43 @@ func NewUserDefinedSinkClient(cc grpc.ClientConnInterface) UserDefinedSinkClient
 	return &userDefinedSinkClient{cc}
 }
 
-func (c *userDefinedSinkClient) SinkFn(ctx context.Context, in *DatumList, opts ...grpc.CallOption) (*ResponseList, error) {
-	out := new(ResponseList)
-	err := c.cc.Invoke(ctx, "/sink.v1.UserDefinedSink/SinkFn", in, out, opts...)
+func (c *userDefinedSinkClient) SinkFn(ctx context.Context, opts ...grpc.CallOption) (UserDefinedSink_SinkFnClient, error) {
+	stream, err := c.cc.NewStream(ctx, &UserDefinedSink_ServiceDesc.Streams[0], "/sink.v2.UserDefinedSink/SinkFn", opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &userDefinedSinkSinkFnClient{stream}
+	return x, nil
+}
+
+type UserDefinedSink_SinkFnClient interface {
+	Send(*Datum) error
+	CloseAndRecv() (*ResponseList, error)
+	grpc.ClientStream
+}
+
+type userDefinedSinkSinkFnClient struct {
+	grpc.ClientStream
+}
+
+func (x *userDefinedSinkSinkFnClient) Send(m *Datum) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *userDefinedSinkSinkFnClient) CloseAndRecv() (*ResponseList, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(ResponseList)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func (c *userDefinedSinkClient) IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReadyResponse, error) {
 	out := new(ReadyResponse)
-	err := c.cc.Invoke(ctx, "/sink.v1.UserDefinedSink/IsReady", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/sink.v2.UserDefinedSink/IsReady", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +85,7 @@ func (c *userDefinedSinkClient) IsReady(ctx context.Context, in *emptypb.Empty, 
 // for forward compatibility
 type UserDefinedSinkServer interface {
 	// SinkFn writes the Datum to a user defined sink.
-	SinkFn(context.Context, *DatumList) (*ResponseList, error)
+	SinkFn(UserDefinedSink_SinkFnServer) error
 	// IsReady is the heartbeat endpoint for gRPC.
 	IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error)
 	mustEmbedUnimplementedUserDefinedSinkServer()
@@ -70,8 +95,8 @@ type UserDefinedSinkServer interface {
 type UnimplementedUserDefinedSinkServer struct {
 }
 
-func (UnimplementedUserDefinedSinkServer) SinkFn(context.Context, *DatumList) (*ResponseList, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SinkFn not implemented")
+func (UnimplementedUserDefinedSinkServer) SinkFn(UserDefinedSink_SinkFnServer) error {
+	return status.Errorf(codes.Unimplemented, "method SinkFn not implemented")
 }
 func (UnimplementedUserDefinedSinkServer) IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsReady not implemented")
@@ -89,22 +114,30 @@ func RegisterUserDefinedSinkServer(s grpc.ServiceRegistrar, srv UserDefinedSinkS
 	s.RegisterService(&UserDefinedSink_ServiceDesc, srv)
 }
 
-func _UserDefinedSink_SinkFn_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DatumList)
-	if err := dec(in); err != nil {
+func _UserDefinedSink_SinkFn_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(UserDefinedSinkServer).SinkFn(&userDefinedSinkSinkFnServer{stream})
+}
+
+type UserDefinedSink_SinkFnServer interface {
+	SendAndClose(*ResponseList) error
+	Recv() (*Datum, error)
+	grpc.ServerStream
+}
+
+type userDefinedSinkSinkFnServer struct {
+	grpc.ServerStream
+}
+
+func (x *userDefinedSinkSinkFnServer) SendAndClose(m *ResponseList) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *userDefinedSinkSinkFnServer) Recv() (*Datum, error) {
+	m := new(Datum)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
-	if interceptor == nil {
-		return srv.(UserDefinedSinkServer).SinkFn(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/sink.v1.UserDefinedSink/SinkFn",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserDefinedSinkServer).SinkFn(ctx, req.(*DatumList))
-	}
-	return interceptor(ctx, in, info, handler)
+	return m, nil
 }
 
 func _UserDefinedSink_IsReady_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -117,7 +150,7 @@ func _UserDefinedSink_IsReady_Handler(srv interface{}, ctx context.Context, dec 
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/sink.v1.UserDefinedSink/IsReady",
+		FullMethod: "/sink.v2.UserDefinedSink/IsReady",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UserDefinedSinkServer).IsReady(ctx, req.(*emptypb.Empty))
@@ -129,18 +162,20 @@ func _UserDefinedSink_IsReady_Handler(srv interface{}, ctx context.Context, dec 
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var UserDefinedSink_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "sink.v1.UserDefinedSink",
+	ServiceName: "sink.v2.UserDefinedSink",
 	HandlerType: (*UserDefinedSinkServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "SinkFn",
-			Handler:    _UserDefinedSink_SinkFn_Handler,
-		},
 		{
 			MethodName: "IsReady",
 			Handler:    _UserDefinedSink_IsReady_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "pkg/apis/proto/sink/v1/udsink.proto",
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "SinkFn",
+			Handler:       _UserDefinedSink_SinkFn_Handler,
+			ClientStreams: true,
+		},
+	},
+	Metadata: "pkg/apis/proto/sink/v2/udsink.proto",
 }
