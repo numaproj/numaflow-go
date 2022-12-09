@@ -75,12 +75,12 @@ func Test_server_sink(t *testing.T) {
 					Watermark: &sinkpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 			}
-			var reduceDatumCh = make(chan *sinkpb.Datum, 10)
+			var datumStreamCh = make(chan *sinkpb.Datum, 10)
 			for _, datum := range testDatumList {
-				reduceDatumCh <- datum
+				datumStreamCh <- datum
 			}
-			close(reduceDatumCh)
-			responseList, err := c.SinkFn(ctx, reduceDatumCh)
+			close(datumStreamCh)
+			responseList, err := c.SinkFn(ctx, datumStreamCh)
 			assert.NoError(t, err)
 			expectedResponseList := []*sinkpb.Response{
 				{
