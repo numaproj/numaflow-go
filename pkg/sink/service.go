@@ -49,16 +49,16 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*sinkpb.ReadyRespon
 // SinkFn applies a function to a list of datum element.
 func (fs *Service) SinkFn(stream sinkpb.UserDefinedSink_SinkFnServer) error {
 	var (
-		responseList []*sinkpb.Response
-		wg           sync.WaitGroup
-		sinkCh       = make(chan Datum)
-		ctx          = stream.Context()
+		responseList  []*sinkpb.Response
+		wg            sync.WaitGroup
+		datumStreamCh = make(chan Datum)
+		ctx           = stream.Context()
 	)
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		messages := fs.Sinker.HandleDo(ctx, sinkCh)
+		messages := fs.Sinker.HandleDo(ctx, datumStreamCh)
 		for _, msg := range messages {
 			responseList = append(responseList, &sinkpb.Response{
 				Id:      msg.ID,
@@ -71,11 +71,11 @@ func (fs *Service) SinkFn(stream sinkpb.UserDefinedSink_SinkFnServer) error {
 	for {
 		d, err := stream.Recv()
 		if err == io.EOF {
-			close(sinkCh)
+			close(datumStreamCh)
 			break
 		}
 		if err != nil {
-			close(sinkCh)
+			close(datumStreamCh)
 			// TODO: research on gRPC errors and revisit the error handler
 			return err
 		}
@@ -85,7 +85,7 @@ func (fs *Service) SinkFn(stream sinkpb.UserDefinedSink_SinkFnServer) error {
 			eventTime: d.GetEventTime().EventTime.AsTime(),
 			watermark: d.GetWatermark().Watermark.AsTime(),
 		}
-		sinkCh <- hd
+		datumStreamCh <- hd
 	}
 
 	wg.Wait()
