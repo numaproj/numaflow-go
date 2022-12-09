@@ -9,7 +9,7 @@ package sink.v1;
 
 service UserDefinedSink {
   // SinkFn writes the Datum to a user defined sink.
-  rpc SinkFn(DatumList) returns (ResponseList);
+  rpc SinkFn(stream Datum) returns (ResponseList);
 
   // IsReady is the heartbeat endpoint for gRPC.
   rpc IsReady(google.protobuf.Empty) returns (ReadyResponse);
@@ -35,13 +35,6 @@ message Datum {
   EventTime event_time = 3;
   Watermark watermark = 4;
   string id = 5;
-}
-
-/**
- * DatumList represents a list of datum elements.
- */
-message DatumList {
-  repeated Datum elements = 1;
 }
 
 /**
