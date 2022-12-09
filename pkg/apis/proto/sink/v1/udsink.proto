@@ -1,11 +1,11 @@
 syntax = "proto3";
 
-option go_package = "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v2";
+option go_package = "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1";
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 
-package sink.v2;
+package sink.v1;
 
 service UserDefinedSink {
   // SinkFn writes the Datum to a user defined sink.

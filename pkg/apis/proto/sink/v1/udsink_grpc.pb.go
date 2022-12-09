@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v3.21.5
-// source: pkg/apis/proto/sink/v2/udsink.proto
+// source: pkg/apis/proto/sink/v1/udsink.proto
 
 package v1
 
@@ -38,7 +38,7 @@ func NewUserDefinedSinkClient(cc grpc.ClientConnInterface) UserDefinedSinkClient
 }
 
 func (c *userDefinedSinkClient) SinkFn(ctx context.Context, opts ...grpc.CallOption) (UserDefinedSink_SinkFnClient, error) {
-	stream, err := c.cc.NewStream(ctx, &UserDefinedSink_ServiceDesc.Streams[0], "/sink.v2.UserDefinedSink/SinkFn", opts...)
+	stream, err := c.cc.NewStream(ctx, &UserDefinedSink_ServiceDesc.Streams[0], "/sink.v1.UserDefinedSink/SinkFn", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func (x *userDefinedSinkSinkFnClient) CloseAndRecv() (*ResponseList, error) {
 
 func (c *userDefinedSinkClient) IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReadyResponse, error) {
 	out := new(ReadyResponse)
-	err := c.cc.Invoke(ctx, "/sink.v2.UserDefinedSink/IsReady", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/sink.v1.UserDefinedSink/IsReady", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +150,7 @@ func _UserDefinedSink_IsReady_Handler(srv interface{}, ctx context.Context, dec 
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/sink.v2.UserDefinedSink/IsReady",
+		FullMethod: "/sink.v1.UserDefinedSink/IsReady",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UserDefinedSinkServer).IsReady(ctx, req.(*emptypb.Empty))
@@ -162,7 +162,7 @@ func _UserDefinedSink_IsReady_Handler(srv interface{}, ctx context.Context, dec 
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var UserDefinedSink_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "sink.v2.UserDefinedSink",
+	ServiceName: "sink.v1.UserDefinedSink",
 	HandlerType: (*UserDefinedSinkServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -177,5 +177,5 @@ var UserDefinedSink_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "pkg/apis/proto/sink/v2/udsink.proto",
+	Metadata: "pkg/apis/proto/sink/v1/udsink.proto",
 }
