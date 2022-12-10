@@ -6,6 +6,7 @@ import (
 
 	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
 	"github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1/sinkmock"
+	"github.com/numaproj/numaflow-go/pkg/sink"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -13,6 +14,8 @@ import (
 type client struct {
 	grpcClt sinkpb.UserDefinedSinkClient
 }
+
+var _ sink.Client = (*client)(nil)
 
 // New creates a new mock client object.
 func New(c *sinkmock.MockUserDefinedSinkClient) (*client, error) {

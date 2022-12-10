@@ -17,6 +17,8 @@ type client struct {
 	grpcClt sinkpb.UserDefinedSinkClient
 }
 
+var _ sink.Client = (*client)(nil)
+
 // New creates a new client object.
 func New(inputOptions ...Option) (*client, error) {
 
