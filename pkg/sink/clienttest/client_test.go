@@ -110,18 +110,8 @@ func TestSinkFn(t *testing.T) {
 			ErrMsg:  "mock sink message error",
 		},
 	}
-	mockClient.EXPECT().SinkFn(gomock.Any(), &rpcMsg{msg: &sinkpb.DatumList{
-		Elements: testDatumList,
-	}}).Return(&sinkpb.ResponseList{
-		Responses: testResponseList,
-	}, nil)
-	mockClient.EXPECT().SinkFn(gomock.Any(), &rpcMsg{msg: &sinkpb.DatumList{
-		Elements: testDatumList,
-	}}).Return(&sinkpb.ResponseList{
-		Responses: []*sinkpb.Response{
-			nil,
-		},
-	}, fmt.Errorf("mock SinkFn error"))
+	mockClient.EXPECT().SinkFn(gomock.Any(), gomock.Any()).Return(mockSinkClient, nil)
+	mockClient.EXPECT().SinkFn(gomock.Any(), gomock.Any()).Return(mockSinkErrClient, fmt.Errorf("mock SinkFn error"))
 
 	testClient, err := New(mockClient)
 	assert.NoError(t, err)
