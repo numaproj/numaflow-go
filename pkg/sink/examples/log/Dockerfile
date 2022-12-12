@@ -6,7 +6,7 @@ RUN apk update && apk upgrade && \
     apk add ca-certificates && \
     apk --no-cache add tzdata
 
-COPY dist/go-udsink-example /bin/log-example
+COPY dist/log-example /bin/log-example
 RUN chmod +x /bin/log-example
 
 ####################################################################################################
