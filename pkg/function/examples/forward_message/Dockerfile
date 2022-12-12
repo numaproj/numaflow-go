@@ -6,15 +6,15 @@ RUN apk update && apk upgrade && \
     apk add ca-certificates && \
     apk --no-cache add tzdata
 
-COPY dist/counter-example /bin/counter-example
-RUN chmod +x /bin/counter-example
+COPY dist/forward-message-example /bin/forward-message-example
+RUN chmod +x /bin/forward-message-example
 
 ####################################################################################################
-# counter
+# forward-message
 ####################################################################################################
-FROM scratch as counter
+FROM scratch as forward-message
 ARG ARCH
 COPY --from=base /usr/share/zoneinfo /usr/share/zoneinfo
 COPY --from=base /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-COPY --from=base /bin/counter-example /bin/counter-example
-ENTRYPOINT [ "/bin/counter-example" ]
+COPY --from=base /bin/forward-message-example /bin/forward-message-example
+ENTRYPOINT [ "/bin/forward-message-example" ]
