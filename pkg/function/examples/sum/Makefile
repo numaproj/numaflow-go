@@ -4,7 +4,7 @@ build:
 
 .PHONY: image
 image: build
-	docker build -t "quay.io/numaio/udf/reduce-go-sum:latest" --target sum .
+	docker build -t "quay.io/numaio/reduce-go-sum:latest" --target sum .
 
 clean:
 	-rm -rf ./dist

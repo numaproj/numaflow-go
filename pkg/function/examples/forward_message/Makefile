@@ -4,7 +4,7 @@ build:
 
 .PHONY: image
 image: build
-	docker build -t "quay.io/numaio/udf/map-go-forward-message:latest" --target forward-message .
+	docker build -t "quay.io/numaio/map-go-forward-message:latest" --target forward-message .
 
 clean:
 	-rm -rf ./dist

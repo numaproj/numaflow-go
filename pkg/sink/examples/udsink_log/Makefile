@@ -4,7 +4,7 @@ build:
 
 .PHONY: image
 image: build
-	docker build -t "quay.io/numaio/udsink/go-log:latest" --target log .
+	docker build -t "quay.io/numaio/sink-go-log:latest" --target log .
 
 clean:
 	-rm -rf ./dist
