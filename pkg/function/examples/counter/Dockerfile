@@ -10,7 +10,7 @@ COPY dist/go-counter-example /bin/go-counter-example
 RUN chmod +x /bin/go-counter-example
 
 ####################################################################################################
-# evenodd
+# counter
 ####################################################################################################
 FROM scratch as counter
 ARG ARCH
