@@ -9,23 +9,36 @@ import (
 	"syscall"
 
 	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
-	"github.com/numaproj/numaflow-go/pkg/sink"
+	sinksdk "github.com/numaproj/numaflow-go/pkg/sink"
 	"google.golang.org/grpc"
 )
 
 type server struct {
-	svc *sink.Service
+	svc *sinksdk.Service
 }
 
 // New creates a new server object.
 func New() *server {
 	s := new(server)
-	s.svc = new(sink.Service)
+	s.svc = new(sinksdk.Service)
 	return s
 }
 
 // RegisterSinker registers the sink operation handler to the server.
-func (s *server) RegisterSinker(h sink.SinkHandler) *server {
+// Example:
+// func handle(ctx context.Context, datumStreamCh <-chan sinksdk.Datum) sinksdk.Responses {
+// 	result := sinksdk.ResponsesBuilder()
+// 	for _, datum := range datumList {
+// 		fmt.Println(string(datum.Value()))
+// 		result = result.Append(sinksdk.ResponseOK(datum.ID()))
+// 	}
+// 	return result
+// }
+//
+// func main() {
+// 	server.New().RegisterSinker(sinksdk.SinkFunc(handle)).Start(context.Background())
+// }
+func (s *server) RegisterSinker(h sinksdk.SinkHandler) *server {
 	s.svc.Sinker = h
 	return s
 }
@@ -33,8 +46,8 @@ func (s *server) RegisterSinker(h sink.SinkHandler) *server {
 // Start starts the gRPC server via unix domain socket at configs.Addr.
 func (s *server) Start(ctx context.Context, inputOptions ...Option) {
 	var opts = &options{
-		sockAddr:       sink.Addr,
-		maxMessageSize: sink.DefaultMaxMessageSize,
+		sockAddr:       sinksdk.Addr,
+		maxMessageSize: sinksdk.DefaultMaxMessageSize,
 	}
 
 	for _, inputOption := range inputOptions {
@@ -53,9 +66,9 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) {
 	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	lis, err := net.Listen(sink.Protocol, opts.sockAddr)
+	lis, err := net.Listen(sinksdk.Protocol, opts.sockAddr)
 	if err != nil {
-		log.Fatalf("failed to execute net.Listen(%q, %q): %v", sink.Protocol, sink.Addr, err)
+		log.Fatalf("failed to execute net.Listen(%q, %q): %v", sinksdk.Protocol, sinksdk.Addr, err)
 	}
 	grpcSvr := grpc.NewServer(
 		grpc.MaxRecvMsgSize(opts.maxMessageSize),
