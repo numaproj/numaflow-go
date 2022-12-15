@@ -6,6 +6,7 @@ import (
 
 	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
 	"github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1/sinkmock"
+	"github.com/numaproj/numaflow-go/pkg/sink"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -13,6 +14,8 @@ import (
 type client struct {
 	grpcClt sinkpb.UserDefinedSinkClient
 }
+
+var _ sink.Client = (*client)(nil)
 
 // New creates a new mock client object.
 func New(c *sinkmock.MockUserDefinedSinkClient) (*client, error) {
@@ -35,9 +38,18 @@ func (c *client) IsReady(ctx context.Context, in *emptypb.Empty) (bool, error) {
 
 // SinkFn applies a function to a list of datum elements.
 func (c *client) SinkFn(ctx context.Context, datumList []*sinkpb.Datum) ([]*sinkpb.Response, error) {
-	responseList, err := c.grpcClt.SinkFn(ctx, &sinkpb.DatumList{Elements: datumList})
+	stream, err := c.grpcClt.SinkFn(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute c.grpcClt.SinkFn(): %w", err)
+	}
+	for _, datum := range datumList {
+		if err := stream.Send(datum); err != nil {
+			return nil, fmt.Errorf("failed to execute stream.Send(%v): %w", datum, err)
+		}
+	}
+	responseList, err := stream.CloseAndRecv()
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute stream.CloseAndRecv(): %w", err)
 	}
 
 	return responseList.GetResponses(), nil

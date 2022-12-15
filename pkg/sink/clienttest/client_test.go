@@ -63,6 +63,26 @@ func TestSinkFn(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	mockSinkClient := sinkmock.NewMockUserDefinedSink_SinkFnClient(ctrl)
+	mockSinkClient.EXPECT().Send(gomock.Any()).Return(nil).AnyTimes()
+	mockSinkClient.EXPECT().CloseAndRecv().Return(&sinkpb.ResponseList{
+		Responses: []*sinkpb.Response{
+			{
+				Id:      "test_id_0",
+				Success: true,
+				ErrMsg:  "",
+			},
+			{
+				Id:      "test_id_1",
+				Success: false,
+				ErrMsg:  "mock sink message error",
+			},
+		},
+	}, nil)
+
+	mockSinkErrClient := sinkmock.NewMockUserDefinedSink_SinkFnClient(ctrl)
+	mockSinkErrClient.EXPECT().Send(gomock.Any()).Return(nil).AnyTimes()
+
 	mockClient := sinkmock.NewMockUserDefinedSinkClient(ctrl)
 	testDatumList := []*sinkpb.Datum{
 		{
@@ -90,18 +110,8 @@ func TestSinkFn(t *testing.T) {
 			ErrMsg:  "mock sink message error",
 		},
 	}
-	mockClient.EXPECT().SinkFn(gomock.Any(), &rpcMsg{msg: &sinkpb.DatumList{
-		Elements: testDatumList,
-	}}).Return(&sinkpb.ResponseList{
-		Responses: testResponseList,
-	}, nil)
-	mockClient.EXPECT().SinkFn(gomock.Any(), &rpcMsg{msg: &sinkpb.DatumList{
-		Elements: testDatumList,
-	}}).Return(&sinkpb.ResponseList{
-		Responses: []*sinkpb.Response{
-			nil,
-		},
-	}, fmt.Errorf("mock SinkFn error"))
+	mockClient.EXPECT().SinkFn(gomock.Any(), gomock.Any()).Return(mockSinkClient, nil)
+	mockClient.EXPECT().SinkFn(gomock.Any(), gomock.Any()).Return(mockSinkErrClient, fmt.Errorf("mock SinkFn error"))
 
 	testClient, err := New(mockClient)
 	assert.NoError(t, err)
