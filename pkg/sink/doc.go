@@ -2,26 +2,26 @@
 // Example:
 // package main
 //
-// import (
+//	 import (
 //
-//	"context"
-//	"fmt"
+//		  "context"
+//		  "fmt"
 //
-//	sinksdk "github.com/numaproj/numaflow-go/pkg/sink"
-//	"github.com/numaproj/numaflow-go/pkg/sink/server"
+//	   sinksdk "github.com/numaproj/numaflow-go/pkg/sink"
+//		  "github.com/numaproj/numaflow-go/pkg/sink/server"
 //
-// )
+//	 )
 //
-//	func handle(ctx context.Context, datumList []sinksdk.Datum) sinksdk.Responses {
-//		result := sinksdk.ResponsesBuilder()
-//		for _, datum := range datumList {
-//			fmt.Println(string(datum.Value()))
-//			result = result.Append(sinksdk.ResponseOK(datum.ID()))
+//		func handle(ctx context.Context, datumList []sinksdk.Datum) sinksdk.Responses {
+//		  result := sinksdk.ResponsesBuilder()
+//		  for _, datum := range datumList {
+//		    fmt.Println(string(datum.Value()))
+//		    result = result.Append(sinksdk.ResponseOK(datum.ID()))
+//		  }
+//		  return result
 //		}
-//		return result
-//	}
 //
-//	func main() {
-//		server.New().RegisterSinker(sinksdk.SinkFunc(handle)).Start(context.Background())
-//	}
+//		func main() {
+//		  server.New().RegisterSinker(sinksdk.SinkFunc(handle)).Start(context.Background())
+//		}
 package sink
