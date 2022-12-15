@@ -12,9 +12,9 @@
 //
 // )
 //
-//	func handle(ctx context.Context, datumList []sinksdk.Datum) sinksdk.Responses {
+//	func handle(ctx context.Context, datumStreamCh <-chan sinksdk.Datum) sinksdk.Responses {
 //		result := sinksdk.ResponsesBuilder()
-//		for _, datum := range datumList {
+//		for datum := range datumStreamCh {
 //			fmt.Println(string(datum.Value()))
 //			result = result.Append(sinksdk.ResponseOK(datum.ID()))
 //		}
