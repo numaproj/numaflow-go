@@ -1,3 +1,3 @@
-# User Defined Sink - Log
+# Log
 
-An example User Defined Sink that print the payload of each incoming datum element.
+An example User Defined Sink that prints the payload of each incoming datum element.
