@@ -4,7 +4,7 @@ build:
 
 .PHONY: image
 image: build
-	docker build -t "quay.io/keranyang/numaflow/sink-go-redis:v1" --target redis .
+	docker build -t "quay.io/numaio/numaflow-go/sink-redis:latest" --target redis .
 
 clean:
 	-rm -rf ./dist
