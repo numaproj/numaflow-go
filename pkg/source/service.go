@@ -3,6 +3,7 @@ package source
 import (
 	"context"
 	"fmt"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"time"
 
 	sourcepb "github.com/numaproj/numaflow-go/pkg/apis/proto/source/v1"
@@ -64,8 +65,7 @@ func (fs *Service) TransformFn(ctx context.Context, d *sourcepb.Datum) (*sourcep
 	var elements []*sourcepb.Datum
 	for _, m := range messages.Items() {
 		elements = append(elements, &sourcepb.Datum{
-			// TODO - extract event time from message
-			EventTime: nil,
+			EventTime: &sourcepb.EventTime{EventTime: timestamppb.New(m.EventTime)},
 			Key:       m.Key,
 			Value:     m.Value,
 		})

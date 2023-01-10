@@ -33,7 +33,7 @@ func TestService_TransformFn(t *testing.T) {
 			fields: fields{
 				Transformer: TransformFunc(func(ctx context.Context, key string, datum Datum) Messages {
 					msg := datum.Value()
-					return MessagesBuilder().Append(MessageTo(key+"_test", msg))
+					return MessagesBuilder().Append(MessageTo(time.Time{}, key+"_test", msg))
 				}),
 			},
 			args: args{
@@ -48,8 +48,9 @@ func TestService_TransformFn(t *testing.T) {
 			want: &sourcepb.DatumList{
 				Elements: []*sourcepb.Datum{
 					{
-						Key:   "client_test",
-						Value: []byte(`test`),
+						EventTime: &sourcepb.EventTime{EventTime: timestamppb.New(time.Time{})},
+						Key:       "client_test",
+						Value:     []byte(`test`),
 					},
 				},
 			},

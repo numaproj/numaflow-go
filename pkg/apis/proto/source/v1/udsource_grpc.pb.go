@@ -24,7 +24,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type UserDefinedSourceTransformerClient interface {
 	// TransformFn applies a transform function to each datum element.
-	// The transformation includes data filtering and event time assignment.
+	// The datum transformation includes data filtering and event time assignment.
 	TransformFn(ctx context.Context, in *Datum, opts ...grpc.CallOption) (*DatumList, error)
 	// IsReady is the heartbeat endpoint for gRPC.
 	IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReadyResponse, error)
@@ -61,7 +61,7 @@ func (c *userDefinedSourceTransformerClient) IsReady(ctx context.Context, in *em
 // for forward compatibility
 type UserDefinedSourceTransformerServer interface {
 	// TransformFn applies a transform function to each datum element.
-	// The transformation includes data filtering and event time assignment.
+	// The datum transformation includes data filtering and event time assignment.
 	TransformFn(context.Context, *Datum) (*DatumList, error)
 	// IsReady is the heartbeat endpoint for gRPC.
 	IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error)

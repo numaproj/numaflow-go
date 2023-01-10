@@ -35,7 +35,7 @@ func Test_server_transform(t *testing.T) {
 			fields: fields{
 				transformHandler: sourcesdk.TransformFunc(func(ctx context.Context, key string, d sourcesdk.Datum) sourcesdk.Messages {
 					msg := d.Value()
-					return sourcesdk.MessagesBuilder().Append(sourcesdk.MessageTo(key+"_test", msg))
+					return sourcesdk.MessagesBuilder().Append(sourcesdk.MessageTo(time.Time{}, key+"_test", msg))
 				}),
 			},
 		},
@@ -63,10 +63,11 @@ func Test_server_transform(t *testing.T) {
 					Watermark: &sourcepb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				})
 				assert.NoError(t, err)
+				assert.Equal(t, 1, len(list))
 				for _, e := range list {
 					assert.Equal(t, key+"_test", e.GetKey())
 					assert.Equal(t, []byte(`server_test`), e.GetValue())
-					assert.Nil(t, e.GetEventTime())
+					assert.Equal(t, &sourcepb.EventTime{EventTime: timestamppb.New(time.Time{})}, e.GetEventTime())
 					assert.Nil(t, e.GetWatermark())
 				}
 			}

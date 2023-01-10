@@ -1,16 +1,20 @@
 package source
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 var (
 	DROP = fmt.Sprintf("%U__DROP__", '\\') // U+005C__DROP__
 	ALL  = fmt.Sprintf("%U__ALL__", '\\')  // U+005C__ALL__
 )
 
-// Message is used to wrap the data return by UDF functions
+// Message is used to wrap the data return by transform functions
 type Message struct {
-	Key   string
-	Value []byte
+	EventTime time.Time
+	Key       string
+	Value     []byte
 }
 
 // MessageToDrop creates a Message to be dropped
@@ -24,8 +28,8 @@ func MessageToAll(value []byte) Message {
 }
 
 // MessageTo creates a Message that will forward to specified "to"
-func MessageTo(to string, value []byte) Message {
-	return Message{Key: to, Value: value}
+func MessageTo(et time.Time, to string, value []byte) Message {
+	return Message{EventTime: et, Key: to, Value: value}
 }
 
 type Messages []Message
