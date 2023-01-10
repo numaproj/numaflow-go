@@ -21,6 +21,8 @@ func TestService_TransformFn(t *testing.T) {
 		ctx context.Context
 		d   *sourcepb.Datum
 	}
+
+	testTime := time.Date(2021, 8, 15, 14, 30, 45, 100, time.Local)
 	tests := []struct {
 		name    string
 		fields  fields
@@ -33,7 +35,62 @@ func TestService_TransformFn(t *testing.T) {
 			fields: fields{
 				Transformer: TransformFunc(func(ctx context.Context, key string, datum Datum) Messages {
 					msg := datum.Value()
-					return MessagesBuilder().Append(MessageTo(time.Time{}, key+"_test", msg))
+					return MessagesBuilder().Append(MessageTo(testTime, key+"_test", msg))
+				}),
+			},
+			args: args{
+				ctx: context.Background(),
+				d: &sourcepb.Datum{
+					Key:       "client",
+					Value:     []byte(`test`),
+					EventTime: &sourcepb.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &sourcepb.Watermark{Watermark: timestamppb.New(time.Time{})},
+				},
+			},
+			want: &sourcepb.DatumList{
+				Elements: []*sourcepb.Datum{
+					{
+						EventTime: &sourcepb.EventTime{EventTime: timestamppb.New(testTime)},
+						Key:       "client_test",
+						Value:     []byte(`test`),
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "map_fn_forward_msg_forward_to_all",
+			fields: fields{
+				Transformer: TransformFunc(func(ctx context.Context, key string, datum Datum) Messages {
+					msg := datum.Value()
+					return MessagesBuilder().Append(MessageToAll(testTime, msg))
+				}),
+			},
+			args: args{
+				ctx: context.Background(),
+				d: &sourcepb.Datum{
+					Key:       "client",
+					Value:     []byte(`test`),
+					EventTime: &sourcepb.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &sourcepb.Watermark{Watermark: timestamppb.New(time.Time{})},
+				},
+			},
+			want: &sourcepb.DatumList{
+				Elements: []*sourcepb.Datum{
+					{
+						EventTime: &sourcepb.EventTime{EventTime: timestamppb.New(testTime)},
+						Key:       ALL,
+						Value:     []byte(`test`),
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "map_fn_drop_msg",
+			fields: fields{
+				Transformer: TransformFunc(func(ctx context.Context, key string, datum Datum) Messages {
+					return MessagesBuilder().Append(MessageToDrop())
 				}),
 			},
 			args: args{
@@ -49,8 +106,8 @@ func TestService_TransformFn(t *testing.T) {
 				Elements: []*sourcepb.Datum{
 					{
 						EventTime: &sourcepb.EventTime{EventTime: timestamppb.New(time.Time{})},
-						Key:       "client_test",
-						Value:     []byte(`test`),
+						Key:       DROP,
+						Value:     []byte{},
 					},
 				},
 			},

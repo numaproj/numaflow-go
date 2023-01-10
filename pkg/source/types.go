@@ -23,8 +23,8 @@ func MessageToDrop() Message {
 }
 
 // MessageToAll creates a Message that will forward to all
-func MessageToAll(value []byte) Message {
-	return Message{Key: ALL, Value: value}
+func MessageToAll(et time.Time, value []byte) Message {
+	return Message{EventTime: et, Key: ALL, Value: value}
 }
 
 // MessageTo creates a Message that will forward to specified "to"

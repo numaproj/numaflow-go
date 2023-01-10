@@ -25,19 +25,18 @@ func New() *server {
 	return s
 }
 
-// TODO - update comments
-
 // RegisterTransformer registers the map operation handler to the server.
 // Example:
 //
-//	func handle(ctx context.Context, key string, data functionsdk.Datum) functionsdk.Messages {
-//		_ = data.EventTime() // Event time is available
-//		_ = data.Watermark() // Watermark is available
-//		return functionsdk.MessagesBuilder().Append(functionsdk.MessageToAll(data.Value()))
+//	func transformHandle(_ context.Context, key string, d sourcesdk.Datum) sourcesdk.Messages {
+//		// directly forward the input to the output without changing the event time
+//		_ = d.EventTime() // Event time is available
+//		_ = d.Watermark() // Watermark is available
+//		return sourcesdk.MessagesBuilder().Append(sourcesdk.MessageTo(d.EventTime(), key, d.Value()))
 //	}
 //
 //	func main() {
-//		server.New().RegisterMapper(functionsdk.MapFunc(handle)).Start(context.Background())
+//		server.New().RegisterTransformer(sourcesdk.TransformFunc(transformHandle)).Start(context.Background())
 //	}
 func (s *server) RegisterTransformer(m sourcesdk.TransformHandler) *server {
 	s.svc.Transformer = m

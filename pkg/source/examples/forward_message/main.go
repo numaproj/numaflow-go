@@ -8,16 +8,10 @@ import (
 )
 
 func transformHandle(_ context.Context, key string, d sourcesdk.Datum) sourcesdk.Messages {
-	// directly forward the input to the output
-	val := d.Value()
-	eventTime := d.EventTime()
-	_ = eventTime
-	watermark := d.Watermark()
-	_ = watermark
-
-	var resultKey = key
-	var resultVal = val
-	return sourcesdk.MessagesBuilder().Append(sourcesdk.MessageTo(d.EventTime(), resultKey, resultVal))
+	// directly forward the input to the output without changing the event time
+	_ = d.EventTime() // Event time is available
+	_ = d.Watermark() // Watermark is available
+	return sourcesdk.MessagesBuilder().Append(sourcesdk.MessageTo(d.EventTime(), key, d.Value()))
 }
 
 func main() {

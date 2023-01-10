@@ -16,8 +16,6 @@ service UserDefinedSourceTransformer {
   rpc IsReady(google.protobuf.Empty) returns (ReadyResponse);
 }
 
-// TODO - All messages below seem common, can they be defined once and shared among protos?
-
 message EventTime {
   // event_time is the time associated with each datum.
   google.protobuf.Timestamp event_time = 1;

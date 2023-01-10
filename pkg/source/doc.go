@@ -1,57 +1,25 @@
-// Package source implements the server code for User Defined Function in golang.
+// Package source implements the server code for User Defined Source Data Transformer in golang.
 //
-// Example Map
+// Example Transformer
 /*
   package main
 
   import (
+	"context"
+	sourcesdk "github.com/numaproj/numaflow-go/pkg/source"
 
-    "context"
-
-    functionsdk "github.com/numaproj/numaflow-go/pkg/function"
-    "github.com/numaproj/numaflow-go/pkg/function/server"
-
+	"github.com/numaproj/numaflow-go/pkg/source/server"
   )
 
-  // Simply return the same msg
-
-  func handle(ctx context.Context, key string, data functionsdk.Datum) functionsdk.Messages {
-    _ = data.EventTime() // Event time is available
-    _ = data.Watermark() // Watermark is available
-    return functionsdk.MessagesBuilder().Append(functionsdk.MessageToAll(data.Value()))
+  func transformHandle(_ context.Context, key string, d sourcesdk.Datum) sourcesdk.Messages {
+	// directly forward the input to the output without changing the event time
+	_ = d.EventTime() // Event time is available
+    _ = d.Watermark() // Watermark is available
+	return sourcesdk.MessagesBuilder().Append(sourcesdk.MessageTo(d.EventTime(), key, d.Value()))
   }
 
   func main() {
-    server.New().RegisterMapper(functionsdk.MapFunc(handle)).Start(context.Background())
-  }
-*/
-// Example Reduce
-/*
-  package main
-
-  import (
-    "context"
-    "strconv"
-
-    functionsdk "github.com/numaproj/numaflow-go/pkg/function"
-    "github.com/numaproj/numaflow-go/pkg/function/server"
-  )
-
-  // Count the incoming events
-
-  func handle(_ context.Context, key string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) functionsdk.Messages {
-    var resultKey = key
-    var resultVal []byte
-    var counter = 0
-    for _ = range reduceCh {
-        counter++
-    }
-    resultVal = []byte(strconv.Itoa(counter))
-    return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(resultKey, resultVal))
-  }
-
-  func main() {
-    server.New().RegisterReducer(functionsdk.ReduceFunc(handle)).Start(context.Background())
+	server.New().RegisterTransformer(sourcesdk.TransformFunc(transformHandle)).Start(context.Background())
   }
 */
 package source
