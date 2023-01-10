@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	sourcepb "github.com/numaproj/numaflow-go/pkg/apis/proto/source/v1"
+	client2 "github.com/numaproj/numaflow-go/pkg/sharedutils/client"
+	sharedutils "github.com/numaproj/numaflow-go/pkg/sharedutils/server"
 	sourcesdk "github.com/numaproj/numaflow-go/pkg/source"
 	"os"
 	"testing"
@@ -43,10 +45,10 @@ func Test_server_transform(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// note: using actual UDS connection
-			go New().RegisterTransformer(tt.fields.transformHandler).Start(context.Background(), WithSockAddr(file.Name()))
+			go New().RegisterTransformer(tt.fields.transformHandler).Start(context.Background(), sharedutils.WithSockAddr(file.Name()))
 
 			var ctx = context.Background()
-			c, err := client.New(client.WithSockAddr(file.Name()))
+			c, err := client.New(client2.WithSockAddr(file.Name()))
 			assert.NoError(t, err)
 			defer func() {
 				err = c.CloseConn(ctx)

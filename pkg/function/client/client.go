@@ -6,6 +6,7 @@ import (
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	"github.com/numaproj/numaflow-go/pkg/function"
+	sharedutils "github.com/numaproj/numaflow-go/pkg/sharedutils/client"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -18,9 +19,9 @@ type client struct {
 }
 
 // New creates a new client object.
-func New(inputOptions ...Option) (*client, error) {
-	var opts = &options{
-		sockAddr: function.Addr,
+func New(inputOptions ...sharedutils.Option) (*client, error) {
+	var opts = &sharedutils.Options{
+		SockAddr: function.Addr,
 	}
 
 	for _, inputOption := range inputOptions {
@@ -28,7 +29,7 @@ func New(inputOptions ...Option) (*client, error) {
 	}
 
 	c := new(client)
-	sockAddr := fmt.Sprintf("%s:%s", function.Protocol, opts.sockAddr)
+	sockAddr := fmt.Sprintf("%s:%s", function.Protocol, opts.SockAddr)
 	conn, err := grpc.Dial(sockAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute grpc.Dial(%q): %w", sockAddr, err)

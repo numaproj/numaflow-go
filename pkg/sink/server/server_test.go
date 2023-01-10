@@ -8,6 +8,8 @@ import (
 	"time"
 
 	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
+	clientutils "github.com/numaproj/numaflow-go/pkg/sharedutils/client"
+	serverutils "github.com/numaproj/numaflow-go/pkg/sharedutils/server"
 	sinksdk "github.com/numaproj/numaflow-go/pkg/sink"
 	"github.com/numaproj/numaflow-go/pkg/sink/client"
 	"github.com/stretchr/testify/assert"
@@ -52,10 +54,10 @@ func Test_server_sink(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// note: using actual UDS connection
 
-			go New().RegisterSinker(tt.fields.sinkHandler).Start(context.Background(), WithSockAddr(file.Name()))
+			go New().RegisterSinker(tt.fields.sinkHandler).Start(context.Background(), serverutils.WithSockAddr(file.Name()))
 
 			var ctx = context.Background()
-			c, err := client.New(client.WithSockAddr(file.Name()))
+			c, err := client.New(clientutils.WithSockAddr(file.Name()))
 			assert.NoError(t, err)
 			defer func() {
 				err = c.CloseConn(ctx)

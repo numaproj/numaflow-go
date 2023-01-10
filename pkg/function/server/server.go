@@ -10,6 +10,7 @@ import (
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
+	serverutils "github.com/numaproj/numaflow-go/pkg/sharedutils/server"
 	"google.golang.org/grpc"
 )
 
@@ -26,15 +27,16 @@ func New() *server {
 
 // RegisterMapper registers the map operation handler to the server.
 // Example:
-// func handle(ctx context.Context, key string, data functionsdk.Datum) functionsdk.Messages {
-// 	_ = data.EventTime() // Event time is available
-// 	_ = data.Watermark() // Watermark is available
-// 	return functionsdk.MessagesBuilder().Append(functionsdk.MessageToAll(data.Value()))
-// }
 //
-// func main() {
-// 	server.New().RegisterMapper(functionsdk.MapFunc(handle)).Start(context.Background())
-// }
+//	func handle(ctx context.Context, key string, data functionsdk.Datum) functionsdk.Messages {
+//		_ = data.EventTime() // Event time is available
+//		_ = data.Watermark() // Watermark is available
+//		return functionsdk.MessagesBuilder().Append(functionsdk.MessageToAll(data.Value()))
+//	}
+//
+//	func main() {
+//		server.New().RegisterMapper(functionsdk.MapFunc(handle)).Start(context.Background())
+//	}
 func (s *server) RegisterMapper(m functionsdk.MapHandler) *server {
 	s.svc.Mapper = m
 	return s
@@ -42,29 +44,30 @@ func (s *server) RegisterMapper(m functionsdk.MapHandler) *server {
 
 // RegisterReducer registers the reduce operation handler.
 // Example:
-// func handle(_ context.Context, key string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) functionsdk.Messages {
-// 	var resultKey = key
-// 	var resultVal []byte
-// 	for data := range reduceCh {
-// 		_ = data.EventTime() // Event time is available
-// 		_ = data.Watermark() // Watermark is available
-// 	}
-// 	return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(resultKey, resultVal))
-// }
 //
-// func main() {
-// 	server.New().RegisterReducer(functionsdk.ReduceFunc(handle)).Start(context.Background())
-// }
+//	func handle(_ context.Context, key string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) functionsdk.Messages {
+//		var resultKey = key
+//		var resultVal []byte
+//		for data := range reduceCh {
+//			_ = data.EventTime() // Event time is available
+//			_ = data.Watermark() // Watermark is available
+//		}
+//		return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(resultKey, resultVal))
+//	}
+//
+//	func main() {
+//		server.New().RegisterReducer(functionsdk.ReduceFunc(handle)).Start(context.Background())
+//	}
 func (s *server) RegisterReducer(r functionsdk.ReduceHandler) *server {
 	s.svc.Reducer = r
 	return s
 }
 
 // Start starts the gRPC server via unix domain socket at configs.Addr.
-func (s *server) Start(ctx context.Context, inputOptions ...Option) {
-	var opts = &options{
-		sockAddr:       functionsdk.Addr,
-		maxMessageSize: functionsdk.DefaultMaxMessageSize,
+func (s *server) Start(ctx context.Context, inputOptions ...serverutils.Option) {
+	var opts = &serverutils.Options{
+		SockAddr:       functionsdk.Addr,
+		MaxMessageSize: functionsdk.DefaultMaxMessageSize,
 	}
 
 	for _, inputOption := range inputOptions {
@@ -72,8 +75,8 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) {
 	}
 
 	cleanup := func() {
-		if _, err := os.Stat(opts.sockAddr); err == nil {
-			if err := os.RemoveAll(opts.sockAddr); err != nil {
+		if _, err := os.Stat(opts.SockAddr); err == nil {
+			if err := os.RemoveAll(opts.SockAddr); err != nil {
 				log.Fatal(err)
 			}
 		}
@@ -83,13 +86,13 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) {
 	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	lis, err := net.Listen(functionsdk.Protocol, opts.sockAddr)
+	lis, err := net.Listen(functionsdk.Protocol, opts.SockAddr)
 	if err != nil {
 		log.Fatalf("failed to execute net.Listen(%q, %q): %v", functionsdk.Protocol, functionsdk.Addr, err)
 	}
 	grpcSvr := grpc.NewServer(
-		grpc.MaxRecvMsgSize(opts.maxMessageSize),
-		grpc.MaxSendMsgSize(opts.maxMessageSize),
+		grpc.MaxRecvMsgSize(opts.MaxMessageSize),
+		grpc.MaxSendMsgSize(opts.MaxMessageSize),
 	)
 	functionpb.RegisterUserDefinedFunctionServer(grpcSvr, s.svc)
 

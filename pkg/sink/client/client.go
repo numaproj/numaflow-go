@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
+	sharedutils "github.com/numaproj/numaflow-go/pkg/sharedutils/client"
 	"github.com/numaproj/numaflow-go/pkg/sink"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -20,10 +21,10 @@ type client struct {
 var _ sink.Client = (*client)(nil)
 
 // New creates a new client object.
-func New(inputOptions ...Option) (*client, error) {
+func New(inputOptions ...sharedutils.Option) (*client, error) {
 
-	var opts = &options{
-		sockAddr: sink.Addr,
+	var opts = &sharedutils.Options{
+		SockAddr: sink.Addr,
 	}
 
 	for _, inputOption := range inputOptions {
@@ -31,7 +32,7 @@ func New(inputOptions ...Option) (*client, error) {
 	}
 
 	c := new(client)
-	sockAddr := fmt.Sprintf("%s:%s", sink.Protocol, opts.sockAddr)
+	sockAddr := fmt.Sprintf("%s:%s", sink.Protocol, opts.SockAddr)
 	conn, err := grpc.Dial(sockAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute grpc.Dial(%q): %w", sockAddr, err)

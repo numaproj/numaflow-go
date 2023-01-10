@@ -3,7 +3,9 @@ package client
 import (
 	"context"
 	"fmt"
+
 	sourcepb "github.com/numaproj/numaflow-go/pkg/apis/proto/source/v1"
+	clientutils "github.com/numaproj/numaflow-go/pkg/sharedutils/client"
 	"github.com/numaproj/numaflow-go/pkg/source"
 
 	"google.golang.org/grpc"
@@ -18,9 +20,9 @@ type client struct {
 }
 
 // New creates a new client object.
-func New(inputOptions ...Option) (*client, error) {
-	var opts = &options{
-		sockAddr: source.Addr,
+func New(inputOptions ...clientutils.Option) (*client, error) {
+	var opts = &clientutils.Options{
+		SockAddr: source.Addr,
 	}
 
 	for _, inputOption := range inputOptions {
@@ -28,7 +30,7 @@ func New(inputOptions ...Option) (*client, error) {
 	}
 
 	c := new(client)
-	sockAddr := fmt.Sprintf("%s:%s", source.Protocol, opts.sockAddr)
+	sockAddr := fmt.Sprintf("%s:%s", source.Protocol, opts.SockAddr)
 	conn, err := grpc.Dial(sockAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute grpc.Dial(%q): %w", sockAddr, err)
@@ -52,13 +54,11 @@ func (c *client) IsReady(ctx context.Context, in *emptypb.Empty) (bool, error) {
 	return resp.GetReady(), nil
 }
 
-// TransformFn applies a transform function to each datum element.
-// The datum transformation includes data filtering and event time assignment.
 func (c *client) TransformFn(ctx context.Context, datum *sourcepb.Datum) ([]*sourcepb.Datum, error) {
-	mappedDatumList, err := c.grpcClt.TransformFn(ctx, datum)
+	transformedDatumList, err := c.grpcClt.TransformFn(ctx, datum)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute c.grpcClt.TransformFn(): %w", err)
 	}
 
-	return mappedDatumList.GetElements(), nil
+	return transformedDatumList.GetElements(), nil
 }

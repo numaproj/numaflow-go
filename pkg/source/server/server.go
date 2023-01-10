@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	sharedutils "github.com/numaproj/numaflow-go/pkg/sharedutils/server"
 	"log"
 	"net"
 	"os"
@@ -25,7 +26,7 @@ func New() *server {
 	return s
 }
 
-// RegisterTransformer registers the map operation handler to the server.
+// RegisterTransformer registers the transform operation handler to the server.
 // Example:
 //
 //	func transformHandle(_ context.Context, key string, d sourcesdk.Datum) sourcesdk.Messages {
@@ -44,10 +45,10 @@ func (s *server) RegisterTransformer(m sourcesdk.TransformHandler) *server {
 }
 
 // Start starts the gRPC server via unix domain socket at configs.Addr.
-func (s *server) Start(ctx context.Context, inputOptions ...Option) {
-	var opts = &options{
-		sockAddr:       sourcesdk.Addr,
-		maxMessageSize: sourcesdk.DefaultMaxMessageSize,
+func (s *server) Start(ctx context.Context, inputOptions ...sharedutils.Option) {
+	var opts = &sharedutils.Options{
+		SockAddr:       sourcesdk.Addr,
+		MaxMessageSize: sourcesdk.DefaultMaxMessageSize,
 	}
 
 	for _, inputOption := range inputOptions {
@@ -55,8 +56,8 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) {
 	}
 
 	cleanup := func() {
-		if _, err := os.Stat(opts.sockAddr); err == nil {
-			if err := os.RemoveAll(opts.sockAddr); err != nil {
+		if _, err := os.Stat(opts.SockAddr); err == nil {
+			if err := os.RemoveAll(opts.SockAddr); err != nil {
 				log.Fatal(err)
 			}
 		}
@@ -66,13 +67,13 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) {
 	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	lis, err := net.Listen(sourcesdk.Protocol, opts.sockAddr)
+	lis, err := net.Listen(sourcesdk.Protocol, opts.SockAddr)
 	if err != nil {
 		log.Fatalf("failed to execute net.Listen(%q, %q): %v", sourcesdk.Protocol, sourcesdk.Addr, err)
 	}
 	grpcSvr := grpc.NewServer(
-		grpc.MaxRecvMsgSize(opts.maxMessageSize),
-		grpc.MaxSendMsgSize(opts.maxMessageSize),
+		grpc.MaxRecvMsgSize(opts.MaxMessageSize),
+		grpc.MaxSendMsgSize(opts.MaxMessageSize),
 	)
 	sourcepb.RegisterUserDefinedSourceTransformerServer(grpcSvr, s.svc)
 

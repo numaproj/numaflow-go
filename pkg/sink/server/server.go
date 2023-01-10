@@ -9,7 +9,9 @@ import (
 	"syscall"
 
 	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
+	serverutils "github.com/numaproj/numaflow-go/pkg/sharedutils/server"
 	sinksdk "github.com/numaproj/numaflow-go/pkg/sink"
+
 	"google.golang.org/grpc"
 )
 
@@ -26,28 +28,29 @@ func New() *server {
 
 // RegisterSinker registers the sink operation handler to the server.
 // Example:
-// func handle(ctx context.Context, datumStreamCh <-chan sinksdk.Datum) sinksdk.Responses {
-// 	result := sinksdk.ResponsesBuilder()
-// 	for _, datum := range datumList {
-// 		fmt.Println(string(datum.Value()))
-// 		result = result.Append(sinksdk.ResponseOK(datum.ID()))
-// 	}
-// 	return result
-// }
 //
-// func main() {
-// 	server.New().RegisterSinker(sinksdk.SinkFunc(handle)).Start(context.Background())
-// }
+//	func handle(ctx context.Context, datumStreamCh <-chan sinksdk.Datum) sinksdk.Responses {
+//		result := sinksdk.ResponsesBuilder()
+//		for _, datum := range datumList {
+//			fmt.Println(string(datum.Value()))
+//			result = result.Append(sinksdk.ResponseOK(datum.ID()))
+//		}
+//		return result
+//	}
+//
+//	func main() {
+//		server.New().RegisterSinker(sinksdk.SinkFunc(handle)).Start(context.Background())
+//	}
 func (s *server) RegisterSinker(h sinksdk.SinkHandler) *server {
 	s.svc.Sinker = h
 	return s
 }
 
 // Start starts the gRPC server via unix domain socket at configs.Addr.
-func (s *server) Start(ctx context.Context, inputOptions ...Option) {
-	var opts = &options{
-		sockAddr:       sinksdk.Addr,
-		maxMessageSize: sinksdk.DefaultMaxMessageSize,
+func (s *server) Start(ctx context.Context, inputOptions ...serverutils.Option) {
+	var opts = &serverutils.Options{
+		SockAddr:       sinksdk.Addr,
+		MaxMessageSize: sinksdk.DefaultMaxMessageSize,
 	}
 
 	for _, inputOption := range inputOptions {
@@ -55,8 +58,8 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) {
 	}
 
 	cleanup := func() {
-		if _, err := os.Stat(opts.sockAddr); err == nil {
-			if err := os.RemoveAll(opts.sockAddr); err != nil {
+		if _, err := os.Stat(opts.SockAddr); err == nil {
+			if err := os.RemoveAll(opts.SockAddr); err != nil {
 				log.Fatal(err)
 			}
 		}
@@ -66,13 +69,13 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) {
 	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	lis, err := net.Listen(sinksdk.Protocol, opts.sockAddr)
+	lis, err := net.Listen(sinksdk.Protocol, opts.SockAddr)
 	if err != nil {
 		log.Fatalf("failed to execute net.Listen(%q, %q): %v", sinksdk.Protocol, sinksdk.Addr, err)
 	}
 	grpcSvr := grpc.NewServer(
-		grpc.MaxRecvMsgSize(opts.maxMessageSize),
-		grpc.MaxSendMsgSize(opts.maxMessageSize),
+		grpc.MaxRecvMsgSize(opts.MaxMessageSize),
+		grpc.MaxSendMsgSize(opts.MaxMessageSize),
 	)
 	sinkpb.RegisterUserDefinedSinkServer(grpcSvr, s.svc)
 

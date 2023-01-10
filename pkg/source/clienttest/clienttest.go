@@ -33,8 +33,6 @@ func (c *client) IsReady(ctx context.Context, in *emptypb.Empty) (bool, error) {
 	return resp.GetReady(), nil
 }
 
-// TransformFn applies a transform function to each datum element.
-// The datum transformation includes data filtering and event time assignment.
 func (c *client) TransformFn(ctx context.Context, datum *sourcepb.Datum) ([]*sourcepb.Datum, error) {
 	transformedDatumList, err := c.grpcClt.TransformFn(ctx, datum)
 	if err != nil {

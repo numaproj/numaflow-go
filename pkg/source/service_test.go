@@ -31,7 +31,7 @@ func TestService_TransformFn(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "map_fn_forward_msg",
+			name: "transform_fn_forward_msg",
 			fields: fields{
 				Transformer: TransformFunc(func(ctx context.Context, key string, datum Datum) Messages {
 					msg := datum.Value()
@@ -59,7 +59,7 @@ func TestService_TransformFn(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "map_fn_forward_msg_forward_to_all",
+			name: "transform_fn_forward_msg_forward_to_all",
 			fields: fields{
 				Transformer: TransformFunc(func(ctx context.Context, key string, datum Datum) Messages {
 					msg := datum.Value()
@@ -87,7 +87,7 @@ func TestService_TransformFn(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "map_fn_drop_msg",
+			name: "transform_fn_drop_msg",
 			fields: fields{
 				Transformer: TransformFunc(func(ctx context.Context, key string, datum Datum) Messages {
 					return MessagesBuilder().Append(MessageToDrop())
@@ -125,7 +125,7 @@ func TestService_TransformFn(t *testing.T) {
 			ctx := grpcmd.NewIncomingContext(context.Background(), grpcmd.New(map[string]string{DatumKey: "client"}))
 			got, err := fs.TransformFn(ctx, tt.args.d)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("MapFn() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("TransformFn() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {

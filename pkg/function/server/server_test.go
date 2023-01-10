@@ -11,6 +11,8 @@ import (
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
 	"github.com/numaproj/numaflow-go/pkg/function/client"
+	clientutils "github.com/numaproj/numaflow-go/pkg/sharedutils/client"
+	serverutils "github.com/numaproj/numaflow-go/pkg/sharedutils/server"
 	"github.com/stretchr/testify/assert"
 	grpcmd "google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -46,10 +48,10 @@ func Test_server_map(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// note: using actual UDS connection
 
-			go New().RegisterMapper(tt.fields.mapHandler).Start(context.Background(), WithSockAddr(file.Name()))
+			go New().RegisterMapper(tt.fields.mapHandler).Start(context.Background(), serverutils.WithSockAddr(file.Name()))
 
 			var ctx = context.Background()
-			c, err := client.New(client.WithSockAddr(file.Name()))
+			c, err := client.New(clientutils.WithSockAddr(file.Name()))
 			assert.NoError(t, err)
 			defer func() {
 				err = c.CloseConn(ctx)
@@ -132,10 +134,10 @@ func Test_server_reduce(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// note: using actual UDS connection
 
-			go New().RegisterReducer(tt.fields.reduceHandler).Start(context.Background(), WithSockAddr(file.Name()))
+			go New().RegisterReducer(tt.fields.reduceHandler).Start(context.Background(), serverutils.WithSockAddr(file.Name()))
 
 			var ctx = context.Background()
-			c, err := client.New(client.WithSockAddr(file.Name()))
+			c, err := client.New(clientutils.WithSockAddr(file.Name()))
 			assert.NoError(t, err)
 			defer func() {
 				err = c.CloseConn(ctx)
