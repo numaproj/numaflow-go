@@ -19,7 +19,6 @@ type client struct {
 
 // New creates a new client object.
 func New(inputOptions ...Option) (*client, error) {
-
 	var opts = &options{
 		sockAddr: function.Addr,
 	}
