@@ -26,35 +26,54 @@ func New() *server {
 
 // RegisterMapper registers the map operation handler to the server.
 // Example:
-// func handle(ctx context.Context, key string, data functionsdk.Datum) functionsdk.Messages {
-// 	_ = data.EventTime() // Event time is available
-// 	_ = data.Watermark() // Watermark is available
-// 	return functionsdk.MessagesBuilder().Append(functionsdk.MessageToAll(data.Value()))
-// }
 //
-// func main() {
-// 	server.New().RegisterMapper(functionsdk.MapFunc(handle)).Start(context.Background())
-// }
+//	func handle(ctx context.Context, key string, data functionsdk.Datum) functionsdk.Messages {
+//		_ = data.EventTime() // Event time is available
+//		_ = data.Watermark() // Watermark is available
+//		return functionsdk.MessagesBuilder().Append(functionsdk.MessageToAll(data.Value()))
+//	}
+//
+//	func main() {
+//		server.New().RegisterMapper(functionsdk.MapFunc(handle)).Start(context.Background())
+//	}
 func (s *server) RegisterMapper(m functionsdk.MapHandler) *server {
 	s.svc.Mapper = m
 	return s
 }
 
+// RegisterMapperT registers the mapT operation handler to the server.
+// Example:
+//
+//	func handle(ctx context.Context, key string, data functionsdk.Datum) functionsdk.MessageTs {
+//		_ = data.EventTime() // Event time is available
+//		_ = data.Watermark() // Watermark is available
+//		return functionsdk.MessageTsBuilder().Append(functionsdk.MessageTToAll(data.Value()))
+//	}
+//
+//	func main() {
+//		server.New().RegisterMapperT(functionsdk.MapTFunc(handle)).Start(context.Background())
+//	}
+func (s *server) RegisterMapperT(m functionsdk.MapTHandler) *server {
+	s.svc.MapperT = m
+	return s
+}
+
 // RegisterReducer registers the reduce operation handler.
 // Example:
-// func handle(_ context.Context, key string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) functionsdk.Messages {
-// 	var resultKey = key
-// 	var resultVal []byte
-// 	for data := range reduceCh {
-// 		_ = data.EventTime() // Event time is available
-// 		_ = data.Watermark() // Watermark is available
-// 	}
-// 	return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(resultKey, resultVal))
-// }
 //
-// func main() {
-// 	server.New().RegisterReducer(functionsdk.ReduceFunc(handle)).Start(context.Background())
-// }
+//	func handle(_ context.Context, key string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) functionsdk.Messages {
+//		var resultKey = key
+//		var resultVal []byte
+//		for data := range reduceCh {
+//			_ = data.EventTime() // Event time is available
+//			_ = data.Watermark() // Watermark is available
+//		}
+//		return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(resultKey, resultVal))
+//	}
+//
+//	func main() {
+//		server.New().RegisterReducer(functionsdk.ReduceFunc(handle)).Start(context.Background())
+//	}
 func (s *server) RegisterReducer(r functionsdk.ReduceHandler) *server {
 	s.svc.Reducer = r
 	return s

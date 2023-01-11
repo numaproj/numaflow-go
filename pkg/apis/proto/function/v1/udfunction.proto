@@ -8,10 +8,14 @@ import "google/protobuf/empty.proto";
 package function.v1;
 
 service UserDefinedFunction {
-  // Applies a function to each datum element.
+  // MapFn applies a function to each datum element without modifying event time.
   rpc MapFn(Datum) returns (DatumList);
 
-  // Applies a reduce function to a datum stream.
+  // MapTFn applies a function to each datum element.
+  // In addition to map function, MapTFn also supports assigning a new event time to datum.
+  rpc MapTFn(Datum) returns (DatumList);
+
+  // ReduceFn applies a reduce function to a datum stream.
   rpc ReduceFn(stream Datum) returns (DatumList);
 
   // IsReady is the heartbeat endpoint for gRPC.

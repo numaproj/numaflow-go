@@ -2,12 +2,13 @@ package main
 
 import (
 	"context"
+	"github.com/numaproj/numaflow-go/pkg/function/types"
 
 	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
 	"github.com/numaproj/numaflow-go/pkg/function/server"
 )
 
-func mapHandle(_ context.Context, key string, d functionsdk.Datum) functionsdk.Messages {
+func mapHandle(_ context.Context, key string, d functionsdk.Datum) types.Messages {
 	// directly forward the input to the output
 	val := d.Value()
 	eventTime := d.EventTime()
@@ -17,7 +18,7 @@ func mapHandle(_ context.Context, key string, d functionsdk.Datum) functionsdk.M
 
 	var resultKey = key
 	var resultVal = val
-	return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(resultKey, resultVal))
+	return types.MessagesBuilder().Append(types.MessageTo(resultKey, resultVal))
 }
 
 func main() {

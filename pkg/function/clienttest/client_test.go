@@ -93,3 +93,40 @@ func TestMapFn(t *testing.T) {
 	assert.Nil(t, got)
 	assert.EqualError(t, err, "failed to execute c.grpcClt.MapFn(): mock MapFn error")
 }
+
+func TestMapTFn(t *testing.T) {
+	var ctx = context.Background()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockClient := funcmock.NewMockUserDefinedFunctionClient(ctrl)
+	testDatum := &functionpb.Datum{
+		Key:       "test_success_key",
+		Value:     []byte(`forward_message`),
+		EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Unix(1661169600, 0))},
+		Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
+	}
+	mockClient.EXPECT().MapTFn(gomock.Any(), &rpcMsg{msg: testDatum}).Return(&functionpb.DatumList{
+		Elements: []*functionpb.Datum{
+			testDatum,
+		},
+	}, nil)
+	mockClient.EXPECT().MapTFn(gomock.Any(), &rpcMsg{msg: testDatum}).Return(&functionpb.DatumList{
+		Elements: []*functionpb.Datum{
+			nil,
+		},
+	}, fmt.Errorf("mock MapTFn error"))
+	testClient, err := New(mockClient)
+	assert.NoError(t, err)
+	reflect.DeepEqual(testClient, &client{
+		grpcClt: mockClient,
+	})
+	got, err := testClient.MapTFn(ctx, testDatum)
+	reflect.DeepEqual(got, testDatum)
+	assert.NoError(t, err)
+
+	got, err = testClient.MapTFn(ctx, testDatum)
+	assert.Nil(t, got)
+	assert.EqualError(t, err, "failed to execute c.grpcClt.MapTFn(): mock MapTFn error")
+}

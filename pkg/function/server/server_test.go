@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"github.com/numaproj/numaflow-go/pkg/function/types"
 	"os"
 	"strconv"
 	"testing"
@@ -16,6 +17,12 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+type fields struct {
+	mapHandler    functionsdk.MapHandler
+	mapTHandler   functionsdk.MapTHandler
+	reduceHandler functionsdk.ReduceHandler
+}
+
 func Test_server_map(t *testing.T) {
 	file, err := os.CreateTemp("/tmp", "numaflow-test.sock")
 	assert.NoError(t, err)
@@ -23,11 +30,6 @@ func Test_server_map(t *testing.T) {
 		err = os.RemoveAll(file.Name())
 		assert.NoError(t, err)
 	}()
-
-	type fields struct {
-		mapHandler    functionsdk.MapHandler
-		reduceHandler functionsdk.ReduceHandler
-	}
 	tests := []struct {
 		name   string
 		fields fields
@@ -35,9 +37,9 @@ func Test_server_map(t *testing.T) {
 		{
 			name: "server_map",
 			fields: fields{
-				mapHandler: functionsdk.MapFunc(func(ctx context.Context, key string, d functionsdk.Datum) functionsdk.Messages {
+				mapHandler: functionsdk.MapFunc(func(ctx context.Context, key string, d functionsdk.Datum) types.Messages {
 					msg := d.Value()
-					return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(key+"_test", msg))
+					return types.MessagesBuilder().Append(types.MessageTo(key+"_test", msg))
 				}),
 			},
 		},
@@ -78,6 +80,63 @@ func Test_server_map(t *testing.T) {
 	}
 }
 
+func Test_server_mapT(t *testing.T) {
+	file, err := os.CreateTemp("/tmp", "numaflow-test.sock")
+	assert.NoError(t, err)
+	defer func() {
+		err = os.RemoveAll(file.Name())
+		assert.NoError(t, err)
+	}()
+	tests := []struct {
+		name   string
+		fields fields
+	}{
+		{
+			name: "server_mapT",
+			fields: fields{
+				mapTHandler: functionsdk.MapTFunc(func(ctx context.Context, key string, d functionsdk.Datum) types.MessageTs {
+					msg := d.Value()
+					return types.MessageTsBuilder().Append(types.MessageTTo(time.Time{}, key+"_test", msg))
+				}),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// note: using actual UDS connection
+
+			go New().RegisterMapperT(tt.fields.mapTHandler).Start(context.Background(), WithSockAddr(file.Name()))
+
+			var ctx = context.Background()
+			c, err := client.New(client.WithSockAddr(file.Name()))
+			assert.NoError(t, err)
+			defer func() {
+				err = c.CloseConn(ctx)
+				assert.NoError(t, err)
+			}()
+			for i := 0; i < 10; i++ {
+				key := fmt.Sprintf("client_%d", i)
+				// set the key in metadata for map function
+				md := grpcmd.New(map[string]string{functionsdk.DatumKey: key})
+				ctx = grpcmd.NewOutgoingContext(ctx, md)
+				list, err := c.MapTFn(ctx, &functionpb.Datum{
+					Key:       key,
+					Value:     []byte(`server_test`),
+					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
+				})
+				assert.NoError(t, err)
+				for _, e := range list {
+					assert.Equal(t, key+"_test", e.GetKey())
+					assert.Equal(t, []byte(`server_test`), e.GetValue())
+					assert.Equal(t, &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})}, e.GetEventTime())
+					assert.Nil(t, e.GetWatermark())
+				}
+			}
+		})
+	}
+}
+
 func Test_server_reduce(t *testing.T) {
 	file, err := os.CreateTemp("/tmp", "numaflow-test.sock")
 	assert.NoError(t, err)
@@ -85,13 +144,7 @@ func Test_server_reduce(t *testing.T) {
 		err = os.RemoveAll(file.Name())
 		assert.NoError(t, err)
 	}()
-
 	var testKey = "reduce_key"
-
-	type fields struct {
-		mapHandler    functionsdk.MapHandler
-		reduceHandler functionsdk.ReduceHandler
-	}
 	tests := []struct {
 		name   string
 		fields fields
@@ -99,7 +152,7 @@ func Test_server_reduce(t *testing.T) {
 		{
 			name: "server_reduce",
 			fields: fields{
-				reduceHandler: functionsdk.ReduceFunc(func(ctx context.Context, key string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) functionsdk.Messages {
+				reduceHandler: functionsdk.ReduceFunc(func(ctx context.Context, key string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) types.Messages {
 					// sum up values for the same key
 
 					// in this test case, md is nil
@@ -123,7 +176,7 @@ func Test_server_reduce(t *testing.T) {
 						sum += v
 					}
 					resultVal = []byte(strconv.Itoa(sum))
-					return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(resultKey, resultVal))
+					return types.MessagesBuilder().Append(types.MessageTo(resultKey, resultVal))
 				}),
 			},
 		},
