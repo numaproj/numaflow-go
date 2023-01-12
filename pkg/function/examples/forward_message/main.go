@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+
 	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
 	"github.com/numaproj/numaflow-go/pkg/function/server"
 )

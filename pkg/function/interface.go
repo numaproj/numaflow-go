@@ -37,13 +37,13 @@ type Client interface {
 
 // MapHandler is the interface of map function implementation.
 type MapHandler interface {
-	// HandleDo is the function to process each coming message
+	// HandleDo is the function to process each coming message.
 	HandleDo(ctx context.Context, key string, datum Datum) Messages
 }
 
 // MapTHandler is the interface of mapT function implementation.
 type MapTHandler interface {
-	// HandleDo is the function to process each coming message
+	// HandleDo is the function to process each coming message.
 	HandleDo(ctx context.Context, key string, datum Datum) MessageTs
 }
 

@@ -273,6 +273,7 @@ func TestService_IsReady(t *testing.T) {
 			name: "is_ready",
 			fields: fields{
 				mapper:  nil,
+				mapperT: nil,
 				reducer: nil,
 			},
 			args: args{
@@ -289,6 +290,7 @@ func TestService_IsReady(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			fs := &Service{
 				Mapper:  tt.fields.mapper,
+				MapperT: tt.fields.mapperT,
 				Reducer: tt.fields.reducer,
 			}
 			got, err := fs.IsReady(tt.args.in0, tt.args.in1)

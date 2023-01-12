@@ -27,6 +27,7 @@
 */
 //
 // Example MapT (assigning a random event time to a message)
+// MapT includes both Map and EventTime assignment functionalities.
 /*
   package main
 
