@@ -2,14 +2,13 @@ package main
 
 import (
 	"context"
-	"github.com/numaproj/numaflow-go/pkg/function/types"
 	"strconv"
 
 	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
 	"github.com/numaproj/numaflow-go/pkg/function/server"
 )
 
-func reduceHandle(_ context.Context, key string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) types.Messages {
+func reduceHandle(_ context.Context, key string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) functionsdk.Messages {
 	// count the incoming events
 	var resultKey = key
 	var resultVal []byte
@@ -18,7 +17,7 @@ func reduceHandle(_ context.Context, key string, reduceCh <-chan functionsdk.Dat
 		counter++
 	}
 	resultVal = []byte(strconv.Itoa(counter))
-	return types.MessagesBuilder().Append(types.MessageTo(resultKey, resultVal))
+	return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(resultKey, resultVal))
 }
 
 func main() {

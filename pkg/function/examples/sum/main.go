@@ -3,14 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/numaproj/numaflow-go/pkg/function/types"
 	"strconv"
 
 	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
 	"github.com/numaproj/numaflow-go/pkg/function/server"
 )
 
-func reduceHandle(_ context.Context, key string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) types.Messages {
+func reduceHandle(_ context.Context, key string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) functionsdk.Messages {
 	// sum up values for the same key
 	intervalWindow := md.IntervalWindow()
 	_ = intervalWindow
@@ -33,7 +32,7 @@ func reduceHandle(_ context.Context, key string, reduceCh <-chan functionsdk.Dat
 		sum += v
 	}
 	resultVal = []byte(strconv.Itoa(sum))
-	return types.MessagesBuilder().Append(types.MessageTo(resultKey, resultVal))
+	return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(resultKey, resultVal))
 }
 
 func main() {

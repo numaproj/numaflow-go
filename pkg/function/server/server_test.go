@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"github.com/numaproj/numaflow-go/pkg/function/types"
 	"os"
 	"strconv"
 	"testing"
@@ -37,9 +36,9 @@ func Test_server_map(t *testing.T) {
 		{
 			name: "server_map",
 			fields: fields{
-				mapHandler: functionsdk.MapFunc(func(ctx context.Context, key string, d functionsdk.Datum) types.Messages {
+				mapHandler: functionsdk.MapFunc(func(ctx context.Context, key string, d functionsdk.Datum) functionsdk.Messages {
 					msg := d.Value()
-					return types.MessagesBuilder().Append(types.MessageTo(key+"_test", msg))
+					return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(key+"_test", msg))
 				}),
 			},
 		},
@@ -94,9 +93,9 @@ func Test_server_mapT(t *testing.T) {
 		{
 			name: "server_mapT",
 			fields: fields{
-				mapTHandler: functionsdk.MapTFunc(func(ctx context.Context, key string, d functionsdk.Datum) types.MessageTs {
+				mapTHandler: functionsdk.MapTFunc(func(ctx context.Context, key string, d functionsdk.Datum) functionsdk.MessageTs {
 					msg := d.Value()
-					return types.MessageTsBuilder().Append(types.MessageTTo(time.Time{}, key+"_test", msg))
+					return functionsdk.MessageTsBuilder().Append(functionsdk.MessageTTo(time.Time{}, key+"_test", msg))
 				}),
 			},
 		},
@@ -152,7 +151,7 @@ func Test_server_reduce(t *testing.T) {
 		{
 			name: "server_reduce",
 			fields: fields{
-				reduceHandler: functionsdk.ReduceFunc(func(ctx context.Context, key string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) types.Messages {
+				reduceHandler: functionsdk.ReduceFunc(func(ctx context.Context, key string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) functionsdk.Messages {
 					// sum up values for the same key
 
 					// in this test case, md is nil
@@ -176,7 +175,7 @@ func Test_server_reduce(t *testing.T) {
 						sum += v
 					}
 					resultVal = []byte(strconv.Itoa(sum))
-					return types.MessagesBuilder().Append(types.MessageTo(resultKey, resultVal))
+					return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(resultKey, resultVal))
 				}),
 			},
 		},

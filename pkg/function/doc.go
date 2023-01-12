@@ -26,7 +26,7 @@
   }
 */
 //
-// Example MapT (assigning a random event time to message)
+// Example MapT (assigning a random event time to a message)
 /*
   package main
 
@@ -37,11 +37,10 @@
 
 	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
 	"github.com/numaproj/numaflow-go/pkg/function/server"
-	"github.com/numaproj/numaflow-go/pkg/function/types"
   )
 
-  func mapTHandle(_ context.Context, key string, d functionsdk.Datum) types.MessageTs {
-	// assign a random event time then forward the input to the output.
+  func mapTHandle(_ context.Context, key string, d functionsdk.Datum) functionsdk.MessageTs {
+	// assign a random event time to the message, then forward the input to the output.
 	randomEventTime := generateRandomTime
 	return types.MessageTsBuilder().Append(types.MessageTTo(randomEventTime(), key, d.Value()))
   }

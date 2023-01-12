@@ -2,7 +2,6 @@ package function
 
 import (
 	"context"
-	"github.com/numaproj/numaflow-go/pkg/function/types"
 	"reflect"
 	"testing"
 	"time"
@@ -34,9 +33,9 @@ func TestService_MapFn(t *testing.T) {
 		{
 			name: "map_fn_forward_msg",
 			fields: fields{
-				mapper: MapFunc(func(ctx context.Context, key string, datum Datum) types.Messages {
+				mapper: MapFunc(func(ctx context.Context, key string, datum Datum) Messages {
 					msg := datum.Value()
-					return types.MessagesBuilder().Append(types.MessageTo(key+"_test", msg))
+					return MessagesBuilder().Append(MessageTo(key+"_test", msg))
 				}),
 			},
 			args: args{
@@ -61,9 +60,9 @@ func TestService_MapFn(t *testing.T) {
 		{
 			name: "map_fn_forward_msg_forward_to_all",
 			fields: fields{
-				mapper: MapFunc(func(ctx context.Context, key string, datum Datum) types.Messages {
+				mapper: MapFunc(func(ctx context.Context, key string, datum Datum) Messages {
 					msg := datum.Value()
-					return types.MessagesBuilder().Append(types.MessageToAll(msg))
+					return MessagesBuilder().Append(MessageToAll(msg))
 				}),
 			},
 			args: args{
@@ -78,7 +77,7 @@ func TestService_MapFn(t *testing.T) {
 			want: &functionpb.DatumList{
 				Elements: []*functionpb.Datum{
 					{
-						Key:   types.ALL,
+						Key:   ALL,
 						Value: []byte(`test`),
 					},
 				},
@@ -88,8 +87,8 @@ func TestService_MapFn(t *testing.T) {
 		{
 			name: "map_fn_forward_msg_drop_msg",
 			fields: fields{
-				mapper: MapFunc(func(ctx context.Context, key string, datum Datum) types.Messages {
-					return types.MessagesBuilder().Append(types.MessageToDrop())
+				mapper: MapFunc(func(ctx context.Context, key string, datum Datum) Messages {
+					return MessagesBuilder().Append(MessageToDrop())
 				}),
 			},
 			args: args{
@@ -104,7 +103,7 @@ func TestService_MapFn(t *testing.T) {
 			want: &functionpb.DatumList{
 				Elements: []*functionpb.Datum{
 					{
-						Key:   types.DROP,
+						Key:   DROP,
 						Value: []byte{},
 					},
 				},
@@ -152,9 +151,9 @@ func TestService_MapTFn(t *testing.T) {
 		{
 			name: "mapT_fn_forward_msg",
 			fields: fields{
-				mapperT: MapTFunc(func(ctx context.Context, key string, datum Datum) types.MessageTs {
+				mapperT: MapTFunc(func(ctx context.Context, key string, datum Datum) MessageTs {
 					msg := datum.Value()
-					return types.MessageTsBuilder().Append(types.MessageTTo(testTime, key+"_test", msg))
+					return MessageTsBuilder().Append(MessageTTo(testTime, key+"_test", msg))
 				}),
 			},
 			args: args{
@@ -180,9 +179,9 @@ func TestService_MapTFn(t *testing.T) {
 		{
 			name: "mapT_fn_forward_msg_forward_to_all",
 			fields: fields{
-				mapperT: MapTFunc(func(ctx context.Context, key string, datum Datum) types.MessageTs {
+				mapperT: MapTFunc(func(ctx context.Context, key string, datum Datum) MessageTs {
 					msg := datum.Value()
-					return types.MessageTsBuilder().Append(types.MessageTToAll(testTime, msg))
+					return MessageTsBuilder().Append(MessageTToAll(testTime, msg))
 				}),
 			},
 			args: args{
@@ -198,7 +197,7 @@ func TestService_MapTFn(t *testing.T) {
 				Elements: []*functionpb.Datum{
 					{
 						EventTime: &functionpb.EventTime{EventTime: timestamppb.New(testTime)},
-						Key:       types.ALL,
+						Key:       ALL,
 						Value:     []byte(`test`),
 					},
 				},
@@ -208,8 +207,8 @@ func TestService_MapTFn(t *testing.T) {
 		{
 			name: "mapT_fn_forward_msg_drop_msg",
 			fields: fields{
-				mapperT: MapTFunc(func(ctx context.Context, key string, datum Datum) types.MessageTs {
-					return types.MessageTsBuilder().Append(types.MessageTToDrop())
+				mapperT: MapTFunc(func(ctx context.Context, key string, datum Datum) MessageTs {
+					return MessageTsBuilder().Append(MessageTToDrop())
 				}),
 			},
 			args: args{
@@ -225,7 +224,7 @@ func TestService_MapTFn(t *testing.T) {
 				Elements: []*functionpb.Datum{
 					{
 						EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
-						Key:       types.DROP,
+						Key:       DROP,
 						Value:     []byte{},
 					},
 				},

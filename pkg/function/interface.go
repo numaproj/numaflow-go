@@ -2,7 +2,6 @@ package function
 
 import (
 	"context"
-	"github.com/numaproj/numaflow-go/pkg/function/types"
 	"time"
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
@@ -39,40 +38,40 @@ type Client interface {
 // MapHandler is the interface of map function implementation.
 type MapHandler interface {
 	// HandleDo is the function to process each coming message
-	HandleDo(ctx context.Context, key string, datum Datum) types.Messages
+	HandleDo(ctx context.Context, key string, datum Datum) Messages
 }
 
 // MapTHandler is the interface of mapT function implementation.
 type MapTHandler interface {
 	// HandleDo is the function to process each coming message
-	HandleDo(ctx context.Context, key string, datum Datum) types.MessageTs
+	HandleDo(ctx context.Context, key string, datum Datum) MessageTs
 }
 
 // ReduceHandler is the interface of reduce function implementation.
 type ReduceHandler interface {
-	HandleDo(ctx context.Context, key string, reduceCh <-chan Datum, md Metadata) types.Messages
+	HandleDo(ctx context.Context, key string, reduceCh <-chan Datum, md Metadata) Messages
 }
 
 // MapFunc is utility type used to convert a HandleDo function to a MapHandler.
-type MapFunc func(ctx context.Context, key string, datum Datum) types.Messages
+type MapFunc func(ctx context.Context, key string, datum Datum) Messages
 
 // HandleDo implements the function of map function.
-func (mf MapFunc) HandleDo(ctx context.Context, key string, datum Datum) types.Messages {
+func (mf MapFunc) HandleDo(ctx context.Context, key string, datum Datum) Messages {
 	return mf(ctx, key, datum)
 }
 
 // MapTFunc is utility type used to convert a HandleDo function to a MapTHandler.
-type MapTFunc func(ctx context.Context, key string, datum Datum) types.MessageTs
+type MapTFunc func(ctx context.Context, key string, datum Datum) MessageTs
 
 // HandleDo implements the function of mapT function.
-func (mf MapTFunc) HandleDo(ctx context.Context, key string, datum Datum) types.MessageTs {
+func (mf MapTFunc) HandleDo(ctx context.Context, key string, datum Datum) MessageTs {
 	return mf(ctx, key, datum)
 }
 
 // ReduceFunc is utility type used to convert a HandleDo function to a ReduceHandler.
-type ReduceFunc func(ctx context.Context, key string, reduceCh <-chan Datum, md Metadata) types.Messages
+type ReduceFunc func(ctx context.Context, key string, reduceCh <-chan Datum, md Metadata) Messages
 
 // HandleDo implements the function of reduce function.
-func (rf ReduceFunc) HandleDo(ctx context.Context, key string, reduceCh <-chan Datum, md Metadata) types.Messages {
+func (rf ReduceFunc) HandleDo(ctx context.Context, key string, reduceCh <-chan Datum, md Metadata) Messages {
 	return rf(ctx, key, reduceCh, md)
 }
