@@ -28,6 +28,8 @@
 //
 // Example MapT (extracting event time from the datum payload)
 // MapT includes both Map and EventTime assignment functionalities.
+// Although the input datum already contains EventTime and Watermark, it's up to the MapT implementor to
+// decide on whether to use them for generating new EventTime.
 /*
   package main
 
