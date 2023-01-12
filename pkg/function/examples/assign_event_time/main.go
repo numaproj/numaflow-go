@@ -9,6 +9,7 @@ import (
 )
 
 func mapTHandle(_ context.Context, key string, d functionsdk.Datum) functionsdk.MessageTs {
+	// Update message event time to time.Now()
 	eventTime := time.Now()
 	return functionsdk.MessageTsBuilder().Append(functionsdk.MessageTTo(eventTime, key, d.Value()))
 }
