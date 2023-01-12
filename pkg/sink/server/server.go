@@ -14,7 +14,8 @@ import (
 )
 
 type server struct {
-	svc *sinksdk.Service
+	svc        *sinksdk.Service
+	grpcServer *grpc.Server
 }
 
 // New creates a new server object.
@@ -26,18 +27,19 @@ func New() *server {
 
 // RegisterSinker registers the sink operation handler to the server.
 // Example:
-// func handle(ctx context.Context, datumStreamCh <-chan sinksdk.Datum) sinksdk.Responses {
-// 	result := sinksdk.ResponsesBuilder()
-// 	for _, datum := range datumList {
-// 		fmt.Println(string(datum.Value()))
-// 		result = result.Append(sinksdk.ResponseOK(datum.ID()))
-// 	}
-// 	return result
-// }
 //
-// func main() {
-// 	server.New().RegisterSinker(sinksdk.SinkFunc(handle)).Start(context.Background())
-// }
+//	func handle(ctx context.Context, datumStreamCh <-chan sinksdk.Datum) sinksdk.Responses {
+//		result := sinksdk.ResponsesBuilder()
+//		for _, datum := range datumList {
+//			fmt.Println(string(datum.Value()))
+//			result = result.Append(sinksdk.ResponseOK(datum.ID()))
+//		}
+//		return result
+//	}
+//
+//	func main() {
+//		server.New().RegisterSinker(sinksdk.SinkFunc(handle)).Start(context.Background())
+//	}
 func (s *server) RegisterSinker(h sinksdk.SinkHandler) *server {
 	s.svc.Sinker = h
 	return s
@@ -70,16 +72,16 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) {
 	if err != nil {
 		log.Fatalf("failed to execute net.Listen(%q, %q): %v", sinksdk.Protocol, sinksdk.Addr, err)
 	}
-	grpcSvr := grpc.NewServer(
+	s.grpcServer = grpc.NewServer(
 		grpc.MaxRecvMsgSize(opts.maxMessageSize),
 		grpc.MaxSendMsgSize(opts.maxMessageSize),
 	)
-	sinkpb.RegisterUserDefinedSinkServer(grpcSvr, s.svc)
+	sinkpb.RegisterUserDefinedSinkServer(s.grpcServer, s.svc)
 
 	// start the grpc server
 	go func() {
 		log.Println("starting the gRPC server with unix domain socket...")
-		err = grpcSvr.Serve(lis)
+		err = s.grpcServer.Serve(lis)
 		if err != nil {
 			log.Fatalf("failed to start the gRPC server: %v", err)
 		}
@@ -88,5 +90,10 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) {
 	<-ctxWithSignal.Done()
 	log.Println("Got a signal: terminating gRPC server...")
 	defer log.Println("Successfully stopped the gRPC server")
-	grpcSvr.GracefulStop()
+	s.grpcServer.GracefulStop()
+}
+
+func (s *server) Stop() {
+	defer log.Println("Successfully stopped the gRPC server")
+	s.grpcServer.GracefulStop()
 }

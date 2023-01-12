@@ -47,7 +47,9 @@ func Test_server_map(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// note: using actual UDS connection
 
-			go New().RegisterMapper(tt.fields.mapHandler).Start(context.Background(), WithSockAddr(file.Name()))
+			server := New().RegisterMapper(tt.fields.mapHandler)
+			go server.Start(context.Background(), WithSockAddr(file.Name()))
+			defer server.Stop()
 
 			var ctx = context.Background()
 			c, err := client.New(client.WithSockAddr(file.Name()))
@@ -104,7 +106,9 @@ func Test_server_mapT(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// note: using actual UDS connection
 
-			go New().RegisterMapperT(tt.fields.mapTHandler).Start(context.Background(), WithSockAddr(file.Name()))
+			server := New().RegisterMapperT(tt.fields.mapTHandler)
+			go server.Start(context.Background(), WithSockAddr(file.Name()))
+			defer server.Stop()
 
 			var ctx = context.Background()
 			c, err := client.New(client.WithSockAddr(file.Name()))
@@ -184,7 +188,9 @@ func Test_server_reduce(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// note: using actual UDS connection
 
-			go New().RegisterReducer(tt.fields.reduceHandler).Start(context.Background(), WithSockAddr(file.Name()))
+			server := New().RegisterReducer(tt.fields.reduceHandler)
+			go server.Start(context.Background(), WithSockAddr(file.Name()))
+			defer server.Stop()
 
 			var ctx = context.Background()
 			c, err := client.New(client.WithSockAddr(file.Name()))

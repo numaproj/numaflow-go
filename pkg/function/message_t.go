@@ -5,7 +5,7 @@ import (
 )
 
 // MessageT is used to wrap the data return by UDF functions.
-// Compared with Message, MessageT contains one more field - event time.
+// Compared with Message, MessageT contains one more field, the event time, usually extracted from the payload.
 type MessageT struct {
 	EventTime time.Time
 	Key       string
