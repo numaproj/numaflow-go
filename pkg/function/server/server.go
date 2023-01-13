@@ -14,8 +14,7 @@ import (
 )
 
 type server struct {
-	svc        *functionsdk.Service
-	grpcServer *grpc.Server
+	svc *functionsdk.Service
 }
 
 // New creates a new server object.
@@ -107,16 +106,16 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) {
 	if err != nil {
 		log.Fatalf("failed to execute net.Listen(%q, %q): %v", functionsdk.Protocol, functionsdk.Addr, err)
 	}
-	s.grpcServer = grpc.NewServer(
+	grpcServer := grpc.NewServer(
 		grpc.MaxRecvMsgSize(opts.maxMessageSize),
 		grpc.MaxSendMsgSize(opts.maxMessageSize),
 	)
-	functionpb.RegisterUserDefinedFunctionServer(s.grpcServer, s.svc)
+	functionpb.RegisterUserDefinedFunctionServer(grpcServer, s.svc)
 
 	// start the grpc server
 	go func() {
 		log.Println("starting the gRPC server with unix domain socket...")
-		err = s.grpcServer.Serve(lis)
+		err = grpcServer.Serve(lis)
 		if err != nil {
 			log.Fatalf("failed to start the gRPC server: %v", err)
 		}
@@ -125,5 +124,5 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) {
 	<-ctxWithSignal.Done()
 	log.Println("Got a signal: terminating gRPC server...")
 	defer log.Println("Successfully stopped the gRPC server")
-	s.grpcServer.GracefulStop()
+	grpcServer.GracefulStop()
 }
