@@ -46,12 +46,10 @@ func Test_server_map(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// note: using actual UDS connection
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			go New().RegisterMapper(tt.fields.mapHandler).Start(ctx, WithSockAddr(file.Name()))
 
-			server := New().RegisterMapper(tt.fields.mapHandler)
-			go server.Start(context.Background(), WithSockAddr(file.Name()))
-			defer server.Stop()
-
-			var ctx = context.Background()
 			c, err := client.New(client.WithSockAddr(file.Name()))
 			assert.NoError(t, err)
 			defer func() {
@@ -105,12 +103,10 @@ func Test_server_mapT(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// note: using actual UDS connection
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			go New().RegisterMapperT(tt.fields.mapTHandler).Start(ctx, WithSockAddr(file.Name()))
 
-			server := New().RegisterMapperT(tt.fields.mapTHandler)
-			go server.Start(context.Background(), WithSockAddr(file.Name()))
-			defer server.Stop()
-
-			var ctx = context.Background()
 			c, err := client.New(client.WithSockAddr(file.Name()))
 			assert.NoError(t, err)
 			defer func() {
@@ -187,12 +183,10 @@ func Test_server_reduce(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// note: using actual UDS connection
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			go New().RegisterReducer(tt.fields.reduceHandler).Start(ctx, WithSockAddr(file.Name()))
 
-			server := New().RegisterReducer(tt.fields.reduceHandler)
-			go server.Start(context.Background(), WithSockAddr(file.Name()))
-			defer server.Stop()
-
-			var ctx = context.Background()
 			c, err := client.New(client.WithSockAddr(file.Name()))
 			assert.NoError(t, err)
 			defer func() {

@@ -92,8 +92,3 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) {
 	defer log.Println("Successfully stopped the gRPC server")
 	s.grpcServer.GracefulStop()
 }
-
-func (s *server) Stop() {
-	defer log.Println("Successfully stopped the gRPC server")
-	s.grpcServer.GracefulStop()
-}
