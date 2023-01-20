@@ -8,11 +8,12 @@ import "google/protobuf/empty.proto";
 package function.v1;
 
 service UserDefinedFunction {
-  // MapFn applies a function to each datum element without modifying event time.
+  // MapFn applies a function to each datum element.
   rpc MapFn(Datum) returns (DatumList);
 
   // MapTFn applies a function to each datum element.
   // In addition to map function, MapTFn also supports assigning a new event time to datum.
+  // MapTFn can be used only at source vertex by source data transformer.
   rpc MapTFn(Datum) returns (DatumList);
 
   // ReduceFn applies a reduce function to a datum stream.

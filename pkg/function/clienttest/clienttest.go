@@ -33,7 +33,7 @@ func (c *client) IsReady(ctx context.Context, in *emptypb.Empty) (bool, error) {
 	return resp.GetReady(), nil
 }
 
-// MapFn applies a function to each datum element without modifying event time.
+// MapFn applies a function to each datum element.
 func (c *client) MapFn(ctx context.Context, datum *functionpb.Datum) ([]*functionpb.Datum, error) {
 	mappedDatumList, err := c.grpcClt.MapFn(ctx, datum)
 	if err != nil {
@@ -45,6 +45,7 @@ func (c *client) MapFn(ctx context.Context, datum *functionpb.Datum) ([]*functio
 
 // MapTFn applies a function to each datum element.
 // In addition to map function, MapTFn also supports assigning a new event time to datum.
+// MapTFn can be used only at source vertex by source data transformer.
 func (c *client) MapTFn(ctx context.Context, datum *functionpb.Datum) ([]*functionpb.Datum, error) {
 	mappedDatumList, err := c.grpcClt.MapTFn(ctx, datum)
 	if err != nil {

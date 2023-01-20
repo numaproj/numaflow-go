@@ -23,10 +23,11 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type UserDefinedFunctionClient interface {
-	// MapFn applies a function to each datum element without modifying event time.
+	// MapFn applies a function to each datum element.
 	MapFn(ctx context.Context, in *Datum, opts ...grpc.CallOption) (*DatumList, error)
 	// MapTFn applies a function to each datum element.
 	// In addition to map function, MapTFn also supports assigning a new event time to datum.
+	// MapTFn can be used only at source vertex by source data transformer.
 	MapTFn(ctx context.Context, in *Datum, opts ...grpc.CallOption) (*DatumList, error)
 	// ReduceFn applies a reduce function to a datum stream.
 	ReduceFn(ctx context.Context, opts ...grpc.CallOption) (UserDefinedFunction_ReduceFnClient, error)
@@ -107,10 +108,11 @@ func (c *userDefinedFunctionClient) IsReady(ctx context.Context, in *emptypb.Emp
 // All implementations must embed UnimplementedUserDefinedFunctionServer
 // for forward compatibility
 type UserDefinedFunctionServer interface {
-	// MapFn applies a function to each datum element without modifying event time.
+	// MapFn applies a function to each datum element.
 	MapFn(context.Context, *Datum) (*DatumList, error)
 	// MapTFn applies a function to each datum element.
 	// In addition to map function, MapTFn also supports assigning a new event time to datum.
+	// MapTFn can be used only at source vertex by source data transformer.
 	MapTFn(context.Context, *Datum) (*DatumList, error)
 	// ReduceFn applies a reduce function to a datum stream.
 	ReduceFn(UserDefinedFunction_ReduceFnServer) error
