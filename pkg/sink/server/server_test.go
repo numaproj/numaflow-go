@@ -51,10 +51,10 @@ func Test_server_sink(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// note: using actual UDS connection
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			go New().RegisterSinker(tt.fields.sinkHandler).Start(ctx, WithSockAddr(file.Name()))
 
-			go New().RegisterSinker(tt.fields.sinkHandler).Start(context.Background(), WithSockAddr(file.Name()))
-
-			var ctx = context.Background()
 			c, err := client.New(client.WithSockAddr(file.Name()))
 			assert.NoError(t, err)
 			defer func() {

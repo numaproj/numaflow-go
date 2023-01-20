@@ -78,6 +78,26 @@ func (mr *MockUserDefinedFunctionClientMockRecorder) MapFn(arg0, arg1 interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MapFn", reflect.TypeOf((*MockUserDefinedFunctionClient)(nil).MapFn), varargs...)
 }
 
+// MapTFn mocks base method.
+func (m *MockUserDefinedFunctionClient) MapTFn(arg0 context.Context, arg1 *v1.Datum, arg2 ...grpc.CallOption) (*v1.DatumList, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "MapTFn", varargs...)
+	ret0, _ := ret[0].(*v1.DatumList)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MapTFn indicates an expected call of MapTFn.
+func (mr *MockUserDefinedFunctionClientMockRecorder) MapTFn(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MapTFn", reflect.TypeOf((*MockUserDefinedFunctionClient)(nil).MapTFn), varargs...)
+}
+
 // ReduceFn mocks base method.
 func (m *MockUserDefinedFunctionClient) ReduceFn(arg0 context.Context, arg1 ...grpc.CallOption) (v1.UserDefinedFunction_ReduceFnClient, error) {
 	m.ctrl.T.Helper()

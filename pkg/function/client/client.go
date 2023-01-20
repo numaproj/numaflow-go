@@ -63,6 +63,18 @@ func (c *client) MapFn(ctx context.Context, datum *functionpb.Datum) ([]*functio
 	return mappedDatumList.GetElements(), nil
 }
 
+// MapTFn applies a function to each datum element.
+// In addition to map function, MapTFn also supports assigning a new event time to datum.
+// MapTFn can be used only at source vertex by source data transformer.
+func (c *client) MapTFn(ctx context.Context, datum *functionpb.Datum) ([]*functionpb.Datum, error) {
+	mappedDatumList, err := c.grpcClt.MapTFn(ctx, datum)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute c.grpcClt.MapTFn(): %w", err)
+	}
+
+	return mappedDatumList.GetElements(), nil
+}
+
 // ReduceFn applies a reduce function to a datum stream.
 func (c *client) ReduceFn(ctx context.Context, datumStreamCh <-chan *functionpb.Datum) ([]*functionpb.Datum, error) {
 	stream, err := c.grpcClt.ReduceFn(ctx)

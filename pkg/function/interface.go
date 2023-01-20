@@ -31,13 +31,20 @@ type Client interface {
 	CloseConn(ctx context.Context) error
 	IsReady(ctx context.Context, in *emptypb.Empty) (bool, error)
 	MapFn(ctx context.Context, datum *functionpb.Datum) ([]*functionpb.Datum, error)
+	MapTFn(ctx context.Context, datum *functionpb.Datum) ([]*functionpb.Datum, error)
 	ReduceFn(ctx context.Context, datumStreamCh <-chan *functionpb.Datum) ([]*functionpb.Datum, error)
 }
 
 // MapHandler is the interface of map function implementation.
 type MapHandler interface {
-	// HandleDo is the function to process each coming message
+	// HandleDo is the function to process each coming message.
 	HandleDo(ctx context.Context, key string, datum Datum) Messages
+}
+
+// MapTHandler is the interface of mapT function implementation.
+type MapTHandler interface {
+	// HandleDo is the function to process each coming message.
+	HandleDo(ctx context.Context, key string, datum Datum) MessageTs
 }
 
 // ReduceHandler is the interface of reduce function implementation.
@@ -50,6 +57,14 @@ type MapFunc func(ctx context.Context, key string, datum Datum) Messages
 
 // HandleDo implements the function of map function.
 func (mf MapFunc) HandleDo(ctx context.Context, key string, datum Datum) Messages {
+	return mf(ctx, key, datum)
+}
+
+// MapTFunc is utility type used to convert a HandleDo function to a MapTHandler.
+type MapTFunc func(ctx context.Context, key string, datum Datum) MessageTs
+
+// HandleDo implements the function of mapT function.
+func (mf MapTFunc) HandleDo(ctx context.Context, key string, datum Datum) MessageTs {
 	return mf(ctx, key, datum)
 }
 

@@ -26,35 +26,54 @@ func New() *server {
 
 // RegisterMapper registers the map operation handler to the server.
 // Example:
-// func handle(ctx context.Context, key string, data functionsdk.Datum) functionsdk.Messages {
-// 	_ = data.EventTime() // Event time is available
-// 	_ = data.Watermark() // Watermark is available
-// 	return functionsdk.MessagesBuilder().Append(functionsdk.MessageToAll(data.Value()))
-// }
 //
-// func main() {
-// 	server.New().RegisterMapper(functionsdk.MapFunc(handle)).Start(context.Background())
-// }
+//	func handle(ctx context.Context, key string, data functionsdk.Datum) functionsdk.Messages {
+//		_ = data.EventTime() // Event time is available
+//		_ = data.Watermark() // Watermark is available
+//		return functionsdk.MessagesBuilder().Append(functionsdk.MessageToAll(data.Value()))
+//	}
+//
+//	func main() {
+//		server.New().RegisterMapper(functionsdk.MapFunc(handle)).Start(context.Background())
+//	}
 func (s *server) RegisterMapper(m functionsdk.MapHandler) *server {
 	s.svc.Mapper = m
 	return s
 }
 
+// RegisterMapperT registers the mapT operation handler to the server.
+// Example:
+//
+//	func handle(ctx context.Context, key string, data functionsdk.Datum) functionsdk.MessageTs {
+//		_ = data.EventTime() // Event time is available
+//		_ = data.Watermark() // Watermark is available
+//		return functionsdk.MessageTsBuilder().Append(functionsdk.MessageTToAll(time.Now(), data.Value()))
+//	}
+//
+//	func main() {
+//		server.New().RegisterMapperT(functionsdk.MapTFunc(handle)).Start(context.Background())
+//	}
+func (s *server) RegisterMapperT(m functionsdk.MapTHandler) *server {
+	s.svc.MapperT = m
+	return s
+}
+
 // RegisterReducer registers the reduce operation handler.
 // Example:
-// func handle(_ context.Context, key string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) functionsdk.Messages {
-// 	var resultKey = key
-// 	var resultVal []byte
-// 	for data := range reduceCh {
-// 		_ = data.EventTime() // Event time is available
-// 		_ = data.Watermark() // Watermark is available
-// 	}
-// 	return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(resultKey, resultVal))
-// }
 //
-// func main() {
-// 	server.New().RegisterReducer(functionsdk.ReduceFunc(handle)).Start(context.Background())
-// }
+//	func handle(_ context.Context, key string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) functionsdk.Messages {
+//		var resultKey = key
+//		var resultVal []byte
+//		for data := range reduceCh {
+//			_ = data.EventTime() // Event time is available
+//			_ = data.Watermark() // Watermark is available
+//		}
+//		return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(resultKey, resultVal))
+//	}
+//
+//	func main() {
+//		server.New().RegisterReducer(functionsdk.ReduceFunc(handle)).Start(context.Background())
+//	}
 func (s *server) RegisterReducer(r functionsdk.ReduceHandler) *server {
 	s.svc.Reducer = r
 	return s
@@ -87,16 +106,16 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) {
 	if err != nil {
 		log.Fatalf("failed to execute net.Listen(%q, %q): %v", functionsdk.Protocol, functionsdk.Addr, err)
 	}
-	grpcSvr := grpc.NewServer(
+	grpcServer := grpc.NewServer(
 		grpc.MaxRecvMsgSize(opts.maxMessageSize),
 		grpc.MaxSendMsgSize(opts.maxMessageSize),
 	)
-	functionpb.RegisterUserDefinedFunctionServer(grpcSvr, s.svc)
+	functionpb.RegisterUserDefinedFunctionServer(grpcServer, s.svc)
 
 	// start the grpc server
 	go func() {
 		log.Println("starting the gRPC server with unix domain socket...")
-		err = grpcSvr.Serve(lis)
+		err = grpcServer.Serve(lis)
 		if err != nil {
 			log.Fatalf("failed to start the gRPC server: %v", err)
 		}
@@ -105,5 +124,5 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) {
 	<-ctxWithSignal.Done()
 	log.Println("Got a signal: terminating gRPC server...")
 	defer log.Println("Successfully stopped the gRPC server")
-	grpcSvr.GracefulStop()
+	grpcServer.GracefulStop()
 }
