@@ -4,7 +4,7 @@ build:
 
 .PHONY: image
 image: build
-	docker build -t "quay.io/numaio/numaflow-go/event-time-filter:v1" --target event-time-filter .
+	docker build -t "quay.io/numaio/numaflow-go/mapt-event-time-filter::latest" --target event-time-filter .
 
 clean:
 	-rm -rf ./dist
