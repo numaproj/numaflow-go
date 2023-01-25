@@ -1,7 +1,8 @@
 package client
 
 type options struct {
-	sockAddr string
+	sockAddr       string
+	maxMessageSize int
 }
 
 // Option is the interface to apply options.
@@ -11,5 +12,12 @@ type Option func(*options)
 func WithSockAddr(addr string) Option {
 	return func(opts *options) {
 		opts.sockAddr = addr
+	}
+}
+
+// WithMaxMessageSize sets the server max receive message size and the server max send message size to the given size.
+func WithMaxMessageSize(size int) Option {
+	return func(opts *options) {
+		opts.maxMessageSize = size
 	}
 }
