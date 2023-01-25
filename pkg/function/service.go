@@ -11,6 +11,7 @@ import (
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	grpcmd "google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // handlerDatum implements the Datum interface and is used in the map and reduce handlers.
@@ -72,6 +73,7 @@ type Service struct {
 	functionpb.UnimplementedUserDefinedFunctionServer
 
 	Mapper  MapHandler
+	MapperT MapTHandler
 	Reducer ReduceHandler
 }
 
@@ -80,7 +82,7 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*functionpb.ReadyRe
 	return &functionpb.ReadyResponse{Ready: true}, nil
 }
 
-// MapFn applies a function to each datum element
+// MapFn applies a function to each datum element.
 func (fs *Service) MapFn(ctx context.Context, d *functionpb.Datum) (*functionpb.DatumList, error) {
 	var key string
 
@@ -106,6 +108,43 @@ func (fs *Service) MapFn(ctx context.Context, d *functionpb.Datum) (*functionpb.
 		elements = append(elements, &functionpb.Datum{
 			Key:   m.Key,
 			Value: m.Value,
+		})
+	}
+	datumList := &functionpb.DatumList{
+		Elements: elements,
+	}
+	return datumList, nil
+}
+
+// MapTFn applies a function to each datum element.
+// In addition to map function, MapTFn also supports assigning a new event time to datum.
+// MapTFn can be used only at source vertex by source data transformer.
+func (fs *Service) MapTFn(ctx context.Context, d *functionpb.Datum) (*functionpb.DatumList, error) {
+	var key string
+
+	// get key from gPRC metadata
+	if grpcMD, ok := grpcmd.FromIncomingContext(ctx); ok {
+		keyValue := grpcMD.Get(DatumKey)
+		if len(keyValue) > 1 {
+			return nil, fmt.Errorf("expect extact one key but got %d keys", len(keyValue))
+		} else if len(keyValue) == 1 {
+			key = keyValue[0]
+		} else {
+			// do nothing: the length equals zero is valid, meaning the key is an empty string ""
+		}
+	}
+	var hd = handlerDatum{
+		value:     d.GetValue(),
+		eventTime: d.GetEventTime().EventTime.AsTime(),
+		watermark: d.GetWatermark().Watermark.AsTime(),
+	}
+	messages := fs.MapperT.HandleDo(ctx, key, &hd)
+	var elements []*functionpb.Datum
+	for _, m := range messages.Items() {
+		elements = append(elements, &functionpb.Datum{
+			EventTime: &functionpb.EventTime{EventTime: timestamppb.New(m.EventTime)},
+			Key:       m.Key,
+			Value:     m.Value,
 		})
 	}
 	datumList := &functionpb.DatumList{
