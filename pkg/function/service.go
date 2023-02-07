@@ -156,24 +156,18 @@ func (fs *Service) MapTFn(ctx context.Context, d *functionpb.Datum) (*functionpb
 // ReduceFn applies a reduce function to a datum stream.
 func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer) error {
 	var (
-		key       string
 		md        Metadata
 		err       error
 		startTime int64
 		endTime   int64
-		reduceCh  = make(chan Datum)
 		ctx       = stream.Context()
+		chanMap   = make(map[string]chan Datum)
+		mu        sync.RWMutex
 	)
 
 	grpcMD, ok := grpcmd.FromIncomingContext(ctx)
 	if !ok {
 		return fmt.Errorf("key and window information are not passed in grpc metadata")
-	}
-
-	// get key from gPRC metadata
-	key, err = getValueForKey(grpcMD, DatumKey)
-	if err != nil {
-		return err
 	}
 
 	// get window start and end time from grpc metadata
@@ -202,26 +196,17 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 		wg        sync.WaitGroup
 	)
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		messages := fs.Reducer.HandleDo(ctx, key, reduceCh, md)
-		for _, msg := range messages {
-			datumList = append(datumList, &functionpb.Datum{
-				Key:   msg.Key,
-				Value: msg.Value,
-			})
-		}
-	}()
-
+	// read messages from the stream and write the messages to corresponding channels
+	// if the channel is not created, create the channel and invoke the HandleDo
 	for {
 		d, err := stream.Recv()
+		// if EOF, close all the channels
 		if err == io.EOF {
-			close(reduceCh)
+			closeChannels(chanMap)
 			break
 		}
 		if err != nil {
-			close(reduceCh)
+			closeChannels(chanMap)
 			// TODO: research on gRPC errors and revisit the error handler
 			return err
 		}
@@ -230,13 +215,40 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 			eventTime: d.GetEventTime().EventTime.AsTime(),
 			watermark: d.GetWatermark().Watermark.AsTime(),
 		}
-		reduceCh <- hd
+
+		ch, chok := chanMap[d.Key]
+		if !chok {
+			ch = make(chan Datum)
+			chanMap[d.Key] = ch
+
+			wg.Add(1)
+			go func(key string, ch chan Datum) {
+				defer wg.Done()
+				messages := fs.Reducer.HandleDo(ctx, key, ch, md)
+				mu.Lock()
+				defer mu.Unlock()
+				for _, msg := range messages {
+					datumList = append(datumList, &functionpb.Datum{
+						Key:   msg.Key,
+						Value: msg.Value,
+					})
+				}
+			}(d.Key, ch)
+		}
+		ch <- hd
 	}
 
+	// wait until all the HandleDo return
 	wg.Wait()
 	return stream.SendAndClose(&functionpb.DatumList{
 		Elements: datumList,
 	})
+}
+
+func closeChannels(chanMap map[string]chan Datum) {
+	for _, ch := range chanMap {
+		close(ch)
+	}
 }
 
 func getValueForKey(md grpcmd.MD, key string) (string, error) {
