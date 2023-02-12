@@ -114,6 +114,8 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 		grpc.MaxRecvMsgSize(opts.maxMessageSize),
 		grpc.MaxSendMsgSize(opts.maxMessageSize),
 	)
+	defer log.Println("Successfully stopped the gRPC server")
+	defer grpcServer.GracefulStop()
 	functionpb.RegisterUserDefinedFunctionServer(grpcServer, s.svc)
 
 	errCh := make(chan error, 1)
@@ -136,7 +138,5 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 		log.Println("Got a signal: terminating gRPC server...")
 	}
 
-	defer log.Println("Successfully stopped the gRPC server")
-	grpcServer.GracefulStop()
 	return nil
 }
