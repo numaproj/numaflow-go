@@ -118,7 +118,7 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 
 	errCh := make(chan error, 1)
 	// start the grpc server
-	go func(ch chan error) {
+	go func(ch chan<- error) {
 		log.Println("starting the gRPC server with unix domain socket...")
 		err = grpcServer.Serve(lis)
 		if err != nil {
