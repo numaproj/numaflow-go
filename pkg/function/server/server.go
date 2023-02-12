@@ -117,6 +117,7 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 	functionpb.RegisterUserDefinedFunctionServer(grpcServer, s.svc)
 
 	errCh := make(chan error, 1)
+	defer close(errCh)
 	// start the grpc server
 	go func(ch chan<- error) {
 		log.Println("starting the gRPC server with unix domain socket...")
