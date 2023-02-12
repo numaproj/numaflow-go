@@ -80,7 +80,7 @@ func (s *server) RegisterReducer(r functionsdk.ReduceHandler) *server {
 }
 
 // Start starts the gRPC server via unix domain socket at configs.Addr.
-func (s *server) Start(ctx context.Context, inputOptions ...Option) {
+func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 	var opts = &options{
 		sockAddr:       functionsdk.Addr,
 		maxMessageSize: functionsdk.DefaultMaxMessageSize,
@@ -90,21 +90,25 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) {
 		inputOption(opts)
 	}
 
-	cleanup := func() {
-		if _, err := os.Stat(opts.sockAddr); err == nil {
-			if err := os.RemoveAll(opts.sockAddr); err != nil {
-				log.Fatal(err)
-			}
+	cleanup := func() error {
+		_, err := os.Stat(opts.sockAddr)
+		if err == nil {
+			err = os.RemoveAll(opts.sockAddr)
 		}
+		return err
 	}
-	cleanup()
+
+	err := cleanup()
+	if err != nil {
+		return err
+	}
 
 	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
 	lis, err := net.Listen(functionsdk.Protocol, opts.sockAddr)
 	if err != nil {
-		log.Fatalf("failed to execute net.Listen(%q, %q): %v", functionsdk.Protocol, functionsdk.Addr, err)
+		return err
 	}
 	grpcServer := grpc.NewServer(
 		grpc.MaxRecvMsgSize(opts.maxMessageSize),
@@ -112,17 +116,26 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) {
 	)
 	functionpb.RegisterUserDefinedFunctionServer(grpcServer, s.svc)
 
+	errCh := make(chan error)
 	// start the grpc server
-	go func() {
+	go func(ch chan error) {
 		log.Println("starting the gRPC server with unix domain socket...")
 		err = grpcServer.Serve(lis)
 		if err != nil {
-			log.Fatalf("failed to start the gRPC server: %v", err)
+			ch <- err
 		}
-	}()
+	}(errCh)
 
-	<-ctxWithSignal.Done()
-	log.Println("Got a signal: terminating gRPC server...")
+	select {
+	case err := <-errCh:
+		if err != nil {
+			return err
+		}
+	case <-ctxWithSignal.Done():
+		log.Println("Got a signal: terminating gRPC server...")
+	}
+
 	defer log.Println("Successfully stopped the gRPC server")
 	grpcServer.GracefulStop()
+	return nil
 }
