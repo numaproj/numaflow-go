@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -98,7 +99,7 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 		return err
 	}
 
-        if err := cleanup(); err != nil {
+	if err := cleanup(); err != nil {
 		return err
 	}
 
