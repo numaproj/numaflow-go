@@ -45,56 +45,8 @@ func (s *server) RegisterSinker(h sinksdk.SinkHandler) *server {
 	return s
 }
 
-// Start starts the gRPC server via unix domain socket at configs.Addr.
-func (s *server) Start(ctx context.Context, inputOptions ...Option) {
-	var opts = &options{
-		sockAddr:       sinksdk.Addr,
-		maxMessageSize: sinksdk.DefaultMaxMessageSize,
-	}
-
-	for _, inputOption := range inputOptions {
-		inputOption(opts)
-	}
-
-	cleanup := func() {
-		if _, err := os.Stat(opts.sockAddr); err == nil {
-			if err := os.RemoveAll(opts.sockAddr); err != nil {
-				log.Fatal(err)
-			}
-		}
-	}
-	cleanup()
-
-	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
-
-	lis, err := net.Listen(sinksdk.Protocol, opts.sockAddr)
-	if err != nil {
-		log.Fatalf("failed to execute net.Listen(%q, %q): %v", sinksdk.Protocol, sinksdk.Addr, err)
-	}
-	grpcServer := grpc.NewServer(
-		grpc.MaxRecvMsgSize(opts.maxMessageSize),
-		grpc.MaxSendMsgSize(opts.maxMessageSize),
-	)
-	sinkpb.RegisterUserDefinedSinkServer(grpcServer, s.svc)
-
-	// start the grpc server
-	go func() {
-		log.Println("starting the gRPC server with unix domain socket...")
-		err = grpcServer.Serve(lis)
-		if err != nil {
-			log.Fatalf("failed to start the gRPC server: %v", err)
-		}
-	}()
-
-	<-ctxWithSignal.Done()
-	log.Println("Got a signal: terminating gRPC server...")
-	defer log.Println("Successfully stopped the gRPC server")
-	grpcServer.GracefulStop()
-}
-
-// StartE starts the gRPC server via unix domain socket at configs.Addr and return error.
-func (s *server) StartE(ctx context.Context, inputOptions ...Option) error {
+// Start starts the gRPC server via unix domain socket at configs.Addr and return error.
+func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 	var opts = &options{
 		sockAddr:       sinksdk.Addr,
 		maxMessageSize: sinksdk.DefaultMaxMessageSize,
