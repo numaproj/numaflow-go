@@ -128,7 +128,7 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) {
 	grpcServer.GracefulStop()
 }
 
-// StartE starts the gRPC server via unix domain socket at configs.Addr and return errors.
+// StartE starts the gRPC server via unix domain socket at configs.Addr and return error.
 func (s *server) StartE(ctx context.Context, inputOptions ...Option) error {
 	var opts = &options{
 		sockAddr:       functionsdk.Addr,
