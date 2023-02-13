@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -90,4 +91,62 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) {
 	log.Println("Got a signal: terminating gRPC server...")
 	defer log.Println("Successfully stopped the gRPC server")
 	grpcServer.GracefulStop()
+}
+
+// Start starts the gRPC server via unix domain socket at configs.Addr.
+func (s *server) StartE(ctx context.Context, inputOptions ...Option) error {
+	var opts = &options{
+		sockAddr:       sinksdk.Addr,
+		maxMessageSize: sinksdk.DefaultMaxMessageSize,
+	}
+
+	for _, inputOption := range inputOptions {
+		inputOption(opts)
+	}
+
+	cleanup := func() error {
+		_, err := os.Stat(opts.sockAddr)
+		if err == nil {
+			err = os.RemoveAll(opts.sockAddr)
+		}
+		return err
+	}
+
+	if err := cleanup(); err != nil {
+		return err
+	}
+
+	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	lis, err := net.Listen(sinksdk.Protocol, opts.sockAddr)
+	if err != nil {
+		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", sinksdk.Protocol, sinksdk.Addr, err)
+	}
+	grpcServer := grpc.NewServer(
+		grpc.MaxRecvMsgSize(opts.maxMessageSize),
+		grpc.MaxSendMsgSize(opts.maxMessageSize),
+	)
+	defer log.Println("Successfully stopped the gRPC server")
+	defer grpcServer.GracefulStop()
+	sinkpb.RegisterUserDefinedSinkServer(grpcServer, s.svc)
+
+	errCh := make(chan error, 1)
+	defer close(errCh)
+	// start the grpc server
+	go func(ch chan<- error) {
+		log.Println("starting the gRPC server with unix domain socket...")
+		err = grpcServer.Serve(lis)
+		if err != nil {
+			ch <- fmt.Errorf("failed to start the gRPC server: %v", err)
+		}
+	}(errCh)
+
+	select {
+	case err := <-errCh:
+		return err
+	case <-ctxWithSignal.Done():
+		log.Println("Got a signal: terminating gRPC server...")
+	}
+	return nil
 }

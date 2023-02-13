@@ -81,7 +81,55 @@ func (s *server) RegisterReducer(r functionsdk.ReduceHandler) *server {
 }
 
 // Start starts the gRPC server via unix domain socket at configs.Addr.
-func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
+func (s *server) Start(ctx context.Context, inputOptions ...Option) {
+	var opts = &options{
+		sockAddr:       functionsdk.Addr,
+		maxMessageSize: functionsdk.DefaultMaxMessageSize,
+	}
+
+	for _, inputOption := range inputOptions {
+		inputOption(opts)
+	}
+
+	cleanup := func() {
+		if _, err := os.Stat(opts.sockAddr); err == nil {
+			if err := os.RemoveAll(opts.sockAddr); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+	cleanup()
+
+	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	lis, err := net.Listen(functionsdk.Protocol, opts.sockAddr)
+	if err != nil {
+		log.Fatalf("failed to execute net.Listen(%q, %q): %v", functionsdk.Protocol, functionsdk.Addr, err)
+	}
+	grpcServer := grpc.NewServer(
+		grpc.MaxRecvMsgSize(opts.maxMessageSize),
+		grpc.MaxSendMsgSize(opts.maxMessageSize),
+	)
+	functionpb.RegisterUserDefinedFunctionServer(grpcServer, s.svc)
+
+	// start the grpc server
+	go func() {
+		log.Println("starting the gRPC server with unix domain socket...")
+		err = grpcServer.Serve(lis)
+		if err != nil {
+			log.Fatalf("failed to start the gRPC server: %v", err)
+		}
+	}()
+
+	<-ctxWithSignal.Done()
+	log.Println("Got a signal: terminating gRPC server...")
+	defer log.Println("Successfully stopped the gRPC server")
+	grpcServer.GracefulStop()
+}
+
+// StartE starts the gRPC server via unix domain socket at configs.Addr and return errors.
+func (s *server) StartE(ctx context.Context, inputOptions ...Option) error {
 	var opts = &options{
 		sockAddr:       functionsdk.Addr,
 		maxMessageSize: functionsdk.DefaultMaxMessageSize,
@@ -131,9 +179,7 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 
 	select {
 	case err := <-errCh:
-		if err != nil {
-			return err
-		}
+		return err
 	case <-ctxWithSignal.Done():
 		log.Println("Got a signal: terminating gRPC server...")
 	}
