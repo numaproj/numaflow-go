@@ -98,8 +98,7 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 		return err
 	}
 
-	err := cleanup()
-	if err != nil {
+        if err := cleanup(); err != nil {
 		return err
 	}
 
@@ -108,7 +107,7 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 
 	lis, err := net.Listen(functionsdk.Protocol, opts.sockAddr)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", functionsdk.Protocol, functionsdk.Addr, err)
 	}
 	grpcServer := grpc.NewServer(
 		grpc.MaxRecvMsgSize(opts.maxMessageSize),
@@ -125,7 +124,7 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 		log.Println("starting the gRPC server with unix domain socket...")
 		err = grpcServer.Serve(lis)
 		if err != nil {
-			ch <- err
+			ch <- fmt.Errorf("failed to start the gRPC server: %v", err)
 		}
 	}(errCh)
 
