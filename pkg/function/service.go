@@ -220,6 +220,9 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 
 			func(key string, ch chan Datum) {
 				g.Go(func() error {
+					// we stream the messages to the user by writing messages
+					// to channel and wait until we get the result and stream
+					// the result back to the client (numaflow).
 					messages := fs.Reducer.HandleDo(ctx, key, ch, md)
 					datumList := buildDatumList(messages)
 

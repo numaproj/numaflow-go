@@ -89,6 +89,7 @@ func (c *client) ReduceFn(ctx context.Context, datumStreamCh <-chan *functionpb.
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute c.grpcClt.ReduceFn(): %w", err)
 	}
+	// stream the messages to server
 	g.Go(func() error {
 		var sendErr error
 		for datum := range datumStreamCh {
@@ -104,6 +105,7 @@ func (c *client) ReduceFn(ctx context.Context, datumStreamCh <-chan *functionpb.
 		return stream.CloseSend()
 	})
 
+	// read the response from the server stream
 outputLoop:
 	for {
 		select {
