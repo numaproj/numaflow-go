@@ -9,6 +9,7 @@ import (
 	"time"
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
+	"golang.org/x/sync/errgroup"
 	grpcmd "google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -163,6 +164,7 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 		ctx       = stream.Context()
 		chanMap   = make(map[string]chan Datum)
 		mu        sync.RWMutex
+		g         errgroup.Group
 	)
 
 	grpcMD, ok := grpcmd.FromIncomingContext(ctx)
@@ -191,11 +193,6 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 	// create metadata using interval window interface
 	md = NewMetadata(iw)
 
-	var (
-		datumList []*functionpb.Datum
-		wg        sync.WaitGroup
-	)
-
 	// read messages from the stream and write the messages to corresponding channels
 	// if the channel is not created, create the channel and invoke the HandleDo
 	for {
@@ -221,28 +218,40 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 			ch = make(chan Datum)
 			chanMap[d.Key] = ch
 
-			wg.Add(1)
-			go func(key string, ch chan Datum) {
-				defer wg.Done()
-				messages := fs.Reducer.HandleDo(ctx, key, ch, md)
-				mu.Lock()
-				defer mu.Unlock()
-				for _, msg := range messages {
-					datumList = append(datumList, &functionpb.Datum{
-						Key:   msg.Key,
-						Value: msg.Value,
-					})
-				}
+			func(key string, ch chan Datum) {
+				g.Go(func() error {
+					messages := fs.Reducer.HandleDo(ctx, key, ch, md)
+					datumList := buildDatumList(messages)
+
+					// stream.Send() is not thread safe.
+					mu.Lock()
+					defer mu.Unlock()
+					err := stream.Send(datumList)
+					if err != nil {
+						// TODO: research on gRPC errors and revisit the error handler
+						return err
+					}
+					return nil
+				})
 			}(d.Key, ch)
 		}
 		ch <- hd
 	}
 
 	// wait until all the HandleDo return
-	wg.Wait()
-	return stream.SendAndClose(&functionpb.DatumList{
-		Elements: datumList,
-	})
+	return g.Wait()
+}
+
+func buildDatumList(messages Messages) *functionpb.DatumList {
+	datumList := &functionpb.DatumList{}
+	for _, msg := range messages {
+		datumList.Elements = append(datumList.Elements, &functionpb.Datum{
+			Key:   msg.Key,
+			Value: msg.Value,
+		})
+	}
+
+	return datumList
 }
 
 func closeChannels(chanMap map[string]chan Datum) {

@@ -3,9 +3,11 @@ package client
 import (
 	"context"
 	"fmt"
+	"io"
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	"github.com/numaproj/numaflow-go/pkg/function"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -79,20 +81,51 @@ func (c *client) MapTFn(ctx context.Context, datum *functionpb.Datum) ([]*functi
 }
 
 // ReduceFn applies a reduce function to a datum stream.
-func (c *client) ReduceFn(ctx context.Context, datumStreamCh <-chan *functionpb.Datum) ([]*functionpb.Datum, error) {
+func (c *client) ReduceFn(ctx context.Context, datumStreamCh <-chan *functionpb.Datum) (*functionpb.DatumList, error) {
+	var g errgroup.Group
+	datumList := &functionpb.DatumList{}
+
 	stream, err := c.grpcClt.ReduceFn(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute c.grpcClt.ReduceFn(): %w", err)
 	}
-	for datum := range datumStreamCh {
-		if err := stream.Send(datum); err != nil {
-			return nil, fmt.Errorf("failed to execute stream.Send(%v): %w", datum, err)
+	g.Go(func() error {
+		var sendErr error
+		for datum := range datumStreamCh {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+				if sendErr = stream.Send(datum); sendErr != nil {
+					return sendErr
+				}
+			}
+		}
+		return stream.CloseSend()
+	})
+
+outputLoop:
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+			var resp *functionpb.DatumList
+			resp, err = stream.Recv()
+			if err == io.EOF {
+				break outputLoop
+			}
+			if err != nil {
+				return nil, err
+			}
+			datumList.Elements = append(datumList.Elements, resp.Elements...)
 		}
 	}
-	reducedDatumList, err := stream.CloseAndRecv()
+
+	err = g.Wait()
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute stream.CloseAndRecv(): %w", err)
+		return nil, err
 	}
 
-	return reducedDatumList.GetElements(), nil
+	return datumList, err
 }
