@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -79,8 +80,8 @@ func (s *server) RegisterReducer(r functionsdk.ReduceHandler) *server {
 	return s
 }
 
-// Start starts the gRPC server via unix domain socket at configs.Addr.
-func (s *server) Start(ctx context.Context, inputOptions ...Option) {
+// Start starts the gRPC server via unix domain socket at configs.Addr and return error.
+func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 	var opts = &options{
 		sockAddr:       functionsdk.Addr,
 		maxMessageSize: functionsdk.DefaultMaxMessageSize,
@@ -90,39 +91,50 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) {
 		inputOption(opts)
 	}
 
-	cleanup := func() {
+	cleanup := func() error {
+		// err if no opts.sockAddr should be ignored
 		if _, err := os.Stat(opts.sockAddr); err == nil {
-			if err := os.RemoveAll(opts.sockAddr); err != nil {
-				log.Fatal(err)
-			}
+			return os.RemoveAll(opts.sockAddr)
 		}
+		return nil
 	}
-	cleanup()
+
+	if err := cleanup(); err != nil {
+		return err
+	}
 
 	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
 	lis, err := net.Listen(functionsdk.Protocol, opts.sockAddr)
 	if err != nil {
-		log.Fatalf("failed to execute net.Listen(%q, %q): %v", functionsdk.Protocol, functionsdk.Addr, err)
+		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", functionsdk.Protocol, functionsdk.Addr, err)
 	}
 	grpcServer := grpc.NewServer(
 		grpc.MaxRecvMsgSize(opts.maxMessageSize),
 		grpc.MaxSendMsgSize(opts.maxMessageSize),
 	)
+	defer log.Println("Successfully stopped the gRPC server")
+	defer grpcServer.GracefulStop()
 	functionpb.RegisterUserDefinedFunctionServer(grpcServer, s.svc)
 
+	errCh := make(chan error, 1)
+	defer close(errCh)
 	// start the grpc server
-	go func() {
+	go func(ch chan<- error) {
 		log.Println("starting the gRPC server with unix domain socket...")
 		err = grpcServer.Serve(lis)
 		if err != nil {
-			log.Fatalf("failed to start the gRPC server: %v", err)
+			ch <- fmt.Errorf("failed to start the gRPC server: %v", err)
 		}
-	}()
+	}(errCh)
 
-	<-ctxWithSignal.Done()
-	log.Println("Got a signal: terminating gRPC server...")
-	defer log.Println("Successfully stopped the gRPC server")
-	grpcServer.GracefulStop()
+	select {
+	case err := <-errCh:
+		return err
+	case <-ctxWithSignal.Done():
+		log.Println("Got a signal: terminating gRPC server...")
+	}
+
+	return nil
 }
