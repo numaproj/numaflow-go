@@ -57,11 +57,11 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 	}
 
 	cleanup := func() error {
-		_, err := os.Stat(opts.sockAddr)
-		if err == nil {
-			err = os.RemoveAll(opts.sockAddr)
+		// err if no opts.sockAddr should be ignored
+		if _, err := os.Stat(opts.sockAddr); err == nil {
+			return os.RemoveAll(opts.sockAddr)
 		}
-		return err
+		return nil
 	}
 
 	if err := cleanup(); err != nil {
