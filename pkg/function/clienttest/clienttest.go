@@ -58,14 +58,15 @@ func (c *client) MapTFn(ctx context.Context, datum *functionpb.Datum) ([]*functi
 }
 
 // ReduceFn applies a reduce function to a datum stream.
-func (c *client) ReduceFn(ctx context.Context, datumStreamCh <-chan *functionpb.Datum) (*functionpb.DatumList, error) {
+func (c *client) ReduceFn(ctx context.Context, datumStreamCh <-chan *functionpb.Datum) ([]*functionpb.Datum, error) {
 	var g errgroup.Group
-	datumList := &functionpb.DatumList{}
+	datumList := make([]*functionpb.Datum, 0)
 
 	stream, err := c.grpcClt.ReduceFn(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute c.grpcClt.ReduceFn(): %w", err)
 	}
+	// stream the messages to server
 	g.Go(func() error {
 		var sendErr error
 		for datum := range datumStreamCh {
@@ -74,6 +75,8 @@ func (c *client) ReduceFn(ctx context.Context, datumStreamCh <-chan *functionpb.
 				return ctx.Err()
 			default:
 				if sendErr = stream.Send(datum); sendErr != nil {
+					// we don't need to invoke close on the stream
+					// if there is an error gRPC will close the stream.
 					return sendErr
 				}
 			}
@@ -81,6 +84,7 @@ func (c *client) ReduceFn(ctx context.Context, datumStreamCh <-chan *functionpb.
 		return stream.CloseSend()
 	})
 
+	// read the response from the server stream
 outputLoop:
 	for {
 		select {
@@ -95,7 +99,7 @@ outputLoop:
 			if err != nil {
 				return nil, err
 			}
-			datumList.Elements = append(datumList.Elements, resp.Elements...)
+			datumList = append(datumList, resp.Elements...)
 		}
 	}
 
