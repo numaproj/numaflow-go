@@ -141,21 +141,6 @@ func (m *MockUserDefinedFunction_ReduceFnClient) EXPECT() *MockUserDefinedFuncti
 	return m.recorder
 }
 
-// CloseAndRecv mocks base method.
-func (m *MockUserDefinedFunction_ReduceFnClient) CloseAndRecv() (*v1.DatumList, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CloseAndRecv")
-	ret0, _ := ret[0].(*v1.DatumList)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CloseAndRecv indicates an expected call of CloseAndRecv.
-func (mr *MockUserDefinedFunction_ReduceFnClientMockRecorder) CloseAndRecv() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CloseAndRecv", reflect.TypeOf((*MockUserDefinedFunction_ReduceFnClient)(nil).CloseAndRecv))
-}
-
 // CloseSend mocks base method.
 func (m *MockUserDefinedFunction_ReduceFnClient) CloseSend() error {
 	m.ctrl.T.Helper()
@@ -197,6 +182,21 @@ func (m *MockUserDefinedFunction_ReduceFnClient) Header() (metadata.MD, error) {
 func (mr *MockUserDefinedFunction_ReduceFnClientMockRecorder) Header() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Header", reflect.TypeOf((*MockUserDefinedFunction_ReduceFnClient)(nil).Header))
+}
+
+// Recv mocks base method.
+func (m *MockUserDefinedFunction_ReduceFnClient) Recv() (*v1.DatumList, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Recv")
+	ret0, _ := ret[0].(*v1.DatumList)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Recv indicates an expected call of Recv.
+func (mr *MockUserDefinedFunction_ReduceFnClientMockRecorder) Recv() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Recv", reflect.TypeOf((*MockUserDefinedFunction_ReduceFnClient)(nil).Recv))
 }
 
 // RecvMsg mocks base method.

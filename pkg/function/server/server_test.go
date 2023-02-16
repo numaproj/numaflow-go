@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"sync"
 	"testing"
 	"time"
 
@@ -206,16 +207,28 @@ func Test_server_reduce(t *testing.T) {
 			}
 			close(reduceDatumCh)
 
+			dList := &functionpb.DatumList{}
 			// set the key in gPRC metadata for reduce function
 			md := grpcmd.New(map[string]string{functionsdk.DatumKey: testKey, functionsdk.WinStartTime: "60000", functionsdk.WinEndTime: "120000"})
 			ctx = grpcmd.NewOutgoingContext(ctx, md)
-			list, err := c.ReduceFn(ctx, reduceDatumCh)
+			resultChan, err := c.ReduceFn(ctx, reduceDatumCh)
+			var wg sync.WaitGroup
+
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				for res := range resultChan {
+					dList.Elements = append(dList.Elements, res.Elements...)
+				}
+			}()
+
+			wg.Wait()
 			assert.NoError(t, err)
-			assert.Equal(t, 1, len(list))
-			assert.Equal(t, testKey, list[0].GetKey())
-			assert.Equal(t, []byte(`45`), list[0].GetValue())
-			assert.Nil(t, list[0].GetEventTime())
-			assert.Nil(t, list[0].GetWatermark())
+			assert.Equal(t, 1, len(dList.Elements))
+			assert.Equal(t, testKey, dList.Elements[0].GetKey())
+			assert.Equal(t, []byte(`45`), dList.Elements[0].GetValue())
+			assert.Nil(t, dList.Elements[0].GetEventTime())
+			assert.Nil(t, dList.Elements[0].GetWatermark())
 		})
 	}
 }

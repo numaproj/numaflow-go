@@ -3,6 +3,7 @@ package clienttest
 import (
 	"context"
 	"fmt"
+	"io"
 	"reflect"
 	"testing"
 	"time"
@@ -129,4 +130,61 @@ func TestMapTFn(t *testing.T) {
 	got, err = testClient.MapTFn(ctx, testDatum)
 	assert.Nil(t, got)
 	assert.EqualError(t, err, "failed to execute c.grpcClt.MapTFn(): mock MapTFn error")
+}
+
+func TestReduceFn(t *testing.T) {
+	var ctx = context.Background()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockClient := funcmock.NewMockUserDefinedFunctionClient(ctrl)
+	mockReduceClient := funcmock.NewMockUserDefinedFunction_ReduceFnClient(ctrl)
+
+	mockReduceClient.EXPECT().Send(gomock.Any()).Return(nil).AnyTimes()
+	mockReduceClient.EXPECT().CloseSend().Return(nil).AnyTimes()
+
+	testDatumList := &functionpb.DatumList{
+		Elements: []*functionpb.Datum{
+			{
+				Key:   "reduced_result_key",
+				Value: []byte(`forward_message`),
+			},
+		},
+	}
+
+	mockReduceClient.EXPECT().Recv().Return(testDatumList, nil).Times(3)
+
+	mockReduceClient.EXPECT().Recv().Return(nil, io.EOF).Times(1)
+
+	datumCh := make(chan *functionpb.Datum)
+
+	mockClient.EXPECT().ReduceFn(gomock.Any(), gomock.Any()).Return(mockReduceClient, nil)
+
+	testClient, err := New(mockClient)
+	assert.NoError(t, err)
+	reflect.DeepEqual(testClient, &client{
+		grpcClt: mockClient,
+	})
+
+	expectedDatumList := &functionpb.DatumList{
+		Elements: []*functionpb.Datum{
+			{
+				Key:   "reduced_result_key",
+				Value: []byte(`forward_message`),
+			},
+			{
+				Key:   "reduced_result_key",
+				Value: []byte(`forward_message`),
+			},
+			{
+				Key:   "reduced_result_key",
+				Value: []byte(`forward_message`),
+			},
+		},
+	}
+	close(datumCh)
+	got, err := testClient.ReduceFn(ctx, datumCh)
+	reflect.DeepEqual(got, expectedDatumList)
+	assert.NoError(t, err)
 }

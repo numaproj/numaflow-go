@@ -25,25 +25,28 @@ type fields struct {
 
 type UserDefinedFunctionReduceFnServerTest struct {
 	ctx      context.Context
-	outputCh chan *functionpb.Datum
-	result   *functionpb.DatumList
+	inputCh  chan *functionpb.Datum
+	outputCh chan *functionpb.DatumList
 	grpc.ServerStream
 }
 
-func NewUserDefinedFunctionReduceFnServerTest(ctx context.Context, datumCh chan *functionpb.Datum) *UserDefinedFunctionReduceFnServerTest {
-	return &UserDefinedFunctionReduceFnServerTest{
-		ctx:      ctx,
-		outputCh: datumCh,
-	}
-}
-
-func (u *UserDefinedFunctionReduceFnServerTest) SendAndClose(list *functionpb.DatumList) error {
-	u.result = list
+func (u *UserDefinedFunctionReduceFnServerTest) Send(list *functionpb.DatumList) error {
+	u.outputCh <- list
 	return nil
 }
 
+func NewUserDefinedFunctionReduceFnServerTest(ctx context.Context,
+	inputCh chan *functionpb.Datum,
+	outputCh chan *functionpb.DatumList) *UserDefinedFunctionReduceFnServerTest {
+	return &UserDefinedFunctionReduceFnServerTest{
+		ctx:      ctx,
+		inputCh:  inputCh,
+		outputCh: outputCh,
+	}
+}
+
 func (u *UserDefinedFunctionReduceFnServerTest) Recv() (*functionpb.Datum, error) {
-	val, ok := <-u.outputCh
+	val, ok := <-u.inputCh
 	if !ok {
 		return val, io.EOF
 	}
@@ -508,7 +511,10 @@ func TestService_ReduceFn(t *testing.T) {
 			ctx := grpcmd.NewIncomingContext(context.Background(), grpcmd.New(map[string]string{DatumKey: "client", WinStartTime: "60000", WinEndTime: "120000"}))
 
 			inputCh := make(chan *functionpb.Datum)
-			udfReduceFnStream := NewUserDefinedFunctionReduceFnServerTest(ctx, inputCh)
+			outputCh := make(chan *functionpb.DatumList)
+			result := &functionpb.DatumList{}
+
+			udfReduceFnStream := NewUserDefinedFunctionReduceFnServerTest(ctx, inputCh, outputCh)
 
 			var wg sync.WaitGroup
 			var err error
@@ -517,12 +523,21 @@ func TestService_ReduceFn(t *testing.T) {
 			go func() {
 				defer wg.Done()
 				err = fs.ReduceFn(udfReduceFnStream)
+				close(outputCh)
+			}()
+
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				for msg := range outputCh {
+					result.Elements = append(result.Elements, msg.Elements...)
+				}
 			}()
 
 			for _, val := range tt.input {
-				udfReduceFnStream.outputCh <- val
+				udfReduceFnStream.inputCh <- val
 			}
-			close(udfReduceFnStream.outputCh)
+			close(udfReduceFnStream.inputCh)
 			wg.Wait()
 
 			if (err != nil) != tt.expectedErr {
@@ -530,13 +545,13 @@ func TestService_ReduceFn(t *testing.T) {
 				return
 			}
 
-			// sort and compare, since order of the output doesn't matter
-			sort.Slice(udfReduceFnStream.result.Elements, func(i, j int) bool {
-				return string(udfReduceFnStream.result.Elements[i].Value) < string(udfReduceFnStream.result.Elements[j].Value)
+			//sort and compare, since order of the output doesn't matter
+			sort.Slice(result.Elements, func(i, j int) bool {
+				return string(result.Elements[i].Value) < string(result.Elements[j].Value)
 			})
 
-			if !reflect.DeepEqual(udfReduceFnStream.result, tt.expected) {
-				t.Errorf("ReduceFn() got = %v, want %v", udfReduceFnStream.result, tt.expected)
+			if !reflect.DeepEqual(result, tt.expected) {
+				t.Errorf("ReduceFn() got = %v, want %v", result, tt.expected)
 			}
 		})
 	}
