@@ -61,33 +61,21 @@ func Test_FilterEventTime(t *testing.T) {
 			name:  "DatumWithEventTimeBefore2022GetsDropped",
 			input: beforeYear2022Datum{},
 			expectedOutput: functionsdk.MessageTs{
-				functionsdk.MessageT{
-					EventTime: time.Time{},
-					Key:       functionsdk.DROP,
-					Value:     []byte{},
-				},
+				functionsdk.MessageTToDrop(),
 			},
 		},
 		{
 			name:  "DatumWithEventTimeWithin2022GetsKeyAndEventTimeUpdated",
 			input: withinYear2022Datum{},
 			expectedOutput: functionsdk.MessageTs{
-				functionsdk.MessageT{
-					EventTime: janFisrt2022,
-					Key:       "within_year_2022",
-					Value:     []byte("test-data"),
-				},
+				functionsdk.MessageTTo(janFisrt2022, "within_year_2022", []byte("test-data")),
 			},
 		},
 		{
 			name:  "DatumWithEventTimeAfter2022GetsKeyAndEventTimeUpdated",
 			input: afterYear2022Datum{},
 			expectedOutput: functionsdk.MessageTs{
-				functionsdk.MessageT{
-					EventTime: janFirst2023,
-					Key:       "after_year_2022",
-					Value:     []byte("test-data"),
-				},
+				functionsdk.MessageTTo(janFirst2023, "after_year_2022", []byte("test-data")),
 			},
 		},
 	}
