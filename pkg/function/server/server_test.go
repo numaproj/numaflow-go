@@ -9,12 +9,13 @@ import (
 	"testing"
 	"time"
 
-	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
-	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
-	"github.com/numaproj/numaflow-go/pkg/function/client"
 	"github.com/stretchr/testify/assert"
 	grpcmd "google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
+	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
+	"github.com/numaproj/numaflow-go/pkg/function/client"
 )
 
 type fields struct {
@@ -211,14 +212,14 @@ func Test_server_reduce(t *testing.T) {
 			// set the key in gPRC metadata for reduce function
 			md := grpcmd.New(map[string]string{functionsdk.DatumKey: testKey, functionsdk.WinStartTime: "60000", functionsdk.WinEndTime: "120000"})
 			ctx = grpcmd.NewOutgoingContext(ctx, md)
-			resultChan, err := c.ReduceFn(ctx, reduceDatumCh)
+			resultDatumList, err := c.ReduceFn(ctx, reduceDatumCh)
 			var wg sync.WaitGroup
 
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				for res := range resultChan {
-					dList.Elements = append(dList.Elements, res.Elements...)
+				for _, d := range resultDatumList {
+					dList.Elements = append(dList.Elements, d)
 				}
 			}()
 

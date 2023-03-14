@@ -8,11 +8,12 @@ import (
 	"sync"
 	"time"
 
-	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	"golang.org/x/sync/errgroup"
 	grpcmd "google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 )
 
 // handlerDatum implements the Datum interface and is used in the map and reduce handlers.
@@ -107,8 +108,8 @@ func (fs *Service) MapFn(ctx context.Context, d *functionpb.Datum) (*functionpb.
 	var elements []*functionpb.Datum
 	for _, m := range messages.Items() {
 		elements = append(elements, &functionpb.Datum{
-			Key:   m.Key,
-			Value: m.Value,
+			Key:   m.key,
+			Value: m.value,
 		})
 	}
 	datumList := &functionpb.DatumList{
@@ -139,13 +140,13 @@ func (fs *Service) MapTFn(ctx context.Context, d *functionpb.Datum) (*functionpb
 		eventTime: d.GetEventTime().EventTime.AsTime(),
 		watermark: d.GetWatermark().Watermark.AsTime(),
 	}
-	messages := fs.MapperT.HandleDo(ctx, key, &hd)
+	messageTs := fs.MapperT.HandleDo(ctx, key, &hd)
 	var elements []*functionpb.Datum
-	for _, m := range messages.Items() {
+	for _, m := range messageTs.Items() {
 		elements = append(elements, &functionpb.Datum{
-			EventTime: &functionpb.EventTime{EventTime: timestamppb.New(m.EventTime)},
-			Key:       m.Key,
-			Value:     m.Value,
+			EventTime: &functionpb.EventTime{EventTime: timestamppb.New(m.eventTime)},
+			Key:       m.key,
+			Value:     m.value,
 		})
 	}
 	datumList := &functionpb.DatumList{
@@ -249,8 +250,8 @@ func buildDatumList(messages Messages) *functionpb.DatumList {
 	datumList := &functionpb.DatumList{}
 	for _, msg := range messages {
 		datumList.Elements = append(datumList.Elements, &functionpb.Datum{
-			Key:   msg.Key,
-			Value: msg.Value,
+			Key:   msg.key,
+			Value: msg.value,
 		})
 	}
 
