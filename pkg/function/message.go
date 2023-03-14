@@ -9,23 +9,23 @@ var (
 
 // Message is used to wrap the data return by UDF functions
 type Message struct {
-	Key   string
-	Value []byte
+	key   string
+	value []byte
 }
 
 // MessageToDrop creates a Message to be dropped
 func MessageToDrop() Message {
-	return Message{Key: DROP, Value: []byte{}}
+	return Message{key: DROP, value: []byte{}}
 }
 
 // MessageToAll creates a Message that will forward to all
 func MessageToAll(value []byte) Message {
-	return Message{Key: ALL, Value: value}
+	return Message{key: ALL, value: value}
 }
 
 // MessageTo creates a Message that will forward to specified "to"
 func MessageTo(to string, value []byte) Message {
-	return Message{Key: to, Value: value}
+	return Message{key: to, value: value}
 }
 
 type Messages []Message

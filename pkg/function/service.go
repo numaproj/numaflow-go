@@ -108,8 +108,8 @@ func (fs *Service) MapFn(ctx context.Context, d *functionpb.Datum) (*functionpb.
 	var elements []*functionpb.Datum
 	for _, m := range messages.Items() {
 		elements = append(elements, &functionpb.Datum{
-			Key:   m.Key,
-			Value: m.Value,
+			Key:   m.key,
+			Value: m.value,
 		})
 	}
 	datumList := &functionpb.DatumList{
@@ -250,8 +250,8 @@ func buildDatumList(messages Messages) *functionpb.DatumList {
 	datumList := &functionpb.DatumList{}
 	for _, msg := range messages {
 		datumList.Elements = append(datumList.Elements, &functionpb.Datum{
-			Key:   msg.Key,
-			Value: msg.Value,
+			Key:   msg.key,
+			Value: msg.value,
 		})
 	}
 
