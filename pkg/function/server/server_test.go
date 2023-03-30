@@ -38,9 +38,9 @@ func Test_server_map(t *testing.T) {
 		{
 			name: "server_map",
 			fields: fields{
-				mapHandler: functionsdk.MapFunc(func(ctx context.Context, key string, d functionsdk.Datum) functionsdk.Messages {
+				mapHandler: functionsdk.MapFunc(func(ctx context.Context, key []string, d functionsdk.Datum) functionsdk.Messages {
 					msg := d.Value()
-					return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(key+"_test", msg))
+					return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo([]string{key[0] + "_test"}, msg))
 				}),
 			},
 		},
@@ -59,10 +59,8 @@ func Test_server_map(t *testing.T) {
 				assert.NoError(t, err)
 			}()
 			for i := 0; i < 10; i++ {
-				key := fmt.Sprintf("client_%d", i)
+				key := []string{fmt.Sprintf("client_%d", i)}
 				// set the key in metadata for map function
-				md := grpcmd.New(map[string]string{functionsdk.DatumKey: key})
-				ctx = grpcmd.NewOutgoingContext(ctx, md)
 				list, err := c.MapFn(ctx, &functionpb.Datum{
 					Key:       key,
 					Value:     []byte(`server_test`),
@@ -71,7 +69,7 @@ func Test_server_map(t *testing.T) {
 				})
 				assert.NoError(t, err)
 				for _, e := range list {
-					assert.Equal(t, key+"_test", e.GetKey())
+					assert.Equal(t, []string{key[0] + "_test"}, e.GetKey())
 					assert.Equal(t, []byte(`server_test`), e.GetValue())
 					assert.Nil(t, e.GetEventTime())
 					assert.Nil(t, e.GetWatermark())
@@ -95,9 +93,9 @@ func Test_server_mapT(t *testing.T) {
 		{
 			name: "server_mapT",
 			fields: fields{
-				mapTHandler: functionsdk.MapTFunc(func(ctx context.Context, key string, d functionsdk.Datum) functionsdk.MessageTs {
+				mapTHandler: functionsdk.MapTFunc(func(ctx context.Context, key []string, d functionsdk.Datum) functionsdk.MessageTs {
 					msg := d.Value()
-					return functionsdk.MessageTsBuilder().Append(functionsdk.MessageTTo(time.Time{}, key+"_test", msg))
+					return functionsdk.MessageTsBuilder().Append(functionsdk.MessageTTo(time.Time{}, []string{key[0] + "_test"}, msg))
 				}),
 			},
 		},
@@ -116,10 +114,8 @@ func Test_server_mapT(t *testing.T) {
 				assert.NoError(t, err)
 			}()
 			for i := 0; i < 10; i++ {
-				key := fmt.Sprintf("client_%d", i)
+				key := []string{fmt.Sprintf("client_%d", i)}
 				// set the key in metadata for map function
-				md := grpcmd.New(map[string]string{functionsdk.DatumKey: key})
-				ctx = grpcmd.NewOutgoingContext(ctx, md)
 				list, err := c.MapTFn(ctx, &functionpb.Datum{
 					Key:       key,
 					Value:     []byte(`server_test`),
@@ -128,7 +124,7 @@ func Test_server_mapT(t *testing.T) {
 				})
 				assert.NoError(t, err)
 				for _, e := range list {
-					assert.Equal(t, key+"_test", e.GetKey())
+					assert.Equal(t, []string{key[0] + "_test"}, e.GetKey())
 					assert.Equal(t, []byte(`server_test`), e.GetValue())
 					assert.Equal(t, &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})}, e.GetEventTime())
 					assert.Nil(t, e.GetWatermark())
@@ -153,7 +149,7 @@ func Test_server_reduce(t *testing.T) {
 		{
 			name: "server_reduce",
 			fields: fields{
-				reduceHandler: functionsdk.ReduceFunc(func(ctx context.Context, key string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) functionsdk.Messages {
+				reduceHandler: functionsdk.ReduceFunc(func(ctx context.Context, key []string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) functionsdk.Messages {
 					// sum up values for the same key
 
 					// in this test case, md is nil
@@ -200,7 +196,7 @@ func Test_server_reduce(t *testing.T) {
 			// the sum of the numbers from 0 to 9
 			for i := 0; i < 10; i++ {
 				reduceDatumCh <- &functionpb.Datum{
-					Key:       testKey,
+					Key:       []string{testKey},
 					Value:     []byte(strconv.Itoa(i)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
@@ -226,7 +222,7 @@ func Test_server_reduce(t *testing.T) {
 			wg.Wait()
 			assert.NoError(t, err)
 			assert.Equal(t, 1, len(dList.Elements))
-			assert.Equal(t, testKey, dList.Elements[0].GetKey())
+			assert.Equal(t, []string{testKey}, dList.Elements[0].GetKey())
 			assert.Equal(t, []byte(`45`), dList.Elements[0].GetValue())
 			assert.Nil(t, dList.Elements[0].GetEventTime())
 			assert.Nil(t, dList.Elements[0].GetWatermark())

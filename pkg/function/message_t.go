@@ -8,22 +8,22 @@ import (
 // Compared with Message, MessageT contains one more field, the event time, usually extracted from the payload.
 type MessageT struct {
 	eventTime time.Time
-	key       string
+	key       []string
 	value     []byte
 }
 
 // MessageTToDrop creates a MessageT to be dropped
 func MessageTToDrop() MessageT {
-	return MessageT{eventTime: time.Time{}, key: DROP, value: []byte{}}
+	return MessageT{eventTime: time.Time{}, key: []string{DROP}, value: []byte{}}
 }
 
 // MessageTToAll creates a MessageT that will forward to all
 func MessageTToAll(eventTime time.Time, value []byte) MessageT {
-	return MessageT{eventTime: eventTime, key: ALL, value: value}
+	return MessageT{eventTime: eventTime, key: []string{ALL}, value: value}
 }
 
 // MessageTTo creates a MessageT that will forward to specified "to"
-func MessageTTo(eventTime time.Time, to string, value []byte) MessageT {
+func MessageTTo(eventTime time.Time, to []string, value []byte) MessageT {
 	return MessageT{eventTime: eventTime, key: to, value: value}
 }
 
