@@ -13,6 +13,16 @@ type Message struct {
 	value []byte
 }
 
+// Key returns message key
+func (m *Message) Key() []string {
+	return m.key
+}
+
+// Value returns message value
+func (m *Message) Value() []byte {
+	return m.value
+}
+
 // MessageToDrop creates a Message to be dropped
 func MessageToDrop() Message {
 	return Message{key: []string{DROP}, value: []byte{}}

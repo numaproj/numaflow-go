@@ -12,6 +12,21 @@ type MessageT struct {
 	value     []byte
 }
 
+// EventTime returns message eventTime
+func (m *MessageT) EventTime() time.Time {
+	return m.eventTime
+}
+
+// Key returns message key
+func (m *MessageT) Key() []string {
+	return m.key
+}
+
+// Value returns message value
+func (m *MessageT) Value() []byte {
+	return m.value
+}
+
 // MessageTToDrop creates a MessageT to be dropped
 func MessageTToDrop() MessageT {
 	return MessageT{eventTime: time.Time{}, key: []string{DROP}, value: []byte{}}
