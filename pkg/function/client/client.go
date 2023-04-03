@@ -4,9 +4,12 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	"github.com/numaproj/numaflow-go/pkg/function"
+	"github.com/numaproj/numaflow-go/pkg/info"
+	infoclient "github.com/numaproj/numaflow-go/pkg/info/client"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -21,14 +24,25 @@ type client struct {
 
 // New creates a new client object.
 func New(inputOptions ...Option) (*client, error) {
-
 	var opts = &options{
-		sockAddr:       function.Addr,
-		maxMessageSize: function.DefaultMaxMessageSize,
+		sockAddr:        function.Addr,
+		maxMessageSize:  function.DefaultMaxMessageSize,
+		infoSvrSockAddr: info.SocketAddress,
 	}
 
 	for _, inputOption := range inputOptions {
 		inputOption(opts)
+	}
+
+	infoClient := infoclient.NewInfoClient(infoclient.WithSocketAddress(opts.infoSvrSockAddr))
+	serverInfo, err := infoClient.GetServerInfo(context.Background())
+	if err != nil {
+		// TODO: return nil, err
+		log.Println("Failed to execute infoClient.GetServerInfo(): ", err)
+	}
+	// TODO: Use serverInfo to check compatibility and start the right gRPC client.
+	if serverInfo != nil {
+		log.Printf("ServerInfo: %v\n", serverInfo)
 	}
 
 	c := new(client)

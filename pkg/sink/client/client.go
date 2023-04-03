@@ -3,8 +3,11 @@ package client
 import (
 	"context"
 	"fmt"
+	"log"
 
 	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
+	"github.com/numaproj/numaflow-go/pkg/info"
+	infoclient "github.com/numaproj/numaflow-go/pkg/info/client"
 	"github.com/numaproj/numaflow-go/pkg/sink"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -21,13 +24,24 @@ var _ sink.Client = (*client)(nil)
 
 // New creates a new client object.
 func New(inputOptions ...Option) (*client, error) {
-
 	var opts = &options{
-		sockAddr: sink.Addr,
+		sockAddr:        sink.Addr,
+		infoSvrSockAddr: info.SocketAddress,
 	}
 
 	for _, inputOption := range inputOptions {
 		inputOption(opts)
+	}
+
+	infoClient := infoclient.NewInfoClient(infoclient.WithSocketAddress(opts.infoSvrSockAddr))
+	serverInfo, err := infoClient.GetServerInfo(context.Background())
+	if err != nil {
+		// TODO: return nil, err
+		log.Println("Failed to execute infoClient.GetServerInfo(): ", err)
+	}
+	// TODO: Use serverInfo to check compatibility and start the right gRPC client.
+	if serverInfo != nil {
+		log.Printf("ServerInfo: %v\n", serverInfo)
 	}
 
 	c := new(client)

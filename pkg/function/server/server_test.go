@@ -25,12 +25,21 @@ type fields struct {
 }
 
 func Test_server_map(t *testing.T) {
-	file, err := os.CreateTemp("/tmp", "numaflow-test.sock")
+
+	socketFile, err := os.CreateTemp("/tmp", "numaflow-test.sock")
 	assert.NoError(t, err)
 	defer func() {
-		err = os.RemoveAll(file.Name())
+		err = os.RemoveAll(socketFile.Name())
 		assert.NoError(t, err)
 	}()
+
+	infoSocketFile, err := os.CreateTemp("/tmp", "numaflow-test-info.sock")
+	assert.NoError(t, err)
+	defer func() {
+		err = os.RemoveAll(infoSocketFile.Name())
+		assert.NoError(t, err)
+	}()
+
 	tests := []struct {
 		name   string
 		fields fields
@@ -50,9 +59,9 @@ func Test_server_map(t *testing.T) {
 			// note: using actual UDS connection
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
-			go New().RegisterMapper(tt.fields.mapHandler).Start(ctx, WithSockAddr(file.Name()))
+			go New().RegisterMapper(tt.fields.mapHandler).Start(ctx, WithSockAddr(socketFile.Name()), WithInfoServerSocketAddr(infoSocketFile.Name()))
 
-			c, err := client.New(client.WithSockAddr(file.Name()))
+			c, err := client.New(client.WithSockAddr(socketFile.Name()), client.WithInfoServerSocketAddr(infoSocketFile.Name()))
 			assert.NoError(t, err)
 			defer func() {
 				err = c.CloseConn(ctx)
@@ -82,12 +91,20 @@ func Test_server_map(t *testing.T) {
 }
 
 func Test_server_mapT(t *testing.T) {
-	file, err := os.CreateTemp("/tmp", "numaflow-test.sock")
+	socketFile, err := os.CreateTemp("/tmp", "numaflow-test.sock")
 	assert.NoError(t, err)
 	defer func() {
-		err = os.RemoveAll(file.Name())
+		err = os.RemoveAll(socketFile.Name())
 		assert.NoError(t, err)
 	}()
+
+	infoSocketFile, err := os.CreateTemp("/tmp", "numaflow-test-info.sock")
+	assert.NoError(t, err)
+	defer func() {
+		err = os.RemoveAll(infoSocketFile.Name())
+		assert.NoError(t, err)
+	}()
+
 	tests := []struct {
 		name   string
 		fields fields
@@ -107,9 +124,9 @@ func Test_server_mapT(t *testing.T) {
 			// note: using actual UDS connection
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
-			go New().RegisterMapperT(tt.fields.mapTHandler).Start(ctx, WithSockAddr(file.Name()))
+			go New().RegisterMapperT(tt.fields.mapTHandler).Start(ctx, WithSockAddr(socketFile.Name()), WithInfoServerSocketAddr(infoSocketFile.Name()))
 
-			c, err := client.New(client.WithSockAddr(file.Name()))
+			c, err := client.New(client.WithSockAddr(socketFile.Name()), client.WithInfoServerSocketAddr(infoSocketFile.Name()))
 			assert.NoError(t, err)
 			defer func() {
 				err = c.CloseConn(ctx)
@@ -145,6 +162,14 @@ func Test_server_reduce(t *testing.T) {
 		err = os.RemoveAll(file.Name())
 		assert.NoError(t, err)
 	}()
+
+	infoSocketFile, err := os.CreateTemp("/tmp", "numaflow-test-info.sock")
+	assert.NoError(t, err)
+	defer func() {
+		err = os.RemoveAll(infoSocketFile.Name())
+		assert.NoError(t, err)
+	}()
+
 	var testKey = "reduce_key"
 	tests := []struct {
 		name   string
@@ -187,9 +212,9 @@ func Test_server_reduce(t *testing.T) {
 			// note: using actual UDS connection
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
-			go New().RegisterReducer(tt.fields.reduceHandler).Start(ctx, WithSockAddr(file.Name()))
+			go New().RegisterReducer(tt.fields.reduceHandler).Start(ctx, WithSockAddr(file.Name()), WithInfoServerSocketAddr(infoSocketFile.Name()))
 
-			c, err := client.New(client.WithSockAddr(file.Name()))
+			c, err := client.New(client.WithSockAddr(file.Name()), client.WithInfoServerSocketAddr(infoSocketFile.Name()))
 			assert.NoError(t, err)
 			defer func() {
 				err = c.CloseConn(ctx)
@@ -218,9 +243,7 @@ func Test_server_reduce(t *testing.T) {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				for _, d := range resultDatumList {
-					dList.Elements = append(dList.Elements, d)
-				}
+				dList.Elements = append(dList.Elements, resultDatumList...)
 			}()
 
 			wg.Wait()
