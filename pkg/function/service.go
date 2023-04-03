@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -137,7 +138,7 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 		startTime int64
 		endTime   int64
 		ctx       = stream.Context()
-		chanMap   = NewCustomMap()
+		chanMap   = make(map[string]chan Datum)
 		mu        sync.RWMutex
 		g         errgroup.Group
 	)
@@ -174,31 +175,32 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 		d, err := stream.Recv()
 		// if EOF, close all the channels
 		if err == io.EOF {
-			chanMap.closeChannels()
+			closeChannels(chanMap)
 			break
 		}
 		if err != nil {
-			chanMap.closeChannels()
+			closeChannels(chanMap)
 			// TODO: research on gRPC errors and revisit the error handler
 			return err
 		}
+		key := strings.Join(d.Key, "")
 		var hd = &handlerDatum{
 			value:     d.GetValue(),
 			eventTime: d.GetEventTime().EventTime.AsTime(),
 			watermark: d.GetWatermark().Watermark.AsTime(),
 		}
 
-		ch, chok := chanMap.getIfPresent(d.Key)
+		ch, chok := chanMap[key]
 		if !chok {
 			ch = make(chan Datum)
-			chanMap.putIfNotPresent(d.Key, ch)
+			chanMap[key] = ch
 
-			func(key []string, ch chan Datum) {
+			func(k []string, ch chan Datum) {
 				g.Go(func() error {
 					// we stream the messages to the user by writing messages
 					// to channel and wait until we get the result and stream
 					// the result back to the client (numaflow).
-					messages := fs.Reducer.HandleDo(ctx, key, ch, md)
+					messages := fs.Reducer.HandleDo(ctx, k, ch, md)
 					datumList := buildDatumList(messages)
 
 					// stream.Send() is not thread safe.
@@ -230,6 +232,12 @@ func buildDatumList(messages Messages) *functionpb.DatumList {
 	}
 
 	return datumList
+}
+
+func closeChannels(chanMap map[string]chan Datum) {
+	for _, ch := range chanMap {
+		close(ch)
+	}
 }
 
 func getValueForKey(md grpcmd.MD, key string) (string, error) {
