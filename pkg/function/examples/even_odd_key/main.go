@@ -15,13 +15,11 @@ func handle(_ context.Context, key string, d functionsdk.Datum) functionsdk.Mess
 	_ = d.Watermark() // Watermark is available
 	// If msg is not an integer, drop it, otherwise return it with "even" or "odd" key.
 	if num, err := strconv.Atoi(string(key)); err != nil {
-		fmt.Println("dropping message")
+		fmt.Println("dropping message (not an integer)")
 		return functionsdk.MessagesBuilder().Append(functionsdk.MessageToDrop())
 	} else if num%2 == 0 {
-		fmt.Printf("num %d is even\n", num)
 		return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo("even", msg))
 	} else {
-		fmt.Printf("num %d is odd\n", num)
 		return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo("odd", msg))
 	}
 }
