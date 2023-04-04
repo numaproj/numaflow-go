@@ -2,6 +2,7 @@ package function
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"reflect"
 	"sort"
@@ -90,6 +91,38 @@ func TestService_MapFn(t *testing.T) {
 				Elements: []*functionpb.Datum{
 					{
 						Keys:  []string{"client_test"},
+						Value: []byte(`test`),
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "map_fn_forward_msg_with_transform_key",
+			fields: fields{
+				mapper: MapFunc(func(ctx context.Context, key string, datum Datum) Messages {
+					msg := datum.Value()
+					id := datum.ID()
+					numDelivered := datum.NumDelivered()
+					transformKey := fmt.Sprintf("%s_id_%s_numDelivered_%d", key, id, numDelivered)
+					return MessagesBuilder().Append(MessageTo(transformKey, msg))
+				}),
+			},
+			args: args{
+				ctx: context.Background(),
+				d: &functionpb.Datum{
+					Id:           "1",
+					Key:          "client",
+					Value:        []byte(`test`),
+					EventTime:    &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark:    &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
+					NumDelivered: 2,
+				},
+			},
+			want: &functionpb.DatumList{
+				Elements: []*functionpb.Datum{
+					{
+						Key:   "client_id_1_numDelivered_2",
 						Value: []byte(`test`),
 					},
 				},
@@ -340,6 +373,49 @@ func TestService_ReduceFn(t *testing.T) {
 					{
 						Keys:  []string{"client_test"},
 						Value: []byte(strconv.Itoa(60)),
+					},
+				},
+			},
+			expectedErr: false,
+		},
+		{
+			name: "reduce_fn_forward_msg_transform_key",
+			fields: fields{
+				reducer: ReduceFunc(func(ctx context.Context, key string, rch <-chan Datum, md Metadata) Messages {
+					sum := 0
+					transform_key := key
+					for msg := range rch {
+						msgVal, _ := strconv.Atoi(string(msg.Value()))
+						sum += msgVal
+						transform_key += "_id_" + msg.ID()
+						transform_key += "_numDelivered_" + strconv.Itoa(int(msg.NumDelivered()))
+					}
+					return MessagesBuilder().Append(MessageTo(transform_key, []byte(strconv.Itoa(sum))))
+				}),
+			},
+			input: []*functionpb.Datum{
+				{
+					Id:           "1",
+					Key:          "client",
+					Value:        []byte(strconv.Itoa(10)),
+					EventTime:    &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark:    &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
+					NumDelivered: 1,
+				},
+				{
+					Id:           "2",
+					Key:          "client",
+					Value:        []byte(strconv.Itoa(20)),
+					EventTime:    &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark:    &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
+					NumDelivered: 1,
+				},
+			},
+			expected: &functionpb.DatumList{
+				Elements: []*functionpb.Datum{
+					{
+						Key:   "client_id_1_numDelivered_1_id_2_numDelivered_1",
+						Value: []byte(strconv.Itoa(30)),
 					},
 				},
 			},

@@ -11,6 +11,10 @@ import (
 
 type beforeYear2022Datum struct{}
 
+func (d beforeYear2022Datum) ID() string {
+	return "id"
+}
+
 func (d beforeYear2022Datum) Value() []byte {
 	return []byte("test-data")
 }
@@ -22,7 +26,15 @@ func (d beforeYear2022Datum) Watermark() time.Time {
 	return time.Now()
 }
 
+func (d beforeYear2022Datum) NumDelivered() uint64 {
+	return 1
+}
+
 type withinYear2022Datum struct{}
+
+func (d withinYear2022Datum) ID() string {
+	return "id"
+}
 
 func (d withinYear2022Datum) Value() []byte {
 	return []byte("test-data")
@@ -35,7 +47,15 @@ func (d withinYear2022Datum) Watermark() time.Time {
 	return time.Now()
 }
 
+func (d withinYear2022Datum) NumDelivered() uint64 {
+	return 1
+}
+
 type afterYear2022Datum struct{}
+
+func (d afterYear2022Datum) ID() string {
+	return "id"
+}
 
 func (d afterYear2022Datum) Value() []byte {
 	return []byte("test-data")
@@ -46,6 +66,10 @@ func (d afterYear2022Datum) EventTime() time.Time {
 }
 func (d afterYear2022Datum) Watermark() time.Time {
 	return time.Now()
+}
+
+func (d afterYear2022Datum) NumDelivered() uint64 {
+	return 1
 }
 
 func Test_FilterEventTime(t *testing.T) {

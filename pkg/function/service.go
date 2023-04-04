@@ -19,9 +19,15 @@ import (
 
 // handlerDatum implements the Datum interface and is used in the map and reduce handlers.
 type handlerDatum struct {
-	value     []byte
-	eventTime time.Time
-	watermark time.Time
+	id           string
+	value        []byte
+	eventTime    time.Time
+	watermark    time.Time
+	numDelivered uint64
+}
+
+func (h *handlerDatum) ID() string {
+	return h.id
 }
 
 func (h *handlerDatum) Value() []byte {
@@ -34,6 +40,10 @@ func (h *handlerDatum) EventTime() time.Time {
 
 func (h *handlerDatum) Watermark() time.Time {
 	return h.watermark
+}
+
+func (h *handlerDatum) NumDelivered() uint64 {
+	return h.numDelivered
 }
 
 // intervalWindow implements IntervalWindow interface which will be passed as metadata
@@ -88,9 +98,11 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*functionpb.ReadyRe
 // MapFn applies a function to each datum element.
 func (fs *Service) MapFn(ctx context.Context, d *functionpb.Datum) (*functionpb.DatumList, error) {
 	var hd = handlerDatum{
-		value:     d.GetValue(),
-		eventTime: d.GetEventTime().EventTime.AsTime(),
-		watermark: d.GetWatermark().Watermark.AsTime(),
+		id:           d.Id,
+		value:        d.GetValue(),
+		eventTime:    d.GetEventTime().EventTime.AsTime(),
+		watermark:    d.GetWatermark().Watermark.AsTime(),
+		numDelivered: d.NumDelivered,
 	}
 	messages := fs.Mapper.HandleDo(ctx, d.GetKeys(), &hd)
 	var elements []*functionpb.Datum
@@ -111,9 +123,11 @@ func (fs *Service) MapFn(ctx context.Context, d *functionpb.Datum) (*functionpb.
 // MapTFn can be used only at source vertex by source data transformer.
 func (fs *Service) MapTFn(ctx context.Context, d *functionpb.Datum) (*functionpb.DatumList, error) {
 	var hd = handlerDatum{
-		value:     d.GetValue(),
-		eventTime: d.GetEventTime().EventTime.AsTime(),
-		watermark: d.GetWatermark().Watermark.AsTime(),
+		id:           d.Id,
+		value:        d.GetValue(),
+		eventTime:    d.GetEventTime().EventTime.AsTime(),
+		watermark:    d.GetWatermark().Watermark.AsTime(),
+		numDelivered: d.NumDelivered,
 	}
 	messageTs := fs.MapperT.HandleDo(ctx, d.GetKeys(), &hd)
 	var elements []*functionpb.Datum
@@ -185,9 +199,11 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 		}
 		unifiedKey := strings.Join(d.GetKeys(), Delimiter)
 		var hd = &handlerDatum{
-			value:     d.GetValue(),
-			eventTime: d.GetEventTime().EventTime.AsTime(),
-			watermark: d.GetWatermark().Watermark.AsTime(),
+			id:           d.Id,
+			value:        d.GetValue(),
+			eventTime:    d.GetEventTime().EventTime.AsTime(),
+			watermark:    d.GetWatermark().Watermark.AsTime(),
+			numDelivered: d.GetNumDelivered(),
 		}
 
 		ch, chok := chanMap[unifiedKey]

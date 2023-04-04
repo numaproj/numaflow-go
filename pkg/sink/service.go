@@ -12,11 +12,19 @@ import (
 
 // handlerDatum implements the Datum interface and is used in the sink handlers.
 type handlerDatum struct {
+<<<<<<< HEAD
 	id        string
 	keys      []string
 	value     []byte
 	eventTime time.Time
 	watermark time.Time
+=======
+	id           string
+	value        []byte
+	eventTime    time.Time
+	watermark    time.Time
+	numDelivered uint64
+>>>>>>> a7f807e (chore: Add ID and numDelivered field to Datum.)
 }
 
 func (h *handlerDatum) Keys() []string {
@@ -37,6 +45,10 @@ func (h *handlerDatum) EventTime() time.Time {
 
 func (h *handlerDatum) Watermark() time.Time {
 	return h.watermark
+}
+
+func (h *handlerDatum) NumDelivered() uint64 {
+	return h.numDelivered
 }
 
 // Service implements the proto gen server interface and contains the sink operation handler.

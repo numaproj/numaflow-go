@@ -14,6 +14,7 @@ type Datum interface {
 	EventTime() time.Time
 	Watermark() time.Time
 	ID() string
+	NumDelivered() uint64
 }
 
 // Client contains methods to call a gRPC client.

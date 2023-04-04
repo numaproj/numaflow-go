@@ -10,9 +10,11 @@ import (
 
 // Datum contains methods to get the payload information.
 type Datum interface {
+	ID() string
 	Value() []byte
 	EventTime() time.Time
 	Watermark() time.Time
+	NumDelivered() uint64
 }
 
 // Metadata contains methods to get the metadata for the reduce operation.
