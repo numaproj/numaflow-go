@@ -3,14 +3,14 @@ package client
 import (
 	"context"
 	"fmt"
-	"io"
-
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	"github.com/numaproj/numaflow-go/pkg/function"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"io"
+	"log"
 )
 
 // client contains the grpc connection and the grpc client.
@@ -32,10 +32,25 @@ func New(inputOptions ...Option) (*client, error) {
 	}
 
 	c := new(client)
-	sockAddr := fmt.Sprintf("%s:%s", function.Protocol, opts.sockAddr)
-	conn, err := grpc.Dial(sockAddr, grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(opts.maxMessageSize), grpc.MaxCallSendMsgSize(opts.maxMessageSize)))
-
+	var conn *grpc.ClientConn
+	var err error
+	var sockAddr string
+	if function.MAP_MULTIPROC_SERV == true {
+		log.Println("Multiprocessing TCP Client ", function.Protocol, opts.sockAddr)
+		sockAddr = fmt.Sprintf("%s%s", connAddr, opts.sockAddr)
+		conn, err = grpc.Dial(
+			fmt.Sprintf("%s:///%s", exampleScheme, exampleServiceName),
+			// This sets the initial load balancing policy as Round Robin
+			grpc.WithDefaultServiceConfig(`{"loadBalancingConfig": [{"round_robin":{}}]}`),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(opts.maxMessageSize), grpc.MaxCallSendMsgSize(opts.maxMessageSize)),
+		)
+	} else {
+		log.Println("UDS Client ", function.Protocol, opts.sockAddr)
+		sockAddr = fmt.Sprintf("%s:%s", function.Protocol, opts.sockAddr)
+		conn, err = grpc.Dial(sockAddr, grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(opts.maxMessageSize), grpc.MaxCallSendMsgSize(opts.maxMessageSize)))
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute grpc.Dial(%q): %w", sockAddr, err)
 	}
