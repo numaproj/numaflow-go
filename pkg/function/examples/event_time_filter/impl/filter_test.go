@@ -49,7 +49,7 @@ func (d afterYear2022Datum) Watermark() time.Time {
 }
 
 func Test_FilterEventTime(t *testing.T) {
-	testKey := []string{"test-key"}
+	testKeys := []string{"test-key"}
 	janFisrt2022 := time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC)
 	janFirst2023 := time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)
 	tests := []struct {

@@ -6,7 +6,7 @@ import (
 	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
 )
 
-func FilterEventTime(key []string, d functionsdk.Datum) functionsdk.MessageTs {
+func FilterEventTime(keys []string, d functionsdk.Datum) functionsdk.MessageTs {
 	janFirst2022 := time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC)
 	janFirst2023 := time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)
 	if d.EventTime().Before(janFirst2022) {

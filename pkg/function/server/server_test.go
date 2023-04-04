@@ -114,17 +114,17 @@ func Test_server_mapT(t *testing.T) {
 				assert.NoError(t, err)
 			}()
 			for i := 0; i < 10; i++ {
-				key := []string{fmt.Sprintf("client_%d", i)}
+				keys := []string{fmt.Sprintf("client_%d", i)}
 				// set the key in metadata for map function
 				list, err := c.MapTFn(ctx, &functionpb.Datum{
-					Keys:      key,
+					Keys:      keys,
 					Value:     []byte(`server_test`),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				})
 				assert.NoError(t, err)
 				for _, e := range list {
-					assert.Equal(t, []string{key[0] + "_test"}, e.GetKeys())
+					assert.Equal(t, []string{keys[0] + "_test"}, e.GetKeys())
 					assert.Equal(t, []byte(`server_test`), e.GetValue())
 					assert.Equal(t, &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})}, e.GetEventTime())
 					assert.Nil(t, e.GetWatermark())
@@ -149,7 +149,7 @@ func Test_server_reduce(t *testing.T) {
 		{
 			name: "server_reduce",
 			fields: fields{
-				reduceHandler: functionsdk.ReduceFunc(func(ctx context.Context, key []string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) functionsdk.Messages {
+				reduceHandler: functionsdk.ReduceFunc(func(ctx context.Context, keys []string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) functionsdk.Messages {
 					// sum up values for the same key
 
 					// in this test case, md is nil
@@ -196,7 +196,7 @@ func Test_server_reduce(t *testing.T) {
 			// the sum of the numbers from 0 to 9
 			for i := 0; i < 10; i++ {
 				reduceDatumCh <- &functionpb.Datum{
-					Keys:      []string{testKey},
+					Keys:      []string{testKeys},
 					Value:     []byte(strconv.Itoa(i)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
