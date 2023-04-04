@@ -15,7 +15,7 @@
 
   // Simply return the same msg
 
-  func handle(ctx context.Context, keys string, data functionsdk.Datum) functionsdk.Messages {
+  func handle(ctx context.Context, keys []string, data functionsdk.Datum) functionsdk.Messages {
     _ = data.EventTime() // Event time is available
     _ = data.Watermark() // Watermark is available
     return functionsdk.MessagesBuilder().Append(functionsdk.MessageToAll(data.Value()))
@@ -42,7 +42,7 @@
 	"github.com/numaproj/numaflow-go/pkg/function/server"
   )
 
-  func mapTHandle(_ context.Context, keys string, d functionsdk.Datum) functionsdk.MessageTs {
+  func mapTHandle(_ context.Context, keys []string, d functionsdk.Datum) functionsdk.MessageTs {
 	eventTime := getEventTime(d.Value())
 	return types.MessageTsBuilder().Append(types.MessageTTo(eventTime, keys, d.Value()))
   }
@@ -70,15 +70,15 @@
 
   // Count the incoming events
 
-  func handle(_ context.Context, keys string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) functionsdk.Messages {
-    var resultKey = keys
+  func handle(_ context.Context, keys []string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) functionsdk.Messages {
+    var resultKeys = keys
     var resultVal []byte
     var counter = 0
     for _ = range reduceCh {
         counter++
     }
     resultVal = []byte(strconv.Itoa(counter))
-    return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(resultKey, resultVal))
+    return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(resultKeys, resultVal))
   }
 
   func main() {
