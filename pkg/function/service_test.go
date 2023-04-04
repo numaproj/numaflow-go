@@ -160,7 +160,7 @@ func TestService_MapFn(t *testing.T) {
 			// here's a trick for testing:
 			// because we are not using gRPC, we directly set a new incoming ctx
 			// instead of the regular outgoing context in the real gRPC connection.
-			ctx := grpcmd.NewIncomingContext(context.Background(), grpcmd.New(map[string]string{DatumKey: "client"}))
+			ctx := context.Background()
 			got, err := fs.MapFn(ctx, tt.args.d)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("MapFn() error = %v, wantErr %v", err, tt.wantErr)
@@ -281,7 +281,7 @@ func TestService_MapTFn(t *testing.T) {
 			// here's a trick for testing:
 			// because we are not using gRPC, we directly set a new incoming ctx
 			// instead of the regular outgoing context in the real gRPC connection.
-			ctx := grpcmd.NewIncomingContext(context.Background(), grpcmd.New(map[string]string{DatumKey: "client"}))
+			ctx := context.Background()
 			got, err := fs.MapTFn(ctx, tt.args.d)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("MapTFn() error = %v, wantErr %v", err, tt.wantErr)
@@ -508,7 +508,7 @@ func TestService_ReduceFn(t *testing.T) {
 			// here's a trick for testing:
 			// because we are not using gRPC, we directly set a new incoming ctx
 			// instead of the regular outgoing context in the real gRPC connection.
-			ctx := grpcmd.NewIncomingContext(context.Background(), grpcmd.New(map[string]string{DatumKey: "client", WinStartTime: "60000", WinEndTime: "120000"}))
+			ctx := grpcmd.NewIncomingContext(context.Background(), grpcmd.New(map[string]string{WinStartTime: "60000", WinEndTime: "120000"}))
 
 			inputCh := make(chan *functionpb.Datum)
 			outputCh := make(chan *functionpb.DatumList)

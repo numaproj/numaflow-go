@@ -206,7 +206,7 @@ func Test_server_reduce(t *testing.T) {
 
 			dList := &functionpb.DatumList{}
 			// set the key in gPRC metadata for reduce function
-			md := grpcmd.New(map[string]string{functionsdk.DatumKey: testKey, functionsdk.WinStartTime: "60000", functionsdk.WinEndTime: "120000"})
+			md := grpcmd.New(map[string]string{functionsdk.WinStartTime: "60000", functionsdk.WinEndTime: "120000"})
 			ctx = grpcmd.NewOutgoingContext(ctx, md)
 			resultDatumList, err := c.ReduceFn(ctx, reduceDatumCh)
 			var wg sync.WaitGroup
