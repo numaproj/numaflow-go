@@ -9,7 +9,7 @@ import (
 )
 
 func mapTHandle(_ context.Context, keys []string, d functionsdk.Datum) functionsdk.MessageTs {
-	return impl.FilterEventTime(key, d)
+	return impl.FilterEventTime(keys, d)
 }
 
 func main() {

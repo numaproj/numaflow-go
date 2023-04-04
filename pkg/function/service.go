@@ -150,12 +150,12 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 
 	// get window start and end time from grpc metadata
 	var st, et string
-	st, err = getValueForKey(grpcMD, WinStartTime)
+	st, err = getValueFromMetadata(grpcMD, WinStartTime)
 	if err != nil {
 		return err
 	}
 
-	et, err = getValueForKey(grpcMD, WinEndTime)
+	et, err = getValueFromMetadata(grpcMD, WinEndTime)
 	if err != nil {
 		return err
 	}
@@ -183,17 +183,17 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 			// TODO: research on gRPC errors and revisit the error handler
 			return err
 		}
-		key := strings.Join(d.GetKeys(), "")
+		unifiedKey := strings.Join(d.GetKeys(), "")
 		var hd = &handlerDatum{
 			value:     d.GetValue(),
 			eventTime: d.GetEventTime().EventTime.AsTime(),
 			watermark: d.GetWatermark().Watermark.AsTime(),
 		}
 
-		ch, chok := chanMap[key]
+		ch, chok := chanMap[unifiedKey]
 		if !chok {
 			ch = make(chan Datum)
-			chanMap[key] = ch
+			chanMap[unifiedKey] = ch
 
 			func(k []string, ch chan Datum) {
 				g.Go(func() error {
@@ -240,20 +240,20 @@ func closeChannels(chanMap map[string]chan Datum) {
 	}
 }
 
-func getValueForKey(md grpcmd.MD, key string) (string, error) {
+func getValueFromMetadata(md grpcmd.MD, k string) (string, error) {
 	var value string
 
-	keyValue := md.Get(key)
+	keyValue := md.Get(k)
 
 	if len(keyValue) > 1 {
-		return value, fmt.Errorf("expected extactly one value for keys %s in metadata but got %d values, %s", key, len(keyValue), keyValue)
+		return value, fmt.Errorf("expected extactly one value for keys %s in metadata but got %d values, %s", k, len(keyValue), keyValue)
 	} else if len(keyValue) == 1 {
 		value = keyValue[0]
 	} else {
 		// the length equals zero is invalid for reduce
 		// since we are using a global keys, and start and end time
 		// cannot be empty
-		return value, fmt.Errorf("expected non empty value for keys %s in metadata but got an empty value", key)
+		return value, fmt.Errorf("expected non empty value for keys %s in metadata but got an empty value", k)
 	}
 	return value, nil
 }

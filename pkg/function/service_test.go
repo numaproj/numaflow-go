@@ -72,9 +72,9 @@ func TestService_MapFn(t *testing.T) {
 		{
 			name: "map_fn_forward_msg",
 			fields: fields{
-				mapper: MapFunc(func(ctx context.Context, key []string, datum Datum) Messages {
+				mapper: MapFunc(func(ctx context.Context, keys []string, datum Datum) Messages {
 					msg := datum.Value()
-					return MessagesBuilder().Append(MessageTo([]string{key[0] + "_test"}, msg))
+					return MessagesBuilder().Append(MessageTo([]string{keys[0] + "_test"}, msg))
 				}),
 			},
 			args: args{
@@ -99,7 +99,7 @@ func TestService_MapFn(t *testing.T) {
 		{
 			name: "map_fn_forward_msg_forward_to_all",
 			fields: fields{
-				mapper: MapFunc(func(ctx context.Context, key []string, datum Datum) Messages {
+				mapper: MapFunc(func(ctx context.Context, keys []string, datum Datum) Messages {
 					msg := datum.Value()
 					return MessagesBuilder().Append(MessageToAll(msg))
 				}),
@@ -126,7 +126,7 @@ func TestService_MapFn(t *testing.T) {
 		{
 			name: "map_fn_forward_msg_drop_msg",
 			fields: fields{
-				mapper: MapFunc(func(ctx context.Context, key []string, datum Datum) Messages {
+				mapper: MapFunc(func(ctx context.Context, keys []string, datum Datum) Messages {
 					return MessagesBuilder().Append(MessageToDrop())
 				}),
 			},
@@ -190,9 +190,9 @@ func TestService_MapTFn(t *testing.T) {
 		{
 			name: "mapT_fn_forward_msg",
 			fields: fields{
-				mapperT: MapTFunc(func(ctx context.Context, key []string, datum Datum) MessageTs {
+				mapperT: MapTFunc(func(ctx context.Context, keys []string, datum Datum) MessageTs {
 					msg := datum.Value()
-					return MessageTsBuilder().Append(MessageTTo(testTime, []string{key[0] + "_test"}, msg))
+					return MessageTsBuilder().Append(MessageTTo(testTime, []string{keys[0] + "_test"}, msg))
 				}),
 			},
 			args: args{
@@ -218,7 +218,7 @@ func TestService_MapTFn(t *testing.T) {
 		{
 			name: "mapT_fn_forward_msg_forward_to_all",
 			fields: fields{
-				mapperT: MapTFunc(func(ctx context.Context, key []string, datum Datum) MessageTs {
+				mapperT: MapTFunc(func(ctx context.Context, keys []string, datum Datum) MessageTs {
 					msg := datum.Value()
 					return MessageTsBuilder().Append(MessageTToAll(testTime, msg))
 				}),
@@ -246,7 +246,7 @@ func TestService_MapTFn(t *testing.T) {
 		{
 			name: "mapT_fn_forward_msg_drop_msg",
 			fields: fields{
-				mapperT: MapTFunc(func(ctx context.Context, key []string, datum Datum) MessageTs {
+				mapperT: MapTFunc(func(ctx context.Context, keys []string, datum Datum) MessageTs {
 					return MessageTsBuilder().Append(MessageTToDrop())
 				}),
 			},
@@ -304,15 +304,15 @@ func TestService_ReduceFn(t *testing.T) {
 		expectedErr bool
 	}{
 		{
-			name: "reduce_fn_forward_msg_same_key",
+			name: "reduce_fn_forward_msg_same_keys",
 			fields: fields{
-				reducer: ReduceFunc(func(ctx context.Context, key []string, rch <-chan Datum, md Metadata) Messages {
+				reducer: ReduceFunc(func(ctx context.Context, keys []string, rch <-chan Datum, md Metadata) Messages {
 					sum := 0
 					for val := range rch {
 						msgVal, _ := strconv.Atoi(string(val.Value()))
 						sum += msgVal
 					}
-					return MessagesBuilder().Append(MessageTo([]string{key[0] + "_test"}, []byte(strconv.Itoa(sum))))
+					return MessagesBuilder().Append(MessageTo([]string{keys[0] + "_test"}, []byte(strconv.Itoa(sum))))
 				}),
 			},
 			input: []*functionpb.Datum{
@@ -346,15 +346,15 @@ func TestService_ReduceFn(t *testing.T) {
 			expectedErr: false,
 		},
 		{
-			name: "reduce_fn_forward_msg_multiple_key",
+			name: "reduce_fn_forward_msg_multiple_keys",
 			fields: fields{
-				reducer: ReduceFunc(func(ctx context.Context, key []string, rch <-chan Datum, md Metadata) Messages {
+				reducer: ReduceFunc(func(ctx context.Context, keys []string, rch <-chan Datum, md Metadata) Messages {
 					sum := 0
 					for val := range rch {
 						msgVal, _ := strconv.Atoi(string(val.Value()))
 						sum += msgVal
 					}
-					return MessagesBuilder().Append(MessageTo([]string{key[0] + "_test"}, []byte(strconv.Itoa(sum))))
+					return MessagesBuilder().Append(MessageTo([]string{keys[0] + "_test"}, []byte(strconv.Itoa(sum))))
 				}),
 			},
 			input: []*functionpb.Datum{
@@ -416,7 +416,7 @@ func TestService_ReduceFn(t *testing.T) {
 		{
 			name: "reduce_fn_forward_msg_forward_to_all",
 			fields: fields{
-				reducer: ReduceFunc(func(ctx context.Context, key []string, rch <-chan Datum, md Metadata) Messages {
+				reducer: ReduceFunc(func(ctx context.Context, keys []string, rch <-chan Datum, md Metadata) Messages {
 					sum := 0
 					for val := range rch {
 						msgVal, _ := strconv.Atoi(string(val.Value()))
@@ -458,7 +458,7 @@ func TestService_ReduceFn(t *testing.T) {
 		{
 			name: "reduce_fn_forward_msg_drop_msg",
 			fields: fields{
-				reducer: ReduceFunc(func(ctx context.Context, key []string, rch <-chan Datum, md Metadata) Messages {
+				reducer: ReduceFunc(func(ctx context.Context, keys []string, rch <-chan Datum, md Metadata) Messages {
 					sum := 0
 					for val := range rch {
 						msgVal, _ := strconv.Atoi(string(val.Value()))

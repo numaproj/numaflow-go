@@ -81,7 +81,7 @@ func Test_FilterEventTime(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			output := FilterEventTime(testKey, tt.input)
+			output := FilterEventTime(testKeys, tt.input)
 			assert.Equal(t, tt.expectedOutput, output)
 		})
 	}

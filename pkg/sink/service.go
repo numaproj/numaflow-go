@@ -13,14 +13,14 @@ import (
 // handlerDatum implements the Datum interface and is used in the sink handlers.
 type handlerDatum struct {
 	id        string
-	key       []string
+	keys      []string
 	value     []byte
 	eventTime time.Time
 	watermark time.Time
 }
 
-func (h *handlerDatum) Key() []string {
-	return h.key
+func (h *handlerDatum) Keys() []string {
+	return h.keys
 }
 
 func (h *handlerDatum) ID() string {

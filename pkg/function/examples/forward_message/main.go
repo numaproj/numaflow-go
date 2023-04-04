@@ -15,9 +15,9 @@ func mapHandle(_ context.Context, keys []string, d functionsdk.Datum) functionsd
 	watermark := d.Watermark()
 	_ = watermark
 
-	var resultKey = key
+	var resultKeys = keys
 	var resultVal = val
-	return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(resultKey, resultVal))
+	return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(resultKeys, resultVal))
 }
 
 func main() {

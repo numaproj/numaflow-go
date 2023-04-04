@@ -10,10 +10,10 @@ import (
 )
 
 func reduceHandle(_ context.Context, keys []string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) functionsdk.Messages {
-	// sum up values for the same key
+	// sum up values for the same keys
 	intervalWindow := md.IntervalWindow()
 	_ = intervalWindow
-	var resultKey = key
+	var resultKeys = keys
 	var resultVal []byte
 	var sum = 0
 	// sum up the values
@@ -32,7 +32,7 @@ func reduceHandle(_ context.Context, keys []string, reduceCh <-chan functionsdk.
 		sum += v
 	}
 	resultVal = []byte(strconv.Itoa(sum))
-	return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(resultKey, resultVal))
+	return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(resultKeys, resultVal))
 }
 
 func main() {
