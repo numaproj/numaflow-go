@@ -30,11 +30,6 @@ type UserDefinedFunctionReduceFnServerTest struct {
 	grpc.ServerStream
 }
 
-func (u *UserDefinedFunctionReduceFnServerTest) Send(list *functionpb.DatumList) error {
-	u.outputCh <- list
-	return nil
-}
-
 func NewUserDefinedFunctionReduceFnServerTest(ctx context.Context,
 	inputCh chan *functionpb.Datum,
 	outputCh chan *functionpb.DatumList) *UserDefinedFunctionReduceFnServerTest {
@@ -43,6 +38,11 @@ func NewUserDefinedFunctionReduceFnServerTest(ctx context.Context,
 		inputCh:  inputCh,
 		outputCh: outputCh,
 	}
+}
+
+func (u *UserDefinedFunctionReduceFnServerTest) Send(list *functionpb.DatumList) error {
+	u.outputCh <- list
+	return nil
 }
 
 func (u *UserDefinedFunctionReduceFnServerTest) Recv() (*functionpb.Datum, error) {
@@ -80,7 +80,7 @@ func TestService_MapFn(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				d: &functionpb.Datum{
-					Key:       []string{"client"},
+					Keys:      []string{"client"},
 					Value:     []byte(`test`),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
@@ -89,7 +89,7 @@ func TestService_MapFn(t *testing.T) {
 			want: &functionpb.DatumList{
 				Elements: []*functionpb.Datum{
 					{
-						Key:   []string{"client_test"},
+						Keys:  []string{"client_test"},
 						Value: []byte(`test`),
 					},
 				},
@@ -107,7 +107,7 @@ func TestService_MapFn(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				d: &functionpb.Datum{
-					Key:       []string{"client"},
+					Keys:      []string{"client"},
 					Value:     []byte(`test`),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
@@ -116,7 +116,7 @@ func TestService_MapFn(t *testing.T) {
 			want: &functionpb.DatumList{
 				Elements: []*functionpb.Datum{
 					{
-						Key:   []string{ALL},
+						Keys:  []string{ALL},
 						Value: []byte(`test`),
 					},
 				},
@@ -133,7 +133,7 @@ func TestService_MapFn(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				d: &functionpb.Datum{
-					Key:       []string{"client"},
+					Keys:      []string{"client"},
 					Value:     []byte(`test`),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
@@ -142,7 +142,7 @@ func TestService_MapFn(t *testing.T) {
 			want: &functionpb.DatumList{
 				Elements: []*functionpb.Datum{
 					{
-						Key:   []string{DROP},
+						Keys:  []string{DROP},
 						Value: []byte{},
 					},
 				},
@@ -198,7 +198,7 @@ func TestService_MapTFn(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				d: &functionpb.Datum{
-					Key:       []string{"client"},
+					Keys:      []string{"client"},
 					Value:     []byte(`test`),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
@@ -208,7 +208,7 @@ func TestService_MapTFn(t *testing.T) {
 				Elements: []*functionpb.Datum{
 					{
 						EventTime: &functionpb.EventTime{EventTime: timestamppb.New(testTime)},
-						Key:       []string{"client_test"},
+						Keys:      []string{"client_test"},
 						Value:     []byte(`test`),
 					},
 				},
@@ -226,7 +226,7 @@ func TestService_MapTFn(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				d: &functionpb.Datum{
-					Key:       []string{"client"},
+					Keys:      []string{"client"},
 					Value:     []byte(`test`),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
@@ -236,7 +236,7 @@ func TestService_MapTFn(t *testing.T) {
 				Elements: []*functionpb.Datum{
 					{
 						EventTime: &functionpb.EventTime{EventTime: timestamppb.New(testTime)},
-						Key:       []string{ALL},
+						Keys:      []string{ALL},
 						Value:     []byte(`test`),
 					},
 				},
@@ -253,7 +253,7 @@ func TestService_MapTFn(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				d: &functionpb.Datum{
-					Key:       []string{"client"},
+					Keys:      []string{"client"},
 					Value:     []byte(`test`),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
@@ -263,7 +263,7 @@ func TestService_MapTFn(t *testing.T) {
 				Elements: []*functionpb.Datum{
 					{
 						EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
-						Key:       []string{DROP},
+						Keys:      []string{DROP},
 						Value:     []byte{},
 					},
 				},
@@ -317,19 +317,19 @@ func TestService_ReduceFn(t *testing.T) {
 			},
 			input: []*functionpb.Datum{
 				{
-					Key:       []string{"client"},
+					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(10)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
-					Key:       []string{"client"},
+					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(20)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
-					Key:       []string{"client"},
+					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(30)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
@@ -338,7 +338,7 @@ func TestService_ReduceFn(t *testing.T) {
 			expected: &functionpb.DatumList{
 				Elements: []*functionpb.Datum{
 					{
-						Key:   []string{"client_test"},
+						Keys:  []string{"client_test"},
 						Value: []byte(strconv.Itoa(60)),
 					},
 				},
@@ -359,37 +359,37 @@ func TestService_ReduceFn(t *testing.T) {
 			},
 			input: []*functionpb.Datum{
 				{
-					Key:       []string{"client1"},
+					Keys:      []string{"client1"},
 					Value:     []byte(strconv.Itoa(10)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
-					Key:       []string{"client2"},
+					Keys:      []string{"client2"},
 					Value:     []byte(strconv.Itoa(20)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
-					Key:       []string{"client3"},
+					Keys:      []string{"client3"},
 					Value:     []byte(strconv.Itoa(30)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
-					Key:       []string{"client1"},
+					Keys:      []string{"client1"},
 					Value:     []byte(strconv.Itoa(10)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
-					Key:       []string{"client2"},
+					Keys:      []string{"client2"},
 					Value:     []byte(strconv.Itoa(20)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
-					Key:       []string{"client3"},
+					Keys:      []string{"client3"},
 					Value:     []byte(strconv.Itoa(30)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
@@ -398,15 +398,15 @@ func TestService_ReduceFn(t *testing.T) {
 			expected: &functionpb.DatumList{
 				Elements: []*functionpb.Datum{
 					{
-						Key:   []string{"client1_test"},
+						Keys:  []string{"client1_test"},
 						Value: []byte(strconv.Itoa(20)),
 					},
 					{
-						Key:   []string{"client2_test"},
+						Keys:  []string{"client2_test"},
 						Value: []byte(strconv.Itoa(40)),
 					},
 					{
-						Key:   []string{"client3_test"},
+						Keys:  []string{"client3_test"},
 						Value: []byte(strconv.Itoa(60)),
 					},
 				},
@@ -427,19 +427,19 @@ func TestService_ReduceFn(t *testing.T) {
 			},
 			input: []*functionpb.Datum{
 				{
-					Key:       []string{"client"},
+					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(10)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
-					Key:       []string{"client"},
+					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(20)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
-					Key:       []string{"client"},
+					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(30)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
@@ -448,7 +448,7 @@ func TestService_ReduceFn(t *testing.T) {
 			expected: &functionpb.DatumList{
 				Elements: []*functionpb.Datum{
 					{
-						Key:   []string{ALL},
+						Keys:  []string{ALL},
 						Value: []byte(strconv.Itoa(60)),
 					},
 				},
@@ -469,19 +469,19 @@ func TestService_ReduceFn(t *testing.T) {
 			},
 			input: []*functionpb.Datum{
 				{
-					Key:       []string{"client"},
+					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(10)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
-					Key:       []string{"client"},
+					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(20)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
-					Key:       []string{"client"},
+					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(30)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
@@ -490,7 +490,7 @@ func TestService_ReduceFn(t *testing.T) {
 			expected: &functionpb.DatumList{
 				Elements: []*functionpb.Datum{
 					{
-						Key:   []string{DROP},
+						Keys:  []string{DROP},
 						Value: []byte{},
 					},
 				},

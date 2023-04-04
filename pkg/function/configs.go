@@ -3,7 +3,7 @@ package function
 const (
 	Protocol = "unix"
 	Addr     = "/var/run/numaflow/function.sock"
-	DatumKey = "x-numaflow-datum-key"
+	DatumKey = "x-numaflow-datum-keys"
 	// DefaultMaxMessageSize overrides gRPC max message size configuration
 	// https://github.com/grpc/grpc-go/blob/master/server.go#L58-L59
 	//   - defaultServerMaxReceiveMessageSize

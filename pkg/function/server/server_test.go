@@ -62,14 +62,14 @@ func Test_server_map(t *testing.T) {
 				key := []string{fmt.Sprintf("client_%d", i)}
 				// set the key in metadata for map function
 				list, err := c.MapFn(ctx, &functionpb.Datum{
-					Key:       key,
+					Keys:      key,
 					Value:     []byte(`server_test`),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				})
 				assert.NoError(t, err)
 				for _, e := range list {
-					assert.Equal(t, []string{key[0] + "_test"}, e.GetKey())
+					assert.Equal(t, []string{key[0] + "_test"}, e.GetKeys())
 					assert.Equal(t, []byte(`server_test`), e.GetValue())
 					assert.Nil(t, e.GetEventTime())
 					assert.Nil(t, e.GetWatermark())
@@ -117,14 +117,14 @@ func Test_server_mapT(t *testing.T) {
 				key := []string{fmt.Sprintf("client_%d", i)}
 				// set the key in metadata for map function
 				list, err := c.MapTFn(ctx, &functionpb.Datum{
-					Key:       key,
+					Keys:      key,
 					Value:     []byte(`server_test`),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				})
 				assert.NoError(t, err)
 				for _, e := range list {
-					assert.Equal(t, []string{key[0] + "_test"}, e.GetKey())
+					assert.Equal(t, []string{key[0] + "_test"}, e.GetKeys())
 					assert.Equal(t, []byte(`server_test`), e.GetValue())
 					assert.Equal(t, &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})}, e.GetEventTime())
 					assert.Nil(t, e.GetWatermark())
@@ -196,7 +196,7 @@ func Test_server_reduce(t *testing.T) {
 			// the sum of the numbers from 0 to 9
 			for i := 0; i < 10; i++ {
 				reduceDatumCh <- &functionpb.Datum{
-					Key:       []string{testKey},
+					Keys:      []string{testKey},
 					Value:     []byte(strconv.Itoa(i)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
@@ -222,7 +222,7 @@ func Test_server_reduce(t *testing.T) {
 			wg.Wait()
 			assert.NoError(t, err)
 			assert.Equal(t, 1, len(dList.Elements))
-			assert.Equal(t, []string{testKey}, dList.Elements[0].GetKey())
+			assert.Equal(t, []string{testKey}, dList.Elements[0].GetKeys())
 			assert.Equal(t, []byte(`45`), dList.Elements[0].GetValue())
 			assert.Nil(t, dList.Elements[0].GetEventTime())
 			assert.Nil(t, dList.Elements[0].GetWatermark())

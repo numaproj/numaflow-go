@@ -92,11 +92,11 @@ func (fs *Service) MapFn(ctx context.Context, d *functionpb.Datum) (*functionpb.
 		eventTime: d.GetEventTime().EventTime.AsTime(),
 		watermark: d.GetWatermark().Watermark.AsTime(),
 	}
-	messages := fs.Mapper.HandleDo(ctx, d.GetKey(), &hd)
+	messages := fs.Mapper.HandleDo(ctx, d.GetKeys(), &hd)
 	var elements []*functionpb.Datum
 	for _, m := range messages.Items() {
 		elements = append(elements, &functionpb.Datum{
-			Key:   m.key,
+			Keys:  m.keys,
 			Value: m.value,
 		})
 	}
@@ -115,12 +115,12 @@ func (fs *Service) MapTFn(ctx context.Context, d *functionpb.Datum) (*functionpb
 		eventTime: d.GetEventTime().EventTime.AsTime(),
 		watermark: d.GetWatermark().Watermark.AsTime(),
 	}
-	messageTs := fs.MapperT.HandleDo(ctx, d.GetKey(), &hd)
+	messageTs := fs.MapperT.HandleDo(ctx, d.GetKeys(), &hd)
 	var elements []*functionpb.Datum
 	for _, m := range messageTs.Items() {
 		elements = append(elements, &functionpb.Datum{
 			EventTime: &functionpb.EventTime{EventTime: timestamppb.New(m.eventTime)},
-			Key:       m.key,
+			Keys:      m.keys,
 			Value:     m.value,
 		})
 	}
@@ -145,7 +145,7 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 
 	grpcMD, ok := grpcmd.FromIncomingContext(ctx)
 	if !ok {
-		return fmt.Errorf("key and window information are not passed in grpc metadata")
+		return fmt.Errorf("keys and window information are not passed in grpc metadata")
 	}
 
 	// get window start and end time from grpc metadata
@@ -183,7 +183,7 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 			// TODO: research on gRPC errors and revisit the error handler
 			return err
 		}
-		key := strings.Join(d.Key, "")
+		key := strings.Join(d.GetKeys(), "")
 		var hd = &handlerDatum{
 			value:     d.GetValue(),
 			eventTime: d.GetEventTime().EventTime.AsTime(),
@@ -213,7 +213,7 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 					}
 					return nil
 				})
-			}(d.Key, ch)
+			}(d.GetKeys(), ch)
 		}
 		ch <- hd
 	}
@@ -226,7 +226,7 @@ func buildDatumList(messages Messages) *functionpb.DatumList {
 	datumList := &functionpb.DatumList{}
 	for _, msg := range messages {
 		datumList.Elements = append(datumList.Elements, &functionpb.Datum{
-			Key:   msg.key,
+			Keys:  msg.keys,
 			Value: msg.value,
 		})
 	}
@@ -246,14 +246,14 @@ func getValueForKey(md grpcmd.MD, key string) (string, error) {
 	keyValue := md.Get(key)
 
 	if len(keyValue) > 1 {
-		return value, fmt.Errorf("expected extactly one value for key %s in metadata but got %d values, %s", key, len(keyValue), keyValue)
+		return value, fmt.Errorf("expected extactly one value for keys %s in metadata but got %d values, %s", key, len(keyValue), keyValue)
 	} else if len(keyValue) == 1 {
 		value = keyValue[0]
 	} else {
 		// the length equals zero is invalid for reduce
-		// since we are using a global key, and start and end time
+		// since we are using a global keys, and start and end time
 		// cannot be empty
-		return value, fmt.Errorf("expected non empty value for key %s in metadata but got an empty value", key)
+		return value, fmt.Errorf("expected non empty value for keys %s in metadata but got an empty value", key)
 	}
 	return value, nil
 }

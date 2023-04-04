@@ -66,7 +66,7 @@ func TestMapFn(t *testing.T) {
 
 	mockClient := funcmock.NewMockUserDefinedFunctionClient(ctrl)
 	testDatum := &functionpb.Datum{
-		Key:       []string{"test_success_key"},
+		Keys:      []string{"test_success_key"},
 		Value:     []byte(`forward_message`),
 		EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Unix(1661169600, 0))},
 		Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
@@ -103,7 +103,7 @@ func TestMapTFn(t *testing.T) {
 
 	mockClient := funcmock.NewMockUserDefinedFunctionClient(ctrl)
 	testDatum := &functionpb.Datum{
-		Key:       []string{"test_success_key"},
+		Keys:      []string{"test_success_key"},
 		Value:     []byte(`forward_message`),
 		EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Unix(1661169600, 0))},
 		Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
@@ -147,7 +147,7 @@ func TestReduceFn(t *testing.T) {
 	testDatumList := &functionpb.DatumList{
 		Elements: []*functionpb.Datum{
 			{
-				Key:   []string{"reduced_result_key"},
+				Keys:  []string{"reduced_result_key"},
 				Value: []byte(`forward_message`),
 			},
 		},
@@ -170,15 +170,15 @@ func TestReduceFn(t *testing.T) {
 	expectedDatumList := &functionpb.DatumList{
 		Elements: []*functionpb.Datum{
 			{
-				Key:   []string{"reduced_result_key"},
+				Keys:  []string{"reduced_result_key"},
 				Value: []byte(`forward_message`),
 			},
 			{
-				Key:   []string{"reduced_result_key"},
+				Keys:  []string{"reduced_result_key"},
 				Value: []byte(`forward_message`),
 			},
 			{
-				Key:   []string{"reduced_result_key"},
+				Keys:  []string{"reduced_result_key"},
 				Value: []byte(`forward_message`),
 			},
 		},
