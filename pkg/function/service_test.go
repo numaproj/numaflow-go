@@ -30,11 +30,6 @@ type UserDefinedFunctionReduceFnServerTest struct {
 	grpc.ServerStream
 }
 
-func (u *UserDefinedFunctionReduceFnServerTest) Send(list *functionpb.DatumList) error {
-	u.outputCh <- list
-	return nil
-}
-
 func NewUserDefinedFunctionReduceFnServerTest(ctx context.Context,
 	inputCh chan *functionpb.Datum,
 	outputCh chan *functionpb.DatumList) *UserDefinedFunctionReduceFnServerTest {
@@ -43,6 +38,11 @@ func NewUserDefinedFunctionReduceFnServerTest(ctx context.Context,
 		inputCh:  inputCh,
 		outputCh: outputCh,
 	}
+}
+
+func (u *UserDefinedFunctionReduceFnServerTest) Send(list *functionpb.DatumList) error {
+	u.outputCh <- list
+	return nil
 }
 
 func (u *UserDefinedFunctionReduceFnServerTest) Recv() (*functionpb.Datum, error) {
@@ -72,15 +72,15 @@ func TestService_MapFn(t *testing.T) {
 		{
 			name: "map_fn_forward_msg",
 			fields: fields{
-				mapper: MapFunc(func(ctx context.Context, key string, datum Datum) Messages {
+				mapper: MapFunc(func(ctx context.Context, keys []string, datum Datum) Messages {
 					msg := datum.Value()
-					return MessagesBuilder().Append(MessageTo(key+"_test", msg))
+					return MessagesBuilder().Append(MessageTo([]string{keys[0] + "_test"}, msg))
 				}),
 			},
 			args: args{
 				ctx: context.Background(),
 				d: &functionpb.Datum{
-					Key:       "client",
+					Keys:      []string{"client"},
 					Value:     []byte(`test`),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
@@ -89,7 +89,7 @@ func TestService_MapFn(t *testing.T) {
 			want: &functionpb.DatumList{
 				Elements: []*functionpb.Datum{
 					{
-						Key:   "client_test",
+						Keys:  []string{"client_test"},
 						Value: []byte(`test`),
 					},
 				},
@@ -99,7 +99,7 @@ func TestService_MapFn(t *testing.T) {
 		{
 			name: "map_fn_forward_msg_forward_to_all",
 			fields: fields{
-				mapper: MapFunc(func(ctx context.Context, key string, datum Datum) Messages {
+				mapper: MapFunc(func(ctx context.Context, keys []string, datum Datum) Messages {
 					msg := datum.Value()
 					return MessagesBuilder().Append(MessageToAll(msg))
 				}),
@@ -107,7 +107,7 @@ func TestService_MapFn(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				d: &functionpb.Datum{
-					Key:       "client",
+					Keys:      []string{"client"},
 					Value:     []byte(`test`),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
@@ -116,7 +116,7 @@ func TestService_MapFn(t *testing.T) {
 			want: &functionpb.DatumList{
 				Elements: []*functionpb.Datum{
 					{
-						Key:   ALL,
+						Keys:  []string{ALL},
 						Value: []byte(`test`),
 					},
 				},
@@ -126,14 +126,14 @@ func TestService_MapFn(t *testing.T) {
 		{
 			name: "map_fn_forward_msg_drop_msg",
 			fields: fields{
-				mapper: MapFunc(func(ctx context.Context, key string, datum Datum) Messages {
+				mapper: MapFunc(func(ctx context.Context, keys []string, datum Datum) Messages {
 					return MessagesBuilder().Append(MessageToDrop())
 				}),
 			},
 			args: args{
 				ctx: context.Background(),
 				d: &functionpb.Datum{
-					Key:       "client",
+					Keys:      []string{"client"},
 					Value:     []byte(`test`),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
@@ -142,7 +142,7 @@ func TestService_MapFn(t *testing.T) {
 			want: &functionpb.DatumList{
 				Elements: []*functionpb.Datum{
 					{
-						Key:   DROP,
+						Keys:  []string{DROP},
 						Value: []byte{},
 					},
 				},
@@ -160,7 +160,7 @@ func TestService_MapFn(t *testing.T) {
 			// here's a trick for testing:
 			// because we are not using gRPC, we directly set a new incoming ctx
 			// instead of the regular outgoing context in the real gRPC connection.
-			ctx := grpcmd.NewIncomingContext(context.Background(), grpcmd.New(map[string]string{DatumKey: "client"}))
+			ctx := context.Background()
 			got, err := fs.MapFn(ctx, tt.args.d)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("MapFn() error = %v, wantErr %v", err, tt.wantErr)
@@ -190,15 +190,15 @@ func TestService_MapTFn(t *testing.T) {
 		{
 			name: "mapT_fn_forward_msg",
 			fields: fields{
-				mapperT: MapTFunc(func(ctx context.Context, key string, datum Datum) MessageTs {
+				mapperT: MapTFunc(func(ctx context.Context, keys []string, datum Datum) MessageTs {
 					msg := datum.Value()
-					return MessageTsBuilder().Append(MessageTTo(testTime, key+"_test", msg))
+					return MessageTsBuilder().Append(MessageTTo(testTime, []string{keys[0] + "_test"}, msg))
 				}),
 			},
 			args: args{
 				ctx: context.Background(),
 				d: &functionpb.Datum{
-					Key:       "client",
+					Keys:      []string{"client"},
 					Value:     []byte(`test`),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
@@ -208,7 +208,7 @@ func TestService_MapTFn(t *testing.T) {
 				Elements: []*functionpb.Datum{
 					{
 						EventTime: &functionpb.EventTime{EventTime: timestamppb.New(testTime)},
-						Key:       "client_test",
+						Keys:      []string{"client_test"},
 						Value:     []byte(`test`),
 					},
 				},
@@ -218,7 +218,7 @@ func TestService_MapTFn(t *testing.T) {
 		{
 			name: "mapT_fn_forward_msg_forward_to_all",
 			fields: fields{
-				mapperT: MapTFunc(func(ctx context.Context, key string, datum Datum) MessageTs {
+				mapperT: MapTFunc(func(ctx context.Context, keys []string, datum Datum) MessageTs {
 					msg := datum.Value()
 					return MessageTsBuilder().Append(MessageTToAll(testTime, msg))
 				}),
@@ -226,7 +226,7 @@ func TestService_MapTFn(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				d: &functionpb.Datum{
-					Key:       "client",
+					Keys:      []string{"client"},
 					Value:     []byte(`test`),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
@@ -236,7 +236,7 @@ func TestService_MapTFn(t *testing.T) {
 				Elements: []*functionpb.Datum{
 					{
 						EventTime: &functionpb.EventTime{EventTime: timestamppb.New(testTime)},
-						Key:       ALL,
+						Keys:      []string{ALL},
 						Value:     []byte(`test`),
 					},
 				},
@@ -246,14 +246,14 @@ func TestService_MapTFn(t *testing.T) {
 		{
 			name: "mapT_fn_forward_msg_drop_msg",
 			fields: fields{
-				mapperT: MapTFunc(func(ctx context.Context, key string, datum Datum) MessageTs {
+				mapperT: MapTFunc(func(ctx context.Context, keys []string, datum Datum) MessageTs {
 					return MessageTsBuilder().Append(MessageTToDrop())
 				}),
 			},
 			args: args{
 				ctx: context.Background(),
 				d: &functionpb.Datum{
-					Key:       "client",
+					Keys:      []string{"client"},
 					Value:     []byte(`test`),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
@@ -263,7 +263,7 @@ func TestService_MapTFn(t *testing.T) {
 				Elements: []*functionpb.Datum{
 					{
 						EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
-						Key:       DROP,
+						Keys:      []string{DROP},
 						Value:     []byte{},
 					},
 				},
@@ -281,7 +281,7 @@ func TestService_MapTFn(t *testing.T) {
 			// here's a trick for testing:
 			// because we are not using gRPC, we directly set a new incoming ctx
 			// instead of the regular outgoing context in the real gRPC connection.
-			ctx := grpcmd.NewIncomingContext(context.Background(), grpcmd.New(map[string]string{DatumKey: "client"}))
+			ctx := context.Background()
 			got, err := fs.MapTFn(ctx, tt.args.d)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("MapTFn() error = %v, wantErr %v", err, tt.wantErr)
@@ -304,32 +304,32 @@ func TestService_ReduceFn(t *testing.T) {
 		expectedErr bool
 	}{
 		{
-			name: "reduce_fn_forward_msg_same_key",
+			name: "reduce_fn_forward_msg_same_keys",
 			fields: fields{
-				reducer: ReduceFunc(func(ctx context.Context, key string, rch <-chan Datum, md Metadata) Messages {
+				reducer: ReduceFunc(func(ctx context.Context, keys []string, rch <-chan Datum, md Metadata) Messages {
 					sum := 0
 					for val := range rch {
 						msgVal, _ := strconv.Atoi(string(val.Value()))
 						sum += msgVal
 					}
-					return MessagesBuilder().Append(MessageTo(key+"_test", []byte(strconv.Itoa(sum))))
+					return MessagesBuilder().Append(MessageTo([]string{keys[0] + "_test"}, []byte(strconv.Itoa(sum))))
 				}),
 			},
 			input: []*functionpb.Datum{
 				{
-					Key:       "client",
+					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(10)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
-					Key:       "client",
+					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(20)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
-					Key:       "client",
+					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(30)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
@@ -338,7 +338,7 @@ func TestService_ReduceFn(t *testing.T) {
 			expected: &functionpb.DatumList{
 				Elements: []*functionpb.Datum{
 					{
-						Key:   "client_test",
+						Keys:  []string{"client_test"},
 						Value: []byte(strconv.Itoa(60)),
 					},
 				},
@@ -346,50 +346,50 @@ func TestService_ReduceFn(t *testing.T) {
 			expectedErr: false,
 		},
 		{
-			name: "reduce_fn_forward_msg_multiple_key",
+			name: "reduce_fn_forward_msg_multiple_keys",
 			fields: fields{
-				reducer: ReduceFunc(func(ctx context.Context, key string, rch <-chan Datum, md Metadata) Messages {
+				reducer: ReduceFunc(func(ctx context.Context, keys []string, rch <-chan Datum, md Metadata) Messages {
 					sum := 0
 					for val := range rch {
 						msgVal, _ := strconv.Atoi(string(val.Value()))
 						sum += msgVal
 					}
-					return MessagesBuilder().Append(MessageTo(key+"_test", []byte(strconv.Itoa(sum))))
+					return MessagesBuilder().Append(MessageTo([]string{keys[0] + "_test"}, []byte(strconv.Itoa(sum))))
 				}),
 			},
 			input: []*functionpb.Datum{
 				{
-					Key:       "client1",
+					Keys:      []string{"client1"},
 					Value:     []byte(strconv.Itoa(10)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
-					Key:       "client2",
+					Keys:      []string{"client2"},
 					Value:     []byte(strconv.Itoa(20)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
-					Key:       "client3",
+					Keys:      []string{"client3"},
 					Value:     []byte(strconv.Itoa(30)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
-					Key:       "client1",
+					Keys:      []string{"client1"},
 					Value:     []byte(strconv.Itoa(10)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
-					Key:       "client2",
+					Keys:      []string{"client2"},
 					Value:     []byte(strconv.Itoa(20)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
-					Key:       "client3",
+					Keys:      []string{"client3"},
 					Value:     []byte(strconv.Itoa(30)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
@@ -398,15 +398,15 @@ func TestService_ReduceFn(t *testing.T) {
 			expected: &functionpb.DatumList{
 				Elements: []*functionpb.Datum{
 					{
-						Key:   "client1_test",
+						Keys:  []string{"client1_test"},
 						Value: []byte(strconv.Itoa(20)),
 					},
 					{
-						Key:   "client2_test",
+						Keys:  []string{"client2_test"},
 						Value: []byte(strconv.Itoa(40)),
 					},
 					{
-						Key:   "client3_test",
+						Keys:  []string{"client3_test"},
 						Value: []byte(strconv.Itoa(60)),
 					},
 				},
@@ -416,7 +416,7 @@ func TestService_ReduceFn(t *testing.T) {
 		{
 			name: "reduce_fn_forward_msg_forward_to_all",
 			fields: fields{
-				reducer: ReduceFunc(func(ctx context.Context, key string, rch <-chan Datum, md Metadata) Messages {
+				reducer: ReduceFunc(func(ctx context.Context, keys []string, rch <-chan Datum, md Metadata) Messages {
 					sum := 0
 					for val := range rch {
 						msgVal, _ := strconv.Atoi(string(val.Value()))
@@ -427,19 +427,19 @@ func TestService_ReduceFn(t *testing.T) {
 			},
 			input: []*functionpb.Datum{
 				{
-					Key:       "client",
+					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(10)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
-					Key:       "client",
+					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(20)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
-					Key:       "client",
+					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(30)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
@@ -448,7 +448,7 @@ func TestService_ReduceFn(t *testing.T) {
 			expected: &functionpb.DatumList{
 				Elements: []*functionpb.Datum{
 					{
-						Key:   ALL,
+						Keys:  []string{ALL},
 						Value: []byte(strconv.Itoa(60)),
 					},
 				},
@@ -458,7 +458,7 @@ func TestService_ReduceFn(t *testing.T) {
 		{
 			name: "reduce_fn_forward_msg_drop_msg",
 			fields: fields{
-				reducer: ReduceFunc(func(ctx context.Context, key string, rch <-chan Datum, md Metadata) Messages {
+				reducer: ReduceFunc(func(ctx context.Context, keys []string, rch <-chan Datum, md Metadata) Messages {
 					sum := 0
 					for val := range rch {
 						msgVal, _ := strconv.Atoi(string(val.Value()))
@@ -469,19 +469,19 @@ func TestService_ReduceFn(t *testing.T) {
 			},
 			input: []*functionpb.Datum{
 				{
-					Key:       "client",
+					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(10)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
-					Key:       "client",
+					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(20)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
-					Key:       "client",
+					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(30)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
@@ -490,7 +490,7 @@ func TestService_ReduceFn(t *testing.T) {
 			expected: &functionpb.DatumList{
 				Elements: []*functionpb.Datum{
 					{
-						Key:   DROP,
+						Keys:  []string{DROP},
 						Value: []byte{},
 					},
 				},
@@ -508,7 +508,7 @@ func TestService_ReduceFn(t *testing.T) {
 			// here's a trick for testing:
 			// because we are not using gRPC, we directly set a new incoming ctx
 			// instead of the regular outgoing context in the real gRPC connection.
-			ctx := grpcmd.NewIncomingContext(context.Background(), grpcmd.New(map[string]string{DatumKey: "client", WinStartTime: "60000", WinEndTime: "120000"}))
+			ctx := grpcmd.NewIncomingContext(context.Background(), grpcmd.New(map[string]string{WinStartTime: "60000", WinEndTime: "120000"}))
 
 			inputCh := make(chan *functionpb.Datum)
 			outputCh := make(chan *functionpb.DatumList)

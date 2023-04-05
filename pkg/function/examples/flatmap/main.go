@@ -8,7 +8,7 @@ import (
 	"github.com/numaproj/numaflow-go/pkg/function/server"
 )
 
-func handle(_ context.Context, key string, d functionsdk.Datum) functionsdk.Messages {
+func handle(_ context.Context, keys []string, d functionsdk.Datum) functionsdk.Messages {
 	msg := d.Value()
 	_ = d.EventTime() // Event time is available
 	_ = d.Watermark() // Watermark is available

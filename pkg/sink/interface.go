@@ -9,6 +9,7 @@ import (
 )
 
 type Datum interface {
+	Keys() []string
 	Value() []byte
 	EventTime() time.Time
 	Watermark() time.Time
