@@ -98,11 +98,11 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*functionpb.ReadyRe
 // MapFn applies a function to each datum element.
 func (fs *Service) MapFn(ctx context.Context, d *functionpb.Datum) (*functionpb.DatumList, error) {
 	var hd = handlerDatum{
-		id:           d.Id,
+		id:           d.GetMetadata().GetId(),
 		value:        d.GetValue(),
 		eventTime:    d.GetEventTime().EventTime.AsTime(),
 		watermark:    d.GetWatermark().Watermark.AsTime(),
-		numDelivered: d.NumDelivered,
+		numDelivered: d.GetMetadata().GetNumDelivered(),
 	}
 	messages := fs.Mapper.HandleDo(ctx, d.GetKeys(), &hd)
 	var elements []*functionpb.Datum
@@ -123,11 +123,11 @@ func (fs *Service) MapFn(ctx context.Context, d *functionpb.Datum) (*functionpb.
 // MapTFn can be used only at source vertex by source data transformer.
 func (fs *Service) MapTFn(ctx context.Context, d *functionpb.Datum) (*functionpb.DatumList, error) {
 	var hd = handlerDatum{
-		id:           d.Id,
+		id:           d.GetMetadata().GetId(),
 		value:        d.GetValue(),
 		eventTime:    d.GetEventTime().EventTime.AsTime(),
 		watermark:    d.GetWatermark().Watermark.AsTime(),
-		numDelivered: d.NumDelivered,
+		numDelivered: d.GetMetadata().GetNumDelivered(),
 	}
 	messageTs := fs.MapperT.HandleDo(ctx, d.GetKeys(), &hd)
 	var elements []*functionpb.Datum
@@ -199,11 +199,11 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 		}
 		unifiedKey := strings.Join(d.GetKeys(), Delimiter)
 		var hd = &handlerDatum{
-			id:           d.Id,
+			id:           d.GetMetadata().GetId(),
 			value:        d.GetValue(),
 			eventTime:    d.GetEventTime().EventTime.AsTime(),
 			watermark:    d.GetWatermark().Watermark.AsTime(),
-			numDelivered: d.GetNumDelivered(),
+			numDelivered: d.GetMetadata().GetNumDelivered(),
 		}
 
 		ch, chok := chanMap[unifiedKey]

@@ -35,6 +35,7 @@ message Datum {
   EventTime event_time = 3;
   Watermark watermark = 4;
   string id = 5;
+  uint64 num_delivered = 6;
 }
 
 /**

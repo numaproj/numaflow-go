@@ -97,10 +97,11 @@ func (fs *Service) SinkFn(stream sinkpb.UserDefinedSink_SinkFnServer) error {
 			return err
 		}
 		var hd = &handlerDatum{
-			id:        d.GetId(),
-			value:     d.GetValue(),
-			eventTime: d.GetEventTime().EventTime.AsTime(),
-			watermark: d.GetWatermark().Watermark.AsTime(),
+			id:           d.GetId(),
+			value:        d.GetValue(),
+			eventTime:    d.GetEventTime().EventTime.AsTime(),
+			watermark:    d.GetWatermark().Watermark.AsTime(),
+			numDelivered: d.GetNumDelivered(),
 		}
 		datumStreamCh <- hd
 	}

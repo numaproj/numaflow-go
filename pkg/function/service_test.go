@@ -111,12 +111,14 @@ func TestService_MapFn(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				d: &functionpb.Datum{
-					Id:           "1",
-					Key:          "client",
-					Value:        []byte(`test`),
-					EventTime:    &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark:    &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
-					NumDelivered: 2,
+					Key:       "client",
+					Value:     []byte(`test`),
+					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
+					Metadata: &functionpb.Metadata{
+						Id:           "1",
+						NumDelivered: 2,
+					},
 				},
 			},
 			want: &functionpb.DatumList{
@@ -395,20 +397,24 @@ func TestService_ReduceFn(t *testing.T) {
 			},
 			input: []*functionpb.Datum{
 				{
-					Id:           "1",
-					Key:          "client",
-					Value:        []byte(strconv.Itoa(10)),
-					EventTime:    &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark:    &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
-					NumDelivered: 1,
+					Key:       "client",
+					Value:     []byte(strconv.Itoa(10)),
+					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
+					Metadata: &functionpb.Metadata{
+						Id:           "1",
+						NumDelivered: 1,
+					},
 				},
 				{
-					Id:           "2",
-					Key:          "client",
-					Value:        []byte(strconv.Itoa(20)),
-					EventTime:    &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark:    &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
-					NumDelivered: 1,
+					Key:       "client",
+					Value:     []byte(strconv.Itoa(20)),
+					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
+					Metadata: &functionpb.Metadata{
+						Id:           "2",
+						NumDelivered: 1,
+					},
 				},
 			},
 			expected: &functionpb.DatumList{
