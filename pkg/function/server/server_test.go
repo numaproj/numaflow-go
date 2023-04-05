@@ -47,9 +47,9 @@ func Test_server_map(t *testing.T) {
 		{
 			name: "server_map",
 			fields: fields{
-				mapHandler: functionsdk.MapFunc(func(ctx context.Context, key string, d functionsdk.Datum) functionsdk.Messages {
+				mapHandler: functionsdk.MapFunc(func(ctx context.Context, keys []string, d functionsdk.Datum) functionsdk.Messages {
 					msg := d.Value()
-					return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(key+"_test", msg))
+					return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo([]string{keys[0] + "_test"}, msg))
 				}),
 			},
 		},
@@ -68,19 +68,16 @@ func Test_server_map(t *testing.T) {
 				assert.NoError(t, err)
 			}()
 			for i := 0; i < 10; i++ {
-				key := fmt.Sprintf("client_%d", i)
-				// set the key in metadata for map function
-				md := grpcmd.New(map[string]string{functionsdk.DatumKey: key})
-				ctx = grpcmd.NewOutgoingContext(ctx, md)
+				keys := []string{fmt.Sprintf("client_%d", i)}
 				list, err := c.MapFn(ctx, &functionpb.Datum{
-					Key:       key,
+					Keys:      keys,
 					Value:     []byte(`server_test`),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				})
 				assert.NoError(t, err)
 				for _, e := range list {
-					assert.Equal(t, key+"_test", e.GetKey())
+					assert.Equal(t, []string{keys[0] + "_test"}, e.GetKeys())
 					assert.Equal(t, []byte(`server_test`), e.GetValue())
 					assert.Nil(t, e.GetEventTime())
 					assert.Nil(t, e.GetWatermark())
@@ -112,9 +109,9 @@ func Test_server_mapT(t *testing.T) {
 		{
 			name: "server_mapT",
 			fields: fields{
-				mapTHandler: functionsdk.MapTFunc(func(ctx context.Context, key string, d functionsdk.Datum) functionsdk.MessageTs {
+				mapTHandler: functionsdk.MapTFunc(func(ctx context.Context, keys []string, d functionsdk.Datum) functionsdk.MessageTs {
 					msg := d.Value()
-					return functionsdk.MessageTsBuilder().Append(functionsdk.MessageTTo(time.Time{}, key+"_test", msg))
+					return functionsdk.MessageTsBuilder().Append(functionsdk.MessageTTo(time.Time{}, []string{keys[0] + "_test"}, msg))
 				}),
 			},
 		},
@@ -133,19 +130,16 @@ func Test_server_mapT(t *testing.T) {
 				assert.NoError(t, err)
 			}()
 			for i := 0; i < 10; i++ {
-				key := fmt.Sprintf("client_%d", i)
-				// set the key in metadata for map function
-				md := grpcmd.New(map[string]string{functionsdk.DatumKey: key})
-				ctx = grpcmd.NewOutgoingContext(ctx, md)
+				keys := []string{fmt.Sprintf("client_%d", i)}
 				list, err := c.MapTFn(ctx, &functionpb.Datum{
-					Key:       key,
+					Keys:      keys,
 					Value:     []byte(`server_test`),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				})
 				assert.NoError(t, err)
 				for _, e := range list {
-					assert.Equal(t, key+"_test", e.GetKey())
+					assert.Equal(t, []string{keys[0] + "_test"}, e.GetKeys())
 					assert.Equal(t, []byte(`server_test`), e.GetValue())
 					assert.Equal(t, &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})}, e.GetEventTime())
 					assert.Nil(t, e.GetWatermark())
@@ -170,7 +164,7 @@ func Test_server_reduce(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	var testKey = "reduce_key"
+	var testKeys = []string{"reduce_key"}
 	tests := []struct {
 		name   string
 		fields fields
@@ -178,13 +172,13 @@ func Test_server_reduce(t *testing.T) {
 		{
 			name: "server_reduce",
 			fields: fields{
-				reduceHandler: functionsdk.ReduceFunc(func(ctx context.Context, key string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) functionsdk.Messages {
-					// sum up values for the same key
+				reduceHandler: functionsdk.ReduceFunc(func(ctx context.Context, keys []string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) functionsdk.Messages {
+					// sum up values for the same keys
 
 					// in this test case, md is nil
 					// intervalWindow := md.IntervalWindow()
 					// _ = intervalWindow
-					var resultKey = key
+					var resultKey = keys
 					var resultVal []byte
 					var sum = 0
 					// sum up the values
@@ -225,7 +219,7 @@ func Test_server_reduce(t *testing.T) {
 			// the sum of the numbers from 0 to 9
 			for i := 0; i < 10; i++ {
 				reduceDatumCh <- &functionpb.Datum{
-					Key:       testKey,
+					Keys:      testKeys,
 					Value:     []byte(strconv.Itoa(i)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
@@ -234,8 +228,7 @@ func Test_server_reduce(t *testing.T) {
 			close(reduceDatumCh)
 
 			dList := &functionpb.DatumList{}
-			// set the key in gPRC metadata for reduce function
-			md := grpcmd.New(map[string]string{functionsdk.DatumKey: testKey, functionsdk.WinStartTime: "60000", functionsdk.WinEndTime: "120000"})
+			md := grpcmd.New(map[string]string{functionsdk.WinStartTime: "60000", functionsdk.WinEndTime: "120000"})
 			ctx = grpcmd.NewOutgoingContext(ctx, md)
 			resultDatumList, err := c.ReduceFn(ctx, reduceDatumCh)
 			var wg sync.WaitGroup
@@ -249,7 +242,7 @@ func Test_server_reduce(t *testing.T) {
 			wg.Wait()
 			assert.NoError(t, err)
 			assert.Equal(t, 1, len(dList.Elements))
-			assert.Equal(t, testKey, dList.Elements[0].GetKey())
+			assert.Equal(t, testKeys, dList.Elements[0].GetKeys())
 			assert.Equal(t, []byte(`45`), dList.Elements[0].GetValue())
 			assert.Nil(t, dList.Elements[0].GetEventTime())
 			assert.Nil(t, dList.Elements[0].GetWatermark())
