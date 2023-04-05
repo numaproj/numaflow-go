@@ -183,7 +183,7 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 			// TODO: research on gRPC errors and revisit the error handler
 			return err
 		}
-		unifiedKey := strings.Join(d.GetKeys(), "")
+		unifiedKey := strings.Join(d.GetKeys(), ":")
 		var hd = &handlerDatum{
 			value:     d.GetValue(),
 			eventTime: d.GetEventTime().EventTime.AsTime(),
