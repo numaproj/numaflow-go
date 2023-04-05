@@ -5,13 +5,20 @@ import (
 	"fmt"
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	"github.com/numaproj/numaflow-go/pkg/function"
+	_ "go.uber.org/automaxprocs"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/resolver"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"io"
 	"log"
+	"os"
+	"runtime"
+	"strconv"
 )
+
+var _ = ""
 
 // client contains the grpc connection and the grpc client.
 type client struct {
@@ -21,6 +28,11 @@ type client struct {
 
 // New creates a new client object.
 func New(inputOptions ...Option) (*client, error) {
+	// Populate connection variables
+	setupConn()
+	if function.MAP_MULTIPROC_SERV == true {
+		regMultProcResolver()
+	}
 
 	var opts = &options{
 		sockAddr:       function.Addr,
@@ -35,11 +47,12 @@ func New(inputOptions ...Option) (*client, error) {
 	var conn *grpc.ClientConn
 	var err error
 	var sockAddr string
+	// Make a TCP connection client for multiprocessing grpc server
 	if function.MAP_MULTIPROC_SERV == true {
 		log.Println("Multiprocessing TCP Client ", function.Protocol, opts.sockAddr)
 		sockAddr = fmt.Sprintf("%s%s", connAddr, opts.sockAddr)
 		conn, err = grpc.Dial(
-			fmt.Sprintf("%s:///%s", exampleScheme, exampleServiceName),
+			fmt.Sprintf("%s:///%s", custScheme, custServiceName),
 			// This sets the initial load balancing policy as Round Robin
 			grpc.WithDefaultServiceConfig(`{"loadBalancingConfig": [{"round_robin":{}}]}`),
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -147,4 +160,34 @@ outputLoop:
 	}
 
 	return datumList, err
+}
+
+// setConn function is used to populate the connection properties based
+// on multiprocessing TCP or UDS connection
+func setupConn() {
+	if os.Getenv("MAP_MULTIPROC") == "true" {
+		function.Protocol = "tcp"
+		function.Addr = ":55551"
+		function.MAP_MULTIPROC_SERV = true
+	} else {
+		function.Protocol = "unix"
+		function.Addr = "/var/run/numaflow/function.sock"
+		function.MAP_MULTIPROC_SERV = false
+	}
+}
+
+func regMultProcResolver() {
+	resolver.Register(&multiProcResolverBuilder{})
+	maxProcs := runtime.GOMAXPROCS(0)
+	numCpu := runtime.NumCPU()
+	if maxProcs < numCpu {
+		numCpu = maxProcs
+	}
+	val, present := os.LookupEnv("NUM_CPU_MULTIPROC")
+	if present {
+		numCpu, _ = strconv.Atoi(val)
+	}
+	log.Println("Num CPU ", numCpu)
+	buildConnAddrs(numCpu)
+	log.Println("TCP client list:", addrsList)
 }

@@ -1,7 +1,5 @@
 package function
 
-import "os"
-
 const (
 	DatumKey = "x-numaflow-datum-key"
 	// DefaultMaxMessageSize overrides gRPC max message size configuration
@@ -17,14 +15,15 @@ var Protocol string
 var Addr string
 var MAP_MULTIPROC_SERV bool
 
-func init() {
-	if os.Getenv("MAP_MULTIPROC") == "true" {
-		Protocol = "tcp"
-		Addr = ":55551"
-		MAP_MULTIPROC_SERV = true
-	} else {
-		Protocol = "unix"
-		Addr = "/var/run/numaflow/function.sock"
-		MAP_MULTIPROC_SERV = false
-	}
-}
+//
+//func init() {
+//	if os.Getenv("MAP_MULTIPROC") == "true" {
+//		Protocol = "tcp"
+//		Addr = ":55551"
+//		MAP_MULTIPROC_SERV = true
+//	} else {
+//		Protocol = "unix"
+//		Addr = "/var/run/numaflow/function.sock"
+//		MAP_MULTIPROC_SERV = false
+//	}
+//}

@@ -4,41 +4,40 @@ import (
 	"github.com/numaproj/numaflow-go/pkg/function"
 	"google.golang.org/grpc/resolver"
 	"log"
-	"runtime"
 	"strconv"
 	"strings"
 )
 
 const (
-	exampleScheme      = "example"
-	exampleServiceName = "lb.example.grpc.io"
-	connAddr           = "0.0.0.0"
+	custScheme      = "example"
+	custServiceName = "lb.example.grpc.io"
+	connAddr        = "0.0.0.0"
 )
 
 var addrsList []string
 
-type exampleResolverBuilder struct{}
+type multiProcResolverBuilder struct{}
 
-func (*exampleResolverBuilder) Build(target resolver.Target, cc resolver.ClientConn, opts resolver.BuildOptions) (resolver.Resolver, error) {
-	r := &exampleResolver{
+func (*multiProcResolverBuilder) Build(target resolver.Target, cc resolver.ClientConn, opts resolver.BuildOptions) (resolver.Resolver, error) {
+	r := &multiProcResolver{
 		target: target,
 		cc:     cc,
 		addrsStore: map[string][]string{
-			exampleServiceName: addrsList,
+			custServiceName: addrsList,
 		},
 	}
 	r.start()
 	return r, nil
 }
-func (*exampleResolverBuilder) Scheme() string { return exampleScheme }
+func (*multiProcResolverBuilder) Scheme() string { return custScheme }
 
-type exampleResolver struct {
+type multiProcResolver struct {
 	target     resolver.Target
 	cc         resolver.ClientConn
 	addrsStore map[string][]string
 }
 
-func (r *exampleResolver) start() {
+func (r *multiProcResolver) start() {
 	addrStrs := r.addrsStore[r.target.Endpoint()]
 	addrs := make([]resolver.Address, len(addrStrs))
 	//attrs := make(*attributes.Attributes, len(addrStrs))
@@ -53,9 +52,9 @@ func (r *exampleResolver) start() {
 		return
 	}
 }
-func (*exampleResolver) ResolveNow(o resolver.ResolveNowOptions) {}
-func (*exampleResolver) Close()                                  {}
-func (*exampleResolver) Resolve(target resolver.Target) {
+func (*multiProcResolver) ResolveNow(o resolver.ResolveNowOptions) {}
+func (*multiProcResolver) Close()                                  {}
+func (*multiProcResolver) Resolve(target resolver.Target) {
 	log.Println(target)
 }
 
@@ -66,11 +65,12 @@ func buildConnAddrs(numCpu int) {
 	}
 	addrsList = conn
 }
-func init() {
-	if function.MAP_MULTIPROC_SERV == true {
-		resolver.Register(&exampleResolverBuilder{})
-		numCpu := runtime.NumCPU()
-		buildConnAddrs(numCpu)
-		log.Println("TCP client list:", addrsList)
-	}
-}
+
+//func init() {
+//	if function.MAP_MULTIPROC_SERV == true {
+//		resolver.Register(&multiProcResolverBuilder{})
+//		numCpu := runtime.NumCPU()
+//		buildConnAddrs(numCpu)
+//		log.Println("TCP client list:", addrsList)
+//	}
+//}
