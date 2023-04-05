@@ -10,4 +10,5 @@ const (
 	DefaultMaxMessageSize = 1024 * 1024 * 4
 	WinStartTime          = "x-numaflow-win-start-time"
 	WinEndTime            = "x-numaflow-win-end-time"
+	Delimiter             = ":"
 )
