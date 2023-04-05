@@ -10,10 +10,14 @@ import (
 
 // Datum contains methods to get the payload information.
 type Datum interface {
-	ID() string
 	Value() []byte
 	EventTime() time.Time
 	Watermark() time.Time
+	Metadata() DatumMetadata
+}
+
+type DatumMetadata interface {
+	ID() string
 	NumDelivered() uint64
 }
 

@@ -51,31 +51,40 @@ func TestService_SinkFn(t *testing.T) {
 
 			input: []*sinkpb.Datum{
 				{
-					Id:        "one-processed",
 					Keys:      []string{"sink-test"},
 					Value:     []byte(strconv.Itoa(10)),
 					EventTime: &sinkpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &sinkpb.Watermark{Watermark: timestamppb.New(time.Time{})},
+					Metadata: &sinkpb.Metadata{
+						Id:           "one-processed",
+						NumDelivered: 1,
+					},
 				},
 				{
-					Id:        "two-processed",
 					Keys:      []string{"sink-test"},
 					Value:     []byte(strconv.Itoa(20)),
 					EventTime: &sinkpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &sinkpb.Watermark{Watermark: timestamppb.New(time.Time{})},
+					Metadata: &sinkpb.Metadata{
+						Id:           "two-processed",
+						NumDelivered: 1,
+					},
 				},
 				{
-					Id:        "three-processed",
 					Keys:      []string{"sink-test"},
 					Value:     []byte(strconv.Itoa(30)),
 					EventTime: &sinkpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &sinkpb.Watermark{Watermark: timestamppb.New(time.Time{})},
+					Metadata: &sinkpb.Metadata{
+						Id:           "three-processed",
+						NumDelivered: 1,
+					},
 				},
 			},
 			sh: SinkFunc(func(ctx context.Context, rch <-chan Datum) Responses {
 				result := ResponsesBuilder()
 				for d := range rch {
-					id := d.ID()
+					id := d.Metadata().ID()
 					result = result.Append(ResponseOK(id))
 				}
 				return result
@@ -103,31 +112,40 @@ func TestService_SinkFn(t *testing.T) {
 
 			input: []*sinkpb.Datum{
 				{
-					Id:        "one-processed",
 					Keys:      []string{"sink-test-1", "sink-test-2"},
 					Value:     []byte(strconv.Itoa(10)),
 					EventTime: &sinkpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &sinkpb.Watermark{Watermark: timestamppb.New(time.Time{})},
+					Metadata: &sinkpb.Metadata{
+						Id:           "one-processed",
+						NumDelivered: 1,
+					},
 				},
 				{
-					Id:        "two-processed",
 					Keys:      []string{"sink-test-1", "sink-test-2"},
 					Value:     []byte(strconv.Itoa(20)),
 					EventTime: &sinkpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &sinkpb.Watermark{Watermark: timestamppb.New(time.Time{})},
+					Metadata: &sinkpb.Metadata{
+						Id:           "two-processed",
+						NumDelivered: 1,
+					},
 				},
 				{
-					Id:        "three-processed",
 					Keys:      []string{"sink-test-1", "sink-test-2"},
 					Value:     []byte(strconv.Itoa(30)),
 					EventTime: &sinkpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 					Watermark: &sinkpb.Watermark{Watermark: timestamppb.New(time.Time{})},
+					Metadata: &sinkpb.Metadata{
+						Id:           "three-processed",
+						NumDelivered: 1,
+					},
 				},
 			},
 			sh: SinkFunc(func(ctx context.Context, rch <-chan Datum) Responses {
 				result := ResponsesBuilder()
 				for d := range rch {
-					id := d.ID()
+					id := d.Metadata().ID()
 					result = result.Append(ResponseFailure(id, "unknown error"))
 				}
 				return result

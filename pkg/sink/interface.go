@@ -13,6 +13,10 @@ type Datum interface {
 	Value() []byte
 	EventTime() time.Time
 	Watermark() time.Time
+	Metadata() DatumMetadata
+}
+
+type DatumMetadata interface {
 	ID() string
 	NumDelivered() uint64
 }

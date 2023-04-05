@@ -11,10 +11,6 @@ import (
 
 type beforeYear2022Datum struct{}
 
-func (d beforeYear2022Datum) ID() string {
-	return "id"
-}
-
 func (d beforeYear2022Datum) Value() []byte {
 	return []byte("test-data")
 }
@@ -26,8 +22,24 @@ func (d beforeYear2022Datum) Watermark() time.Time {
 	return time.Now()
 }
 
-func (d beforeYear2022Datum) NumDelivered() uint64 {
-	return 1
+func (d beforeYear2022Datum) Metadata() functionsdk.DatumMetadata {
+	return beforeYear2022DatumMetadata{
+		id:           "id",
+		numDelivered: 1,
+	}
+}
+
+type beforeYear2022DatumMetadata struct {
+	id           string
+	numDelivered uint64
+}
+
+func (d beforeYear2022DatumMetadata) ID() string {
+	return d.id
+}
+
+func (d beforeYear2022DatumMetadata) NumDelivered() uint64 {
+	return d.numDelivered
 }
 
 type withinYear2022Datum struct{}
@@ -47,15 +59,27 @@ func (d withinYear2022Datum) Watermark() time.Time {
 	return time.Now()
 }
 
-func (d withinYear2022Datum) NumDelivered() uint64 {
-	return 1
+func (d withinYear2022Datum) Metadata() functionsdk.DatumMetadata {
+	return withinYear2022DatumMetadaa{
+		id:           "id",
+		numDelivered: 1,
+	}
+}
+
+type withinYear2022DatumMetadaa struct {
+	id           string
+	numDelivered uint64
+}
+
+func (d withinYear2022DatumMetadaa) ID() string {
+	return d.id
+}
+
+func (d withinYear2022DatumMetadaa) NumDelivered() uint64 {
+	return d.numDelivered
 }
 
 type afterYear2022Datum struct{}
-
-func (d afterYear2022Datum) ID() string {
-	return "id"
-}
 
 func (d afterYear2022Datum) Value() []byte {
 	return []byte("test-data")
@@ -68,8 +92,24 @@ func (d afterYear2022Datum) Watermark() time.Time {
 	return time.Now()
 }
 
-func (d afterYear2022Datum) NumDelivered() uint64 {
-	return 1
+func (d afterYear2022Datum) Metadata() functionsdk.DatumMetadata {
+	return afterYear2022DatumMetadata{
+		id:           "id",
+		numDelivered: 1,
+	}
+}
+
+type afterYear2022DatumMetadata struct {
+	id           string
+	numDelivered uint64
+}
+
+func (d afterYear2022DatumMetadata) ID() string {
+	return d.id
+}
+
+func (d afterYear2022DatumMetadata) NumDelivered() uint64 {
+	return d.numDelivered
 }
 
 func Test_FilterEventTime(t *testing.T) {

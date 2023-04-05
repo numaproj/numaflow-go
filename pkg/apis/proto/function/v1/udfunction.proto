@@ -36,6 +36,9 @@ message Watermark {
   // future we can add LATE, ON_TIME etc.
 }
 
+/**
+ * Metadata of a datum element.
+ */
 message Metadata {
   string id = 1;
   uint64 num_delivered = 2;

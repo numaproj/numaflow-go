@@ -35,7 +35,7 @@ func Test_server_sink(t *testing.T) {
 				sinkHandler: sinksdk.SinkFunc(func(ctx context.Context, datumStreamCh <-chan sinksdk.Datum) sinksdk.Responses {
 					result := sinksdk.ResponsesBuilder()
 					for d := range datumStreamCh {
-						id := d.ID()
+						id := d.Metadata().ID()
 						if strings.Contains(string(d.Value()), "err") {
 							result = result.Append(sinksdk.ResponseFailure(id, "mock sink message error"))
 						} else {
@@ -63,16 +63,22 @@ func Test_server_sink(t *testing.T) {
 			}()
 			testDatumList := []*sinkpb.Datum{
 				{
-					Id:        "test_id_0",
 					Value:     []byte(`sink_message_success`),
 					EventTime: &sinkpb.EventTime{EventTime: timestamppb.New(time.Unix(1661169600, 0))},
 					Watermark: &sinkpb.Watermark{Watermark: timestamppb.New(time.Time{})},
+					Metadata: &sinkpb.Metadata{
+						Id:           "test_id_0",
+						NumDelivered: 1,
+					},
 				},
 				{
-					Id:        "test_id_1",
 					Value:     []byte(`sink_message_err`),
 					EventTime: &sinkpb.EventTime{EventTime: timestamppb.New(time.Unix(1661169600, 0))},
 					Watermark: &sinkpb.Watermark{Watermark: timestamppb.New(time.Time{})},
+					Metadata: &sinkpb.Metadata{
+						Id:           "test_id_1",
+						NumDelivered: 1,
+					},
 				},
 			}
 			responseList, err := c.SinkFn(ctx, testDatumList)

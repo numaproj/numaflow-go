@@ -12,27 +12,15 @@ import (
 
 // handlerDatum implements the Datum interface and is used in the sink handlers.
 type handlerDatum struct {
-<<<<<<< HEAD
-	id        string
 	keys      []string
 	value     []byte
 	eventTime time.Time
 	watermark time.Time
-=======
-	id           string
-	value        []byte
-	eventTime    time.Time
-	watermark    time.Time
-	numDelivered uint64
->>>>>>> a7f807e (chore: Add ID and numDelivered field to Datum.)
+	metadata  handlerDatumMetadata
 }
 
 func (h *handlerDatum) Keys() []string {
 	return h.keys
-}
-
-func (h *handlerDatum) ID() string {
-	return h.id
 }
 
 func (h *handlerDatum) Value() []byte {
@@ -47,7 +35,21 @@ func (h *handlerDatum) Watermark() time.Time {
 	return h.watermark
 }
 
-func (h *handlerDatum) NumDelivered() uint64 {
+func (h *handlerDatum) Metadata() DatumMetadata {
+	return h.metadata
+}
+
+// handlerDatumMetadata implements the DatumMetadata interface and is used in the sink handlers.
+type handlerDatumMetadata struct {
+	id           string
+	numDelivered uint64
+}
+
+func (h handlerDatumMetadata) ID() string {
+	return h.id
+}
+
+func (h handlerDatumMetadata) NumDelivered() uint64 {
 	return h.numDelivered
 }
 
@@ -97,11 +99,13 @@ func (fs *Service) SinkFn(stream sinkpb.UserDefinedSink_SinkFnServer) error {
 			return err
 		}
 		var hd = &handlerDatum{
-			id:           d.GetId(),
-			value:        d.GetValue(),
-			eventTime:    d.GetEventTime().EventTime.AsTime(),
-			watermark:    d.GetWatermark().Watermark.AsTime(),
-			numDelivered: d.GetNumDelivered(),
+			value:     d.GetValue(),
+			eventTime: d.GetEventTime().EventTime.AsTime(),
+			watermark: d.GetWatermark().Watermark.AsTime(),
+			metadata: handlerDatumMetadata{
+				id:           d.GetMetadata().GetId(),
+				numDelivered: d.GetMetadata().GetNumDelivered(),
+			},
 		}
 		datumStreamCh <- hd
 	}
