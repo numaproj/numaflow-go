@@ -61,16 +61,7 @@ func (*multiProcResolver) Resolve(target resolver.Target) {
 func buildConnAddrs(numCpu int) {
 	var conn = make([]string, numCpu)
 	for i := 0; i < numCpu; i++ {
-		conn[i] = connAddr + function.Addr + "," + strconv.Itoa(i+1)
+		conn[i] = connAddr + function.TCP_ADDR + "," + strconv.Itoa(i+1)
 	}
 	addrsList = conn
 }
-
-//func init() {
-//	if function.MAP_MULTIPROC_SERV == true {
-//		resolver.Register(&multiProcResolverBuilder{})
-//		numCpu := runtime.NumCPU()
-//		buildConnAddrs(numCpu)
-//		log.Println("TCP client list:", addrsList)
-//	}
-//}

@@ -18,8 +18,6 @@ import (
 	"strconv"
 )
 
-var _ = ""
-
 // client contains the grpc connection and the grpc client.
 type client struct {
 	conn    *grpc.ClientConn
@@ -28,15 +26,18 @@ type client struct {
 
 // New creates a new client object.
 func New(inputOptions ...Option) (*client, error) {
-	// Populate connection variables
-	setupConn()
-	if function.MAP_MULTIPROC_SERV == true {
-		regMultProcResolver()
-	}
 
 	var opts = &options{
-		sockAddr:       function.Addr,
 		maxMessageSize: function.DefaultMaxMessageSize,
+	}
+
+	// Populate connection variables for client connection
+	// based on multiprocessing enabled/disabled
+	if function.IsMapMultiProcEnabled() == true {
+		regMultProcResolver()
+		opts.sockAddr = function.TCP_ADDR
+	} else {
+		opts.sockAddr = function.UDS_ADDR
 	}
 
 	for _, inputOption := range inputOptions {
@@ -48,8 +49,8 @@ func New(inputOptions ...Option) (*client, error) {
 	var err error
 	var sockAddr string
 	// Make a TCP connection client for multiprocessing grpc server
-	if function.MAP_MULTIPROC_SERV == true {
-		log.Println("Multiprocessing TCP Client ", function.Protocol, opts.sockAddr)
+	if function.IsMapMultiProcEnabled() == true {
+		log.Println("Multiprocessing TCP Client ", function.TCP, function.TCP_ADDR)
 		sockAddr = fmt.Sprintf("%s%s", connAddr, opts.sockAddr)
 		conn, err = grpc.Dial(
 			fmt.Sprintf("%s:///%s", custScheme, custServiceName),
@@ -59,8 +60,8 @@ func New(inputOptions ...Option) (*client, error) {
 			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(opts.maxMessageSize), grpc.MaxCallSendMsgSize(opts.maxMessageSize)),
 		)
 	} else {
-		log.Println("UDS Client ", function.Protocol, opts.sockAddr)
-		sockAddr = fmt.Sprintf("%s:%s", function.Protocol, opts.sockAddr)
+		log.Println("UDS Client ", function.UDS, function.UDS_ADDR)
+		sockAddr = fmt.Sprintf("%s:%s", function.UDS, opts.sockAddr)
 		conn, err = grpc.Dial(sockAddr, grpc.WithTransportCredentials(insecure.NewCredentials()),
 			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(opts.maxMessageSize), grpc.MaxCallSendMsgSize(opts.maxMessageSize)))
 	}
@@ -164,17 +165,6 @@ outputLoop:
 
 // setConn function is used to populate the connection properties based
 // on multiprocessing TCP or UDS connection
-func setupConn() {
-	if os.Getenv("MAP_MULTIPROC") == "true" {
-		function.Protocol = "tcp"
-		function.Addr = ":55551"
-		function.MAP_MULTIPROC_SERV = true
-	} else {
-		function.Protocol = "unix"
-		function.Addr = "/var/run/numaflow/function.sock"
-		function.MAP_MULTIPROC_SERV = false
-	}
-}
 
 func regMultProcResolver() {
 	resolver.Register(&multiProcResolverBuilder{})
