@@ -34,11 +34,7 @@ message Datum {
   bytes value = 2;
   EventTime event_time = 3;
   Watermark watermark = 4;
-
-  reserved 5;
-  reserved "id";
-
-  Metadata metadata = 6;
+  Metadata metadata = 5;
 }
 
 /**

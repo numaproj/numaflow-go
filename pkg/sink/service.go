@@ -45,10 +45,12 @@ type handlerDatumMetadata struct {
 	numDelivered uint64
 }
 
+// ID returns the ID of the datum.
 func (h handlerDatumMetadata) ID() string {
 	return h.id
 }
 
+// NumDelivered returns the number of times the datum has been delivered.
 func (h handlerDatumMetadata) NumDelivered() uint64 {
 	return h.numDelivered
 }

@@ -16,8 +16,11 @@ type Datum interface {
 	Metadata() DatumMetadata
 }
 
+// DatumMetadata contains methods to get the metadata information for datum.
 type DatumMetadata interface {
+	// ID returns the ID of the datum.
 	ID() string
+	// NumDelivered returns the number of times the datum has been delivered.
 	NumDelivered() uint64
 }
 
