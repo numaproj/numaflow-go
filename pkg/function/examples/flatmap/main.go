@@ -16,7 +16,7 @@ func handle(_ context.Context, keys []string, d functionsdk.Datum) functionsdk.M
 	strs := strings.Split(string(msg), ",")
 	results := functionsdk.MessagesBuilder()
 	for _, s := range strs {
-		results = results.Append(functionsdk.MessageToAll([]byte(s)))
+		results = results.Append(functionsdk.NewMessage([]byte(s)))
 	}
 	return results
 }

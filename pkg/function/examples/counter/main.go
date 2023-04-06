@@ -17,7 +17,7 @@ func reduceHandle(_ context.Context, keys []string, reduceCh <-chan functionsdk.
 		counter++
 	}
 	resultVal = []byte(strconv.Itoa(counter))
-	return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(resultKeys, resultVal))
+	return functionsdk.MessagesBuilder().Append(functionsdk.NewMessage(resultVal).WithKeys(resultKeys))
 }
 
 func main() {

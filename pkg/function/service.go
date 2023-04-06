@@ -123,6 +123,7 @@ func (fs *Service) MapFn(ctx context.Context, d *functionpb.DatumRequest) (*func
 		elements = append(elements, &functionpb.DatumResponse{
 			Keys:  m.keys,
 			Value: m.value,
+			Tags:  m.tags,
 		})
 	}
 	datumList := &functionpb.DatumResponseList{
@@ -151,6 +152,7 @@ func (fs *Service) MapTFn(ctx context.Context, d *functionpb.DatumRequest) (*fun
 			EventTime: &functionpb.EventTime{EventTime: timestamppb.New(m.eventTime)},
 			Keys:      m.keys,
 			Value:     m.value,
+			Tags:      m.tags,
 		})
 	}
 	datumList := &functionpb.DatumResponseList{
@@ -261,6 +263,7 @@ func buildDatumList(messages Messages) *functionpb.DatumResponseList {
 		datumList.Elements = append(datumList.Elements, &functionpb.DatumResponse{
 			Keys:  msg.keys,
 			Value: msg.value,
+			Tags:  msg.tags,
 		})
 	}
 

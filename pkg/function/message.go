@@ -4,38 +4,46 @@ import "fmt"
 
 var (
 	DROP = fmt.Sprintf("%U__DROP__", '\\') // U+005C__DROP__
-	ALL  = fmt.Sprintf("%U__ALL__", '\\')  // U+005C__ALL__
 )
 
 // Message is used to wrap the data return by UDF functions
 type Message struct {
+	tags  []string
 	keys  []string
 	value []byte
 }
 
-// Keys returns message keys
-func (m *Message) Keys() []string {
-	return m.keys
-}
-
-// Value returns message value
-func (m *Message) Value() []byte {
-	return m.value
+// NewMessage creates a Message with value
+func NewMessage(value []byte) Message {
+	return Message{value: value}
 }
 
 // MessageToDrop creates a Message to be dropped
 func MessageToDrop() Message {
-	return Message{keys: []string{DROP}, value: []byte{}}
+	return Message{tags: []string{DROP}, value: []byte{}}
 }
 
-// MessageToAll creates a Message that will forward to all
-func MessageToAll(value []byte) Message {
-	return Message{keys: []string{ALL}, value: value}
+// WithKeys is used to assign the keys to the message
+func (m Message) WithKeys(keys []string) Message {
+	m.keys = keys
+	return m
 }
 
-// MessageTo creates a Message that will forward to specified "to"
-func MessageTo(to []string, value []byte) Message {
-	return Message{keys: to, value: value}
+// WithTags is used to assign the tags to the message
+// tags will be used for conditional forwarding
+func (m Message) WithTags(tags []string) Message {
+	m.tags = tags
+	return m
+}
+
+// Keys returns message keys
+func (m Message) Keys() []string {
+	return m.keys
+}
+
+// Value returns message value
+func (m Message) Value() []byte {
+	return m.value
 }
 
 type Messages []Message

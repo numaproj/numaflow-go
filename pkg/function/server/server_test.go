@@ -56,7 +56,7 @@ func Test_server_map(t *testing.T) {
 			fields: fields{
 				mapHandler: functionsdk.MapFunc(func(ctx context.Context, keys []string, d functionsdk.Datum) functionsdk.Messages {
 					msg := d.Value()
-					return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo([]string{keys[0] + "_test"}, msg))
+					return functionsdk.MessagesBuilder().Append(functionsdk.NewMessage(msg).WithKeys([]string{keys[0] + "_test"}))
 				}),
 			},
 		},
@@ -110,7 +110,7 @@ func Test_server_mapT(t *testing.T) {
 			fields: fields{
 				mapTHandler: functionsdk.MapTFunc(func(ctx context.Context, keys []string, d functionsdk.Datum) functionsdk.MessageTs {
 					msg := d.Value()
-					return functionsdk.MessageTsBuilder().Append(functionsdk.MessageTTo(time.Time{}, []string{keys[0] + "_test"}, msg))
+					return functionsdk.MessageTsBuilder().Append(functionsdk.NewMessageT(msg).WithKeys([]string{keys[0] + "_test"}).WithEventTime(time.Time{}))
 				}),
 			},
 		},
@@ -187,7 +187,7 @@ func Test_server_reduce(t *testing.T) {
 						sum += v
 					}
 					resultVal = []byte(strconv.Itoa(sum))
-					return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(resultKey, resultVal))
+					return functionsdk.MessagesBuilder().Append(functionsdk.NewMessage(resultVal).WithKeys(resultKey))
 				}),
 			},
 		},

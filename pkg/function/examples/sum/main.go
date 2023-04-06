@@ -32,7 +32,7 @@ func reduceHandle(_ context.Context, keys []string, reduceCh <-chan functionsdk.
 		sum += v
 	}
 	resultVal = []byte(strconv.Itoa(sum))
-	return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(resultKeys, resultVal))
+	return functionsdk.MessagesBuilder().Append(functionsdk.NewMessage(resultVal).WithKeys(resultKeys))
 }
 
 func main() {

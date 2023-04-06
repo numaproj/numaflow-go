@@ -10,36 +10,51 @@ type MessageT struct {
 	eventTime time.Time
 	keys      []string
 	value     []byte
+	tags      []string
+}
+
+// NewMessageT creates a Message with value
+func NewMessageT(value []byte) MessageT {
+	return MessageT{value: value}
+}
+
+// WithKeys is used to assign the keys to messageT
+func (m MessageT) WithKeys(keys []string) MessageT {
+	m.keys = keys
+	return m
+}
+
+// WithTags is used to assign the tags to messageT
+// tags will be used for conditional forwarding
+func (m MessageT) WithTags(tags []string) MessageT {
+	m.tags = tags
+	return m
+}
+
+// WithEventTime is used to assign the eventTime to messageT
+func (m MessageT) WithEventTime(eventTime time.Time) MessageT {
+	m.eventTime = eventTime
+	return m
 }
 
 // EventTime returns message eventTime
-func (m *MessageT) EventTime() time.Time {
+func (m MessageT) EventTime() time.Time {
 	return m.eventTime
 }
 
 // Keys returns message keys
-func (m *MessageT) Keys() []string {
+func (m MessageT) Keys() []string {
 	return m.keys
 }
 
 // Value returns message value
-func (m *MessageT) Value() []byte {
+func (m MessageT) Value() []byte {
 	return m.value
 }
 
 // MessageTToDrop creates a MessageT to be dropped
 func MessageTToDrop() MessageT {
-	return MessageT{eventTime: time.Time{}, keys: []string{DROP}, value: []byte{}}
-}
-
-// MessageTToAll creates a MessageT that will forward to all
-func MessageTToAll(eventTime time.Time, value []byte) MessageT {
-	return MessageT{eventTime: eventTime, keys: []string{ALL}, value: value}
-}
-
-// MessageTTo creates a MessageT that will forward to specified "to"
-func MessageTTo(eventTime time.Time, to []string, value []byte) MessageT {
-	return MessageT{eventTime: eventTime, keys: to, value: value}
+	return MessageT{eventTime: time.Time{}, value: []byte{}, tags: []string{DROP}}
 }
 
 type MessageTs []MessageT

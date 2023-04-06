@@ -75,7 +75,7 @@ func TestService_MapFn(t *testing.T) {
 			fields: fields{
 				mapper: MapFunc(func(ctx context.Context, keys []string, datum Datum) Messages {
 					msg := datum.Value()
-					return MessagesBuilder().Append(MessageTo([]string{keys[0] + "_test"}, msg))
+					return MessagesBuilder().Append(NewMessage(msg).WithKeys([]string{keys[0] + "_test"}))
 				}),
 			},
 			args: args{
@@ -136,7 +136,7 @@ func TestService_MapFn(t *testing.T) {
 			fields: fields{
 				mapper: MapFunc(func(ctx context.Context, keys []string, datum Datum) Messages {
 					msg := datum.Value()
-					return MessagesBuilder().Append(MessageToAll(msg))
+					return MessagesBuilder().Append(NewMessage(msg))
 				}),
 			},
 			args: args{
@@ -151,7 +151,6 @@ func TestService_MapFn(t *testing.T) {
 			want: &functionpb.DatumResponseList{
 				Elements: []*functionpb.DatumResponse{
 					{
-						Keys:  []string{ALL},
 						Value: []byte(`test`),
 					},
 				},
@@ -177,7 +176,7 @@ func TestService_MapFn(t *testing.T) {
 			want: &functionpb.DatumResponseList{
 				Elements: []*functionpb.DatumResponse{
 					{
-						Keys:  []string{DROP},
+						Tags:  []string{DROP},
 						Value: []byte{},
 					},
 				},
@@ -227,7 +226,7 @@ func TestService_MapTFn(t *testing.T) {
 			fields: fields{
 				mapperT: MapTFunc(func(ctx context.Context, keys []string, datum Datum) MessageTs {
 					msg := datum.Value()
-					return MessageTsBuilder().Append(MessageTTo(testTime, []string{keys[0] + "_test"}, msg))
+					return MessageTsBuilder().Append(NewMessageT(msg).WithEventTime(testTime).WithKeys([]string{keys[0] + "_test"}))
 				}),
 			},
 			args: args{
@@ -255,7 +254,7 @@ func TestService_MapTFn(t *testing.T) {
 			fields: fields{
 				mapperT: MapTFunc(func(ctx context.Context, keys []string, datum Datum) MessageTs {
 					msg := datum.Value()
-					return MessageTsBuilder().Append(MessageTToAll(testTime, msg))
+					return MessageTsBuilder().Append(NewMessageT(msg).WithEventTime(testTime))
 				}),
 			},
 			args: args{
@@ -271,7 +270,6 @@ func TestService_MapTFn(t *testing.T) {
 				Elements: []*functionpb.DatumResponse{
 					{
 						EventTime: &functionpb.EventTime{EventTime: timestamppb.New(testTime)},
-						Keys:      []string{ALL},
 						Value:     []byte(`test`),
 					},
 				},
@@ -298,7 +296,7 @@ func TestService_MapTFn(t *testing.T) {
 				Elements: []*functionpb.DatumResponse{
 					{
 						EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
-						Keys:      []string{DROP},
+						Tags:      []string{DROP},
 						Value:     []byte{},
 					},
 				},
@@ -347,7 +345,7 @@ func TestService_ReduceFn(t *testing.T) {
 						msgVal, _ := strconv.Atoi(string(val.Value()))
 						sum += msgVal
 					}
-					return MessagesBuilder().Append(MessageTo([]string{keys[0] + "_test"}, []byte(strconv.Itoa(sum))))
+					return MessagesBuilder().Append(NewMessage([]byte(strconv.Itoa(sum))).WithKeys([]string{keys[0] + "_test"}))
 				}),
 			},
 			input: []*functionpb.DatumRequest{
@@ -436,7 +434,7 @@ func TestService_ReduceFn(t *testing.T) {
 						msgVal, _ := strconv.Atoi(string(val.Value()))
 						sum += msgVal
 					}
-					return MessagesBuilder().Append(MessageTo([]string{keys[0] + "_test"}, []byte(strconv.Itoa(sum))))
+					return MessagesBuilder().Append(NewMessage([]byte(strconv.Itoa(sum))).WithKeys([]string{keys[0] + "_test"}))
 				}),
 			},
 			input: []*functionpb.DatumRequest{
@@ -504,7 +502,7 @@ func TestService_ReduceFn(t *testing.T) {
 						msgVal, _ := strconv.Atoi(string(val.Value()))
 						sum += msgVal
 					}
-					return MessagesBuilder().Append(MessageToAll([]byte(strconv.Itoa(sum))))
+					return MessagesBuilder().Append(NewMessage([]byte(strconv.Itoa(sum))))
 				}),
 			},
 			input: []*functionpb.DatumRequest{
@@ -530,7 +528,6 @@ func TestService_ReduceFn(t *testing.T) {
 			expected: &functionpb.DatumResponseList{
 				Elements: []*functionpb.DatumResponse{
 					{
-						Keys:  []string{ALL},
 						Value: []byte(strconv.Itoa(60)),
 					},
 				},
@@ -572,7 +569,7 @@ func TestService_ReduceFn(t *testing.T) {
 			expected: &functionpb.DatumResponseList{
 				Elements: []*functionpb.DatumResponse{
 					{
-						Keys:  []string{DROP},
+						Tags:  []string{DROP},
 						Value: []byte{},
 					},
 				},
