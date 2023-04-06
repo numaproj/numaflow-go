@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -86,29 +87,16 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*functionpb.ReadyRe
 
 // MapFn applies a function to each datum element.
 func (fs *Service) MapFn(ctx context.Context, d *functionpb.Datum) (*functionpb.DatumList, error) {
-	var key string
-
-	// get key from gPRC metadata
-	if grpcMD, ok := grpcmd.FromIncomingContext(ctx); ok {
-		keyValue := grpcMD.Get(DatumKey)
-		if len(keyValue) > 1 {
-			return nil, fmt.Errorf("expect extact one key but got %d keys", len(keyValue))
-		} else if len(keyValue) == 1 {
-			key = keyValue[0]
-		} else {
-			// do nothing: the length equals zero is valid, meaning the key is an empty string ""
-		}
-	}
 	var hd = handlerDatum{
 		value:     d.GetValue(),
 		eventTime: d.GetEventTime().EventTime.AsTime(),
 		watermark: d.GetWatermark().Watermark.AsTime(),
 	}
-	messages := fs.Mapper.HandleDo(ctx, key, &hd)
+	messages := fs.Mapper.HandleDo(ctx, d.GetKeys(), &hd)
 	var elements []*functionpb.Datum
 	for _, m := range messages.Items() {
 		elements = append(elements, &functionpb.Datum{
-			Key:   m.key,
+			Keys:  m.keys,
 			Value: m.value,
 		})
 	}
@@ -122,30 +110,17 @@ func (fs *Service) MapFn(ctx context.Context, d *functionpb.Datum) (*functionpb.
 // In addition to map function, MapTFn also supports assigning a new event time to datum.
 // MapTFn can be used only at source vertex by source data transformer.
 func (fs *Service) MapTFn(ctx context.Context, d *functionpb.Datum) (*functionpb.DatumList, error) {
-	var key string
-
-	// get key from gPRC metadata
-	if grpcMD, ok := grpcmd.FromIncomingContext(ctx); ok {
-		keyValue := grpcMD.Get(DatumKey)
-		if len(keyValue) > 1 {
-			return nil, fmt.Errorf("expect extact one key but got %d keys", len(keyValue))
-		} else if len(keyValue) == 1 {
-			key = keyValue[0]
-		} else {
-			// do nothing: the length equals zero is valid, meaning the key is an empty string ""
-		}
-	}
 	var hd = handlerDatum{
 		value:     d.GetValue(),
 		eventTime: d.GetEventTime().EventTime.AsTime(),
 		watermark: d.GetWatermark().Watermark.AsTime(),
 	}
-	messageTs := fs.MapperT.HandleDo(ctx, key, &hd)
+	messageTs := fs.MapperT.HandleDo(ctx, d.GetKeys(), &hd)
 	var elements []*functionpb.Datum
 	for _, m := range messageTs.Items() {
 		elements = append(elements, &functionpb.Datum{
 			EventTime: &functionpb.EventTime{EventTime: timestamppb.New(m.eventTime)},
-			Key:       m.key,
+			Keys:      m.keys,
 			Value:     m.value,
 		})
 	}
@@ -170,17 +145,17 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 
 	grpcMD, ok := grpcmd.FromIncomingContext(ctx)
 	if !ok {
-		return fmt.Errorf("key and window information are not passed in grpc metadata")
+		return fmt.Errorf("keys and window information are not passed in grpc metadata")
 	}
 
 	// get window start and end time from grpc metadata
 	var st, et string
-	st, err = getValueForKey(grpcMD, WinStartTime)
+	st, err = getValueFromMetadata(grpcMD, WinStartTime)
 	if err != nil {
 		return err
 	}
 
-	et, err = getValueForKey(grpcMD, WinEndTime)
+	et, err = getValueFromMetadata(grpcMD, WinEndTime)
 	if err != nil {
 		return err
 	}
@@ -208,23 +183,24 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 			// TODO: research on gRPC errors and revisit the error handler
 			return err
 		}
+		unifiedKey := strings.Join(d.GetKeys(), Delimiter)
 		var hd = &handlerDatum{
 			value:     d.GetValue(),
 			eventTime: d.GetEventTime().EventTime.AsTime(),
 			watermark: d.GetWatermark().Watermark.AsTime(),
 		}
 
-		ch, chok := chanMap[d.Key]
+		ch, chok := chanMap[unifiedKey]
 		if !chok {
 			ch = make(chan Datum)
-			chanMap[d.Key] = ch
+			chanMap[unifiedKey] = ch
 
-			func(key string, ch chan Datum) {
+			func(k []string, ch chan Datum) {
 				g.Go(func() error {
 					// we stream the messages to the user by writing messages
 					// to channel and wait until we get the result and stream
 					// the result back to the client (numaflow).
-					messages := fs.Reducer.HandleDo(ctx, key, ch, md)
+					messages := fs.Reducer.HandleDo(ctx, k, ch, md)
 					datumList := buildDatumList(messages)
 
 					// stream.Send() is not thread safe.
@@ -237,7 +213,7 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 					}
 					return nil
 				})
-			}(d.Key, ch)
+			}(d.GetKeys(), ch)
 		}
 		ch <- hd
 	}
@@ -250,7 +226,7 @@ func buildDatumList(messages Messages) *functionpb.DatumList {
 	datumList := &functionpb.DatumList{}
 	for _, msg := range messages {
 		datumList.Elements = append(datumList.Elements, &functionpb.Datum{
-			Key:   msg.key,
+			Keys:  msg.keys,
 			Value: msg.value,
 		})
 	}
@@ -264,20 +240,20 @@ func closeChannels(chanMap map[string]chan Datum) {
 	}
 }
 
-func getValueForKey(md grpcmd.MD, key string) (string, error) {
+func getValueFromMetadata(md grpcmd.MD, k string) (string, error) {
 	var value string
 
-	keyValue := md.Get(key)
+	keyValue := md.Get(k)
 
 	if len(keyValue) > 1 {
-		return value, fmt.Errorf("expected extactly one value for key %s in metadata but got %d values, %s", key, len(keyValue), keyValue)
+		return value, fmt.Errorf("expected extactly one value for keys %s in metadata but got %d values, %s", k, len(keyValue), keyValue)
 	} else if len(keyValue) == 1 {
 		value = keyValue[0]
 	} else {
 		// the length equals zero is invalid for reduce
-		// since we are using a global key, and start and end time
+		// since we are using a global keys, and start and end time
 		// cannot be empty
-		return value, fmt.Errorf("expected non empty value for key %s in metadata but got an empty value", key)
+		return value, fmt.Errorf("expected non empty value for keys %s in metadata but got an empty value", k)
 	}
 	return value, nil
 }

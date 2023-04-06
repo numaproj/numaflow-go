@@ -7,7 +7,7 @@ import (
 	"github.com/numaproj/numaflow-go/pkg/function/server"
 )
 
-func mapHandle(_ context.Context, key string, d functionsdk.Datum) functionsdk.Messages {
+func mapHandle(_ context.Context, keys []string, d functionsdk.Datum) functionsdk.Messages {
 	// directly forward the input to the output
 	val := d.Value()
 	eventTime := d.EventTime()
@@ -15,9 +15,9 @@ func mapHandle(_ context.Context, key string, d functionsdk.Datum) functionsdk.M
 	watermark := d.Watermark()
 	_ = watermark
 
-	var resultKey = key
+	var resultKeys = keys
 	var resultVal = val
-	return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(resultKey, resultVal))
+	return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(resultKeys, resultVal))
 }
 
 func main() {

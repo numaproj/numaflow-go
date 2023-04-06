@@ -28,7 +28,7 @@ func New() *server {
 // RegisterMapper registers the map operation handler to the server.
 // Example:
 //
-//	func handle(ctx context.Context, key string, data functionsdk.Datum) functionsdk.Messages {
+//	func handle(ctx context.Context, keys []string, data functionsdk.Datum) functionsdk.Messages {
 //		_ = data.EventTime() // Event time is available
 //		_ = data.Watermark() // Watermark is available
 //		return functionsdk.MessagesBuilder().Append(functionsdk.MessageToAll(data.Value()))
@@ -45,7 +45,7 @@ func (s *server) RegisterMapper(m functionsdk.MapHandler) *server {
 // RegisterMapperT registers the mapT operation handler to the server.
 // Example:
 //
-//	func handle(ctx context.Context, key string, data functionsdk.Datum) functionsdk.MessageTs {
+//	func handle(ctx context.Context, keys []string, data functionsdk.Datum) functionsdk.MessageTs {
 //		_ = data.EventTime() // Event time is available
 //		_ = data.Watermark() // Watermark is available
 //		return functionsdk.MessageTsBuilder().Append(functionsdk.MessageTToAll(time.Now(), data.Value()))
@@ -62,14 +62,14 @@ func (s *server) RegisterMapperT(m functionsdk.MapTHandler) *server {
 // RegisterReducer registers the reduce operation handler.
 // Example:
 //
-//	func handle(_ context.Context, key string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) functionsdk.Messages {
-//		var resultKey = key
+//	func handle(_ context.Context, keys []string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) functionsdk.Messages {
+//		var resultKeys = keys
 //		var resultVal []byte
 //		for data := range reduceCh {
 //			_ = data.EventTime() // Event time is available
 //			_ = data.Watermark() // Watermark is available
 //		}
-//		return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(resultKey, resultVal))
+//		return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(resultKeys, resultVal))
 //	}
 //
 //	func main() {

@@ -8,8 +8,8 @@ import (
 	"github.com/numaproj/numaflow-go/pkg/function/server"
 )
 
-func mapTHandle(_ context.Context, key string, d functionsdk.Datum) functionsdk.MessageTs {
-	return impl.FilterEventTime(key, d)
+func mapTHandle(_ context.Context, keys []string, d functionsdk.Datum) functionsdk.MessageTs {
+	return impl.FilterEventTime(keys, d)
 }
 
 func main() {
