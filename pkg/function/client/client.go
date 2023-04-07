@@ -50,7 +50,7 @@ func New(inputOptions ...Option) (*client, error) {
 	var sockAddr string
 	// Make a TCP connection client for multiprocessing grpc server
 	if function.IsMapMultiProcEnabled() == true {
-		log.Println("Multiprocessing TCP Client ", function.TCP, function.TCP_ADDR)
+		log.Println("Multiprocessing TCP Client ", function.TCP, opts.sockAddr)
 		sockAddr = fmt.Sprintf("%s%s", connAddr, opts.sockAddr)
 		conn, err = grpc.Dial(
 			fmt.Sprintf("%s:///%s", custScheme, custServiceName),
@@ -60,7 +60,7 @@ func New(inputOptions ...Option) (*client, error) {
 			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(opts.maxMessageSize), grpc.MaxCallSendMsgSize(opts.maxMessageSize)),
 		)
 	} else {
-		log.Println("UDS Client ", function.UDS, function.UDS_ADDR)
+		log.Println("UDS Client ", function.UDS, opts.sockAddr)
 		sockAddr = fmt.Sprintf("%s:%s", function.UDS, opts.sockAddr)
 		conn, err = grpc.Dial(sockAddr, grpc.WithTransportCredentials(insecure.NewCredentials()),
 			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(opts.maxMessageSize), grpc.MaxCallSendMsgSize(opts.maxMessageSize)))
