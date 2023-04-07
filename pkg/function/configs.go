@@ -1,8 +1,12 @@
 package function
 
+import "os"
+
 const (
-	Protocol = "unix"
-	Addr     = "/var/run/numaflow/function.sock"
+	TCP      = "tcp"
+	UDS      = "unix"
+	UDS_ADDR = "/var/run/numaflow/function.sock"
+	TCP_ADDR = ":55551"
 	// DefaultMaxMessageSize overrides gRPC max message size configuration
 	// https://github.com/grpc/grpc-go/blob/master/server.go#L58-L59
 	//   - defaultServerMaxReceiveMessageSize
@@ -12,3 +16,11 @@ const (
 	WinEndTime            = "x-numaflow-win-end-time"
 	Delimiter             = ":"
 )
+
+func IsMapMultiProcEnabled() bool {
+	val, present := os.LookupEnv("MAP_MULTIPROC")
+	if present && val == "true" {
+		return true
+	}
+	return false
+}
