@@ -3,7 +3,6 @@ package client
 import (
 	"github.com/numaproj/numaflow-go/pkg/function"
 	"google.golang.org/grpc/resolver"
-	"log"
 	"strconv"
 	"strings"
 )
@@ -14,16 +13,16 @@ const (
 	connAddr        = "0.0.0.0"
 )
 
-var addrsList []string
+type multiProcResolverBuilder struct {
+	addrsList []string
+}
 
-type multiProcResolverBuilder struct{}
-
-func (*multiProcResolverBuilder) Build(target resolver.Target, cc resolver.ClientConn, opts resolver.BuildOptions) (resolver.Resolver, error) {
+func (m *multiProcResolverBuilder) Build(target resolver.Target, cc resolver.ClientConn, opts resolver.BuildOptions) (resolver.Resolver, error) {
 	r := &multiProcResolver{
 		target: target,
 		cc:     cc,
 		addrsStore: map[string][]string{
-			custServiceName: addrsList,
+			custServiceName: m.addrsList,
 		},
 	}
 	r.start()
@@ -54,14 +53,14 @@ func (r *multiProcResolver) start() {
 }
 func (*multiProcResolver) ResolveNow(o resolver.ResolveNowOptions) {}
 func (*multiProcResolver) Close()                                  {}
-func (*multiProcResolver) Resolve(target resolver.Target) {
-	log.Println(target)
-}
+func (*multiProcResolver) Resolve(target resolver.Target)          {}
 
-func buildConnAddrs(numCpu int) {
+// Populate the connection list for the clients
+// Format (serverAddr, serverIdx) : (0.0.0.0:5551, 1)
+func buildConnAddrs(numCpu int) []string {
 	var conn = make([]string, numCpu)
 	for i := 0; i < numCpu; i++ {
 		conn[i] = connAddr + function.TCP_ADDR + "," + strconv.Itoa(i+1)
 	}
-	addrsList = conn
+	return conn
 }

@@ -167,7 +167,6 @@ outputLoop:
 // on multiprocessing TCP or UDS connection
 
 func regMultProcResolver() {
-	resolver.Register(&multiProcResolverBuilder{})
 	maxProcs := runtime.GOMAXPROCS(0)
 	numCpu := runtime.NumCPU()
 	if maxProcs < numCpu {
@@ -178,6 +177,8 @@ func regMultProcResolver() {
 		numCpu, _ = strconv.Atoi(val)
 	}
 	log.Println("Num CPU ", numCpu)
-	buildConnAddrs(numCpu)
-	log.Println("TCP client list:", addrsList)
+	conn := buildConnAddrs(numCpu)
+	res := &multiProcResolverBuilder{addrsList: conn}
+	resolver.Register(res)
+	log.Println("TCP client list:", res.addrsList)
 }
