@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	custScheme      = "example"
-	custServiceName = "lb.example.grpc.io"
+	custScheme      = "udf"
+	custServiceName = "numaflow.numaproj.io"
 	connAddr        = "0.0.0.0"
 )
 

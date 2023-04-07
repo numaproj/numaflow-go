@@ -174,7 +174,12 @@ func regMultProcResolver() {
 	}
 	val, present := os.LookupEnv("NUM_CPU_MULTIPROC")
 	if present {
-		numCpu, _ = strconv.Atoi(val)
+		num, err := strconv.Atoi(val)
+		if err != nil || num < 1 {
+			numCpu = maxProcs
+		} else {
+			numCpu = num
+		}
 	}
 	log.Println("Num CPU ", numCpu)
 	conn := buildConnAddrs(numCpu)
