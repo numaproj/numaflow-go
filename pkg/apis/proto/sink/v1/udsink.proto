@@ -34,15 +34,7 @@ message Datum {
   bytes value = 2;
   EventTime event_time = 3;
   Watermark watermark = 4;
-  Metadata metadata = 5;
-}
-
-/**
- * Metadata of a datum element.
- */
-message Metadata {
-  string id = 1;
-  uint64 num_delivered = 2;
+  string id = 5;
 }
 
 /**
