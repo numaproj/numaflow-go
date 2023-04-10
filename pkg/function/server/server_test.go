@@ -123,7 +123,6 @@ func Test_server_mapT(t *testing.T) {
 			go New().RegisterMapperT(tt.fields.mapTHandler).Start(ctx, WithSockAddr(file.Name()))
 			c, err := client.New(client.WithSockAddr(file.Name()))
 			waitUntilReady(ctx, c, t)
-
 			assert.NoError(t, err)
 			defer func() {
 				err = c.CloseConn(ctx)
