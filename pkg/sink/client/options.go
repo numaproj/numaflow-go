@@ -1,8 +1,8 @@
 package client
 
 type options struct {
-	sockAddr        string
-	infoSvrSockAddr string
+	sockAddr            string
+	sereverInfoFilePath string
 }
 
 // Option is the interface to apply options.
@@ -15,9 +15,9 @@ func WithSockAddr(addr string) Option {
 	}
 }
 
-// WithInfoServerSocketAddr start the client with the given info server sock addr. This is mainly used for testing purpose.
-func WithInfoServerSocketAddr(addr string) Option {
-	return func(opts *options) {
-		opts.infoSvrSockAddr = addr
+// WithServerInfoFilePath start the client with the given server info file path. This is mainly used for testing purpose.
+func WithServerInfoFilePath(f string) Option {
+	return func(o *options) {
+		o.sereverInfoFilePath = f
 	}
 }

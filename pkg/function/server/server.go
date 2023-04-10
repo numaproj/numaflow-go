@@ -12,7 +12,6 @@ import (
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
 	"github.com/numaproj/numaflow-go/pkg/info"
-	infoserver "github.com/numaproj/numaflow-go/pkg/info/server"
 	"google.golang.org/grpc"
 )
 
@@ -85,9 +84,9 @@ func (s *server) RegisterReducer(r functionsdk.ReduceHandler) *server {
 // Start starts the gRPC server via unix domain socket at configs.Addr and return error.
 func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 	var opts = &options{
-		sockAddr:        functionsdk.Addr,
-		maxMessageSize:  functionsdk.DefaultMaxMessageSize,
-		infoSvrSockAddr: info.SocketAddress,
+		sockAddr:            functionsdk.Addr,
+		maxMessageSize:      functionsdk.DefaultMaxMessageSize,
+		sereverInfoFilePath: info.ServerInfoFilePath,
 	}
 
 	for _, inputOption := range inputOptions {
@@ -109,11 +108,11 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	go func() {
-		if err := infoserver.Start(ctxWithSignal, infoserver.WithSocketAddress(opts.infoSvrSockAddr)); err != nil {
-			log.Fatalf("Failed to start info server: %v", err)
-		}
-	}()
+	// Write server info to the file
+	serverInfo := &info.ServerInfo{Protocol: info.UDS, Language: info.Go, Version: info.GetSDKVersion()}
+	if err := info.Write(serverInfo, info.WithServerInfoFilePath(opts.sereverInfoFilePath)); err != nil {
+		return err
+	}
 
 	lis, err := net.Listen(functionsdk.Protocol, opts.sockAddr)
 	if err != nil {

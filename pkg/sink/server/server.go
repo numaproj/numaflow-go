@@ -11,7 +11,6 @@ import (
 
 	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
 	"github.com/numaproj/numaflow-go/pkg/info"
-	infoserver "github.com/numaproj/numaflow-go/pkg/info/server"
 	sinksdk "github.com/numaproj/numaflow-go/pkg/sink"
 	"google.golang.org/grpc"
 )
@@ -50,9 +49,9 @@ func (s *server) RegisterSinker(h sinksdk.SinkHandler) *server {
 // Start starts the gRPC server via unix domain socket at configs.Addr and return error.
 func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 	var opts = &options{
-		sockAddr:        sinksdk.Addr,
-		maxMessageSize:  sinksdk.DefaultMaxMessageSize,
-		infoSvrSockAddr: info.SocketAddress,
+		sockAddr:            sinksdk.Addr,
+		maxMessageSize:      sinksdk.DefaultMaxMessageSize,
+		sereverInfoFilePath: info.ServerInfoFilePath,
 	}
 
 	for _, inputOption := range inputOptions {
@@ -74,11 +73,11 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	go func() {
-		if err := infoserver.Start(ctxWithSignal, infoserver.WithSocketAddress(opts.infoSvrSockAddr)); err != nil {
-			log.Fatalf("Failed to start info server: %v", err)
-		}
-	}()
+	// Write server info to the file
+	serverInfo := &info.ServerInfo{Protocol: info.UDS, Language: info.Go, Version: info.GetSDKVersion()}
+	if err := info.Write(serverInfo, info.WithServerInfoFilePath(opts.sereverInfoFilePath)); err != nil {
+		return err
+	}
 
 	lis, err := net.Listen(sinksdk.Protocol, opts.sockAddr)
 	if err != nil {

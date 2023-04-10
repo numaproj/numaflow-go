@@ -1,7 +1,7 @@
 package info
 
 const (
-	SocketAddress = "/var/run/numaflow/info.sock"
+	ServerInfoFilePath = "/var/run/numaflow/server-info"
 )
 
 type Protocol string
