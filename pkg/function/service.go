@@ -22,6 +22,7 @@ type handlerDatum struct {
 	value     []byte
 	eventTime time.Time
 	watermark time.Time
+	metadata  handlerDatumMetadata
 }
 
 func (h *handlerDatum) Value() []byte {
@@ -34,6 +35,26 @@ func (h *handlerDatum) EventTime() time.Time {
 
 func (h *handlerDatum) Watermark() time.Time {
 	return h.watermark
+}
+
+func (h *handlerDatum) Metadata() DatumMetadata {
+	return h.metadata
+}
+
+// handlerDatumMetadata implements the DatumMetadata interface and is used in the map and reduce handlers.
+type handlerDatumMetadata struct {
+	id           string
+	numDelivered uint64
+}
+
+// ID returns the ID of the datum.
+func (h handlerDatumMetadata) ID() string {
+	return h.id
+}
+
+// NumDelivered returns the number of times the datum has been delivered.
+func (h handlerDatumMetadata) NumDelivered() uint64 {
+	return h.numDelivered
 }
 
 // intervalWindow implements IntervalWindow interface which will be passed as metadata
@@ -91,6 +112,10 @@ func (fs *Service) MapFn(ctx context.Context, d *functionpb.Datum) (*functionpb.
 		value:     d.GetValue(),
 		eventTime: d.GetEventTime().EventTime.AsTime(),
 		watermark: d.GetWatermark().Watermark.AsTime(),
+		metadata: handlerDatumMetadata{
+			id:           d.GetMetadata().GetId(),
+			numDelivered: d.GetMetadata().GetNumDelivered(),
+		},
 	}
 	messages := fs.Mapper.HandleDo(ctx, d.GetKeys(), &hd)
 	var elements []*functionpb.Datum
@@ -114,6 +139,10 @@ func (fs *Service) MapTFn(ctx context.Context, d *functionpb.Datum) (*functionpb
 		value:     d.GetValue(),
 		eventTime: d.GetEventTime().EventTime.AsTime(),
 		watermark: d.GetWatermark().Watermark.AsTime(),
+		metadata: handlerDatumMetadata{
+			id:           d.GetMetadata().GetId(),
+			numDelivered: d.GetMetadata().GetNumDelivered(),
+		},
 	}
 	messageTs := fs.MapperT.HandleDo(ctx, d.GetKeys(), &hd)
 	var elements []*functionpb.Datum
@@ -188,6 +217,10 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 			value:     d.GetValue(),
 			eventTime: d.GetEventTime().EventTime.AsTime(),
 			watermark: d.GetWatermark().Watermark.AsTime(),
+			metadata: handlerDatumMetadata{
+				id:           d.GetMetadata().GetId(),
+				numDelivered: d.GetMetadata().GetNumDelivered(),
+			},
 		}
 
 		ch, chok := chanMap[unifiedKey]

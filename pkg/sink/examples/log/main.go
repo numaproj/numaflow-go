@@ -8,7 +8,7 @@ import (
 	"github.com/numaproj/numaflow-go/pkg/sink/server"
 )
 
-func handle(ctx context.Context, datumStreamCh <-chan sinksdk.Datum) sinksdk.Responses {
+func handle(_ context.Context, datumStreamCh <-chan sinksdk.Datum) sinksdk.Responses {
 	result := sinksdk.ResponsesBuilder()
 	for d := range datumStreamCh {
 		_ = d.EventTime()

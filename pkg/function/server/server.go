@@ -84,7 +84,7 @@ func (s *server) RegisterReducer(r functionsdk.ReduceHandler) *server {
 // Start starts the gRPC server via unix domain socket at configs.Addr and return error.
 func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 	var opts = &options{
-		sockAddr:            functionsdk.Addr,
+		sockAddr:            functionsdk.UDS_ADDR,
 		maxMessageSize:      functionsdk.DefaultMaxMessageSize,
 		sereverInfoFilePath: info.ServerInfoFilePath,
 	}
@@ -114,9 +114,9 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 		return err
 	}
 
-	lis, err := net.Listen(functionsdk.Protocol, opts.sockAddr)
+	lis, err := net.Listen(functionsdk.UDS, opts.sockAddr)
 	if err != nil {
-		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", functionsdk.Protocol, functionsdk.Addr, err)
+		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", functionsdk.UDS, functionsdk.UDS_ADDR, err)
 	}
 	defer func() { _ = lis.Close() }()
 	grpcServer := grpc.NewServer(

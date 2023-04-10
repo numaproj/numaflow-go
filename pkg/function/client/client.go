@@ -5,13 +5,18 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"os"
+	"runtime"
+	"strconv"
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	"github.com/numaproj/numaflow-go/pkg/function"
 	"github.com/numaproj/numaflow-go/pkg/info"
+	_ "go.uber.org/automaxprocs"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/resolver"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -24,9 +29,17 @@ type client struct {
 // New creates a new client object.
 func New(inputOptions ...Option) (*client, error) {
 	var opts = &options{
-		sockAddr:            function.Addr,
 		maxMessageSize:      function.DefaultMaxMessageSize,
 		sereverInfoFilePath: info.ServerInfoFilePath,
+	}
+
+	// Populate connection variables for client connection
+	// based on multiprocessing enabled/disabled
+	if function.IsMapMultiProcEnabled() {
+		regMultProcResolver()
+		opts.sockAddr = function.TCP_ADDR
+	} else {
+		opts.sockAddr = function.UDS_ADDR
 	}
 
 	for _, inputOption := range inputOptions {
@@ -44,10 +57,25 @@ func New(inputOptions ...Option) (*client, error) {
 	}
 
 	c := new(client)
-	sockAddr := fmt.Sprintf("%s:%s", function.Protocol, opts.sockAddr)
-	conn, err := grpc.Dial(sockAddr, grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(opts.maxMessageSize), grpc.MaxCallSendMsgSize(opts.maxMessageSize)))
-
+	var conn *grpc.ClientConn
+	var sockAddr string
+	// Make a TCP connection client for multiprocessing grpc server
+	if function.IsMapMultiProcEnabled() {
+		log.Println("Multiprocessing TCP Client ", function.TCP, opts.sockAddr)
+		sockAddr = fmt.Sprintf("%s%s", connAddr, opts.sockAddr)
+		conn, err = grpc.Dial(
+			fmt.Sprintf("%s:///%s", custScheme, custServiceName),
+			// This sets the initial load balancing policy as Round Robin
+			grpc.WithDefaultServiceConfig(`{"loadBalancingConfig": [{"round_robin":{}}]}`),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(opts.maxMessageSize), grpc.MaxCallSendMsgSize(opts.maxMessageSize)),
+		)
+	} else {
+		log.Println("UDS Client ", function.UDS, opts.sockAddr)
+		sockAddr = fmt.Sprintf("%s:%s", function.UDS, opts.sockAddr)
+		conn, err = grpc.Dial(sockAddr, grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(opts.maxMessageSize), grpc.MaxCallSendMsgSize(opts.maxMessageSize)))
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute grpc.Dial(%q): %w", sockAddr, err)
 	}
@@ -144,4 +172,29 @@ outputLoop:
 	}
 
 	return datumList, err
+}
+
+// setConn function is used to populate the connection properties based
+// on multiprocessing TCP or UDS connection
+
+func regMultProcResolver() {
+	maxProcs := runtime.GOMAXPROCS(0)
+	numCpu := runtime.NumCPU()
+	if maxProcs < numCpu {
+		numCpu = maxProcs
+	}
+	val, present := os.LookupEnv("NUM_CPU_MULTIPROC")
+	if present {
+		num, err := strconv.Atoi(val)
+		if err != nil || num < 1 {
+			numCpu = maxProcs
+		} else {
+			numCpu = num
+		}
+	}
+	log.Println("Num CPU ", numCpu)
+	conn := buildConnAddrs(numCpu)
+	res := &multiProcResolverBuilder{addrsList: conn}
+	resolver.Register(res)
+	log.Println("TCP client list:", res.addrsList)
 }
