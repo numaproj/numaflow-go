@@ -32,10 +32,11 @@ func New(inputOptions ...Option) (*client, error) {
 		inputOption(opts)
 	}
 
+	// TODO: WaitUntilReady() check unitl SIGTERM is received.
 	serverInfo, err := info.Read(info.WithServerInfoFilePath(opts.sereverInfoFilePath))
 	if err != nil {
 		// TODO: return nil, err
-		log.Println("Failed to execute infoClient.GetServerInfo(): ", err)
+		log.Println("Failed to execute info.Read(): ", err)
 	}
 	// TODO: Use serverInfo to check compatibility and start the right gRPC client.
 	if serverInfo != nil {
