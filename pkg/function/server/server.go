@@ -93,6 +93,12 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 		inputOption(opts)
 	}
 
+	// Write server info to the file
+	serverInfo := &info.ServerInfo{Protocol: info.UDS, Language: info.Go, Version: info.GetSDKVersion()}
+	if err := info.Write(serverInfo, info.WithServerInfoFilePath(opts.sereverInfoFilePath)); err != nil {
+		return err
+	}
+
 	cleanup := func() error {
 		// err if no opts.sockAddr should be ignored
 		if _, err := os.Stat(opts.sockAddr); err == nil {
@@ -107,12 +113,6 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 
 	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
-
-	// Write server info to the file
-	serverInfo := &info.ServerInfo{Protocol: info.UDS, Language: info.Go, Version: info.GetSDKVersion()}
-	if err := info.Write(serverInfo, info.WithServerInfoFilePath(opts.sereverInfoFilePath)); err != nil {
-		return err
-	}
 
 	lis, err := net.Listen(functionsdk.UDS, opts.sockAddr)
 	if err != nil {
