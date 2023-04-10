@@ -105,8 +105,7 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 
 	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
-
-	lis, err := net.Listen(functionsdk.UDS, functionsdk.UDS_ADDR)
+	lis, err := net.Listen(functionsdk.UDS, opts.sockAddr)
 	if err != nil {
 		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", functionsdk.UDS, functionsdk.UDS_ADDR, err)
 	}
@@ -122,7 +121,7 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 	defer close(errCh)
 	// start the grpc server
 	go func(ch chan<- error) {
-		log.Println("starting the gRPC server with unix domain socket...")
+		log.Println("starting the gRPC server with unix domain socket...", lis.Addr())
 		err = grpcServer.Serve(lis)
 		if err != nil {
 			ch <- fmt.Errorf("failed to start the gRPC server: %v", err)

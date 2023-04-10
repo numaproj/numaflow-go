@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"os"
 	"strconv"
 	"sync"
@@ -17,6 +18,21 @@ import (
 	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
 	"github.com/numaproj/numaflow-go/pkg/function/client"
 )
+
+func waitUntilReady(ctx context.Context, c functionsdk.Client, t *testing.T) {
+	var in = &emptypb.Empty{}
+	isReady, _ := c.IsReady(ctx, in)
+	for !isReady {
+		select {
+		case <-ctx.Done():
+			assert.Fail(t, ctx.Err().Error())
+			return
+		default:
+			time.Sleep(100 * time.Millisecond)
+			isReady, _ = c.IsReady(ctx, in)
+		}
+	}
+}
 
 type fields struct {
 	mapHandler    functionsdk.MapHandler
@@ -51,8 +67,8 @@ func Test_server_map(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 			go New().RegisterMapper(tt.fields.mapHandler).Start(ctx, WithSockAddr(file.Name()))
-
 			c, err := client.New(client.WithSockAddr(file.Name()))
+			waitUntilReady(ctx, c, t)
 			assert.NoError(t, err)
 			defer func() {
 				err = c.CloseConn(ctx)
@@ -105,8 +121,9 @@ func Test_server_mapT(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 			go New().RegisterMapperT(tt.fields.mapTHandler).Start(ctx, WithSockAddr(file.Name()))
-
 			c, err := client.New(client.WithSockAddr(file.Name()))
+			waitUntilReady(ctx, c, t)
+
 			assert.NoError(t, err)
 			defer func() {
 				err = c.CloseConn(ctx)
@@ -184,6 +201,7 @@ func Test_server_reduce(t *testing.T) {
 			go New().RegisterReducer(tt.fields.reduceHandler).Start(ctx, WithSockAddr(file.Name()))
 
 			c, err := client.New(client.WithSockAddr(file.Name()))
+			waitUntilReady(ctx, c, t)
 			assert.NoError(t, err)
 			defer func() {
 				err = c.CloseConn(ctx)
