@@ -14,7 +14,7 @@ func handle(_ context.Context, datumStreamCh <-chan sinksdk.Datum) sinksdk.Respo
 		_ = d.EventTime()
 		_ = d.Watermark()
 		fmt.Println("User Defined Sink:", string(d.Value()))
-		id := d.Metadata().ID()
+		id := d.ID()
 		result = result.Append(sinksdk.ResponseOK(id))
 	}
 	return result

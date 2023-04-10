@@ -13,15 +13,7 @@ type Datum interface {
 	Value() []byte
 	EventTime() time.Time
 	Watermark() time.Time
-	Metadata() DatumMetadata
-}
-
-// DatumMetadata contains metadata of a datum.
-type DatumMetadata interface {
-	// ID returns the ID of the datum.
 	ID() string
-	// NumDelivered returns the number of times the datum has been delivered.
-	NumDelivered() uint64
 }
 
 // Client contains methods to call a gRPC client.
