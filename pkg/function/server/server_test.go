@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	"github.com/stretchr/testify/assert"
 	grpcmd "google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -17,6 +19,21 @@ import (
 	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
 	"github.com/numaproj/numaflow-go/pkg/function/client"
 )
+
+func waitUntilReady(ctx context.Context, c functionsdk.Client, t *testing.T) {
+	var in = &emptypb.Empty{}
+	isReady, _ := c.IsReady(ctx, in)
+	for !isReady {
+		select {
+		case <-ctx.Done():
+			assert.Fail(t, ctx.Err().Error())
+			return
+		default:
+			time.Sleep(100 * time.Millisecond)
+			isReady, _ = c.IsReady(ctx, in)
+		}
+	}
+}
 
 type fields struct {
 	mapHandler    functionsdk.MapHandler
@@ -57,11 +74,11 @@ func Test_server_map(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// note: using actual UDS connection
-			ctx, cancel := context.WithCancel(context.Background())
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			defer cancel()
 			go New().RegisterMapper(tt.fields.mapHandler).Start(ctx, WithSockAddr(socketFile.Name()), WithServerInfoFilePath(serverInfoFile.Name()))
-
 			c, err := client.New(client.WithSockAddr(socketFile.Name()), client.WithServerInfoFilePath(serverInfoFile.Name()))
+			waitUntilReady(ctx, c, t)
 			assert.NoError(t, err)
 			defer func() {
 				err = c.CloseConn(ctx)
@@ -120,11 +137,11 @@ func Test_server_mapT(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// note: using actual UDS connection
-			ctx, cancel := context.WithCancel(context.Background())
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			defer cancel()
 			go New().RegisterMapperT(tt.fields.mapTHandler).Start(ctx, WithSockAddr(socketFile.Name()), WithServerInfoFilePath(serverInfoFile.Name()))
-
 			c, err := client.New(client.WithSockAddr(socketFile.Name()), client.WithServerInfoFilePath(serverInfoFile.Name()))
+			waitUntilReady(ctx, c, t)
 			assert.NoError(t, err)
 			defer func() {
 				err = c.CloseConn(ctx)
@@ -205,11 +222,12 @@ func Test_server_reduce(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// note: using actual UDS connection
-			ctx, cancel := context.WithCancel(context.Background())
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			defer cancel()
 			go New().RegisterReducer(tt.fields.reduceHandler).Start(ctx, WithSockAddr(file.Name()), WithServerInfoFilePath(serverInfoFile.Name()))
 
 			c, err := client.New(client.WithSockAddr(file.Name()), client.WithServerInfoFilePath(serverInfoFile.Name()))
+			waitUntilReady(ctx, c, t)
 			assert.NoError(t, err)
 			defer func() {
 				err = c.CloseConn(ctx)
