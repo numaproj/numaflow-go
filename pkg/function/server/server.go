@@ -31,7 +31,7 @@ func New() *server {
 //	func handle(ctx context.Context, keys []string, data functionsdk.Datum) functionsdk.Messages {
 //		_ = data.EventTime() // Event time is available
 //		_ = data.Watermark() // Watermark is available
-//		return functionsdk.MessagesBuilder().Append(functionsdk.MessageToAll(data.Value()))
+//		return functionsdk.MessagesBuilder().Append(functionsdk.NewMessage(data.Value()))
 //	}
 //
 //	func main() {
@@ -48,7 +48,7 @@ func (s *server) RegisterMapper(m functionsdk.MapHandler) *server {
 //	func handle(ctx context.Context, keys []string, data functionsdk.Datum) functionsdk.MessageTs {
 //		_ = data.EventTime() // Event time is available
 //		_ = data.Watermark() // Watermark is available
-//		return functionsdk.MessageTsBuilder().Append(functionsdk.MessageTToAll(time.Now(), data.Value()))
+//		return functionsdk.MessageTsBuilder().Append(functionsdk.NewMessageT(data.Value()).WithEventTime(time.Now()))
 //	}
 //
 //	func main() {
@@ -69,7 +69,7 @@ func (s *server) RegisterMapperT(m functionsdk.MapTHandler) *server {
 //			_ = data.EventTime() // Event time is available
 //			_ = data.Watermark() // Watermark is available
 //		}
-//		return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(resultKeys, resultVal))
+//		return functionsdk.MessagesBuilder().Append(functionsdk.NewMessage(resultVal).WithKeys(resultKeys))
 //	}
 //
 //	func main() {
