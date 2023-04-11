@@ -10,6 +10,7 @@ import (
 	"syscall"
 
 	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
+	"github.com/numaproj/numaflow-go/pkg/info"
 	sinksdk "github.com/numaproj/numaflow-go/pkg/sink"
 	"google.golang.org/grpc"
 )
@@ -48,12 +49,19 @@ func (s *server) RegisterSinker(h sinksdk.SinkHandler) *server {
 // Start starts the gRPC server via unix domain socket at configs.Addr and return error.
 func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 	var opts = &options{
-		sockAddr:       sinksdk.Addr,
-		maxMessageSize: sinksdk.DefaultMaxMessageSize,
+		sockAddr:            sinksdk.Addr,
+		maxMessageSize:      sinksdk.DefaultMaxMessageSize,
+		sereverInfoFilePath: info.ServerInfoFilePath,
 	}
 
 	for _, inputOption := range inputOptions {
 		inputOption(opts)
+	}
+
+	// Write server info to the file
+	serverInfo := &info.ServerInfo{Protocol: info.UDS, Language: info.Go, Version: info.GetSDKVersion()}
+	if err := info.Write(serverInfo, info.WithServerInfoFilePath(opts.sereverInfoFilePath)); err != nil {
+		return err
 	}
 
 	cleanup := func() error {
@@ -75,6 +83,7 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 	if err != nil {
 		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", sinksdk.Protocol, sinksdk.Addr, err)
 	}
+	defer func() { _ = lis.Close() }()
 	grpcServer := grpc.NewServer(
 		grpc.MaxRecvMsgSize(opts.maxMessageSize),
 		grpc.MaxSendMsgSize(opts.maxMessageSize),

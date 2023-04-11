@@ -15,10 +15,18 @@ import (
 )
 
 func Test_server_sink(t *testing.T) {
-	file, err := os.CreateTemp("/tmp", "numaflow-test.sock")
+
+	socketFile, err := os.CreateTemp("/tmp", "numaflow-test.sock")
 	assert.NoError(t, err)
 	defer func() {
-		err = os.RemoveAll(file.Name())
+		err = os.RemoveAll(socketFile.Name())
+		assert.NoError(t, err)
+	}()
+
+	serverInfoFile, err := os.CreateTemp("/tmp", "numaflow-test-info")
+	assert.NoError(t, err)
+	defer func() {
+		err = os.RemoveAll(serverInfoFile.Name())
 		assert.NoError(t, err)
 	}()
 
@@ -53,9 +61,9 @@ func Test_server_sink(t *testing.T) {
 			// note: using actual UDS connection
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
-			go New().RegisterSinker(tt.fields.sinkHandler).Start(ctx, WithSockAddr(file.Name()))
+			go New().RegisterSinker(tt.fields.sinkHandler).Start(ctx, WithSockAddr(socketFile.Name()), WithServerInfoFilePath(serverInfoFile.Name()))
 
-			c, err := client.New(client.WithSockAddr(file.Name()))
+			c, err := client.New(client.WithSockAddr(socketFile.Name()), client.WithServerInfoFilePath(serverInfoFile.Name()))
 			assert.NoError(t, err)
 			defer func() {
 				err = c.CloseConn(ctx)

@@ -3,19 +3,21 @@ package client
 import (
 	"context"
 	"fmt"
+	"io"
+	"log"
+	"os"
+	"runtime"
+	"strconv"
+
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	"github.com/numaproj/numaflow-go/pkg/function"
+	"github.com/numaproj/numaflow-go/pkg/info"
 	_ "go.uber.org/automaxprocs"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/resolver"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"io"
-	"log"
-	"os"
-	"runtime"
-	"strconv"
 )
 
 // client contains the grpc connection and the grpc client.
@@ -26,14 +28,14 @@ type client struct {
 
 // New creates a new client object.
 func New(inputOptions ...Option) (*client, error) {
-
 	var opts = &options{
-		maxMessageSize: function.DefaultMaxMessageSize,
+		maxMessageSize:      function.DefaultMaxMessageSize,
+		sereverInfoFilePath: info.ServerInfoFilePath,
 	}
 
 	// Populate connection variables for client connection
 	// based on multiprocessing enabled/disabled
-	if function.IsMapMultiProcEnabled() == true {
+	if function.IsMapMultiProcEnabled() {
 		regMultProcResolver()
 		opts.sockAddr = function.TCP_ADDR
 	} else {
@@ -44,12 +46,22 @@ func New(inputOptions ...Option) (*client, error) {
 		inputOption(opts)
 	}
 
+	// TODO: WaitUntilReady() check unitl SIGTERM is received.
+	serverInfo, err := info.Read(info.WithServerInfoFilePath(opts.sereverInfoFilePath))
+	if err != nil {
+		// TODO: return nil, err
+		log.Println("Failed to execute info.Read(): ", err)
+	}
+	// TODO: Use serverInfo to check compatibility and start the right gRPC client.
+	if serverInfo != nil {
+		log.Printf("ServerInfo: %v\n", serverInfo)
+	}
+
 	c := new(client)
 	var conn *grpc.ClientConn
-	var err error
 	var sockAddr string
 	// Make a TCP connection client for multiprocessing grpc server
-	if function.IsMapMultiProcEnabled() == true {
+	if function.IsMapMultiProcEnabled() {
 		log.Println("Multiprocessing TCP Client ", function.TCP, opts.sockAddr)
 		sockAddr = fmt.Sprintf("%s%s", connAddr, opts.sockAddr)
 		conn, err = grpc.Dial(
