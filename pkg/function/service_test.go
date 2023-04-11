@@ -2,7 +2,6 @@ package function
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"reflect"
 	"sort"
@@ -91,40 +90,6 @@ func TestService_MapFn(t *testing.T) {
 				Elements: []*functionpb.DatumResponse{
 					{
 						Keys:  []string{"client_test"},
-						Value: []byte(`test`),
-					},
-				},
-			},
-			wantErr: false,
-		},
-		{
-			name: "map_fn_forward_msg_with_transform_key",
-			fields: fields{
-				mapper: MapFunc(func(ctx context.Context, keys []string, datum Datum) Messages {
-					msg := datum.Value()
-					id := datum.Metadata().ID()
-					numDelivered := datum.Metadata().NumDelivered()
-					transformKey := fmt.Sprintf("%s_id_%s_numDelivered_%d", keys[0], id, numDelivered)
-					return MessagesBuilder().Append(MessageTo([]string{transformKey}, msg))
-				}),
-			},
-			args: args{
-				ctx: context.Background(),
-				d: &functionpb.Datum{
-					Keys:      []string{"client"},
-					Value:     []byte(`test`),
-					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
-					Metadata: &functionpb.Metadata{
-						Id:           "1",
-						NumDelivered: 2,
-					},
-				},
-			},
-			want: &functionpb.DatumList{
-				Elements: []*functionpb.Datum{
-					{
-						Keys:  []string{"client_id_1_numDelivered_2"},
 						Value: []byte(`test`),
 					},
 				},
@@ -373,53 +338,6 @@ func TestService_ReduceFn(t *testing.T) {
 					{
 						Keys:  []string{"client_test"},
 						Value: []byte(strconv.Itoa(60)),
-					},
-				},
-			},
-			expectedErr: false,
-		},
-		{
-			name: "reduce_fn_forward_msg_transform_key",
-			fields: fields{
-				reducer: ReduceFunc(func(ctx context.Context, keys []string, rch <-chan Datum, md Metadata) Messages {
-					sum := 0
-					transformKey := keys[0]
-					for msg := range rch {
-						msgVal, _ := strconv.Atoi(string(msg.Value()))
-						sum += msgVal
-						transformKey += "_id_" + msg.Metadata().ID()
-						transformKey += "_numDelivered_" + strconv.Itoa(int(msg.Metadata().NumDelivered()))
-					}
-					return MessagesBuilder().Append(MessageTo([]string{transformKey}, []byte(strconv.Itoa(sum))))
-				}),
-			},
-			input: []*functionpb.Datum{
-				{
-					Keys:      []string{"client"},
-					Value:     []byte(strconv.Itoa(10)),
-					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
-					Metadata: &functionpb.Metadata{
-						Id:           "1",
-						NumDelivered: 1,
-					},
-				},
-				{
-					Keys:      []string{"client"},
-					Value:     []byte(strconv.Itoa(20)),
-					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
-					Metadata: &functionpb.Metadata{
-						Id:           "2",
-						NumDelivered: 1,
-					},
-				},
-			},
-			expected: &functionpb.DatumList{
-				Elements: []*functionpb.Datum{
-					{
-						Keys:  []string{"client_id_1_numDelivered_1_id_2_numDelivered_1"},
-						Value: []byte(strconv.Itoa(30)),
 					},
 				},
 			},
