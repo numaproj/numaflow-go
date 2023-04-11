@@ -17,7 +17,7 @@ func Test_getSDKVersion(t *testing.T) {
 	}{
 		{
 			name: "getSDK",
-			want: "unknown",
+			want: "",
 		},
 	}
 	for _, tt := range tests {
@@ -54,7 +54,7 @@ func Test_WaitUntilReady(t *testing.T) {
 func Test_Read_Write(t *testing.T) {
 	filepath := os.TempDir() + "/server-info"
 	defer os.Remove(filepath)
-	info := &ServerInfo{Protocol: UDS, Language: Go, Version: "unknown"}
+	info := &ServerInfo{Protocol: UDS, Language: Go, Version: ""}
 	err := Write(info, WithServerInfoFilePath(filepath))
 	assert.NoError(t, err)
 	got, err := Read(WithServerInfoFilePath("/tmp/not-exist"))

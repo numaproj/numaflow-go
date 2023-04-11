@@ -11,8 +11,10 @@ import (
 	"time"
 )
 
+var END = fmt.Sprintf("%U__END__", '\\') // U+005C__END__
+
 func GetSDKVersion() string {
-	version := "unknown"
+	version := ""
 	info, ok := debug.ReadBuildInfo()
 	if !ok {
 		return version
@@ -39,8 +41,18 @@ func Write(svrInfo *ServerInfo, opts ...Option) error {
 	if err := os.Remove(options.svrInfoFilePath); !os.IsNotExist(err) && err != nil {
 		return fmt.Errorf("failed to remove server-info file: %w", err)
 	}
-	if err := os.WriteFile(options.svrInfoFilePath, b, 0644); err != nil {
+	f, err := os.Create(options.svrInfoFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to create server-info file: %w", err)
+	}
+	defer f.Close()
+	_, err = f.Write(b)
+	if err != nil {
 		return fmt.Errorf("failed to write server-info file: %w", err)
+	}
+	_, err = f.WriteString(END)
+	if err != nil {
+		return fmt.Errorf("failed to write END server-info file: %w", err)
 	}
 	return nil
 }
@@ -51,45 +63,22 @@ func WaitUntilReady(ctx context.Context, opts ...Option) error {
 	for _, opt := range opts {
 		opt(options)
 	}
-existence:
 	for {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			if _, err := os.Stat(options.svrInfoFilePath); err != nil {
+			if fileInfo, err := os.Stat(options.svrInfoFilePath); err != nil {
 				log.Printf("Server info file %s is not ready...", options.svrInfoFilePath)
 				time.Sleep(1 * time.Second)
 				continue
 			} else {
-				break existence
+				if fileInfo.Size() > 0 {
+					return nil
+				}
 			}
 		}
 	}
-
-	// Also check if the file is ready to read
-	// It takes some time for the server to write the server info file
-	// TODO: use a better way to wait for the file to be ready
-	b, err := os.ReadFile(options.svrInfoFilePath)
-	if err != nil {
-		return err
-	}
-	for len(b) == 0 {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-			time.Sleep(100 * time.Millisecond)
-			b, err = os.ReadFile(options.svrInfoFilePath)
-			if err != nil {
-				return err
-			}
-			if len(b) > 0 {
-				return nil
-			}
-		}
-	}
-	return nil
 }
 
 // Read reads the server info from a file
@@ -102,7 +91,7 @@ func Read(opts ...Option) (*ServerInfo, error) {
 	// TODO: use a better way to wait for the file to be ready
 	retry := 0
 	b, err := os.ReadFile(options.svrInfoFilePath)
-	for len(b) == 0 && err == nil && retry < 10 {
+	for !strings.HasSuffix(string(b), END) && err == nil && retry < 10 {
 		time.Sleep(100 * time.Millisecond)
 		b, err = os.ReadFile(options.svrInfoFilePath)
 		retry++
@@ -110,9 +99,10 @@ func Read(opts ...Option) (*ServerInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(b) == 0 {
-		return nil, fmt.Errorf("server info file is empty")
+	if !strings.HasSuffix(string(b), END) {
+		return nil, fmt.Errorf("server info file is not ready")
 	}
+	b = b[:len(b)-len([]byte(END))]
 	info := &ServerInfo{}
 	if err := json.Unmarshal(b, info); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal server info: %w", err)
