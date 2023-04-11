@@ -88,7 +88,7 @@ func (c *client) IsReady(ctx context.Context, in *emptypb.Empty) (bool, error) {
 }
 
 // MapFn applies a function to each datum element.
-func (c *client) MapFn(ctx context.Context, datum *functionpb.Datum) ([]*functionpb.Datum, error) {
+func (c *client) MapFn(ctx context.Context, datum *functionpb.DatumRequest) ([]*functionpb.DatumResponse, error) {
 	mappedDatumList, err := c.grpcClt.MapFn(ctx, datum)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute c.grpcClt.MapFn(): %w", err)
@@ -100,7 +100,7 @@ func (c *client) MapFn(ctx context.Context, datum *functionpb.Datum) ([]*functio
 // MapTFn applies a function to each datum element.
 // In addition to map function, MapTFn also supports assigning a new event time to datum.
 // MapTFn can be used only at source vertex by source data transformer.
-func (c *client) MapTFn(ctx context.Context, datum *functionpb.Datum) ([]*functionpb.Datum, error) {
+func (c *client) MapTFn(ctx context.Context, datum *functionpb.DatumRequest) ([]*functionpb.DatumResponse, error) {
 	mappedDatumList, err := c.grpcClt.MapTFn(ctx, datum)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute c.grpcClt.MapTFn(): %w", err)
@@ -110,9 +110,9 @@ func (c *client) MapTFn(ctx context.Context, datum *functionpb.Datum) ([]*functi
 }
 
 // ReduceFn applies a reduce function to a datum stream.
-func (c *client) ReduceFn(ctx context.Context, datumStreamCh <-chan *functionpb.Datum) ([]*functionpb.Datum, error) {
+func (c *client) ReduceFn(ctx context.Context, datumStreamCh <-chan *functionpb.DatumRequest) ([]*functionpb.DatumResponse, error) {
 	var g errgroup.Group
-	datumList := make([]*functionpb.Datum, 0)
+	datumList := make([]*functionpb.DatumResponse, 0)
 
 	stream, err := c.grpcClt.ReduceFn(ctx)
 	if err != nil {
@@ -143,7 +143,7 @@ outputLoop:
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		default:
-			var resp *functionpb.DatumList
+			var resp *functionpb.DatumResponseList
 			resp, err = stream.Recv()
 			if err == io.EOF {
 				break outputLoop

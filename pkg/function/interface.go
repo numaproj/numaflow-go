@@ -39,9 +39,9 @@ type IntervalWindow interface {
 type Client interface {
 	CloseConn(ctx context.Context) error
 	IsReady(ctx context.Context, in *emptypb.Empty) (bool, error)
-	MapFn(ctx context.Context, datum *functionpb.Datum) ([]*functionpb.Datum, error)
-	MapTFn(ctx context.Context, datum *functionpb.Datum) ([]*functionpb.Datum, error)
-	ReduceFn(ctx context.Context, datumStreamCh <-chan *functionpb.Datum) ([]*functionpb.Datum, error)
+	MapFn(ctx context.Context, datum *functionpb.DatumRequest) ([]*functionpb.DatumResponse, error)
+	MapTFn(ctx context.Context, datum *functionpb.DatumRequest) ([]*functionpb.DatumResponse, error)
+	ReduceFn(ctx context.Context, datumStreamCh <-chan *functionpb.DatumRequest) ([]*functionpb.DatumResponse, error)
 }
 
 // MapHandler is the interface of map function implementation.

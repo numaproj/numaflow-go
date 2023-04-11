@@ -177,7 +177,7 @@ func (x *Metadata) GetNumDelivered() uint64 {
 
 // *
 // Datum represents a datum element.
-type Datum struct {
+type DatumRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -189,8 +189,8 @@ type Datum struct {
 	Metadata  *Metadata  `protobuf:"bytes,5,opt,name=metadata,proto3" json:"metadata,omitempty"`
 }
 
-func (x *Datum) Reset() {
-	*x = Datum{}
+func (x *DatumRequest) Reset() {
+	*x = DatumRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_pkg_apis_proto_function_v1_udfunction_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -198,11 +198,11 @@ func (x *Datum) Reset() {
 	}
 }
 
-func (x *Datum) String() string {
+func (x *DatumRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Datum) ProtoMessage() {}
+func (*DatumRequest) ProtoMessage() {}
 
 func (x *Datum) ProtoReflect() protoreflect.Message {
 	mi := &file_pkg_apis_proto_function_v1_udfunction_proto_msgTypes[3]
@@ -221,28 +221,28 @@ func (*Datum) Descriptor() ([]byte, []int) {
 	return file_pkg_apis_proto_function_v1_udfunction_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *Datum) GetKeys() []string {
+func (x *DatumRequest) GetKeys() []string {
 	if x != nil {
 		return x.Keys
 	}
 	return nil
 }
 
-func (x *Datum) GetValue() []byte {
+func (x *DatumRequest) GetValue() []byte {
 	if x != nil {
 		return x.Value
 	}
 	return nil
 }
 
-func (x *Datum) GetEventTime() *EventTime {
+func (x *DatumRequest) GetEventTime() *EventTime {
 	if x != nil {
 		return x.EventTime
 	}
 	return nil
 }
 
-func (x *Datum) GetWatermark() *Watermark {
+func (x *DatumRequest) GetWatermark() *Watermark {
 	if x != nil {
 		return x.Watermark
 	}
@@ -257,17 +257,21 @@ func (x *Datum) GetMetadata() *Metadata {
 }
 
 // *
-// DatumList represents a list of datum elements.
-type DatumList struct {
+// Datum represents a datum element.
+type DatumResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Elements []*Datum `protobuf:"bytes,1,rep,name=elements,proto3" json:"elements,omitempty"`
+	Keys      []string   `protobuf:"bytes,1,rep,name=keys,proto3" json:"keys,omitempty"`
+	Value     []byte     `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	EventTime *EventTime `protobuf:"bytes,3,opt,name=event_time,json=eventTime,proto3" json:"event_time,omitempty"`
+	Watermark *Watermark `protobuf:"bytes,4,opt,name=watermark,proto3" json:"watermark,omitempty"`
+	Tags      []string   `protobuf:"bytes,5,rep,name=tags,proto3" json:"tags,omitempty"`
 }
 
-func (x *DatumList) Reset() {
-	*x = DatumList{}
+func (x *DatumResponse) Reset() {
+	*x = DatumResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_pkg_apis_proto_function_v1_udfunction_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -275,11 +279,11 @@ func (x *DatumList) Reset() {
 	}
 }
 
-func (x *DatumList) String() string {
+func (x *DatumResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*DatumList) ProtoMessage() {}
+func (*DatumResponse) ProtoMessage() {}
 
 func (x *DatumList) ProtoReflect() protoreflect.Message {
 	mi := &file_pkg_apis_proto_function_v1_udfunction_proto_msgTypes[4]
@@ -298,7 +302,84 @@ func (*DatumList) Descriptor() ([]byte, []int) {
 	return file_pkg_apis_proto_function_v1_udfunction_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *DatumList) GetElements() []*Datum {
+func (x *DatumResponse) GetKeys() []string {
+	if x != nil {
+		return x.Keys
+	}
+	return nil
+}
+
+func (x *DatumResponse) GetValue() []byte {
+	if x != nil {
+		return x.Value
+	}
+	return nil
+}
+
+func (x *DatumResponse) GetEventTime() *EventTime {
+	if x != nil {
+		return x.EventTime
+	}
+	return nil
+}
+
+func (x *DatumResponse) GetWatermark() *Watermark {
+	if x != nil {
+		return x.Watermark
+	}
+	return nil
+}
+
+func (x *DatumResponse) GetTags() []string {
+	if x != nil {
+		return x.Tags
+	}
+	return nil
+}
+
+// *
+// DatumList represents a list of datum elements.
+type DatumResponseList struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Elements []*DatumResponse `protobuf:"bytes,1,rep,name=elements,proto3" json:"elements,omitempty"`
+}
+
+func (x *DatumResponseList) Reset() {
+	*x = DatumResponseList{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_apis_proto_function_v1_udfunction_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *DatumResponseList) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DatumResponseList) ProtoMessage() {}
+
+func (x *DatumResponseList) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_apis_proto_function_v1_udfunction_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DatumResponseList.ProtoReflect.Descriptor instead.
+func (*DatumResponseList) Descriptor() ([]byte, []int) {
+	return file_pkg_apis_proto_function_v1_udfunction_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *DatumResponseList) GetElements() []*DatumResponse {
 	if x != nil {
 		return x.Elements
 	}

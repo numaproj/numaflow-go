@@ -65,19 +65,25 @@ func TestMapFn(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockClient := funcmock.NewMockUserDefinedFunctionClient(ctrl)
-	testDatum := &functionpb.Datum{
+	testRequestDatum := &functionpb.DatumRequest{
 		Keys:      []string{"test_success_key"},
 		Value:     []byte(`forward_message`),
 		EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Unix(1661169600, 0))},
 		Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 	}
-	mockClient.EXPECT().MapFn(gomock.Any(), &rpcMsg{msg: testDatum}).Return(&functionpb.DatumList{
-		Elements: []*functionpb.Datum{
-			testDatum,
+	testResponseDatum := &functionpb.DatumResponse{
+		Keys:      []string{"test_success_key"},
+		Value:     []byte(`forward_message`),
+		EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Unix(1661169600, 0))},
+		Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
+	}
+	mockClient.EXPECT().MapFn(gomock.Any(), &rpcMsg{msg: testRequestDatum}).Return(&functionpb.DatumResponseList{
+		Elements: []*functionpb.DatumResponse{
+			testResponseDatum,
 		},
 	}, nil)
-	mockClient.EXPECT().MapFn(gomock.Any(), &rpcMsg{msg: testDatum}).Return(&functionpb.DatumList{
-		Elements: []*functionpb.Datum{
+	mockClient.EXPECT().MapFn(gomock.Any(), &rpcMsg{msg: testRequestDatum}).Return(&functionpb.DatumResponseList{
+		Elements: []*functionpb.DatumResponse{
 			nil,
 		},
 	}, fmt.Errorf("mock MapFn error"))
@@ -86,11 +92,11 @@ func TestMapFn(t *testing.T) {
 	reflect.DeepEqual(testClient, &client{
 		grpcClt: mockClient,
 	})
-	got, err := testClient.MapFn(ctx, testDatum)
-	reflect.DeepEqual(got, testDatum)
+	got, err := testClient.MapFn(ctx, testRequestDatum)
+	reflect.DeepEqual(got, testRequestDatum)
 	assert.NoError(t, err)
 
-	got, err = testClient.MapFn(ctx, testDatum)
+	got, err = testClient.MapFn(ctx, testRequestDatum)
 	assert.Nil(t, got)
 	assert.EqualError(t, err, "failed to execute c.grpcClt.MapFn(): mock MapFn error")
 }
@@ -102,19 +108,25 @@ func TestMapTFn(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockClient := funcmock.NewMockUserDefinedFunctionClient(ctrl)
-	testDatum := &functionpb.Datum{
+	testDatumRequest := &functionpb.DatumRequest{
 		Keys:      []string{"test_success_key"},
 		Value:     []byte(`forward_message`),
 		EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Unix(1661169600, 0))},
 		Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 	}
-	mockClient.EXPECT().MapTFn(gomock.Any(), &rpcMsg{msg: testDatum}).Return(&functionpb.DatumList{
-		Elements: []*functionpb.Datum{
-			testDatum,
+	testDatumResponse := &functionpb.DatumResponse{
+		Keys:      []string{"test_success_key"},
+		Value:     []byte(`forward_message`),
+		EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Unix(1661169600, 0))},
+		Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
+	}
+	mockClient.EXPECT().MapTFn(gomock.Any(), &rpcMsg{msg: testDatumRequest}).Return(&functionpb.DatumResponseList{
+		Elements: []*functionpb.DatumResponse{
+			testDatumResponse,
 		},
 	}, nil)
-	mockClient.EXPECT().MapTFn(gomock.Any(), &rpcMsg{msg: testDatum}).Return(&functionpb.DatumList{
-		Elements: []*functionpb.Datum{
+	mockClient.EXPECT().MapTFn(gomock.Any(), &rpcMsg{msg: testDatumRequest}).Return(&functionpb.DatumResponseList{
+		Elements: []*functionpb.DatumResponse{
 			nil,
 		},
 	}, fmt.Errorf("mock MapTFn error"))
@@ -123,11 +135,11 @@ func TestMapTFn(t *testing.T) {
 	reflect.DeepEqual(testClient, &client{
 		grpcClt: mockClient,
 	})
-	got, err := testClient.MapTFn(ctx, testDatum)
-	reflect.DeepEqual(got, testDatum)
+	got, err := testClient.MapTFn(ctx, testDatumRequest)
+	reflect.DeepEqual(got, testDatumRequest)
 	assert.NoError(t, err)
 
-	got, err = testClient.MapTFn(ctx, testDatum)
+	got, err = testClient.MapTFn(ctx, testDatumRequest)
 	assert.Nil(t, got)
 	assert.EqualError(t, err, "failed to execute c.grpcClt.MapTFn(): mock MapTFn error")
 }
@@ -144,8 +156,8 @@ func TestReduceFn(t *testing.T) {
 	mockReduceClient.EXPECT().Send(gomock.Any()).Return(nil).AnyTimes()
 	mockReduceClient.EXPECT().CloseSend().Return(nil).AnyTimes()
 
-	testDatumList := &functionpb.DatumList{
-		Elements: []*functionpb.Datum{
+	testDatumList := &functionpb.DatumResponseList{
+		Elements: []*functionpb.DatumResponse{
 			{
 				Keys:  []string{"reduced_result_key"},
 				Value: []byte(`forward_message`),
@@ -157,7 +169,7 @@ func TestReduceFn(t *testing.T) {
 
 	mockReduceClient.EXPECT().Recv().Return(nil, io.EOF).Times(1)
 
-	datumCh := make(chan *functionpb.Datum)
+	datumCh := make(chan *functionpb.DatumRequest)
 
 	mockClient.EXPECT().ReduceFn(gomock.Any(), gomock.Any()).Return(mockReduceClient, nil)
 
@@ -167,8 +179,8 @@ func TestReduceFn(t *testing.T) {
 		grpcClt: mockClient,
 	})
 
-	expectedDatumList := &functionpb.DatumList{
-		Elements: []*functionpb.Datum{
+	expectedDatumList := &functionpb.DatumResponseList{
+		Elements: []*functionpb.DatumResponse{
 			{
 				Keys:  []string{"reduced_result_key"},
 				Value: []byte(`forward_message`),

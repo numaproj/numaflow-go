@@ -47,7 +47,7 @@ func (c *userDefinedSinkClient) SinkFn(ctx context.Context, opts ...grpc.CallOpt
 }
 
 type UserDefinedSink_SinkFnClient interface {
-	Send(*Datum) error
+	Send(*DatumRequest) error
 	CloseAndRecv() (*ResponseList, error)
 	grpc.ClientStream
 }
@@ -56,7 +56,7 @@ type userDefinedSinkSinkFnClient struct {
 	grpc.ClientStream
 }
 
-func (x *userDefinedSinkSinkFnClient) Send(m *Datum) error {
+func (x *userDefinedSinkSinkFnClient) Send(m *DatumRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
@@ -120,7 +120,7 @@ func _UserDefinedSink_SinkFn_Handler(srv interface{}, stream grpc.ServerStream) 
 
 type UserDefinedSink_SinkFnServer interface {
 	SendAndClose(*ResponseList) error
-	Recv() (*Datum, error)
+	Recv() (*DatumRequest, error)
 	grpc.ServerStream
 }
 
@@ -132,8 +132,8 @@ func (x *userDefinedSinkSinkFnServer) SendAndClose(m *ResponseList) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *userDefinedSinkSinkFnServer) Recv() (*Datum, error) {
-	m := new(Datum)
+func (x *userDefinedSinkSinkFnServer) Recv() (*DatumRequest, error) {
+	m := new(DatumRequest)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}

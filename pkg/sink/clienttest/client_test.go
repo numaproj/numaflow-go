@@ -84,7 +84,7 @@ func TestSinkFn(t *testing.T) {
 	mockSinkErrClient.EXPECT().Send(gomock.Any()).Return(nil).AnyTimes()
 
 	mockClient := sinkmock.NewMockUserDefinedSinkClient(ctrl)
-	testDatumList := []*sinkpb.Datum{
+	testDatumList := []*sinkpb.DatumRequest{
 		{
 			Id:        "test_id_0",
 			Value:     []byte(`sink_message_success`),
