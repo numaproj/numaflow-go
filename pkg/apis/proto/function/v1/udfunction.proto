@@ -8,15 +8,15 @@ import "google/protobuf/empty.proto";
 package function.v1;
 
 service UserDefinedFunction {
-  // MapFn applies a function to each datum element.
+  // MapFn applies a function to each datum request element.
   rpc MapFn(DatumRequest) returns (DatumResponseList);
 
-  // MapTFn applies a function to each datum element.
+  // MapTFn applies a function to each datum request element.
   // In addition to map function, MapTFn also supports assigning a new event time to datum.
   // MapTFn can be used only at source vertex by source data transformer.
   rpc MapTFn(DatumRequest) returns (DatumResponseList);
 
-  // ReduceFn applies a reduce function to a datum stream.
+  // ReduceFn applies a reduce function to a datum request stream.
   rpc ReduceFn(stream DatumRequest) returns (stream DatumResponseList);
 
   // IsReady is the heartbeat endpoint for gRPC.
@@ -37,7 +37,7 @@ message Watermark {
 }
 
 /**
- * Metadata of a datum element.
+ * Metadata of a datum request element.
  */
 message Metadata {
   string id = 1;
@@ -45,7 +45,7 @@ message Metadata {
 }
 
 /**
- * Datum represents a datum element.
+ * DatumRequest represents a datum request element.
  */
 message DatumRequest {
   repeated string keys = 1;
@@ -56,7 +56,7 @@ message DatumRequest {
 }
 
 /**
- * Datum represents a datum element.
+ * DatumResponse represents a datum response element.
  */
 message DatumResponse {
   repeated string keys = 1;
@@ -67,7 +67,7 @@ message DatumResponse {
 }
 
 /**
- * DatumList represents a list of datum elements.
+ * DatumList represents a list of datum response elements.
  */
 message DatumResponseList {
   repeated DatumResponse elements = 1;
