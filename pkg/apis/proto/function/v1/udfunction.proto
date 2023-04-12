@@ -67,7 +67,7 @@ message DatumResponse {
 }
 
 /**
- * DatumList represents a list of datum response elements.
+ * DatumResponseList represents a list of datum response elements.
  */
 message DatumResponseList {
   repeated DatumResponse elements = 1;
