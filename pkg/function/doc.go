@@ -44,7 +44,7 @@
 
   func mapTHandle(_ context.Context, keys []string, d functionsdk.Datum) functionsdk.MessageTs {
 	eventTime := getEventTime(d.Value())
-	return functionsdk.MessageTsBuilder().Append(functionsdk.NewMessageT(d.Value()).WithKeys(keys).WithEventTime(eventTime))
+	return functionsdk.MessageTsBuilder().Append(functionsdk.NewMessageT(eventTime, d.Value()).WithKeys(keys)))
   }
 
   func getEventTime(val []byte) time.Time {

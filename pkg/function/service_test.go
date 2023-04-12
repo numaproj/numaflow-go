@@ -191,7 +191,7 @@ func TestService_MapTFn(t *testing.T) {
 			fields: fields{
 				mapperT: MapTFunc(func(ctx context.Context, keys []string, datum Datum) MessageTs {
 					msg := datum.Value()
-					return MessageTsBuilder().Append(NewMessageT(msg).WithEventTime(testTime).WithKeys([]string{keys[0] + "_test"}))
+					return MessageTsBuilder().Append(NewMessageT(testTime, msg).WithKeys([]string{keys[0] + "_test"}))
 				}),
 			},
 			args: args{
@@ -219,7 +219,7 @@ func TestService_MapTFn(t *testing.T) {
 			fields: fields{
 				mapperT: MapTFunc(func(ctx context.Context, keys []string, datum Datum) MessageTs {
 					msg := datum.Value()
-					return MessageTsBuilder().Append(NewMessageT(msg).WithEventTime(testTime))
+					return MessageTsBuilder().Append(NewMessageT(testTime, msg))
 				}),
 			},
 			args: args{

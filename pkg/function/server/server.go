@@ -48,7 +48,7 @@ func (s *server) RegisterMapper(m functionsdk.MapHandler) *server {
 //	func handle(ctx context.Context, keys []string, data functionsdk.Datum) functionsdk.MessageTs {
 //		_ = data.EventTime() // Event time is available
 //		_ = data.Watermark() // Watermark is available
-//		return functionsdk.MessageTsBuilder().Append(functionsdk.NewMessageT(data.Value()).WithEventTime(time.Now()))
+//		return functionsdk.MessageTsBuilder().Append(functionsdk.NewMessageT(time.Now(), data.Value()))
 //	}
 //
 //	func main() {

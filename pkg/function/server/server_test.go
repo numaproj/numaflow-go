@@ -3,12 +3,13 @@ package server
 import (
 	"context"
 	"fmt"
-	"google.golang.org/protobuf/types/known/emptypb"
 	"os"
 	"strconv"
 	"sync"
 	"testing"
 	"time"
+
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/stretchr/testify/assert"
 	grpcmd "google.golang.org/grpc/metadata"
@@ -110,7 +111,7 @@ func Test_server_mapT(t *testing.T) {
 			fields: fields{
 				mapTHandler: functionsdk.MapTFunc(func(ctx context.Context, keys []string, d functionsdk.Datum) functionsdk.MessageTs {
 					msg := d.Value()
-					return functionsdk.MessageTsBuilder().Append(functionsdk.NewMessageT(msg).WithKeys([]string{keys[0] + "_test"}).WithEventTime(time.Time{}))
+					return functionsdk.MessageTsBuilder().Append(functionsdk.NewMessageT(time.Time{}, msg).WithKeys([]string{keys[0] + "_test"}))
 				}),
 			},
 		},

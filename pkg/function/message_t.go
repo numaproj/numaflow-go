@@ -13,9 +13,9 @@ type MessageT struct {
 	tags      []string
 }
 
-// NewMessageT creates a Message with value
-func NewMessageT(value []byte) MessageT {
-	return MessageT{value: value}
+// NewMessageT creates a Message with eventTime and value
+func NewMessageT(eventTime time.Time, value []byte) MessageT {
+	return MessageT{eventTime: eventTime, value: value}
 }
 
 // WithKeys is used to assign the keys to messageT
@@ -28,12 +28,6 @@ func (m MessageT) WithKeys(keys []string) MessageT {
 // tags will be used for conditional forwarding
 func (m MessageT) WithTags(tags []string) MessageT {
 	m.tags = tags
-	return m
-}
-
-// WithEventTime is used to assign the eventTime to messageT
-func (m MessageT) WithEventTime(eventTime time.Time) MessageT {
-	m.eventTime = eventTime
 	return m
 }
 
