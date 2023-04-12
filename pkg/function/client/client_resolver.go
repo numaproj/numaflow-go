@@ -1,10 +1,11 @@
 package client
 
 import (
-	"github.com/numaproj/numaflow-go/pkg/function"
-	"google.golang.org/grpc/resolver"
 	"strconv"
 	"strings"
+
+	"github.com/numaproj/numaflow-go/pkg/function"
+	"google.golang.org/grpc/resolver"
 )
 
 const (

@@ -13,7 +13,7 @@ func reduceHandle(_ context.Context, keys []string, reduceCh <-chan functionsdk.
 	var resultKeys = keys
 	var resultVal []byte
 	var counter = 0
-	for _ = range reduceCh {
+	for range reduceCh {
 		counter++
 	}
 	resultVal = []byte(strconv.Itoa(counter))

@@ -3,6 +3,12 @@ package client
 import (
 	"context"
 	"fmt"
+	"io"
+	"log"
+	"os"
+	"runtime"
+	"strconv"
+
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	"github.com/numaproj/numaflow-go/pkg/function"
 	_ "go.uber.org/automaxprocs"
@@ -11,11 +17,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/resolver"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"io"
-	"log"
-	"os"
-	"runtime"
-	"strconv"
 )
 
 // client contains the grpc connection and the grpc client.
