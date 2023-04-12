@@ -50,7 +50,7 @@ func Write(svrInfo *ServerInfo, opts ...Option) error {
 	if err != nil {
 		return fmt.Errorf("failed to write server-info file: %w", err)
 	}
-	_, err = f.WriteString(END)
+	_, err = f.WriteString(fmt.Sprintf("\n%s", END))
 	if err != nil {
 		return fmt.Errorf("failed to write END server-info file: %w", err)
 	}
@@ -102,7 +102,7 @@ func Read(opts ...Option) (*ServerInfo, error) {
 	if !strings.HasSuffix(string(b), END) {
 		return nil, fmt.Errorf("server info file is not ready")
 	}
-	b = b[:len(b)-len([]byte(END))]
+	b = b[:len(b)-len([]byte(fmt.Sprintf("\n%s", END)))]
 	info := &ServerInfo{}
 	if err := json.Unmarshal(b, info); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal server info: %w", err)

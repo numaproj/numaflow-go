@@ -21,8 +21,8 @@ const (
 
 // ServerInfo is the information about the server
 type ServerInfo struct {
-	Protocol  Protocol          `json:"protocol"`
-	Language  Language          `json:"language"`
-	Version   string            `json:"version"`
-	Metaddata map[string]string `json:"metadata"`
+	Protocol Protocol          `json:"protocol"`
+	Language Language          `json:"language"`
+	Version  string            `json:"version"`
+	Metadata map[string]string `json:"metadata"`
 }

@@ -9,15 +9,16 @@ import (
 	"runtime"
 	"strconv"
 
-	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
-	"github.com/numaproj/numaflow-go/pkg/function"
-	"github.com/numaproj/numaflow-go/pkg/info"
 	_ "go.uber.org/automaxprocs"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/resolver"
 	"google.golang.org/protobuf/types/known/emptypb"
+
+	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
+	"github.com/numaproj/numaflow-go/pkg/function"
+	"github.com/numaproj/numaflow-go/pkg/info"
 )
 
 // client contains the grpc connection and the grpc client.
@@ -29,8 +30,8 @@ type client struct {
 // New creates a new client object.
 func New(inputOptions ...Option) (*client, error) {
 	var opts = &options{
-		maxMessageSize:      function.DefaultMaxMessageSize,
-		sereverInfoFilePath: info.ServerInfoFilePath,
+		maxMessageSize:     function.DefaultMaxMessageSize,
+		serverInfoFilePath: info.ServerInfoFilePath,
 	}
 
 	// Populate connection variables for client connection
@@ -47,7 +48,7 @@ func New(inputOptions ...Option) (*client, error) {
 	}
 
 	// TODO: WaitUntilReady() check unitl SIGTERM is received.
-	serverInfo, err := info.Read(info.WithServerInfoFilePath(opts.sereverInfoFilePath))
+	serverInfo, err := info.Read(info.WithServerInfoFilePath(opts.serverInfoFilePath))
 	if err != nil {
 		// TODO: return nil, err
 		log.Println("Failed to execute info.Read(): ", err)

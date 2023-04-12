@@ -50,7 +50,6 @@ func Test_server_map(t *testing.T) {
 	}()
 
 	serverInfoFile, err := os.CreateTemp("/tmp", "numaflow-test-info")
-	fmt.Println(serverInfoFile.Name())
 	assert.NoError(t, err)
 	defer func() {
 		err = os.RemoveAll(serverInfoFile.Name())
