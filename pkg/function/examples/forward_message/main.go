@@ -17,7 +17,7 @@ func mapHandle(_ context.Context, keys []string, d functionsdk.Datum) functionsd
 
 	var resultKeys = keys
 	var resultVal = val
-	return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(resultKeys, resultVal))
+	return functionsdk.MessagesBuilder().Append(functionsdk.NewMessage(resultVal).WithKeys(resultKeys))
 }
 
 func main() {

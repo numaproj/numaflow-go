@@ -69,7 +69,7 @@ func Test_server_sink(t *testing.T) {
 				err = c.CloseConn(ctx)
 				assert.NoError(t, err)
 			}()
-			testDatumList := []*sinkpb.Datum{
+			testDatumList := []*sinkpb.DatumRequest{
 				{
 					Id:        "test_id_0",
 					Value:     []byte(`sink_message_success`),

@@ -174,7 +174,7 @@ func (mr *MockUserDefinedSink_SinkFnClientMockRecorder) RecvMsg(arg0 interface{}
 }
 
 // Send mocks base method.
-func (m *MockUserDefinedSink_SinkFnClient) Send(arg0 *v1.Datum) error {
+func (m *MockUserDefinedSink_SinkFnClient) Send(arg0 *v1.DatumRequest) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Send", arg0)
 	ret0, _ := ret[0].(error)

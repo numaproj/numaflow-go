@@ -59,14 +59,14 @@ func (mr *MockUserDefinedFunctionClientMockRecorder) IsReady(arg0, arg1 interfac
 }
 
 // MapFn mocks base method.
-func (m *MockUserDefinedFunctionClient) MapFn(arg0 context.Context, arg1 *v1.Datum, arg2 ...grpc.CallOption) (*v1.DatumList, error) {
+func (m *MockUserDefinedFunctionClient) MapFn(arg0 context.Context, arg1 *v1.DatumRequest, arg2 ...grpc.CallOption) (*v1.DatumResponseList, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "MapFn", varargs...)
-	ret0, _ := ret[0].(*v1.DatumList)
+	ret0, _ := ret[0].(*v1.DatumResponseList)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -79,14 +79,14 @@ func (mr *MockUserDefinedFunctionClientMockRecorder) MapFn(arg0, arg1 interface{
 }
 
 // MapTFn mocks base method.
-func (m *MockUserDefinedFunctionClient) MapTFn(arg0 context.Context, arg1 *v1.Datum, arg2 ...grpc.CallOption) (*v1.DatumList, error) {
+func (m *MockUserDefinedFunctionClient) MapTFn(arg0 context.Context, arg1 *v1.DatumRequest, arg2 ...grpc.CallOption) (*v1.DatumResponseList, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "MapTFn", varargs...)
-	ret0, _ := ret[0].(*v1.DatumList)
+	ret0, _ := ret[0].(*v1.DatumResponseList)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -185,10 +185,10 @@ func (mr *MockUserDefinedFunction_ReduceFnClientMockRecorder) Header() *gomock.C
 }
 
 // Recv mocks base method.
-func (m *MockUserDefinedFunction_ReduceFnClient) Recv() (*v1.DatumList, error) {
+func (m *MockUserDefinedFunction_ReduceFnClient) Recv() (*v1.DatumResponseList, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Recv")
-	ret0, _ := ret[0].(*v1.DatumList)
+	ret0, _ := ret[0].(*v1.DatumResponseList)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -214,7 +214,7 @@ func (mr *MockUserDefinedFunction_ReduceFnClientMockRecorder) RecvMsg(arg0 inter
 }
 
 // Send mocks base method.
-func (m *MockUserDefinedFunction_ReduceFnClient) Send(arg0 *v1.Datum) error {
+func (m *MockUserDefinedFunction_ReduceFnClient) Send(arg0 *v1.DatumRequest) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Send", arg0)
 	ret0, _ := ret[0].(error)

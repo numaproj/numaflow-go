@@ -17,7 +17,7 @@ import (
 
 type UserDefinedSink_SinkFnServerTest struct {
 	ctx     context.Context
-	inputCh chan *sinkpb.Datum
+	inputCh chan *sinkpb.DatumRequest
 	rl      *sinkpb.ResponseList
 	grpc.ServerStream
 }
@@ -27,7 +27,7 @@ func (t *UserDefinedSink_SinkFnServerTest) SendAndClose(list *sinkpb.ResponseLis
 	return nil
 }
 
-func (t *UserDefinedSink_SinkFnServerTest) Recv() (*sinkpb.Datum, error) {
+func (t *UserDefinedSink_SinkFnServerTest) Recv() (*sinkpb.DatumRequest, error) {
 	val, ok := <-t.inputCh
 	if !ok {
 		return val, io.EOF
@@ -43,13 +43,13 @@ func TestService_SinkFn(t *testing.T) {
 	tests := []struct {
 		name     string
 		sh       SinkHandler
-		input    []*sinkpb.Datum
+		input    []*sinkpb.DatumRequest
 		expected []*sinkpb.Response
 	}{
 		{
 			name: "sink_fn_test_success",
 
-			input: []*sinkpb.Datum{
+			input: []*sinkpb.DatumRequest{
 				{
 					Id:        "one-processed",
 					Keys:      []string{"sink-test"},
@@ -101,7 +101,7 @@ func TestService_SinkFn(t *testing.T) {
 		{
 			name: "sink_fn_test_failure",
 
-			input: []*sinkpb.Datum{
+			input: []*sinkpb.DatumRequest{
 				{
 					Id:        "one-processed",
 					Keys:      []string{"sink-test-1", "sink-test-2"},
@@ -156,7 +156,7 @@ func TestService_SinkFn(t *testing.T) {
 			ss := Service{
 				Sinker: tt.sh,
 			}
-			ich := make(chan *sinkpb.Datum)
+			ich := make(chan *sinkpb.DatumRequest)
 			udfReduceFnStream := &UserDefinedSink_SinkFnServerTest{
 				ctx:     context.Background(),
 				inputCh: ich,

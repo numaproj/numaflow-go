@@ -66,7 +66,7 @@ func Test_server_map(t *testing.T) {
 			fields: fields{
 				mapHandler: functionsdk.MapFunc(func(ctx context.Context, keys []string, d functionsdk.Datum) functionsdk.Messages {
 					msg := d.Value()
-					return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo([]string{keys[0] + "_test"}, msg))
+					return functionsdk.MessagesBuilder().Append(functionsdk.NewMessage(msg).WithKeys([]string{keys[0] + "_test"}))
 				}),
 			},
 		},
@@ -87,7 +87,7 @@ func Test_server_map(t *testing.T) {
 
 			for i := 0; i < 10; i++ {
 				keys := []string{fmt.Sprintf("client_%d", i)}
-				list, err := c.MapFn(ctx, &functionpb.Datum{
+				list, err := c.MapFn(ctx, &functionpb.DatumRequest{
 					Keys:      keys,
 					Value:     []byte(`server_test`),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
@@ -129,7 +129,7 @@ func Test_server_mapT(t *testing.T) {
 			fields: fields{
 				mapTHandler: functionsdk.MapTFunc(func(ctx context.Context, keys []string, d functionsdk.Datum) functionsdk.MessageTs {
 					msg := d.Value()
-					return functionsdk.MessageTsBuilder().Append(functionsdk.MessageTTo(time.Time{}, []string{keys[0] + "_test"}, msg))
+					return functionsdk.MessageTsBuilder().Append(functionsdk.NewMessageT(time.Time{}, msg).WithKeys([]string{keys[0] + "_test"}))
 				}),
 			},
 		},
@@ -149,7 +149,7 @@ func Test_server_mapT(t *testing.T) {
 			}()
 			for i := 0; i < 10; i++ {
 				keys := []string{fmt.Sprintf("client_%d", i)}
-				list, err := c.MapTFn(ctx, &functionpb.Datum{
+				list, err := c.MapTFn(ctx, &functionpb.DatumRequest{
 					Keys:      keys,
 					Value:     []byte(`server_test`),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
@@ -214,7 +214,7 @@ func Test_server_reduce(t *testing.T) {
 						sum += v
 					}
 					resultVal = []byte(strconv.Itoa(sum))
-					return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(resultKey, resultVal))
+					return functionsdk.MessagesBuilder().Append(functionsdk.NewMessage(resultVal).WithKeys(resultKey))
 				}),
 			},
 		},
@@ -233,11 +233,11 @@ func Test_server_reduce(t *testing.T) {
 				err = c.CloseConn(ctx)
 				assert.NoError(t, err)
 			}()
-			var reduceDatumCh = make(chan *functionpb.Datum, 10)
+			var reduceDatumCh = make(chan *functionpb.DatumRequest, 10)
 
 			// the sum of the numbers from 0 to 9
 			for i := 0; i < 10; i++ {
-				reduceDatumCh <- &functionpb.Datum{
+				reduceDatumCh <- &functionpb.DatumRequest{
 					Keys:      testKeys,
 					Value:     []byte(strconv.Itoa(i)),
 					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
@@ -246,7 +246,7 @@ func Test_server_reduce(t *testing.T) {
 			}
 			close(reduceDatumCh)
 
-			dList := &functionpb.DatumList{}
+			dList := &functionpb.DatumResponseList{}
 			md := grpcmd.New(map[string]string{functionsdk.WinStartTime: "60000", functionsdk.WinEndTime: "120000"})
 			ctx = grpcmd.NewOutgoingContext(ctx, md)
 			resultDatumList, err := c.ReduceFn(ctx, reduceDatumCh)

@@ -8,16 +8,16 @@ import "google/protobuf/empty.proto";
 package function.v1;
 
 service UserDefinedFunction {
-  // MapFn applies a function to each datum element.
-  rpc MapFn(Datum) returns (DatumList);
+  // MapFn applies a function to each datum request element.
+  rpc MapFn(DatumRequest) returns (DatumResponseList);
 
-  // MapTFn applies a function to each datum element.
+  // MapTFn applies a function to each datum request element.
   // In addition to map function, MapTFn also supports assigning a new event time to datum.
   // MapTFn can be used only at source vertex by source data transformer.
-  rpc MapTFn(Datum) returns (DatumList);
+  rpc MapTFn(DatumRequest) returns (DatumResponseList);
 
-  // ReduceFn applies a reduce function to a datum stream.
-  rpc ReduceFn(stream Datum) returns (stream DatumList);
+  // ReduceFn applies a reduce function to a datum request stream.
+  rpc ReduceFn(stream DatumRequest) returns (stream DatumResponseList);
 
   // IsReady is the heartbeat endpoint for gRPC.
   rpc IsReady(google.protobuf.Empty) returns (ReadyResponse);
@@ -37,7 +37,7 @@ message Watermark {
 }
 
 /**
- * Metadata of a datum element.
+ * Metadata of a datum request element.
  */
 message Metadata {
   string id = 1;
@@ -45,9 +45,9 @@ message Metadata {
 }
 
 /**
- * Datum represents a datum element.
+ * DatumRequest represents a datum request element.
  */
-message Datum {
+message DatumRequest {
   repeated string keys = 1;
   bytes value = 2;
   EventTime event_time = 3;
@@ -56,10 +56,21 @@ message Datum {
 }
 
 /**
- * DatumList represents a list of datum elements.
+ * DatumResponse represents a datum response element.
  */
-message DatumList {
-  repeated Datum elements = 1;
+message DatumResponse {
+  repeated string keys = 1;
+  bytes value = 2;
+  EventTime event_time = 3;
+  Watermark watermark = 4;
+  repeated string tags = 5;
+}
+
+/**
+ * DatumResponseList represents a list of datum response elements.
+ */
+message DatumResponseList {
+  repeated DatumResponse elements = 1;
 }
 
 /**

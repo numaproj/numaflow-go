@@ -16,9 +16,9 @@ func handle(_ context.Context, keys []string, d functionsdk.Datum) functionsdk.M
 	if num, err := strconv.Atoi(string(msg)); err != nil {
 		return functionsdk.MessagesBuilder().Append(functionsdk.MessageToDrop())
 	} else if num%2 == 0 {
-		return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo([]string{"even"}, msg))
+		return functionsdk.MessagesBuilder().Append(functionsdk.NewMessage(msg).WithKeys([]string{"even"}).WithTags([]string{"even-tag"}))
 	} else {
-		return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo([]string{"odd"}, msg))
+		return functionsdk.MessagesBuilder().Append(functionsdk.NewMessage(msg).WithKeys([]string{"odd"}).WithTags([]string{"odd-tag"}))
 	}
 }
 

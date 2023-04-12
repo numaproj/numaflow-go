@@ -18,7 +18,7 @@
   func handle(ctx context.Context, keys []string, data functionsdk.Datum) functionsdk.Messages {
     _ = data.EventTime() // Event time is available
     _ = data.Watermark() // Watermark is available
-    return functionsdk.MessagesBuilder().Append(functionsdk.MessageToAll(data.Value()))
+    return functionsdk.MessagesBuilder().Append(functionsdk.NewMessage(data.Value()))
   }
 
   func main() {
@@ -44,7 +44,7 @@
 
   func mapTHandle(_ context.Context, keys []string, d functionsdk.Datum) functionsdk.MessageTs {
 	eventTime := getEventTime(d.Value())
-	return types.MessageTsBuilder().Append(types.MessageTTo(eventTime, keys, d.Value()))
+	return functionsdk.MessageTsBuilder().Append(functionsdk.NewMessageT(eventTime, d.Value()).WithKeys(keys)))
   }
 
   func getEventTime(val []byte) time.Time {
@@ -78,7 +78,7 @@
         counter++
     }
     resultVal = []byte(strconv.Itoa(counter))
-    return functionsdk.MessagesBuilder().Append(functionsdk.MessageTo(resultKeys, resultVal))
+    return functionsdk.MessagesBuilder().Append(functionsdk.NewMessage(resultVal).WithKeys(resultKey))
   }
 
   func main() {

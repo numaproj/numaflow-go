@@ -107,7 +107,7 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*functionpb.ReadyRe
 }
 
 // MapFn applies a function to each datum element.
-func (fs *Service) MapFn(ctx context.Context, d *functionpb.Datum) (*functionpb.DatumList, error) {
+func (fs *Service) MapFn(ctx context.Context, d *functionpb.DatumRequest) (*functionpb.DatumResponseList, error) {
 	var hd = handlerDatum{
 		value:     d.GetValue(),
 		eventTime: d.GetEventTime().EventTime.AsTime(),
@@ -118,14 +118,15 @@ func (fs *Service) MapFn(ctx context.Context, d *functionpb.Datum) (*functionpb.
 		},
 	}
 	messages := fs.Mapper.HandleDo(ctx, d.GetKeys(), &hd)
-	var elements []*functionpb.Datum
+	var elements []*functionpb.DatumResponse
 	for _, m := range messages.Items() {
-		elements = append(elements, &functionpb.Datum{
+		elements = append(elements, &functionpb.DatumResponse{
 			Keys:  m.keys,
 			Value: m.value,
+			Tags:  m.tags,
 		})
 	}
-	datumList := &functionpb.DatumList{
+	datumList := &functionpb.DatumResponseList{
 		Elements: elements,
 	}
 	return datumList, nil
@@ -134,7 +135,7 @@ func (fs *Service) MapFn(ctx context.Context, d *functionpb.Datum) (*functionpb.
 // MapTFn applies a function to each datum element.
 // In addition to map function, MapTFn also supports assigning a new event time to datum.
 // MapTFn can be used only at source vertex by source data transformer.
-func (fs *Service) MapTFn(ctx context.Context, d *functionpb.Datum) (*functionpb.DatumList, error) {
+func (fs *Service) MapTFn(ctx context.Context, d *functionpb.DatumRequest) (*functionpb.DatumResponseList, error) {
 	var hd = handlerDatum{
 		value:     d.GetValue(),
 		eventTime: d.GetEventTime().EventTime.AsTime(),
@@ -145,15 +146,16 @@ func (fs *Service) MapTFn(ctx context.Context, d *functionpb.Datum) (*functionpb
 		},
 	}
 	messageTs := fs.MapperT.HandleDo(ctx, d.GetKeys(), &hd)
-	var elements []*functionpb.Datum
+	var elements []*functionpb.DatumResponse
 	for _, m := range messageTs.Items() {
-		elements = append(elements, &functionpb.Datum{
+		elements = append(elements, &functionpb.DatumResponse{
 			EventTime: &functionpb.EventTime{EventTime: timestamppb.New(m.eventTime)},
 			Keys:      m.keys,
 			Value:     m.value,
+			Tags:      m.tags,
 		})
 	}
-	datumList := &functionpb.DatumList{
+	datumList := &functionpb.DatumResponseList{
 		Elements: elements,
 	}
 	return datumList, nil
@@ -255,12 +257,13 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 	return g.Wait()
 }
 
-func buildDatumList(messages Messages) *functionpb.DatumList {
-	datumList := &functionpb.DatumList{}
+func buildDatumList(messages Messages) *functionpb.DatumResponseList {
+	datumList := &functionpb.DatumResponseList{}
 	for _, msg := range messages {
-		datumList.Elements = append(datumList.Elements, &functionpb.Datum{
+		datumList.Elements = append(datumList.Elements, &functionpb.DatumResponse{
 			Keys:  msg.keys,
 			Value: msg.value,
+			Tags:  msg.tags,
 		})
 	}
 
