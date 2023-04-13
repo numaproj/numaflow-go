@@ -85,4 +85,17 @@
     server.New().RegisterReducer(functionsdk.ReduceFunc(handle)).Start(context.Background())
   }
 */
+// The Datum object contains the message payload and metadata. Currently, there are two fields in metadata:
+// the message ID, the message delivery count to indicate how many times the message has been delivered.
+// You can use these metadata to implement customized logic. For example,
+/*
+...
+func handle(ctx context.Context, keys []string, data functionsdk.Datum) functionsdk.Messages {
+    deliveryCount := data.Metadata().NumDelivered()
+    // Choose to do specific actions, if the message delivery count reaches a certain threshold.
+    if deliveryCount > 3:
+        ...
+}
+
+*/
 package function
