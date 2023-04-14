@@ -1,9 +1,9 @@
 package client
 
 type options struct {
-	sockAddr            string
-	maxMessageSize      int
-	sereverInfoFilePath string
+	sockAddr           string
+	maxMessageSize     int
+	serverInfoFilePath string
 }
 
 // Option is the interface to apply options.
@@ -26,6 +26,6 @@ func WithMaxMessageSize(size int) Option {
 // WithServerInfoFilePath sets the server info file path to the given path.
 func WithServerInfoFilePath(f string) Option {
 	return func(o *options) {
-		o.sereverInfoFilePath = f
+		o.serverInfoFilePath = f
 	}
 }
