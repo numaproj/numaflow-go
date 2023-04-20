@@ -7,15 +7,15 @@ import (
 // MessageT is used to wrap the data return by UDF functions.
 // Compared with Message, MessageT contains one more field, the event time, usually extracted from the payload.
 type MessageT struct {
+	value     []byte
 	eventTime time.Time
 	keys      []string
-	value     []byte
 	tags      []string
 }
 
 // NewMessageT creates a Message with eventTime and value
-func NewMessageT(eventTime time.Time, value []byte) MessageT {
-	return MessageT{eventTime: eventTime, value: value}
+func NewMessageT(value []byte, eventTime time.Time) MessageT {
+	return MessageT{value: value, eventTime: eventTime}
 }
 
 // WithKeys is used to assign the keys to messageT

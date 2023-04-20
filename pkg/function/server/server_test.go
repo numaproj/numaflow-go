@@ -128,7 +128,7 @@ func Test_server_mapT(t *testing.T) {
 			fields: fields{
 				mapTHandler: functionsdk.MapTFunc(func(ctx context.Context, keys []string, d functionsdk.Datum) functionsdk.MessageTs {
 					msg := d.Value()
-					return functionsdk.MessageTsBuilder().Append(functionsdk.NewMessageT(time.Time{}, msg).WithKeys([]string{keys[0] + "_test"}))
+					return functionsdk.MessageTsBuilder().Append(functionsdk.NewMessageT(msg, time.Time{}).WithKeys([]string{keys[0] + "_test"}))
 				}),
 			},
 		},

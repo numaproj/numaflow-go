@@ -8,9 +8,9 @@ var (
 
 // Message is used to wrap the data return by UDF functions
 type Message struct {
-	tags  []string
-	keys  []string
 	value []byte
+	keys  []string
+	tags  []string
 }
 
 // NewMessage creates a Message with value
@@ -20,7 +20,7 @@ func NewMessage(value []byte) Message {
 
 // MessageToDrop creates a Message to be dropped
 func MessageToDrop() Message {
-	return Message{tags: []string{DROP}, value: []byte{}}
+	return Message{value: []byte{}, tags: []string{DROP}}
 }
 
 // WithKeys is used to assign the keys to the message
