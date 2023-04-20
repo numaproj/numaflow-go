@@ -132,14 +132,14 @@ func Test_FilterEventTime(t *testing.T) {
 			name:  "DatumWithEventTimeWithin2022GetsKeyAndEventTimeUpdated",
 			input: withinYear2022Datum{},
 			expectedOutput: functionsdk.MessageTs{
-				functionsdk.NewMessageT(janFisrt2022, []byte("test-data")).WithKeys([]string{"within_year_2022"}),
+				functionsdk.NewMessageT([]byte("test-data"), janFisrt2022).WithKeys([]string{"within_year_2022"}),
 			},
 		},
 		{
 			name:  "DatumWithEventTimeAfter2022GetsKeyAndEventTimeUpdated",
 			input: afterYear2022Datum{},
 			expectedOutput: functionsdk.MessageTs{
-				functionsdk.NewMessageT(janFirst2023, []byte("test-data")).WithKeys([]string{"after_year_2022"}),
+				functionsdk.NewMessageT([]byte("test-data"), janFirst2023).WithKeys([]string{"after_year_2022"}),
 			},
 		},
 	}
