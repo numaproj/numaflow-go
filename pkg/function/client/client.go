@@ -29,6 +29,8 @@ func New(inputOptions ...Option) (*client, error) {
 	var opts = &options{
 		maxMessageSize:     function.DefaultMaxMessageSize,
 		serverInfoFilePath: info.ServerInfoFilePath,
+		tcpSockAddr:        function.TCP_ADDR,
+		udsSockAddr:        function.UDS_ADDR,
 	}
 
 	for _, inputOption := range inputOptions {
@@ -52,9 +54,6 @@ func New(inputOptions ...Option) (*client, error) {
 		if err := regMultProcResolver(serverInfo); err != nil {
 			return nil, fmt.Errorf("failed to start Multiproc Client: %w", err)
 		}
-		opts.sockAddr = function.TCP_ADDR
-	} else {
-		opts.sockAddr = function.UDS_ADDR
 	}
 
 	c := new(client)
@@ -62,8 +61,8 @@ func New(inputOptions ...Option) (*client, error) {
 	var sockAddr string
 	// Make a TCP connection client for multiprocessing grpc server
 	if function.IsMapMultiProcEnabled(serverInfo) {
-		log.Println("Multiprocessing TCP Client:", function.TCP, opts.sockAddr)
-		sockAddr = fmt.Sprintf("%s%s", connAddr, opts.sockAddr)
+		log.Println("Multiprocessing TCP Client:", function.TCP, opts.tcpSockAddr)
+		sockAddr = fmt.Sprintf("%s%s", connAddr, opts.tcpSockAddr)
 		conn, err = grpc.Dial(
 			fmt.Sprintf("%s:///%s", custScheme, custServiceName),
 			// This sets the initial load balancing policy as Round Robin
@@ -72,8 +71,8 @@ func New(inputOptions ...Option) (*client, error) {
 			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(opts.maxMessageSize), grpc.MaxCallSendMsgSize(opts.maxMessageSize)),
 		)
 	} else {
-		log.Println("UDS Client ", function.UDS, opts.sockAddr)
-		sockAddr = fmt.Sprintf("%s:%s", function.UDS, opts.sockAddr)
+		log.Println("UDS Client ", function.UDS, opts.udsSockAddr)
+		sockAddr = fmt.Sprintf("%s:%s", function.UDS, opts.udsSockAddr)
 		conn, err = grpc.Dial(sockAddr, grpc.WithTransportCredentials(insecure.NewCredentials()),
 			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(opts.maxMessageSize), grpc.MaxCallSendMsgSize(opts.maxMessageSize)))
 	}
