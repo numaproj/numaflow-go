@@ -19,9 +19,11 @@ const (
 	Delimiter             = ":"
 )
 
+// IsMapMultiProcEnabled Check if the grpc is stared using the TCP protocol
+// which indicated a multiproc server, and thus we would need
+// to start multiple client connections for the same
 func IsMapMultiProcEnabled(svrInfo *info.ServerInfo) bool {
-	protocol := svrInfo.Protocol
-	if protocol == TCP {
+	if protocol := svrInfo.Protocol; protocol == TCP {
 		return true
 	}
 	return false

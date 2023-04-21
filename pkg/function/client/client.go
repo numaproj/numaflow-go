@@ -7,7 +7,6 @@ import (
 	"log"
 	"strconv"
 
-	_ "go.uber.org/automaxprocs"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -50,8 +49,7 @@ func New(inputOptions ...Option) (*client, error) {
 	// Populate connection variables for client connection
 	// based on multiprocessing enabled/disabled
 	if function.IsMapMultiProcEnabled(serverInfo) {
-		err := regMultProcResolver(serverInfo)
-		if err != nil {
+		if err := regMultProcResolver(serverInfo); err != nil {
 			return nil, fmt.Errorf("failed to start Multiproc Client: %w", err)
 		}
 		opts.sockAddr = function.TCP_ADDR
@@ -64,7 +62,7 @@ func New(inputOptions ...Option) (*client, error) {
 	var sockAddr string
 	// Make a TCP connection client for multiprocessing grpc server
 	if function.IsMapMultiProcEnabled(serverInfo) {
-		log.Println("Multiprocessing TCP Client ", function.TCP, opts.sockAddr)
+		log.Println("Multiprocessing TCP Client:", function.TCP, opts.sockAddr)
 		sockAddr = fmt.Sprintf("%s%s", connAddr, opts.sockAddr)
 		conn, err = grpc.Dial(
 			fmt.Sprintf("%s:///%s", custScheme, custServiceName),
@@ -185,7 +183,7 @@ func regMultProcResolver(svrInfo *info.ServerInfo) error {
 	if err != nil {
 		return err
 	}
-	log.Println("Num CPU ", numCpu)
+	log.Println("Num CPU:", numCpu)
 	conn := buildConnAddrs(numCpu)
 	res := &multiProcResolverBuilder{addrsList: conn}
 	resolver.Register(res)
