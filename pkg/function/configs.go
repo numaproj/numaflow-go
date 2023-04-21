@@ -1,6 +1,8 @@
 package function
 
-import "os"
+import (
+	"github.com/numaproj/numaflow-go/pkg/info"
+)
 
 const (
 	TCP      = "tcp"
@@ -17,9 +19,9 @@ const (
 	Delimiter             = ":"
 )
 
-func IsMapMultiProcEnabled() bool {
-	val, present := os.LookupEnv("MAP_MULTIPROC")
-	if present && val == "true" {
+func IsMapMultiProcEnabled(svrInfo *info.ServerInfo) bool {
+	protocol := svrInfo.Protocol
+	if protocol == TCP {
 		return true
 	}
 	return false

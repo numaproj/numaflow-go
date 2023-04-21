@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"os"
-	"runtime"
 	"strconv"
 
 	_ "go.uber.org/automaxprocs"
@@ -34,15 +32,6 @@ func New(inputOptions ...Option) (*client, error) {
 		serverInfoFilePath: info.ServerInfoFilePath,
 	}
 
-	// Populate connection variables for client connection
-	// based on multiprocessing enabled/disabled
-	if function.IsMapMultiProcEnabled() {
-		regMultProcResolver()
-		opts.sockAddr = function.TCP_ADDR
-	} else {
-		opts.sockAddr = function.UDS_ADDR
-	}
-
 	for _, inputOption := range inputOptions {
 		inputOption(opts)
 	}
@@ -58,11 +47,23 @@ func New(inputOptions ...Option) (*client, error) {
 		log.Printf("ServerInfo: %v\n", serverInfo)
 	}
 
+	// Populate connection variables for client connection
+	// based on multiprocessing enabled/disabled
+	if function.IsMapMultiProcEnabled(serverInfo) {
+		err := regMultProcResolver(serverInfo)
+		if err != nil {
+			return nil, fmt.Errorf("failed to start Multiproc Client: %w", err)
+		}
+		opts.sockAddr = function.TCP_ADDR
+	} else {
+		opts.sockAddr = function.UDS_ADDR
+	}
+
 	c := new(client)
 	var conn *grpc.ClientConn
 	var sockAddr string
 	// Make a TCP connection client for multiprocessing grpc server
-	if function.IsMapMultiProcEnabled() {
+	if function.IsMapMultiProcEnabled(serverInfo) {
 		log.Println("Multiprocessing TCP Client ", function.TCP, opts.sockAddr)
 		sockAddr = fmt.Sprintf("%s%s", connAddr, opts.sockAddr)
 		conn, err = grpc.Dial(
@@ -179,24 +180,15 @@ outputLoop:
 // setConn function is used to populate the connection properties based
 // on multiprocessing TCP or UDS connection
 
-func regMultProcResolver() {
-	maxProcs := runtime.GOMAXPROCS(0)
-	numCpu := runtime.NumCPU()
-	if maxProcs < numCpu {
-		numCpu = maxProcs
-	}
-	val, present := os.LookupEnv("NUM_CPU_MULTIPROC")
-	if present {
-		num, err := strconv.Atoi(val)
-		if err != nil || num < 1 {
-			numCpu = maxProcs
-		} else {
-			numCpu = num
-		}
+func regMultProcResolver(svrInfo *info.ServerInfo) error {
+	numCpu, err := strconv.Atoi(svrInfo.Metadata["CPU_LIMIT"])
+	if err != nil {
+		return err
 	}
 	log.Println("Num CPU ", numCpu)
 	conn := buildConnAddrs(numCpu)
 	res := &multiProcResolverBuilder{addrsList: conn}
 	resolver.Register(res)
 	log.Println("TCP client list:", res.addrsList)
+	return nil
 }
