@@ -76,7 +76,7 @@ func Test_server_map(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			defer cancel()
 			go New().RegisterMapper(tt.fields.mapHandler).Start(ctx, WithSockAddr(socketFile.Name()), WithServerInfoFilePath(serverInfoFile.Name()))
-			c, err := client.New(client.WithSockAddr(socketFile.Name()), client.WithServerInfoFilePath(serverInfoFile.Name()))
+			c, err := client.New(client.WithUdsSockAddr(socketFile.Name()), client.WithServerInfoFilePath(serverInfoFile.Name()))
 			waitUntilReady(ctx, c, t)
 			assert.NoError(t, err)
 			defer func() {
@@ -139,7 +139,7 @@ func Test_server_mapT(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			defer cancel()
 			go New().RegisterMapperT(tt.fields.mapTHandler).Start(ctx, WithSockAddr(socketFile.Name()), WithServerInfoFilePath(serverInfoFile.Name()))
-			c, err := client.New(client.WithSockAddr(socketFile.Name()), client.WithServerInfoFilePath(serverInfoFile.Name()))
+			c, err := client.New(client.WithUdsSockAddr(socketFile.Name()), client.WithServerInfoFilePath(serverInfoFile.Name()))
 			waitUntilReady(ctx, c, t)
 			assert.NoError(t, err)
 			defer func() {
@@ -225,7 +225,7 @@ func Test_server_reduce(t *testing.T) {
 			defer cancel()
 			go New().RegisterReducer(tt.fields.reduceHandler).Start(ctx, WithSockAddr(file.Name()), WithServerInfoFilePath(serverInfoFile.Name()))
 
-			c, err := client.New(client.WithSockAddr(file.Name()), client.WithServerInfoFilePath(serverInfoFile.Name()))
+			c, err := client.New(client.WithUdsSockAddr(file.Name()), client.WithServerInfoFilePath(serverInfoFile.Name()))
 			waitUntilReady(ctx, c, t)
 			assert.NoError(t, err)
 			defer func() {

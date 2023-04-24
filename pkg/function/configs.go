@@ -1,6 +1,8 @@
 package function
 
-import "os"
+import (
+	"github.com/numaproj/numaflow-go/pkg/info"
+)
 
 const (
 	TCP      = "tcp"
@@ -17,9 +19,11 @@ const (
 	Delimiter             = ":"
 )
 
-func IsMapMultiProcEnabled() bool {
-	val, present := os.LookupEnv("MAP_MULTIPROC")
-	if present && val == "true" {
+// IsMapMultiProcEnabled Check if the grpc is stared using the TCP protocol
+// which indicated a multiproc server, and thus we would need
+// to start multiple client connections for the same
+func IsMapMultiProcEnabled(svrInfo *info.ServerInfo) bool {
+	if protocol := svrInfo.Protocol; protocol == TCP {
 		return true
 	}
 	return false
