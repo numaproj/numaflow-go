@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"strconv"
+	"time"
 
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
@@ -27,40 +28,44 @@ type client struct {
 // New creates a new client object.
 func New(inputOptions ...Option) (*client, error) {
 	var opts = &options{
-		maxMessageSize:     function.DefaultMaxMessageSize,
-		serverInfoFilePath: info.ServerInfoFilePath,
-		tcpSockAddr:        function.TCP_ADDR,
-		udsSockAddr:        function.UDS_ADDR,
+		maxMessageSize:             function.DefaultMaxMessageSize,
+		serverInfoFilePath:         info.ServerInfoFilePath,
+		tcpSockAddr:                function.TCP_ADDR,
+		udsSockAddr:                function.UDS_ADDR,
+		serverInfoReadinessTimeout: 120 * time.Second, // Default timeout is 120 seconds
 	}
 
 	for _, inputOption := range inputOptions {
 		inputOption(opts)
 	}
 
-	// TODO: WaitUntilReady() check unitl SIGTERM is received.
-	serverInfo, err := info.Read(info.WithServerInfoFilePath(opts.serverInfoFilePath))
-	if err != nil {
-		// TODO: return nil, err
-		log.Println("Failed to execute info.Read(): ", err)
-	}
-	// TODO: Use serverInfo to check compatibility and start the right gRPC client.
-	if serverInfo != nil {
-		log.Printf("ServerInfo: %v\n", serverInfo)
+	ctx, cancel := context.WithTimeout(context.Background(), opts.serverInfoReadinessTimeout)
+	defer cancel()
+
+	if err := info.WaitUntilReady(ctx, info.WithServerInfoFilePath(opts.serverInfoFilePath)); err != nil {
+		return nil, fmt.Errorf("failed to wait until server info is ready: %w", err)
 	}
 
-	// Populate connection variables for client connection
-	// based on multiprocessing enabled/disabled
-	if function.IsMapMultiProcEnabled(serverInfo) {
-		if err := regMultProcResolver(serverInfo); err != nil {
-			return nil, fmt.Errorf("failed to start Multiproc Client: %w", err)
-		}
+	serverInfo, err := info.Read(info.WithServerInfoFilePath(opts.serverInfoFilePath))
+	if err != nil {
+		return nil, fmt.Errorf("failed to read server info: %w", err)
+	}
+	// TODO: Use serverInfo to check compatibility.
+	if serverInfo != nil {
+		log.Printf("ServerInfo: %v\n", serverInfo)
 	}
 
 	c := new(client)
 	var conn *grpc.ClientConn
 	var sockAddr string
 	// Make a TCP connection client for multiprocessing grpc server
-	if function.IsMapMultiProcEnabled(serverInfo) {
+	if serverInfo.Protocol == info.TCP {
+		// Populate connection variables for client connection
+		// based on multiprocessing enabled/disabled
+		if err := regMultProcResolver(serverInfo); err != nil {
+			return nil, fmt.Errorf("failed to start Multiproc Client: %w", err)
+		}
+
 		sockAddr = fmt.Sprintf("%s%s", connAddr, opts.tcpSockAddr)
 		log.Println("Multiprocessing TCP Client:", sockAddr)
 		conn, err = grpc.Dial(
