@@ -45,7 +45,7 @@ func New(inputOptions ...Option) (*client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read server info: %w", err)
 	}
-	// TODO: Use serverInfo to check compatibility and start the right gRPC client.
+	// TODO: Use serverInfo to check compatibility.
 	if serverInfo != nil {
 		log.Printf("ServerInfo: %v\n", serverInfo)
 	}
