@@ -59,7 +59,7 @@ func New(inputOptions ...Option) (*client, error) {
 	var conn *grpc.ClientConn
 	var sockAddr string
 	// Make a TCP connection client for multiprocessing grpc server
-	if protocol := serverInfo.Protocol; protocol == info.TCP {
+	if serverInfo.Protocol == info.TCP {
 		// Populate connection variables for client connection
 		// based on multiprocessing enabled/disabled
 		if err := regMultProcResolver(serverInfo); err != nil {
