@@ -1,8 +1,11 @@
 package client
 
+import "time"
+
 type options struct {
-	sockAddr            string
-	sereverInfoFilePath string
+	sockAddr                   string
+	serverInfoFilePath         string
+	serverInfoReadinessTimeout time.Duration
 }
 
 // Option is the interface to apply options.
@@ -18,6 +21,13 @@ func WithSockAddr(addr string) Option {
 // WithServerInfoFilePath start the client with the given server info file path. This is mainly used for testing purpose.
 func WithServerInfoFilePath(f string) Option {
 	return func(o *options) {
-		o.sereverInfoFilePath = f
+		o.serverInfoFilePath = f
+	}
+}
+
+// WithServerInfoReadinessTimeout sets the server info readiness timeout to the given timeout.
+func WithServerInfoReadinessTimeout(t time.Duration) Option {
+	return func(o *options) {
+		o.serverInfoReadinessTimeout = t
 	}
 }

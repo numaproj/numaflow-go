@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
 	"github.com/numaproj/numaflow-go/pkg/info"
@@ -24,19 +25,25 @@ var _ sink.Client = (*client)(nil)
 // New creates a new client object.
 func New(inputOptions ...Option) (*client, error) {
 	var opts = &options{
-		sockAddr:            sink.Addr,
-		sereverInfoFilePath: info.ServerInfoFilePath,
+		sockAddr:                   sink.Addr,
+		serverInfoFilePath:         info.ServerInfoFilePath,
+		serverInfoReadinessTimeout: 120 * time.Second, // Default timeout is 120 seconds
 	}
 
 	for _, inputOption := range inputOptions {
 		inputOption(opts)
 	}
 
-	// TODO: WaitUntilReady() check unitl SIGTERM is received.
-	serverInfo, err := info.Read(info.WithServerInfoFilePath(opts.sereverInfoFilePath))
+	ctx, cancel := context.WithTimeout(context.Background(), opts.serverInfoReadinessTimeout)
+	defer cancel()
+
+	if err := info.WaitUntilReady(ctx, info.WithServerInfoFilePath(opts.serverInfoFilePath)); err != nil {
+		return nil, fmt.Errorf("failed to wait until server info is ready: %w", err)
+	}
+
+	serverInfo, err := info.Read(info.WithServerInfoFilePath(opts.serverInfoFilePath))
 	if err != nil {
-		// TODO: return nil, err
-		log.Println("Failed to execute info.Read(): ", err)
+		return nil, fmt.Errorf("failed to read server info: %w", err)
 	}
 	// TODO: Use serverInfo to check compatibility and start the right gRPC client.
 	if serverInfo != nil {

@@ -1,10 +1,13 @@
 package client
 
+import "time"
+
 type options struct {
-	tcpSockAddr        string
-	udsSockAddr        string
-	maxMessageSize     int
-	serverInfoFilePath string
+	tcpSockAddr                string
+	udsSockAddr                string
+	maxMessageSize             int
+	serverInfoFilePath         string
+	serverInfoReadinessTimeout time.Duration
 }
 
 // Option is the interface to apply options.
@@ -35,5 +38,12 @@ func WithMaxMessageSize(size int) Option {
 func WithServerInfoFilePath(f string) Option {
 	return func(o *options) {
 		o.serverInfoFilePath = f
+	}
+}
+
+// WithServerInfoReadinessTimeout sets the server info readiness timeout to the given timeout.
+func WithServerInfoReadinessTimeout(t time.Duration) Option {
+	return func(o *options) {
+		o.serverInfoReadinessTimeout = t
 	}
 }
