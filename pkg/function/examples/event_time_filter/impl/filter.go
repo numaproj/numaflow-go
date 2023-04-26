@@ -12,8 +12,8 @@ func FilterEventTime(keys []string, d functionsdk.Datum) functionsdk.MessageTs {
 	if d.EventTime().Before(janFirst2022) {
 		return functionsdk.MessageTsBuilder().Append(functionsdk.MessageTToDrop())
 	} else if d.EventTime().Before(janFirst2023) {
-		return functionsdk.MessageTsBuilder().Append(functionsdk.NewMessageT(d.Value(), janFirst2022).WithKeys([]string{"within_year_2022"}))
+		return functionsdk.MessageTsBuilder().Append(functionsdk.NewMessageT(d.Value(), janFirst2022).WithTags([]string{"within_year_2022"}))
 	} else {
-		return functionsdk.MessageTsBuilder().Append(functionsdk.NewMessageT(d.Value(), janFirst2023).WithKeys([]string{"after_year_2022"}))
+		return functionsdk.MessageTsBuilder().Append(functionsdk.NewMessageT(d.Value(), janFirst2023).WithTags([]string{"after_year_2022"}))
 	}
 }
