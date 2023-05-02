@@ -48,32 +48,30 @@ func (c *client) MapFn(ctx context.Context, datum *functionpb.DatumRequest) ([]*
 // MapStreamFn applies a function to each datum element and returns a stream.
 func (c *client) MapStreamFn(ctx context.Context, datum *functionpb.DatumRequest) (<-chan functionpb.DatumResponse, <-chan error) {
 	resultCh := make(chan functionpb.DatumResponse)
-	resultErrCh := make(chan error)
+	errCh := make(chan error)
 	stream, err := c.grpcClt.MapStreamFn(ctx, datum)
 	if err != nil {
-		resultErrCh <- fmt.Errorf("failed to execute c.grpcClt.MapStreamFn(): %w", err)
+		errCh <- fmt.Errorf("failed to execute c.grpcClt.MapStreamFn(): %w", err)
 		close(resultCh)
-		close(resultErrCh)
-		return resultCh, resultErrCh
+		close(errCh)
+		return resultCh, errCh
 	}
 
 	go func() {
-	outputLoop:
+		defer close(resultCh)
+		defer close(errCh)
 		for {
 			select {
 			case <-ctx.Done():
-				resultErrCh <- ctx.Err()
+				errCh <- ctx.Err()
 				return
 			default:
-				var resp *functionpb.DatumResponseList
-				resp, err = stream.Recv()
+				resp, err := stream.Recv()
 				if err == io.EOF {
-					close(resultCh)
-					close(resultErrCh)
-					break outputLoop
+					return
 				}
 				if err != nil {
-					resultErrCh <- err
+					errCh <- err
 					return
 				}
 				for _, d := range resp.GetElements() {
@@ -83,7 +81,7 @@ func (c *client) MapStreamFn(ctx context.Context, datum *functionpb.DatumRequest
 		}
 	}()
 
-	return resultCh, resultErrCh
+	return resultCh, errCh
 }
 
 // MapTFn applies a function to each datum element.
