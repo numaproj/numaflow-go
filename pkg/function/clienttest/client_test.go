@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"sync"
 	"testing"
 	"time"
 
@@ -99,6 +100,65 @@ func TestMapFn(t *testing.T) {
 	got, err = testClient.MapFn(ctx, testRequestDatum)
 	assert.Nil(t, got)
 	assert.EqualError(t, err, "failed to execute c.grpcClt.MapFn(): mock MapFn error")
+}
+
+func TestMapStreamFn(t *testing.T) {
+	var ctx = context.Background()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockClient := funcmock.NewMockUserDefinedFunctionClient(ctrl)
+	mockMapStreamClient := funcmock.NewMockUserDefinedFunction_MapStreamFnClient(ctrl)
+
+	requestDatum := &functionpb.DatumRequest{
+		Keys:      []string{"test_success_key"},
+		Value:     []byte(`forward_message`),
+		EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Unix(1661169600, 0))},
+		Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
+	}
+	expectedDatumList := &functionpb.DatumResponseList{
+		Elements: []*functionpb.DatumResponse{
+			{
+				Keys:      []string{"test_success_key"},
+				Value:     []byte(`forward_message`),
+				EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Unix(1661169600, 0))},
+				Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
+			},
+		},
+	}
+
+	mockMapStreamClient.EXPECT().Recv().Return(expectedDatumList, nil).Times(1)
+	mockMapStreamClient.EXPECT().Recv().Return(nil, io.EOF).Times(1)
+
+	mockClient.EXPECT().MapStreamFn(gomock.Any(), &rpcMsg{msg: requestDatum}).Return(mockMapStreamClient, nil)
+
+	testClient, err := New(mockClient)
+	assert.NoError(t, err)
+	reflect.DeepEqual(testClient, &client{
+		grpcClt: mockClient,
+	})
+
+	outputCh, errCh := testClient.MapStreamFn(ctx, requestDatum)
+	datumResponses := make([]*functionpb.DatumResponse, 0)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for msg := range outputCh {
+			datumResponses = append(datumResponses, &msg)
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for err := range errCh {
+			assert.NoError(t, err)
+		}
+	}()
+	wg.Wait()
+	assert.True(t, reflect.DeepEqual(datumResponses, expectedDatumList.Elements))
 }
 
 func TestMapTFn(t *testing.T) {
@@ -197,6 +257,6 @@ func TestReduceFn(t *testing.T) {
 	}
 	close(datumCh)
 	got, err := testClient.ReduceFn(ctx, datumCh)
-	reflect.DeepEqual(got, expectedDatumList)
+	assert.True(t, reflect.DeepEqual(got, expectedDatumList.Elements))
 	assert.NoError(t, err)
 }

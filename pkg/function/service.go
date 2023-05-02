@@ -92,13 +92,15 @@ func (m *metadata) IntervalWindow() IntervalWindow {
 	return m.intervalWindow
 }
 
-// Service implements the proto gen server interface and contains the map operation handler and the reduce operation handler.
+// Service implements the proto gen server interface and contains the map operation
+// handler and the reduce operation handler.
 type Service struct {
 	functionpb.UnimplementedUserDefinedFunctionServer
 
-	Mapper  MapHandler
-	MapperT MapTHandler
-	Reducer ReduceHandler
+	Mapper       MapHandler
+	MapperStream MapStreamHandler
+	MapperT      MapTHandler
+	Reducer      ReduceHandler
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
@@ -130,6 +132,40 @@ func (fs *Service) MapFn(ctx context.Context, d *functionpb.DatumRequest) (*func
 		Elements: elements,
 	}
 	return datumList, nil
+}
+
+// MapStreamFn applies a function to each datum element and returns a stream.
+func (fs *Service) MapStreamFn(d *functionpb.DatumRequest, stream functionpb.UserDefinedFunction_MapStreamFnServer) error {
+	var hd = handlerDatum{
+		value:     d.GetValue(),
+		eventTime: d.GetEventTime().EventTime.AsTime(),
+		watermark: d.GetWatermark().Watermark.AsTime(),
+		metadata: handlerDatumMetadata{
+			id:           d.GetMetadata().GetId(),
+			numDelivered: d.GetMetadata().GetNumDelivered(),
+		},
+	}
+	ctx := stream.Context()
+	messagesCh := fs.MapperStream.HandleDo(ctx, d.GetKeys(), &hd)
+	for messages := range messagesCh {
+		var elements []*functionpb.DatumResponse
+		for _, m := range messages.Items() {
+			elements = append(elements, &functionpb.DatumResponse{
+				Keys:  m.keys,
+				Value: m.value,
+				Tags:  m.tags,
+			})
+		}
+		datumList := &functionpb.DatumResponseList{
+			Elements: elements,
+		}
+		err := stream.Send(datumList)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // MapTFn applies a function to each datum element.

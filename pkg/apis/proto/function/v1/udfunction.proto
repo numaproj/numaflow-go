@@ -11,6 +11,9 @@ service UserDefinedFunction {
   // MapFn applies a function to each datum request element.
   rpc MapFn(DatumRequest) returns (DatumResponseList);
 
+  // MapStreamFn applies a function to each datum element and returns a stream.
+  rpc MapStreamFn(DatumRequest) returns (stream DatumResponseList);
+
   // MapTFn applies a function to each datum request element.
   // In addition to map function, MapTFn also supports assigning a new event time to datum.
   // MapTFn can be used only at source vertex by source data transformer.

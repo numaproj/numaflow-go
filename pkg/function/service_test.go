@@ -2,6 +2,8 @@ package function
 
 import (
 	"context"
+	"fmt"
+	"github.com/stretchr/testify/assert"
 	"io"
 	"reflect"
 	"sort"
@@ -18,9 +20,58 @@ import (
 )
 
 type fields struct {
-	mapper  MapHandler
-	mapperT MapTHandler
-	reducer ReduceHandler
+	mapper       MapHandler
+	mapperStream MapStreamHandler
+	mapperT      MapTHandler
+	reducer      ReduceHandler
+}
+
+type UserDefinedFunctionMapStreamFnServerTest struct {
+	ctx      context.Context
+	outputCh chan *functionpb.DatumResponseList
+	grpc.ServerStream
+}
+
+func NewUserDefinedFunctionMapStreamFnServerTest(
+	ctx context.Context,
+	outputCh chan *functionpb.DatumResponseList,
+) *UserDefinedFunctionMapStreamFnServerTest {
+	return &UserDefinedFunctionMapStreamFnServerTest{
+		ctx:      ctx,
+		outputCh: outputCh,
+	}
+}
+
+func (u *UserDefinedFunctionMapStreamFnServerTest) Send(list *functionpb.DatumResponseList) error {
+	u.outputCh <- list
+	return nil
+}
+
+func (u *UserDefinedFunctionMapStreamFnServerTest) Context() context.Context {
+	return u.ctx
+}
+
+type UserDefinedFunctionMapStreamFnServerErrTest struct {
+	ctx      context.Context
+	outputCh chan *functionpb.DatumResponseList
+	grpc.ServerStream
+}
+
+func NewUserDefinedFunctionMapStreamFnServerErrTest(
+	ctx context.Context,
+
+) *UserDefinedFunctionMapStreamFnServerErrTest {
+	return &UserDefinedFunctionMapStreamFnServerErrTest{
+		ctx: ctx,
+	}
+}
+
+func (u *UserDefinedFunctionMapStreamFnServerErrTest) Send(_ *functionpb.DatumResponseList) error {
+	return fmt.Errorf("send error")
+}
+
+func (u *UserDefinedFunctionMapStreamFnServerErrTest) Context() context.Context {
+	return u.ctx
 }
 
 type UserDefinedFunctionReduceFnServerTest struct {
@@ -168,6 +219,185 @@ func TestService_MapFn(t *testing.T) {
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("MapFn() got = %v, want %v", got, tt.want)
 			}
+		})
+	}
+}
+
+func TestService_MapFnStream(t *testing.T) {
+	tests := []struct {
+		name        string
+		fields      fields
+		input       *functionpb.DatumRequest
+		expected    *functionpb.DatumResponseList
+		expectedErr bool
+		streamErr   bool
+	}{
+		{
+			name: "map_stream_fn_forward_msg",
+			fields: fields{
+				mapperStream: MapStreamFunc(func(ctx context.Context, keys []string, datum Datum) <-chan Messages {
+					messagesCh := make(chan Messages)
+
+					go func() {
+						msg := datum.Value()
+						messagesCh <- MessagesBuilder().Append(NewMessage(msg).WithKeys([]string{keys[0] + "_test"}))
+						close(messagesCh)
+					}()
+
+					return messagesCh
+				}),
+			},
+			input: &functionpb.DatumRequest{
+				Keys:      []string{"client"},
+				Value:     []byte(`test`),
+				EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
+				Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
+			},
+			expected: &functionpb.DatumResponseList{
+				Elements: []*functionpb.DatumResponse{
+					{
+						Keys:  []string{"client_test"},
+						Value: []byte(`test`),
+					},
+				},
+			},
+			expectedErr: false,
+		}, {
+			name: "map_stream_fn_forward_msg_forward_to_all",
+			fields: fields{
+				mapperStream: MapStreamFunc(func(ctx context.Context, keys []string, datum Datum) <-chan Messages {
+					messagesCh := make(chan Messages)
+
+					go func() {
+						msg := datum.Value()
+						messagesCh <- MessagesBuilder().Append(NewMessage(msg))
+						close(messagesCh)
+					}()
+
+					return messagesCh
+				}),
+			},
+			input: &functionpb.DatumRequest{
+				Keys:      []string{"client"},
+				Value:     []byte(`test`),
+				EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
+				Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
+			},
+			expected: &functionpb.DatumResponseList{
+				Elements: []*functionpb.DatumResponse{
+					{
+						Value: []byte(`test`),
+					},
+				},
+			},
+			expectedErr: false,
+		},
+		{
+			name: "map_stream_fn_forward_msg_drop_msg",
+			fields: fields{
+				mapperStream: MapStreamFunc(func(ctx context.Context, keys []string, datum Datum) <-chan Messages {
+					messagesCh := make(chan Messages)
+
+					go func() {
+						messagesCh <- MessagesBuilder().Append(MessageToDrop())
+						close(messagesCh)
+					}()
+
+					return messagesCh
+				}),
+			},
+			input: &functionpb.DatumRequest{
+				Keys:      []string{"client"},
+				Value:     []byte(`test`),
+				EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
+				Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
+			},
+			expected: &functionpb.DatumResponseList{
+				Elements: []*functionpb.DatumResponse{
+					{
+						Tags:  []string{DROP},
+						Value: []byte{},
+					},
+				},
+			},
+			expectedErr: false,
+		},
+		{
+			name: "map_stream_fn_forward_err",
+			fields: fields{
+				mapperStream: MapStreamFunc(func(ctx context.Context, keys []string, datum Datum) <-chan Messages {
+					messagesCh := make(chan Messages)
+
+					go func() {
+						messagesCh <- MessagesBuilder().Append(MessageToDrop())
+						close(messagesCh)
+					}()
+
+					return messagesCh
+				}),
+			},
+			input: &functionpb.DatumRequest{
+				Keys:      []string{"client"},
+				Value:     []byte(`test`),
+				EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
+				Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
+			},
+			expected: &functionpb.DatumResponseList{
+				Elements: []*functionpb.DatumResponse{
+					{
+						Tags:  []string{DROP},
+						Value: []byte{},
+					},
+				},
+			},
+			expectedErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fs := &Service{
+				Mapper:       tt.fields.mapper,
+				MapperStream: tt.fields.mapperStream,
+				MapperT:      tt.fields.mapperT,
+				Reducer:      tt.fields.reducer,
+			}
+			// here's a trick for testing:
+			// because we are not using gRPC, we directly set a new incoming ctx
+			// instead of the regular outgoing context in the real gRPC connection.
+			ctx := context.Background()
+			outputCh := make(chan *functionpb.DatumResponseList)
+			result := &functionpb.DatumResponseList{}
+
+			var udfMapStreamFnStream functionpb.UserDefinedFunction_MapStreamFnServer
+			if tt.streamErr {
+				udfMapStreamFnStream = NewUserDefinedFunctionMapStreamFnServerErrTest(ctx)
+			} else {
+				udfMapStreamFnStream = NewUserDefinedFunctionMapStreamFnServerTest(ctx, outputCh)
+			}
+
+			var wg sync.WaitGroup
+
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				for msg := range outputCh {
+					result.Elements = append(result.Elements, msg.Elements...)
+				}
+			}()
+
+			err := fs.MapStreamFn(tt.input, udfMapStreamFnStream)
+			close(outputCh)
+			wg.Wait()
+
+			if err != nil {
+				assert.True(t, tt.expectedErr, "MapStreamFn() error = %v, expectedErr %v", err, tt.expectedErr)
+				return
+			}
+
+			if !reflect.DeepEqual(result, tt.expected) {
+				t.Errorf("MapStreamFn() got = %v, want %v", result, tt.expected)
+			}
+
 		})
 	}
 }

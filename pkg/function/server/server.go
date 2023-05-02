@@ -43,6 +43,32 @@ func (s *server) RegisterMapper(m functionsdk.MapHandler) *server {
 	return s
 }
 
+// RegisterMapperStream registers the mapStream operation handler to the server.
+// Example:
+//
+//	func handle(ctx context.Context, keys []string, data functionsdk.Datum) <-chan functionsdk.Messages {
+//		messagesCh := make(chan functionsdk.Messages)
+//
+//		_ = data.EventTime() // Event time is available
+//		_ = data.Watermark() // Watermark is available
+//
+//		go func() {
+//			msg := d.Value()
+//			messagesCh <- functionsdk.MessagesBuilder().Append(functionsdk.NewMessage(data.Value()))
+//			close(messagesCh)
+//		}()
+//
+//		return messagesCh
+//	}
+//
+//	func main() {
+//		server.New().RegisterMapperStream(functionsdk.MapStreamFunc(handle)).Start(context.Background())
+//	}
+func (s *server) RegisterMapperStream(m functionsdk.MapStreamHandler) *server {
+	s.svc.MapperStream = m
+	return s
+}
+
 // RegisterMapperT registers the mapT operation handler to the server.
 // Example:
 //
