@@ -28,13 +28,13 @@ type fields struct {
 
 type UserDefinedFunctionMapStreamFnServerTest struct {
 	ctx      context.Context
-	outputCh chan *functionpb.DatumResponseList
+	outputCh chan functionpb.DatumResponse
 	grpc.ServerStream
 }
 
 func NewUserDefinedFunctionMapStreamFnServerTest(
 	ctx context.Context,
-	outputCh chan *functionpb.DatumResponseList,
+	outputCh chan functionpb.DatumResponse,
 ) *UserDefinedFunctionMapStreamFnServerTest {
 	return &UserDefinedFunctionMapStreamFnServerTest{
 		ctx:      ctx,
@@ -42,8 +42,8 @@ func NewUserDefinedFunctionMapStreamFnServerTest(
 	}
 }
 
-func (u *UserDefinedFunctionMapStreamFnServerTest) Send(list *functionpb.DatumResponseList) error {
-	u.outputCh <- list
+func (u *UserDefinedFunctionMapStreamFnServerTest) Send(d *functionpb.DatumResponse) error {
+	u.outputCh <- *d
 	return nil
 }
 
@@ -52,8 +52,7 @@ func (u *UserDefinedFunctionMapStreamFnServerTest) Context() context.Context {
 }
 
 type UserDefinedFunctionMapStreamFnServerErrTest struct {
-	ctx      context.Context
-	outputCh chan *functionpb.DatumResponseList
+	ctx context.Context
 	grpc.ServerStream
 }
 
@@ -66,7 +65,7 @@ func NewUserDefinedFunctionMapStreamFnServerErrTest(
 	}
 }
 
-func (u *UserDefinedFunctionMapStreamFnServerErrTest) Send(_ *functionpb.DatumResponseList) error {
+func (u *UserDefinedFunctionMapStreamFnServerErrTest) Send(_ *functionpb.DatumResponse) error {
 	return fmt.Errorf("send error")
 }
 
@@ -228,23 +227,17 @@ func TestService_MapFnStream(t *testing.T) {
 		name        string
 		fields      fields
 		input       *functionpb.DatumRequest
-		expected    *functionpb.DatumResponseList
+		expected    []*functionpb.DatumResponse
 		expectedErr bool
 		streamErr   bool
 	}{
 		{
 			name: "map_stream_fn_forward_msg",
 			fields: fields{
-				mapperStream: MapStreamFunc(func(ctx context.Context, keys []string, datum Datum) <-chan Messages {
-					messagesCh := make(chan Messages)
-
-					go func() {
-						msg := datum.Value()
-						messagesCh <- MessagesBuilder().Append(NewMessage(msg).WithKeys([]string{keys[0] + "_test"}))
-						close(messagesCh)
-					}()
-
-					return messagesCh
+				mapperStream: MapStreamFunc(func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
+					msg := datum.Value()
+					messageCh <- NewMessage(msg).WithKeys([]string{keys[0] + "_test"})
+					close(messageCh)
 				}),
 			},
 			input: &functionpb.DatumRequest{
@@ -253,28 +246,20 @@ func TestService_MapFnStream(t *testing.T) {
 				EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 				Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 			},
-			expected: &functionpb.DatumResponseList{
-				Elements: []*functionpb.DatumResponse{
-					{
-						Keys:  []string{"client_test"},
-						Value: []byte(`test`),
-					},
+			expected: []*functionpb.DatumResponse{
+				{
+					Keys:  []string{"client_test"},
+					Value: []byte(`test`),
 				},
 			},
 			expectedErr: false,
 		}, {
 			name: "map_stream_fn_forward_msg_forward_to_all",
 			fields: fields{
-				mapperStream: MapStreamFunc(func(ctx context.Context, keys []string, datum Datum) <-chan Messages {
-					messagesCh := make(chan Messages)
-
-					go func() {
-						msg := datum.Value()
-						messagesCh <- MessagesBuilder().Append(NewMessage(msg))
-						close(messagesCh)
-					}()
-
-					return messagesCh
+				mapperStream: MapStreamFunc(func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
+					msg := datum.Value()
+					messageCh <- NewMessage(msg)
+					close(messageCh)
 				}),
 			},
 			input: &functionpb.DatumRequest{
@@ -283,11 +268,9 @@ func TestService_MapFnStream(t *testing.T) {
 				EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 				Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 			},
-			expected: &functionpb.DatumResponseList{
-				Elements: []*functionpb.DatumResponse{
-					{
-						Value: []byte(`test`),
-					},
+			expected: []*functionpb.DatumResponse{
+				{
+					Value: []byte(`test`),
 				},
 			},
 			expectedErr: false,
@@ -295,15 +278,9 @@ func TestService_MapFnStream(t *testing.T) {
 		{
 			name: "map_stream_fn_forward_msg_drop_msg",
 			fields: fields{
-				mapperStream: MapStreamFunc(func(ctx context.Context, keys []string, datum Datum) <-chan Messages {
-					messagesCh := make(chan Messages)
-
-					go func() {
-						messagesCh <- MessagesBuilder().Append(MessageToDrop())
-						close(messagesCh)
-					}()
-
-					return messagesCh
+				mapperStream: MapStreamFunc(func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
+					messageCh <- MessageToDrop()
+					close(messageCh)
 				}),
 			},
 			input: &functionpb.DatumRequest{
@@ -312,12 +289,10 @@ func TestService_MapFnStream(t *testing.T) {
 				EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 				Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 			},
-			expected: &functionpb.DatumResponseList{
-				Elements: []*functionpb.DatumResponse{
-					{
-						Tags:  []string{DROP},
-						Value: []byte{},
-					},
+			expected: []*functionpb.DatumResponse{
+				{
+					Tags:  []string{DROP},
+					Value: []byte{},
 				},
 			},
 			expectedErr: false,
@@ -325,15 +300,9 @@ func TestService_MapFnStream(t *testing.T) {
 		{
 			name: "map_stream_fn_forward_err",
 			fields: fields{
-				mapperStream: MapStreamFunc(func(ctx context.Context, keys []string, datum Datum) <-chan Messages {
-					messagesCh := make(chan Messages)
-
-					go func() {
-						messagesCh <- MessagesBuilder().Append(MessageToDrop())
-						close(messagesCh)
-					}()
-
-					return messagesCh
+				mapperStream: MapStreamFunc(func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
+					messageCh <- MessageToDrop()
+					close(messageCh)
 				}),
 			},
 			input: &functionpb.DatumRequest{
@@ -342,12 +311,10 @@ func TestService_MapFnStream(t *testing.T) {
 				EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
 				Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 			},
-			expected: &functionpb.DatumResponseList{
-				Elements: []*functionpb.DatumResponse{
-					{
-						Tags:  []string{DROP},
-						Value: []byte{},
-					},
+			expected: []*functionpb.DatumResponse{
+				{
+					Tags:  []string{DROP},
+					Value: []byte{},
 				},
 			},
 			expectedErr: true,
@@ -365,8 +332,8 @@ func TestService_MapFnStream(t *testing.T) {
 			// because we are not using gRPC, we directly set a new incoming ctx
 			// instead of the regular outgoing context in the real gRPC connection.
 			ctx := context.Background()
-			outputCh := make(chan *functionpb.DatumResponseList)
-			result := &functionpb.DatumResponseList{}
+			outputCh := make(chan functionpb.DatumResponse)
+			result := make([]*functionpb.DatumResponse, 0)
 
 			var udfMapStreamFnStream functionpb.UserDefinedFunction_MapStreamFnServer
 			if tt.streamErr {
@@ -381,7 +348,7 @@ func TestService_MapFnStream(t *testing.T) {
 			go func() {
 				defer wg.Done()
 				for msg := range outputCh {
-					result.Elements = append(result.Elements, msg.Elements...)
+					result = append(result, &msg)
 				}
 			}()
 

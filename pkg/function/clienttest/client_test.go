@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"reflect"
-	"sync"
 	"testing"
 	"time"
 
@@ -117,18 +116,14 @@ func TestMapStreamFn(t *testing.T) {
 		EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Unix(1661169600, 0))},
 		Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 	}
-	expectedDatumList := &functionpb.DatumResponseList{
-		Elements: []*functionpb.DatumResponse{
-			{
-				Keys:      []string{"test_success_key"},
-				Value:     []byte(`forward_message`),
-				EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Unix(1661169600, 0))},
-				Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
-			},
-		},
+	expectedDatum := &functionpb.DatumResponse{
+		Keys:      []string{"test_success_key"},
+		Value:     []byte(`forward_message`),
+		EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Unix(1661169600, 0))},
+		Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
 	}
 
-	mockMapStreamClient.EXPECT().Recv().Return(expectedDatumList, nil).Times(1)
+	mockMapStreamClient.EXPECT().Recv().Return(expectedDatum, nil).Times(1)
 	mockMapStreamClient.EXPECT().Recv().Return(nil, io.EOF).Times(1)
 
 	mockClient.EXPECT().MapStreamFn(gomock.Any(), &rpcMsg{msg: requestDatum}).Return(mockMapStreamClient, nil)
@@ -139,26 +134,18 @@ func TestMapStreamFn(t *testing.T) {
 		grpcClt: mockClient,
 	})
 
-	outputCh, errCh := testClient.MapStreamFn(ctx, requestDatum)
+	datumCh := make(chan functionpb.DatumResponse)
 	datumResponses := make([]*functionpb.DatumResponse, 0)
-	var wg sync.WaitGroup
-	wg.Add(1)
+
 	go func() {
-		defer wg.Done()
-		for msg := range outputCh {
-			datumResponses = append(datumResponses, &msg)
-		}
+		err := testClient.MapStreamFn(ctx, requestDatum, datumCh)
+		assert.NoError(t, err)
 	}()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		for err := range errCh {
-			assert.NoError(t, err)
-		}
-	}()
-	wg.Wait()
-	assert.True(t, reflect.DeepEqual(datumResponses, expectedDatumList.Elements))
+	for msg := range datumCh {
+		datumResponses = append(datumResponses, &msg)
+	}
+	assert.True(t, reflect.DeepEqual(datumResponses, []*functionpb.DatumResponse{expectedDatum}))
 }
 
 func TestMapTFn(t *testing.T) {

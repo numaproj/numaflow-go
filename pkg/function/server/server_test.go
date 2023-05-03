@@ -127,14 +127,10 @@ func Test_server_map_stream(t *testing.T) {
 		{
 			name: "server_map",
 			fields: fields{
-				mapStreamHandler: functionsdk.MapStreamFunc(func(ctx context.Context, keys []string, d functionsdk.Datum) <-chan functionsdk.Messages {
-					messagesCh := make(chan functionsdk.Messages)
-					go func() {
-						msg := d.Value()
-						messagesCh <- functionsdk.MessagesBuilder().Append(functionsdk.NewMessage(msg).WithKeys([]string{keys[0] + "_test"}))
-						close(messagesCh)
-					}()
-					return messagesCh
+				mapStreamHandler: functionsdk.MapStreamFunc(func(ctx context.Context, keys []string, d functionsdk.Datum, messageCh chan<- functionsdk.Message) {
+					msg := d.Value()
+					messageCh <- functionsdk.NewMessage(msg).WithKeys([]string{keys[0] + "_test"})
+					close(messageCh)
 				}),
 			},
 		},
@@ -157,34 +153,23 @@ func Test_server_map_stream(t *testing.T) {
 			for i := 0; i < 10; i++ {
 				keys := []string{fmt.Sprintf("client_%d", i)}
 
-				outputCh, errCh := c.MapStreamFn(ctx, &functionpb.DatumRequest{
-					Keys:      keys,
-					Value:     []byte(`server_test`),
-					EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
-				})
-				var wg sync.WaitGroup
-
-				wg.Add(1)
+				datumCh := make(chan functionpb.DatumResponse)
 				go func() {
-					defer wg.Done()
-					for msg := range outputCh {
-						assert.Equal(t, []string{keys[0] + "_test"}, msg.GetKeys())
-						assert.Equal(t, []byte(`server_test`), msg.GetValue())
-						assert.Nil(t, msg.GetEventTime())
-						assert.Nil(t, msg.GetWatermark())
-					}
+					err := c.MapStreamFn(ctx, &functionpb.DatumRequest{
+						Keys:      keys,
+						Value:     []byte(`server_test`),
+						EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
+						Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
+					}, datumCh)
+					assert.NoError(t, err)
 				}()
 
-				wg.Add(1)
-				go func() {
-					defer wg.Done()
-					for err := range errCh {
-						assert.NoError(t, err)
-					}
-				}()
-
-				wg.Wait()
+				for msg := range datumCh {
+					assert.Equal(t, []string{keys[0] + "_test"}, msg.GetKeys())
+					assert.Equal(t, []byte(`server_test`), msg.GetValue())
+					assert.Nil(t, msg.GetEventTime())
+					assert.Nil(t, msg.GetWatermark())
+				}
 			}
 		})
 	}

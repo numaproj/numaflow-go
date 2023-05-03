@@ -70,7 +70,7 @@ func (c *userDefinedFunctionClient) MapStreamFn(ctx context.Context, in *DatumRe
 }
 
 type UserDefinedFunction_MapStreamFnClient interface {
-	Recv() (*DatumResponseList, error)
+	Recv() (*DatumResponse, error)
 	grpc.ClientStream
 }
 
@@ -78,8 +78,8 @@ type userDefinedFunctionMapStreamFnClient struct {
 	grpc.ClientStream
 }
 
-func (x *userDefinedFunctionMapStreamFnClient) Recv() (*DatumResponseList, error) {
-	m := new(DatumResponseList)
+func (x *userDefinedFunctionMapStreamFnClient) Recv() (*DatumResponse, error) {
+	m := new(DatumResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -213,7 +213,7 @@ func _UserDefinedFunction_MapStreamFn_Handler(srv interface{}, stream grpc.Serve
 }
 
 type UserDefinedFunction_MapStreamFnServer interface {
-	Send(*DatumResponseList) error
+	Send(*DatumResponse) error
 	grpc.ServerStream
 }
 
@@ -221,7 +221,7 @@ type userDefinedFunctionMapStreamFnServer struct {
 	grpc.ServerStream
 }
 
-func (x *userDefinedFunctionMapStreamFnServer) Send(m *DatumResponseList) error {
+func (x *userDefinedFunctionMapStreamFnServer) Send(m *DatumResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 

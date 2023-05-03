@@ -114,42 +114,31 @@ func (c *client) MapFn(ctx context.Context, datum *functionpb.DatumRequest) ([]*
 }
 
 // MapStreamFn applies a function to each datum element and returns a stream.
-func (c *client) MapStreamFn(ctx context.Context, datum *functionpb.DatumRequest) (<-chan functionpb.DatumResponse, <-chan error) {
-	resultCh := make(chan functionpb.DatumResponse)
-	errCh := make(chan error)
+func (c *client) MapStreamFn(ctx context.Context, datum *functionpb.DatumRequest, datumCh chan<- functionpb.DatumResponse) error {
+	defer close(datumCh)
 	stream, err := c.grpcClt.MapStreamFn(ctx, datum)
 	if err != nil {
-		errCh <- fmt.Errorf("failed to execute c.grpcClt.MapStreamFn(): %w", err)
-		close(resultCh)
-		close(errCh)
-		return resultCh, errCh
+		return fmt.Errorf("failed to execute c.grpcClt.MapStreamFn(): %w", err)
 	}
 
-	go func() {
-		defer close(resultCh)
-		defer close(errCh)
-		for {
-			select {
-			case <-ctx.Done():
-				errCh <- ctx.Err()
-				return
-			default:
-				resp, err := stream.Recv()
-				if err == io.EOF {
-					return
-				}
-				if err != nil {
-					errCh <- err
-					return
-				}
-				for _, d := range resp.GetElements() {
-					resultCh <- *d
-				}
+	for {
+		select {
+		case <-ctx.Done():
+			err = ctx.Err()
+		default:
+			var resp *functionpb.DatumResponse
+			resp, err = stream.Recv()
+			if err == io.EOF {
+				return nil
 			}
+			if err != nil {
+				return err
+			}
+			datumCh <- *resp
 		}
-	}()
+	}
 
-	return resultCh, errCh
+	return nil
 }
 
 // MapTFn applies a function to each datum element.

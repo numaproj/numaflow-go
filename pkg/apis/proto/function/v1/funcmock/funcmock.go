@@ -342,10 +342,10 @@ func (mr *MockUserDefinedFunction_MapStreamFnClientMockRecorder) Header() *gomoc
 }
 
 // Recv mocks base method.
-func (m *MockUserDefinedFunction_MapStreamFnClient) Recv() (*v1.DatumResponseList, error) {
+func (m *MockUserDefinedFunction_MapStreamFnClient) Recv() (*v1.DatumResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Recv")
-	ret0, _ := ret[0].(*v1.DatumResponseList)
+	ret0, _ := ret[0].(*v1.DatumResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

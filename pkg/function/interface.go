@@ -40,7 +40,7 @@ type Client interface {
 	CloseConn(ctx context.Context) error
 	IsReady(ctx context.Context, in *emptypb.Empty) (bool, error)
 	MapFn(ctx context.Context, datum *functionpb.DatumRequest) ([]*functionpb.DatumResponse, error)
-	MapStreamFn(ctx context.Context, datum *functionpb.DatumRequest) (<-chan functionpb.DatumResponse, <-chan error)
+	MapStreamFn(ctx context.Context, datum *functionpb.DatumRequest, datumCh chan<- functionpb.DatumResponse) error
 	MapTFn(ctx context.Context, datum *functionpb.DatumRequest) ([]*functionpb.DatumResponse, error)
 	ReduceFn(ctx context.Context, datumStreamCh <-chan *functionpb.DatumRequest) ([]*functionpb.DatumResponse, error)
 }
@@ -53,8 +53,9 @@ type MapHandler interface {
 
 // MapStreamHandler is the interface of map stream function implementation.
 type MapStreamHandler interface {
-	// HandleDo is the function to process each coming message.
-	HandleDo(ctx context.Context, keys []string, datum Datum) <-chan Messages
+	// HandleDo is the function to process each coming message and streams
+	// the result back using a channel.
+	HandleDo(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message)
 }
 
 // MapTHandler is the interface of mapT function implementation.
@@ -77,11 +78,11 @@ func (mf MapFunc) HandleDo(ctx context.Context, keys []string, datum Datum) Mess
 }
 
 // MapStreamFunc is utility type used to convert a HandleDo function to a MapStreamHandler.
-type MapStreamFunc func(ctx context.Context, keys []string, datum Datum) <-chan Messages
+type MapStreamFunc func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message)
 
 // HandleDo implements the function of map stream function.
-func (msf MapStreamFunc) HandleDo(ctx context.Context, keys []string, datum Datum) <-chan Messages {
-	return msf(ctx, keys, datum)
+func (msf MapStreamFunc) HandleDo(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
+	msf(ctx, keys, datum, messageCh)
 }
 
 // MapTFunc is utility type used to convert a HandleDo function to a MapTHandler.

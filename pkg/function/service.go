@@ -146,21 +146,23 @@ func (fs *Service) MapStreamFn(d *functionpb.DatumRequest, stream functionpb.Use
 		},
 	}
 	ctx := stream.Context()
-	messagesCh := fs.MapperStream.HandleDo(ctx, d.GetKeys(), &hd)
-	for messages := range messagesCh {
-		var elements []*functionpb.DatumResponse
-		for _, m := range messages.Items() {
-			elements = append(elements, &functionpb.DatumResponse{
-				Keys:  m.keys,
-				Value: m.value,
-				Tags:  m.tags,
-			})
+	messageCh := make(chan Message)
+
+	go func() {
+		fs.MapperStream.HandleDo(ctx, d.GetKeys(), &hd, messageCh)
+	}()
+
+	for message := range messageCh {
+		element := &functionpb.DatumResponse{
+			Keys:  message.keys,
+			Value: message.value,
+			Tags:  message.tags,
 		}
-		datumList := &functionpb.DatumResponseList{
-			Elements: elements,
-		}
-		err := stream.Send(datumList)
+		err := stream.Send(element)
+		// Only closes the channel when there is an error. Else leave it
+		// to the user to close it.
 		if err != nil {
+			close(messageCh)
 			return err
 		}
 	}
