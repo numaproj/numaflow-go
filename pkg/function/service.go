@@ -150,6 +150,10 @@ func (fs *Service) MapStreamFn(d *functionpb.DatumRequest, stream functionpb.Use
 
 	go func() {
 		fs.MapperStream.HandleDo(ctx, d.GetKeys(), &hd, messageCh)
+		// Close the channel when not closed by the user.
+		if !isClosed(messageCh) {
+			close(messageCh)
+		}
 	}()
 
 	for message := range messageCh {
@@ -159,8 +163,6 @@ func (fs *Service) MapStreamFn(d *functionpb.DatumRequest, stream functionpb.Use
 			Tags:  message.tags,
 		}
 		err := stream.Send(element)
-		// Only closes the channel when there is an error. Else leave it
-		// to the user to close it.
 		if err != nil {
 			close(messageCh)
 			return err
@@ -330,4 +332,13 @@ func getValueFromMetadata(md grpcmd.MD, k string) (string, error) {
 		return value, fmt.Errorf("expected non empty value for keys %s in metadata but got an empty value", k)
 	}
 	return value, nil
+}
+
+func isClosed(c chan Message) bool {
+	select {
+	case <-c:
+		return true
+	default:
+	}
+	return false
 }

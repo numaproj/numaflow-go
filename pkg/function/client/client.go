@@ -124,7 +124,7 @@ func (c *client) MapStreamFn(ctx context.Context, datum *functionpb.DatumRequest
 	for {
 		select {
 		case <-ctx.Done():
-			err = ctx.Err()
+			return ctx.Err()
 		default:
 			var resp *functionpb.DatumResponse
 			resp, err = stream.Recv()

@@ -134,6 +134,15 @@ func Test_server_map_stream(t *testing.T) {
 				}),
 			},
 		},
+		{
+			name: "server_map_without_close_stream",
+			fields: fields{
+				mapStreamHandler: functionsdk.MapStreamFunc(func(ctx context.Context, keys []string, d functionsdk.Datum, messageCh chan<- functionsdk.Message) {
+					msg := d.Value()
+					messageCh <- functionsdk.NewMessage(msg).WithKeys([]string{keys[0] + "_test"})
+				}),
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
