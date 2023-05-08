@@ -170,7 +170,7 @@ func (fs *Service) MapStreamFn(d *functionpb.DatumRequest, stream functionpb.Use
 			}
 			err := stream.Send(element)
 			if err != nil {
-				close(messageCh)
+				// Channel may or may not be closed, as we are not sure leave it to GC.
 				return err
 			}
 		default:
