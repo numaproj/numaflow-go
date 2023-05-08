@@ -148,24 +148,36 @@ func (fs *Service) MapStreamFn(d *functionpb.DatumRequest, stream functionpb.Use
 	ctx := stream.Context()
 	messageCh := make(chan Message)
 
+	done := make(chan bool)
 	go func() {
 		fs.MapperStream.HandleDo(ctx, d.GetKeys(), &hd, messageCh)
-		// Close the channel when not closed by the user.
-		if !isClosed(messageCh) {
-			close(messageCh)
-		}
+		done <- true
 	}()
-
-	for message := range messageCh {
-		element := &functionpb.DatumResponse{
-			Keys:  message.keys,
-			Value: message.value,
-			Tags:  message.tags,
-		}
-		err := stream.Send(element)
-		if err != nil {
-			close(messageCh)
-			return err
+	finished := false
+	for {
+		select {
+		case <-done:
+			finished = true
+		case message, ok := <-messageCh:
+			if !ok {
+				// Channel already closed, not closing again.
+				return nil
+			}
+			element := &functionpb.DatumResponse{
+				Keys:  message.keys,
+				Value: message.value,
+				Tags:  message.tags,
+			}
+			err := stream.Send(element)
+			if err != nil {
+				close(messageCh)
+				return err
+			}
+		default:
+			if finished {
+				close(messageCh)
+				return nil
+			}
 		}
 	}
 
@@ -332,13 +344,4 @@ func getValueFromMetadata(md grpcmd.MD, k string) (string, error) {
 		return value, fmt.Errorf("expected non empty value for keys %s in metadata but got an empty value", k)
 	}
 	return value, nil
-}
-
-func isClosed(c chan Message) bool {
-	select {
-	case <-c:
-		return true
-	default:
-	}
-	return false
 }
