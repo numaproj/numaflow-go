@@ -101,6 +101,53 @@ func TestMapFn(t *testing.T) {
 	assert.EqualError(t, err, "failed to execute c.grpcClt.MapFn(): mock MapFn error")
 }
 
+func TestMapStreamFn(t *testing.T) {
+	var ctx = context.Background()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockClient := funcmock.NewMockUserDefinedFunctionClient(ctrl)
+	mockMapStreamClient := funcmock.NewMockUserDefinedFunction_MapStreamFnClient(ctrl)
+
+	requestDatum := &functionpb.DatumRequest{
+		Keys:      []string{"test_success_key"},
+		Value:     []byte(`forward_message`),
+		EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Unix(1661169600, 0))},
+		Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
+	}
+	expectedDatum := &functionpb.DatumResponse{
+		Keys:      []string{"test_success_key"},
+		Value:     []byte(`forward_message`),
+		EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Unix(1661169600, 0))},
+		Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
+	}
+
+	mockMapStreamClient.EXPECT().Recv().Return(expectedDatum, nil).Times(1)
+	mockMapStreamClient.EXPECT().Recv().Return(nil, io.EOF).Times(1)
+
+	mockClient.EXPECT().MapStreamFn(gomock.Any(), &rpcMsg{msg: requestDatum}).Return(mockMapStreamClient, nil)
+
+	testClient, err := New(mockClient)
+	assert.NoError(t, err)
+	reflect.DeepEqual(testClient, &client{
+		grpcClt: mockClient,
+	})
+
+	datumCh := make(chan functionpb.DatumResponse)
+	datumResponses := make([]*functionpb.DatumResponse, 0)
+
+	go func() {
+		err := testClient.MapStreamFn(ctx, requestDatum, datumCh)
+		assert.NoError(t, err)
+	}()
+
+	for msg := range datumCh {
+		datumResponses = append(datumResponses, &msg)
+	}
+	assert.True(t, reflect.DeepEqual(datumResponses, []*functionpb.DatumResponse{expectedDatum}))
+}
+
 func TestMapTFn(t *testing.T) {
 	var ctx = context.Background()
 
@@ -197,6 +244,6 @@ func TestReduceFn(t *testing.T) {
 	}
 	close(datumCh)
 	got, err := testClient.ReduceFn(ctx, datumCh)
-	reflect.DeepEqual(got, expectedDatumList)
+	assert.True(t, reflect.DeepEqual(got, expectedDatumList.Elements))
 	assert.NoError(t, err)
 }

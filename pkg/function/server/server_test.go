@@ -36,9 +36,10 @@ func waitUntilReady(ctx context.Context, c functionsdk.Client, t *testing.T) {
 }
 
 type fields struct {
-	mapHandler    functionsdk.MapHandler
-	mapTHandler   functionsdk.MapTHandler
-	reduceHandler functionsdk.ReduceHandler
+	mapHandler       functionsdk.MapHandler
+	mapTHandler      functionsdk.MapTHandler
+	reduceHandler    functionsdk.ReduceHandler
+	mapStreamHandler functionsdk.MapStreamFunc
 }
 
 func Test_server_map(t *testing.T) {
@@ -98,6 +99,85 @@ func Test_server_map(t *testing.T) {
 					assert.Equal(t, []byte(`server_test`), e.GetValue())
 					assert.Nil(t, e.GetEventTime())
 					assert.Nil(t, e.GetWatermark())
+				}
+			}
+		})
+	}
+}
+
+func Test_server_map_stream(t *testing.T) {
+	socketFile, err := os.CreateTemp("/tmp", "numaflow-test.sock")
+	assert.NoError(t, err)
+	defer func() {
+		err = os.RemoveAll(socketFile.Name())
+		assert.NoError(t, err)
+	}()
+
+	serverInfoFile, err := os.CreateTemp("/tmp", "numaflow-test-info")
+	assert.NoError(t, err)
+	defer func() {
+		err = os.RemoveAll(serverInfoFile.Name())
+		assert.NoError(t, err)
+	}()
+
+	tests := []struct {
+		name   string
+		fields fields
+	}{
+		{
+			name: "server_map",
+			fields: fields{
+				mapStreamHandler: functionsdk.MapStreamFunc(func(ctx context.Context, keys []string, d functionsdk.Datum, messageCh chan<- functionsdk.Message) {
+					msg := d.Value()
+					messageCh <- functionsdk.NewMessage(msg).WithKeys([]string{keys[0] + "_test"})
+					close(messageCh)
+				}),
+			},
+		},
+		{
+			name: "server_map_without_close_stream",
+			fields: fields{
+				mapStreamHandler: functionsdk.MapStreamFunc(func(ctx context.Context, keys []string, d functionsdk.Datum, messageCh chan<- functionsdk.Message) {
+					msg := d.Value()
+					messageCh <- functionsdk.NewMessage(msg).WithKeys([]string{keys[0] + "_test"})
+				}),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// note: using actual UDS connection
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+			go New().RegisterMapperStream(tt.fields.mapStreamHandler).Start(ctx, WithSockAddr(socketFile.Name()), WithServerInfoFilePath(serverInfoFile.Name()))
+
+			c, err := client.New(client.WithUdsSockAddr(socketFile.Name()), client.WithServerInfoFilePath(serverInfoFile.Name()))
+			waitUntilReady(ctx, c, t)
+			assert.NoError(t, err)
+			defer func() {
+				err = c.CloseConn(ctx)
+				assert.NoError(t, err)
+			}()
+
+			for i := 0; i < 10; i++ {
+				keys := []string{fmt.Sprintf("client_%d", i)}
+
+				datumCh := make(chan functionpb.DatumResponse)
+				go func() {
+					err := c.MapStreamFn(ctx, &functionpb.DatumRequest{
+						Keys:      keys,
+						Value:     []byte(`server_test`),
+						EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Time{})},
+						Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
+					}, datumCh)
+					assert.NoError(t, err)
+				}()
+
+				for msg := range datumCh {
+					assert.Equal(t, []string{keys[0] + "_test"}, msg.GetKeys())
+					assert.Equal(t, []byte(`server_test`), msg.GetValue())
+					assert.Nil(t, msg.GetEventTime())
+					assert.Nil(t, msg.GetWatermark())
 				}
 			}
 		})

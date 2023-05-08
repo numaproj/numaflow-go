@@ -45,6 +45,34 @@ func (c *client) MapFn(ctx context.Context, datum *functionpb.DatumRequest) ([]*
 	return mappedDatumList.GetElements(), nil
 }
 
+// MapStreamFn applies a function to each datum element and returns a stream.
+func (c *client) MapStreamFn(ctx context.Context, datum *functionpb.DatumRequest, datumCh chan<- functionpb.DatumResponse) error {
+	defer close(datumCh)
+	stream, err := c.grpcClt.MapStreamFn(ctx, datum)
+	if err != nil {
+		return fmt.Errorf("failed to execute c.grpcClt.MapStreamFn(): %w", err)
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			err = ctx.Err()
+		default:
+			var resp *functionpb.DatumResponse
+			resp, err = stream.Recv()
+			if err == io.EOF {
+				return nil
+			}
+			if err != nil {
+				return err
+			}
+			datumCh <- *resp
+		}
+	}
+
+	return nil
+}
+
 // MapTFn applies a function to each datum element.
 // In addition to map function, MapTFn also supports assigning a new event time to datum.
 // MapTFn can be used only at source vertex by source data transformer.

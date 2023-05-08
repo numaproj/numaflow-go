@@ -92,13 +92,15 @@ func (m *metadata) IntervalWindow() IntervalWindow {
 	return m.intervalWindow
 }
 
-// Service implements the proto gen server interface and contains the map operation handler and the reduce operation handler.
+// Service implements the proto gen server interface and contains the map operation
+// handler and the reduce operation handler.
 type Service struct {
 	functionpb.UnimplementedUserDefinedFunctionServer
 
-	Mapper  MapHandler
-	MapperT MapTHandler
-	Reducer ReduceHandler
+	Mapper       MapHandler
+	MapperStream MapStreamHandler
+	MapperT      MapTHandler
+	Reducer      ReduceHandler
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
@@ -130,6 +132,56 @@ func (fs *Service) MapFn(ctx context.Context, d *functionpb.DatumRequest) (*func
 		Elements: elements,
 	}
 	return datumList, nil
+}
+
+// MapStreamFn applies a function to each datum element and returns a stream.
+func (fs *Service) MapStreamFn(d *functionpb.DatumRequest, stream functionpb.UserDefinedFunction_MapStreamFnServer) error {
+	var hd = handlerDatum{
+		value:     d.GetValue(),
+		eventTime: d.GetEventTime().EventTime.AsTime(),
+		watermark: d.GetWatermark().Watermark.AsTime(),
+		metadata: handlerDatumMetadata{
+			id:           d.GetMetadata().GetId(),
+			numDelivered: d.GetMetadata().GetNumDelivered(),
+		},
+	}
+	ctx := stream.Context()
+	messageCh := make(chan Message)
+
+	done := make(chan bool)
+	go func() {
+		fs.MapperStream.HandleDo(ctx, d.GetKeys(), &hd, messageCh)
+		done <- true
+	}()
+	finished := false
+	for {
+		select {
+		case <-done:
+			finished = true
+		case message, ok := <-messageCh:
+			if !ok {
+				// Channel already closed, not closing again.
+				return nil
+			}
+			element := &functionpb.DatumResponse{
+				Keys:  message.keys,
+				Value: message.value,
+				Tags:  message.tags,
+			}
+			err := stream.Send(element)
+			if err != nil {
+				// Channel may or may not be closed, as we are not sure leave it to GC.
+				return err
+			}
+		default:
+			if finished {
+				close(messageCh)
+				return nil
+			}
+		}
+	}
+
+	return nil
 }
 
 // MapTFn applies a function to each datum element.
