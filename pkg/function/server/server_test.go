@@ -162,7 +162,7 @@ func Test_server_map_stream(t *testing.T) {
 			for i := 0; i < 10; i++ {
 				keys := []string{fmt.Sprintf("client_%d", i)}
 
-				datumCh := make(chan functionpb.DatumResponse)
+				datumCh := make(chan *functionpb.DatumResponse)
 				go func() {
 					err := c.MapStreamFn(ctx, &functionpb.DatumRequest{
 						Keys:      keys,

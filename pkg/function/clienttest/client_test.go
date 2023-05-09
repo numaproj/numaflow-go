@@ -134,7 +134,7 @@ func TestMapStreamFn(t *testing.T) {
 		grpcClt: mockClient,
 	})
 
-	datumCh := make(chan functionpb.DatumResponse)
+	datumCh := make(chan *functionpb.DatumResponse)
 	datumResponses := make([]*functionpb.DatumResponse, 0)
 
 	go func() {
@@ -143,7 +143,7 @@ func TestMapStreamFn(t *testing.T) {
 	}()
 
 	for msg := range datumCh {
-		datumResponses = append(datumResponses, &msg)
+		datumResponses = append(datumResponses, msg)
 	}
 	assert.True(t, reflect.DeepEqual(datumResponses, []*functionpb.DatumResponse{expectedDatum}))
 }
