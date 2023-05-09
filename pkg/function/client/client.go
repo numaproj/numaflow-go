@@ -114,7 +114,7 @@ func (c *client) MapFn(ctx context.Context, datum *functionpb.DatumRequest) ([]*
 }
 
 // MapStreamFn applies a function to each datum element and returns a stream.
-func (c *client) MapStreamFn(ctx context.Context, datum *functionpb.DatumRequest, datumCh chan<- functionpb.DatumResponse) error {
+func (c *client) MapStreamFn(ctx context.Context, datum *functionpb.DatumRequest, datumCh chan<- *functionpb.DatumResponse) error {
 	defer close(datumCh)
 	stream, err := c.grpcClt.MapStreamFn(ctx, datum)
 	if err != nil {
@@ -134,7 +134,7 @@ func (c *client) MapStreamFn(ctx context.Context, datum *functionpb.DatumRequest
 			if err != nil {
 				return err
 			}
-			datumCh <- *resp
+			datumCh <- resp
 		}
 	}
 
