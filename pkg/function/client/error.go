@@ -18,7 +18,7 @@ func (ek ErrKind) String() string {
 	case Retryable:
 		return "Retryable"
 	case NonRetryable:
-		return "Non-retryable"
+		return "NonRetryable"
 	case Unknown:
 		return "Unknown"
 	default:
@@ -56,5 +56,5 @@ func FromError(err error) (k *ErrKind, s string, ok bool) {
 		return se.ErrorKind(), se.ErrorMessage(), true
 	}
 	unknown := Unknown
-	return &unknown, "", false
+	return &unknown, err.Error(), false
 }
