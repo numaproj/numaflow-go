@@ -10,8 +10,10 @@ import (
 
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/resolver"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
@@ -106,11 +108,24 @@ func (c *client) IsReady(ctx context.Context, in *emptypb.Empty) (bool, error) {
 // MapFn applies a function to each datum element.
 func (c *client) MapFn(ctx context.Context, datum *functionpb.DatumRequest) ([]*functionpb.DatumResponse, error) {
 	mappedDatumList, err := c.grpcClt.MapFn(ctx, datum)
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute c.grpcClt.MapFn(): %w", err)
+	statusCode, ok := status.FromError(err)
+	if !ok {
+		// not a standard status code
 	}
-
-	return mappedDatumList.GetElements(), nil
+	switch statusCode.Code() {
+	case codes.OK:
+		return mappedDatumList.GetElements(), nil
+	case codes.DeadlineExceeded, codes.Unavailable, codes.Unknown:
+		return nil, fmt.Errorf("failed to execute c.grpcClt.MapFn(): %w", UDFError{
+			ErrKind:    Retryable,
+			ErrMessage: statusCode.Message(),
+		})
+	default:
+		return nil, fmt.Errorf("failed to execute c.grpcClt.MapFn(): %w", UDFError{
+			ErrKind:    NonRetryable,
+			ErrMessage: statusCode.Message(),
+		})
+	}
 }
 
 // MapStreamFn applies a function to each datum element and returns a stream.
