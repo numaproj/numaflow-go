@@ -111,6 +111,10 @@ func (c *client) MapFn(ctx context.Context, datum *functionpb.DatumRequest) ([]*
 	statusCode, ok := status.FromError(err)
 	if !ok {
 		// not a standard status code
+		return nil, fmt.Errorf("failed to execute c.grpcClt.MapFn(): %w", UDFError{
+			ErrKind:    NonRetryable,
+			ErrMessage: statusCode.Message(),
+		})
 	}
 	switch statusCode.Code() {
 	case codes.OK:
