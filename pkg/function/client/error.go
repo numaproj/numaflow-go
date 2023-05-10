@@ -4,6 +4,7 @@ import (
 	"fmt"
 )
 
+// ErrKind represents if the error is retryable
 type ErrKind int16
 
 const (
@@ -25,6 +26,7 @@ func (ek ErrKind) String() string {
 	}
 }
 
+// UDFError is returned to the main numaflow indicates the status of the error
 type UDFError struct {
 	ErrKind    ErrKind
 	ErrMessage string
@@ -42,6 +44,7 @@ func (e UDFError) ErrorMessage() string {
 	return e.ErrMessage
 }
 
+// FromError gets error information from the UDFError
 func FromError(err error) (k *ErrKind, s string, ok bool) {
 	if err == nil {
 		return nil, "", true
