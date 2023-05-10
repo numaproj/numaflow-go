@@ -109,26 +109,25 @@ func (c *client) IsReady(ctx context.Context, in *emptypb.Empty) (bool, error) {
 func (c *client) MapFn(ctx context.Context, datum *functionpb.DatumRequest) ([]*functionpb.DatumResponse, error) {
 	mappedDatumList, err := c.grpcClt.MapFn(ctx, datum)
 	statusCode, ok := status.FromError(err)
+	udfError := UDFError{
+		ErrKind:    NonRetryable,
+		ErrMessage: statusCode.Message(),
+	}
 	if !ok {
 		// not a standard status code
-		return nil, fmt.Errorf("failed to execute c.grpcClt.MapFn(): %w", UDFError{
-			ErrKind:    NonRetryable,
-			ErrMessage: statusCode.Message(),
-		})
+		log.Printf("failed to execute c.grpcClt.MapFn(): %s", udfError.Error())
+		return nil, fmt.Errorf("failed to execute c.grpcClt.MapFn(): %w", udfError)
 	}
 	switch statusCode.Code() {
 	case codes.OK:
 		return mappedDatumList.GetElements(), nil
 	case codes.DeadlineExceeded, codes.Unavailable, codes.Unknown:
-		return nil, fmt.Errorf("failed to execute c.grpcClt.MapFn(): %w", UDFError{
-			ErrKind:    Retryable,
-			ErrMessage: statusCode.Message(),
-		})
+		udfError.ErrKind = Retryable
+		log.Printf("failed to execute c.grpcClt.MapFn(): %s", udfError.Error())
+		return nil, fmt.Errorf("failed to execute c.grpcClt.MapFn(): %w", udfError)
 	default:
-		return nil, fmt.Errorf("failed to execute c.grpcClt.MapFn(): %w", UDFError{
-			ErrKind:    NonRetryable,
-			ErrMessage: statusCode.Message(),
-		})
+		log.Printf("failed to execute c.grpcClt.MapFn(): %s", udfError.Error())
+		return nil, fmt.Errorf("failed to execute c.grpcClt.MapFn(): %w", udfError)
 	}
 }
 
