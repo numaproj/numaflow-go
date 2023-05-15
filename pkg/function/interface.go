@@ -22,6 +22,8 @@ type DatumMetadata interface {
 	ID() string
 	// NumDelivered returns the number of times the datum has been delivered.
 	NumDelivered() uint64
+	// UUID returns the UUID of the datum.
+	UUID() string
 }
 
 // Metadata contains methods to get the metadata for the reduce operation.

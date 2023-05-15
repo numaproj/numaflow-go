@@ -17,6 +17,7 @@ type handlerDatum struct {
 	value     []byte
 	eventTime time.Time
 	watermark time.Time
+	metadata  DatumMetadata
 }
 
 func (h *handlerDatum) Keys() []string {
@@ -37,6 +38,16 @@ func (h *handlerDatum) EventTime() time.Time {
 
 func (h *handlerDatum) Watermark() time.Time {
 	return h.watermark
+}
+
+// handlerDatumMetadata implements the DatumMetadata interface and is used in the map and reduce handlers.
+type handlerDatumMetadata struct {
+	uuid string
+}
+
+// UUID returns the UUID of the datum
+func (h handlerDatumMetadata) UUID() string {
+	return h.uuid
 }
 
 // Service implements the proto gen server interface and contains the sink operation handler.
@@ -89,6 +100,7 @@ func (fs *Service) SinkFn(stream sinkpb.UserDefinedSink_SinkFnServer) error {
 			value:     d.GetValue(),
 			eventTime: d.GetEventTime().EventTime.AsTime(),
 			watermark: d.GetWatermark().Watermark.AsTime(),
+			metadata:  handlerDatumMetadata{uuid: d.GetMetadata().GetUuid()},
 		}
 		datumStreamCh <- hd
 	}

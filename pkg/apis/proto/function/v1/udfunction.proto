@@ -45,6 +45,7 @@ message Watermark {
 message Metadata {
   string id = 1;
   uint64 num_delivered = 2;
+  string uuid = 3;
 }
 
 /**

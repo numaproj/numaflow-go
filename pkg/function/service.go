@@ -45,6 +45,12 @@ func (h *handlerDatum) Metadata() DatumMetadata {
 type handlerDatumMetadata struct {
 	id           string
 	numDelivered uint64
+	uuid         string
+}
+
+// UUID returns the UUID of the datum
+func (h handlerDatumMetadata) UUID() string {
+	return h.uuid
 }
 
 // ID returns the ID of the datum.
@@ -117,6 +123,7 @@ func (fs *Service) MapFn(ctx context.Context, d *functionpb.DatumRequest) (*func
 		metadata: handlerDatumMetadata{
 			id:           d.GetMetadata().GetId(),
 			numDelivered: d.GetMetadata().GetNumDelivered(),
+			uuid:         d.GetMetadata().GetUuid(),
 		},
 	}
 	messages := fs.Mapper.HandleDo(ctx, d.GetKeys(), &hd)
@@ -143,6 +150,7 @@ func (fs *Service) MapStreamFn(d *functionpb.DatumRequest, stream functionpb.Use
 		metadata: handlerDatumMetadata{
 			id:           d.GetMetadata().GetId(),
 			numDelivered: d.GetMetadata().GetNumDelivered(),
+			uuid:         d.GetMetadata().GetUuid(),
 		},
 	}
 	ctx := stream.Context()
@@ -180,8 +188,6 @@ func (fs *Service) MapStreamFn(d *functionpb.DatumRequest, stream functionpb.Use
 			}
 		}
 	}
-
-	return nil
 }
 
 // MapTFn applies a function to each datum element.
@@ -195,6 +201,7 @@ func (fs *Service) MapTFn(ctx context.Context, d *functionpb.DatumRequest) (*fun
 		metadata: handlerDatumMetadata{
 			id:           d.GetMetadata().GetId(),
 			numDelivered: d.GetMetadata().GetNumDelivered(),
+			uuid:         d.GetMetadata().GetUuid(),
 		},
 	}
 	messageTs := fs.MapperT.HandleDo(ctx, d.GetKeys(), &hd)
@@ -274,6 +281,7 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 			metadata: handlerDatumMetadata{
 				id:           d.GetMetadata().GetId(),
 				numDelivered: d.GetMetadata().GetNumDelivered(),
+				uuid:         d.GetMetadata().GetUuid(),
 			},
 		}
 

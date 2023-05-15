@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
 
 	"github.com/stretchr/testify/assert"
@@ -26,12 +27,18 @@ func (d beforeYear2022Datum) Metadata() functionsdk.DatumMetadata {
 	return beforeYear2022DatumMetadata{
 		id:           "id",
 		numDelivered: 1,
+		uniqueID:     uuid.New().String(),
 	}
 }
 
 type beforeYear2022DatumMetadata struct {
 	id           string
 	numDelivered uint64
+	uniqueID     string
+}
+
+func (d beforeYear2022DatumMetadata) UUID() string {
+	return d.uniqueID
 }
 
 func (d beforeYear2022DatumMetadata) ID() string {
@@ -63,12 +70,14 @@ func (d withinYear2022Datum) Metadata() functionsdk.DatumMetadata {
 	return withinYear2022DatumMetadaa{
 		id:           "id",
 		numDelivered: 1,
+		uniqueID:     uuid.New().String(),
 	}
 }
 
 type withinYear2022DatumMetadaa struct {
 	id           string
 	numDelivered uint64
+	uniqueID     string
 }
 
 func (d withinYear2022DatumMetadaa) ID() string {
@@ -77,6 +86,10 @@ func (d withinYear2022DatumMetadaa) ID() string {
 
 func (d withinYear2022DatumMetadaa) NumDelivered() uint64 {
 	return d.numDelivered
+}
+
+func (d withinYear2022DatumMetadaa) UUID() string {
+	return d.uniqueID
 }
 
 type afterYear2022Datum struct{}
@@ -96,12 +109,14 @@ func (d afterYear2022Datum) Metadata() functionsdk.DatumMetadata {
 	return afterYear2022DatumMetadata{
 		id:           "id",
 		numDelivered: 1,
+		uniqueID:     uuid.New().String(),
 	}
 }
 
 type afterYear2022DatumMetadata struct {
 	id           string
 	numDelivered uint64
+	uniqueID     string
 }
 
 func (d afterYear2022DatumMetadata) ID() string {
@@ -110,6 +125,10 @@ func (d afterYear2022DatumMetadata) ID() string {
 
 func (d afterYear2022DatumMetadata) NumDelivered() uint64 {
 	return d.numDelivered
+}
+
+func (d afterYear2022DatumMetadata) UUID() string {
+	return d.uniqueID
 }
 
 func Test_FilterEventTime(t *testing.T) {

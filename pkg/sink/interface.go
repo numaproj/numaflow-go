@@ -36,3 +36,9 @@ type SinkFunc func(ctx context.Context, datumStreamCh <-chan Datum) Responses
 func (sf SinkFunc) HandleDo(ctx context.Context, datumStreamCh <-chan Datum) Responses {
 	return sf(ctx, datumStreamCh)
 }
+
+// DatumMetadata contains methods to get the metadata information for datum.
+type DatumMetadata interface {
+	// UUID returns the UUID of the datum.
+	UUID() string
+}

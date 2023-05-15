@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/golang/mock v1.6.0
+	github.com/google/uuid v1.3.0
 	github.com/stretchr/testify v1.7.1
 	golang.org/x/net v0.8.0
 	golang.org/x/sync v0.1.0

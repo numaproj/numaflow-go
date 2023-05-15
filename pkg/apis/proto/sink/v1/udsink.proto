@@ -35,6 +35,14 @@ message DatumRequest {
   EventTime event_time = 3;
   Watermark watermark = 4;
   string id = 5;
+  Metadata metadata = 6;
+}
+
+/**
+ * Metadata of a datum request element.
+ */
+message Metadata {
+  string uuid = 1;
 }
 
 /**
