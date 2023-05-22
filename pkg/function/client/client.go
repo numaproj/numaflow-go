@@ -64,7 +64,7 @@ func New(inputOptions ...Option) (*client, error) {
 	if serverInfo.Protocol == info.TCP {
 		// Populate connection variables for client connection
 		// based on multiprocessing enabled/disabled
-		if err := regMultProcResolver(serverInfo); err != nil {
+		if err := regMultiProcResolver(serverInfo); err != nil {
 			return nil, fmt.Errorf("failed to start Multiproc Client: %w", err)
 		}
 
@@ -225,8 +225,7 @@ outputLoop:
 
 // setConn function is used to populate the connection properties based
 // on multiprocessing TCP or UDS connection
-
-func regMultProcResolver(svrInfo *info.ServerInfo) error {
+func regMultiProcResolver(svrInfo *info.ServerInfo) error {
 	numCpu, err := strconv.Atoi(svrInfo.Metadata["CPU_LIMIT"])
 	if err != nil {
 		return err
