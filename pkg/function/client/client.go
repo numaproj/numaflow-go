@@ -108,7 +108,11 @@ func (c *client) IsReady(ctx context.Context, in *emptypb.Empty) (bool, error) {
 // MapFn applies a function to each datum element.
 func (c *client) MapFn(ctx context.Context, datum *functionpb.DatumRequest) ([]*functionpb.DatumResponse, error) {
 	mappedDatumList, err := c.grpcClt.MapFn(ctx, datum)
-	return normalizeErr("MapFn", err, mappedDatumList)
+	err = normalizeErr("c.grpcClt.MapFn", err)
+	if err != nil {
+		return nil, err
+	}
+	return mappedDatumList.GetElements(), nil
 }
 
 // MapStreamFn applies a function to each datum element and returns a stream.
@@ -142,31 +146,11 @@ func (c *client) MapStreamFn(ctx context.Context, datum *functionpb.DatumRequest
 // MapTFn can be used only at source vertex by source data transformer.
 func (c *client) MapTFn(ctx context.Context, datum *functionpb.DatumRequest) ([]*functionpb.DatumResponse, error) {
 	mappedDatumList, err := c.grpcClt.MapTFn(ctx, datum)
-	return normalizeErr("MapTFn", err, mappedDatumList)
-}
-
-func normalizeErr(name string, err error, datumList *functionpb.DatumResponseList) ([]*functionpb.DatumResponse, error) {
-	statusCode, ok := status.FromError(err)
-	udfError := UDFError{
-		ErrKind:    NonRetryable,
-		ErrMessage: statusCode.Message(),
+	err = normalizeErr("c.grpcClt.MapTFn", err)
+	if err != nil {
+		return nil, err
 	}
-	if !ok {
-		// not a standard status code
-		log.Printf("failed to execute c.grpcClt.%s: %s", name, udfError.Error())
-		return nil, fmt.Errorf("failed to execute c.grpcClt.%s: %w", name, udfError)
-	}
-	switch statusCode.Code() {
-	case codes.OK:
-		return datumList.GetElements(), nil
-	case codes.DeadlineExceeded, codes.Unavailable, codes.Unknown:
-		udfError.ErrKind = Retryable
-		log.Printf("failed to execute c.grpcClt.%s: %s", name, udfError.Error())
-		return nil, fmt.Errorf("failed to execute c.grpcClt.%s: %w", name, udfError)
-	default:
-		log.Printf("failed to execute c.grpcClt.%s: %s", name, udfError.Error())
-		return nil, fmt.Errorf("failed to execute c.grpcClt.%s: %w", name, udfError)
-	}
+	return mappedDatumList.GetElements(), nil
 }
 
 // ReduceFn applies a reduce function to a datum stream.
@@ -175,8 +159,9 @@ func (c *client) ReduceFn(ctx context.Context, datumStreamCh <-chan *functionpb.
 	datumList := make([]*functionpb.DatumResponse, 0)
 
 	stream, err := c.grpcClt.ReduceFn(ctx)
+	err = normalizeErr("c.grpcClt.ReduceFn", err)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute c.grpcClt.ReduceFn(): %w", err)
+		return nil, err
 	}
 	// stream the messages to server
 	g.Go(func() error {
@@ -184,7 +169,7 @@ func (c *client) ReduceFn(ctx context.Context, datumStreamCh <-chan *functionpb.
 		for datum := range datumStreamCh {
 			select {
 			case <-ctx.Done():
-				return ctx.Err()
+				return status.FromContextError(ctx.Err()).Err()
 			default:
 				if sendErr = stream.Send(datum); sendErr != nil {
 					// we don't need to invoke close on the stream
@@ -201,13 +186,14 @@ outputLoop:
 	for {
 		select {
 		case <-ctx.Done():
-			return nil, ctx.Err()
+			return nil, normalizeErr("ReduceFn OutputLoop", status.FromContextError(ctx.Err()).Err())
 		default:
 			var resp *functionpb.DatumResponseList
 			resp, err = stream.Recv()
 			if err == io.EOF {
 				break outputLoop
 			}
+			err = normalizeErr("ReduceFn stream.Recv()", err)
 			if err != nil {
 				return nil, err
 			}
@@ -216,11 +202,39 @@ outputLoop:
 	}
 
 	err = g.Wait()
+	err = normalizeErr("ReduceFn errorGroup", err)
 	if err != nil {
 		return nil, err
 	}
 
-	return datumList, err
+	return datumList, nil
+}
+
+func normalizeErr(name string, err error) error {
+	if err == nil {
+		return nil
+	}
+	statusCode, ok := status.FromError(err)
+	udfError := UDFError{
+		ErrKind:    NonRetryable,
+		ErrMessage: statusCode.Message(),
+	}
+	if !ok {
+		// not a standard status code
+		log.Printf("failed %s: %s", name, udfError.Error())
+		return fmt.Errorf("failed %s: %w", name, udfError)
+	}
+	switch statusCode.Code() {
+	case codes.OK:
+		return nil
+	case codes.DeadlineExceeded, codes.Unavailable, codes.Unknown:
+		udfError.ErrKind = Retryable
+		log.Printf("failed %s: %s", name, udfError.Error())
+		return fmt.Errorf("failed %s: %w", name, udfError)
+	default:
+		log.Printf("failed %s: %s", name, udfError.Error())
+		return fmt.Errorf("failed %s: %w", name, udfError)
+	}
 }
 
 // setConn function is used to populate the connection properties based
