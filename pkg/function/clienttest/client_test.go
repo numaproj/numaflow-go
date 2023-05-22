@@ -2,7 +2,9 @@ package clienttest
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"golang.org/x/sync/errgroup"
 	"io"
 	"reflect"
 	"testing"
@@ -146,6 +148,55 @@ func TestMapStreamFn(t *testing.T) {
 		datumResponses = append(datumResponses, msg)
 	}
 	assert.True(t, reflect.DeepEqual(datumResponses, []*functionpb.DatumResponse{expectedDatum}))
+}
+
+func TestMapStreamFnErr(t *testing.T) {
+	var ctx = context.Background()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockClient := funcmock.NewMockUserDefinedFunctionClient(ctrl)
+	mockMapStreamClient := funcmock.NewMockUserDefinedFunction_MapStreamFnClient(ctrl)
+
+	requestDatum := &functionpb.DatumRequest{
+		Keys:      []string{"test_error_key"},
+		Value:     []byte(`forward_message`),
+		EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Unix(1661169600, 0))},
+		Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
+	}
+	expectedDatum := &functionpb.DatumResponse{
+		Keys:      []string{"test_error_key"},
+		Value:     []byte(`forward_message`),
+		EventTime: &functionpb.EventTime{EventTime: timestamppb.New(time.Unix(1661169600, 0))},
+		Watermark: &functionpb.Watermark{Watermark: timestamppb.New(time.Time{})},
+	}
+
+	mockMapStreamClient.EXPECT().Recv().Return(expectedDatum, nil).Times(1)
+	mockMapStreamClient.EXPECT().Recv().Return(
+		nil, errors.New("mock error for map")).AnyTimes()
+
+	mockClient.EXPECT().MapStreamFn(gomock.Any(), &rpcMsg{msg: requestDatum}).Return(mockMapStreamClient, nil)
+
+	testClient, err := New(mockClient)
+	assert.NoError(t, err)
+	reflect.DeepEqual(testClient, &client{
+		grpcClt: mockClient,
+	})
+
+	datumCh := make(chan *functionpb.DatumResponse)
+	errs, ctx := errgroup.WithContext(ctx)
+	errs.Go(func() error {
+		return testClient.MapStreamFn(ctx, requestDatum, datumCh)
+	})
+
+	datumResponses := make([]*functionpb.DatumResponse, 0)
+	for msg := range datumCh {
+		datumResponses = append(datumResponses, msg)
+	}
+
+	err = errs.Wait()
+	assert.Error(t, err)
 }
 
 func TestMapTFn(t *testing.T) {
