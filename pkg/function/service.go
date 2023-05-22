@@ -171,6 +171,7 @@ func (fs *Service) MapStreamFn(d *functionpb.DatumRequest, stream functionpb.Use
 				Tags:  message.tags,
 			}
 			err := stream.Send(element)
+			// the error here is returned by stream.Send() which is already a gRPC error
 			if err != nil {
 				// Channel may or may not be closed, as we are not sure leave it to GC.
 				return err
