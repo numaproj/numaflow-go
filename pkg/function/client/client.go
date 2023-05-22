@@ -108,27 +108,7 @@ func (c *client) IsReady(ctx context.Context, in *emptypb.Empty) (bool, error) {
 // MapFn applies a function to each datum element.
 func (c *client) MapFn(ctx context.Context, datum *functionpb.DatumRequest) ([]*functionpb.DatumResponse, error) {
 	mappedDatumList, err := c.grpcClt.MapFn(ctx, datum)
-	statusCode, ok := status.FromError(err)
-	udfError := UDFError{
-		ErrKind:    NonRetryable,
-		ErrMessage: statusCode.Message(),
-	}
-	if !ok {
-		// not a standard status code
-		log.Printf("failed to execute c.grpcClt.MapFn(): %s", udfError.Error())
-		return nil, fmt.Errorf("failed to execute c.grpcClt.MapFn(): %w", udfError)
-	}
-	switch statusCode.Code() {
-	case codes.OK:
-		return mappedDatumList.GetElements(), nil
-	case codes.DeadlineExceeded, codes.Unavailable, codes.Unknown:
-		udfError.ErrKind = Retryable
-		log.Printf("failed to execute c.grpcClt.MapFn(): %s", udfError.Error())
-		return nil, fmt.Errorf("failed to execute c.grpcClt.MapFn(): %w", udfError)
-	default:
-		log.Printf("failed to execute c.grpcClt.MapFn(): %s", udfError.Error())
-		return nil, fmt.Errorf("failed to execute c.grpcClt.MapFn(): %w", udfError)
-	}
+	return normalizeErr("MapFn", err, mappedDatumList)
 }
 
 // MapStreamFn applies a function to each datum element and returns a stream.
@@ -155,8 +135,6 @@ func (c *client) MapStreamFn(ctx context.Context, datum *functionpb.DatumRequest
 			datumCh <- resp
 		}
 	}
-
-	return nil
 }
 
 // MapTFn applies a function to each datum element.
@@ -164,11 +142,31 @@ func (c *client) MapStreamFn(ctx context.Context, datum *functionpb.DatumRequest
 // MapTFn can be used only at source vertex by source data transformer.
 func (c *client) MapTFn(ctx context.Context, datum *functionpb.DatumRequest) ([]*functionpb.DatumResponse, error) {
 	mappedDatumList, err := c.grpcClt.MapTFn(ctx, datum)
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute c.grpcClt.MapTFn(): %w", err)
-	}
+	return normalizeErr("MapTFn", err, mappedDatumList)
+}
 
-	return mappedDatumList.GetElements(), nil
+func normalizeErr(name string, err error, datumList *functionpb.DatumResponseList) ([]*functionpb.DatumResponse, error) {
+	statusCode, ok := status.FromError(err)
+	udfError := UDFError{
+		ErrKind:    NonRetryable,
+		ErrMessage: statusCode.Message(),
+	}
+	if !ok {
+		// not a standard status code
+		log.Printf("failed to execute c.grpcClt.%s: %s", name, udfError.Error())
+		return nil, fmt.Errorf("failed to execute c.grpcClt.%s: %w", name, udfError)
+	}
+	switch statusCode.Code() {
+	case codes.OK:
+		return datumList.GetElements(), nil
+	case codes.DeadlineExceeded, codes.Unavailable, codes.Unknown:
+		udfError.ErrKind = Retryable
+		log.Printf("failed to execute c.grpcClt.%s: %s", name, udfError.Error())
+		return nil, fmt.Errorf("failed to execute c.grpcClt.%s: %w", name, udfError)
+	default:
+		log.Printf("failed to execute c.grpcClt.%s: %s", name, udfError.Error())
+		return nil, fmt.Errorf("failed to execute c.grpcClt.%s: %w", name, udfError)
+	}
 }
 
 // ReduceFn applies a reduce function to a datum stream.
