@@ -4,11 +4,15 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
+
+	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	"github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1/funcmock"
-	"golang.org/x/sync/errgroup"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // client contains the grpc client for testing.
@@ -38,10 +42,10 @@ func (c *client) IsReady(ctx context.Context, in *emptypb.Empty) (bool, error) {
 // MapFn applies a function to each datum element.
 func (c *client) MapFn(ctx context.Context, datum *functionpb.DatumRequest) ([]*functionpb.DatumResponse, error) {
 	mappedDatumList, err := c.grpcClt.MapFn(ctx, datum)
+	err = normalizeErr("c.grpcClt.MapFn", err)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute c.grpcClt.MapFn(): %w", err)
+		return nil, err
 	}
-
 	return mappedDatumList.GetElements(), nil
 }
 
@@ -69,8 +73,6 @@ func (c *client) MapStreamFn(ctx context.Context, datum *functionpb.DatumRequest
 			datumCh <- resp
 		}
 	}
-
-	return nil
 }
 
 // MapTFn applies a function to each datum element.
@@ -78,10 +80,10 @@ func (c *client) MapStreamFn(ctx context.Context, datum *functionpb.DatumRequest
 // MapTFn can be used only at source vertex by source data transformer.
 func (c *client) MapTFn(ctx context.Context, datum *functionpb.DatumRequest) ([]*functionpb.DatumResponse, error) {
 	mappedDatumList, err := c.grpcClt.MapTFn(ctx, datum)
+	err = normalizeErr("c.grpcClt.MapTFn", err)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute c.grpcClt.MapTFn(): %w", err)
+		return nil, err
 	}
-
 	return mappedDatumList.GetElements(), nil
 }
 
@@ -91,8 +93,9 @@ func (c *client) ReduceFn(ctx context.Context, datumStreamCh <-chan *functionpb.
 	datumList := make([]*functionpb.DatumResponse, 0)
 
 	stream, err := c.grpcClt.ReduceFn(ctx)
+	err = normalizeErr("c.grpcClt.ReduceFn", err)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute c.grpcClt.ReduceFn(): %w", err)
+		return nil, err
 	}
 	// stream the messages to server
 	g.Go(func() error {
@@ -100,7 +103,7 @@ func (c *client) ReduceFn(ctx context.Context, datumStreamCh <-chan *functionpb.
 		for datum := range datumStreamCh {
 			select {
 			case <-ctx.Done():
-				return ctx.Err()
+				return status.FromContextError(ctx.Err()).Err()
 			default:
 				if sendErr = stream.Send(datum); sendErr != nil {
 					// we don't need to invoke close on the stream
@@ -117,13 +120,14 @@ outputLoop:
 	for {
 		select {
 		case <-ctx.Done():
-			return nil, ctx.Err()
+			return nil, normalizeErr("ReduceFn OutputLoop", status.FromContextError(ctx.Err()).Err())
 		default:
 			var resp *functionpb.DatumResponseList
 			resp, err = stream.Recv()
 			if err == io.EOF {
 				break outputLoop
 			}
+			err = normalizeErr("ReduceFn stream.Recv()", err)
 			if err != nil {
 				return nil, err
 			}
@@ -132,9 +136,37 @@ outputLoop:
 	}
 
 	err = g.Wait()
+	err = normalizeErr("ReduceFn errorGroup", err)
 	if err != nil {
 		return nil, err
 	}
 
-	return datumList, err
+	return datumList, nil
+}
+
+func normalizeErr(name string, err error) error {
+	if err == nil {
+		return nil
+	}
+	statusCode, ok := status.FromError(err)
+	udfError := UDFError{
+		errKind:    NonRetryable,
+		errMessage: statusCode.Message(),
+	}
+	if !ok {
+		// not a standard status code
+		log.Printf("failed %s: %s", name, udfError.Error())
+		return fmt.Errorf("failed %s: %w", name, udfError)
+	}
+	switch statusCode.Code() {
+	case codes.OK:
+		return nil
+	case codes.DeadlineExceeded, codes.Unavailable, codes.Unknown:
+		udfError.errKind = Retryable
+		log.Printf("failed %s: %s", name, udfError.Error())
+		return fmt.Errorf("failed %s: %w", name, udfError)
+	default:
+		log.Printf("failed %s: %s", name, udfError.Error())
+		return fmt.Errorf("failed %s: %w", name, udfError)
+	}
 }
