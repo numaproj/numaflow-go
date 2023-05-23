@@ -216,8 +216,8 @@ func normalizeErr(name string, err error) error {
 	}
 	statusCode, ok := status.FromError(err)
 	udfError := UDFError{
-		ErrKind:    NonRetryable,
-		ErrMessage: statusCode.Message(),
+		errKind:    NonRetryable,
+		errMessage: statusCode.Message(),
 	}
 	if !ok {
 		// not a standard status code
@@ -228,7 +228,7 @@ func normalizeErr(name string, err error) error {
 	case codes.OK:
 		return nil
 	case codes.DeadlineExceeded, codes.Unavailable, codes.Unknown:
-		udfError.ErrKind = Retryable
+		udfError.errKind = Retryable
 		log.Printf("failed %s: %s", name, udfError.Error())
 		return fmt.Errorf("failed %s: %w", name, udfError)
 	default:

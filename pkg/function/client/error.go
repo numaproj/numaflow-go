@@ -28,20 +28,20 @@ func (ek ErrKind) String() string {
 
 // UDFError is returned to the main numaflow indicates the status of the error
 type UDFError struct {
-	ErrKind    ErrKind
-	ErrMessage string
+	errKind    ErrKind
+	errMessage string
 }
 
 func (e UDFError) Error() string {
-	return fmt.Sprintf("%s: %s", e.ErrKind, e.ErrMessage)
+	return fmt.Sprintf("%s: %s", e.errKind, e.errMessage)
 }
 
 func (e UDFError) ErrorKind() ErrKind {
-	return e.ErrKind
+	return e.errKind
 }
 
 func (e UDFError) ErrorMessage() string {
-	return e.ErrMessage
+	return e.errMessage
 }
 
 // FromError gets error information from the UDFError

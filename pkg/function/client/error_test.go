@@ -60,8 +60,8 @@ func TestFromError(t *testing.T) {
 			name: "good_retry",
 			args: args{
 				err: UDFError{
-					ErrKind:    0,
-					ErrMessage: "Retryable Error",
+					errKind:    0,
+					errMessage: "Retryable Error",
 				},
 			},
 			wantK:  &retryable,
@@ -72,8 +72,8 @@ func TestFromError(t *testing.T) {
 			name: "good_non_retry",
 			args: args{
 				err: UDFError{
-					ErrKind:    1,
-					ErrMessage: "NonRetryable Error",
+					errKind:    1,
+					errMessage: "NonRetryable Error",
 				},
 			},
 			wantK:  &nonRetryable,
@@ -84,8 +84,8 @@ func TestFromError(t *testing.T) {
 			name: "good_unknown_1",
 			args: args{
 				err: UDFError{
-					ErrKind:    2,
-					ErrMessage: "Unknown Error",
+					errKind:    2,
+					errMessage: "Unknown Error",
 				},
 			},
 			wantK:  &unknown,
@@ -140,8 +140,8 @@ func TestUDFError_Error(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			e := UDFError{
-				ErrKind:    tt.fields.ErrKind,
-				ErrMessage: tt.fields.ErrMessage,
+				errKind:    tt.fields.ErrKind,
+				errMessage: tt.fields.ErrMessage,
 			}
 			if got := e.Error(); got != tt.want {
 				t.Errorf("Error() = %v, want %v", got, tt.want)
@@ -173,8 +173,8 @@ func TestUDFError_ErrorKind(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			e := UDFError{
-				ErrKind:    tt.fields.ErrKind,
-				ErrMessage: tt.fields.ErrMessage,
+				errKind:    tt.fields.ErrKind,
+				errMessage: tt.fields.ErrMessage,
 			}
 			if got := e.ErrorKind(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ErrorKind() = %v, want %v", got, tt.want)
@@ -205,8 +205,8 @@ func TestUDFError_ErrorMessage(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			e := UDFError{
-				ErrKind:    tt.fields.ErrKind,
-				ErrMessage: tt.fields.ErrMessage,
+				errKind:    tt.fields.ErrKind,
+				errMessage: tt.fields.ErrMessage,
 			}
 			if got := e.ErrorMessage(); got != tt.want {
 				t.Errorf("ErrorMessage() = %v, want %v", got, tt.want)
