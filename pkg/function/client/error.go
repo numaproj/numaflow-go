@@ -36,8 +36,8 @@ func (e UDFError) Error() string {
 	return fmt.Sprintf("%s: %s", e.ErrKind, e.ErrMessage)
 }
 
-func (e UDFError) ErrorKind() *ErrKind {
-	return &e.ErrKind
+func (e UDFError) ErrorKind() ErrKind {
+	return e.ErrKind
 }
 
 func (e UDFError) ErrorMessage() string {
@@ -45,16 +45,15 @@ func (e UDFError) ErrorMessage() string {
 }
 
 // FromError gets error information from the UDFError
-func FromError(err error) (k *ErrKind, s string, ok bool) {
+func FromError(err error) (udfErr *UDFError, ok bool) {
 	if err == nil {
-		return nil, "", true
+		return nil, true
 	}
 	if se, ok := err.(interface {
-		ErrorKind() *ErrKind
+		ErrorKind() ErrKind
 		ErrorMessage() string
 	}); ok {
-		return se.ErrorKind(), se.ErrorMessage(), true
+		return &UDFError{se.ErrorKind(), se.ErrorMessage()}, true
 	}
-	unknown := Unknown
-	return &unknown, err.Error(), false
+	return &UDFError{Unknown, err.Error()}, false
 }
