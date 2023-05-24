@@ -215,12 +215,15 @@ func toUDFErr(name string, err error) error {
 		return nil
 	}
 	statusCode, ok := status.FromError(err)
+	// default udfError
 	udfError := UDFError{
 		errKind:    NonRetryable,
-		errMessage: statusCode.Message(),
+		errMessage: statusCode.Message(), // statusCode won't be nil because we've already return if err is nil
 	}
+	// check if it's a standard status code
 	if !ok {
-		// not a standard status code
+		// if not, the status code will be unknown which we consider as non retryable
+		// return default udfError
 		log.Printf("failed %s: %s", name, udfError.Error())
 		return udfError
 	}
