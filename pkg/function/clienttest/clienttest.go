@@ -13,6 +13,7 @@ import (
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	"github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1/funcmock"
+	"github.com/numaproj/numaflow-go/pkg/function/udferr"
 )
 
 // client contains the grpc client for testing.
@@ -42,7 +43,7 @@ func (c *client) IsReady(ctx context.Context, in *emptypb.Empty) (bool, error) {
 // MapFn applies a function to each datum element.
 func (c *client) MapFn(ctx context.Context, datum *functionpb.DatumRequest) ([]*functionpb.DatumResponse, error) {
 	mappedDatumList, err := c.grpcClt.MapFn(ctx, datum)
-	err = normalizeErr("c.grpcClt.MapFn", err)
+	err = toUDFErr("c.grpcClt.MapFn", err)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +81,7 @@ func (c *client) MapStreamFn(ctx context.Context, datum *functionpb.DatumRequest
 // MapTFn can be used only at source vertex by source data transformer.
 func (c *client) MapTFn(ctx context.Context, datum *functionpb.DatumRequest) ([]*functionpb.DatumResponse, error) {
 	mappedDatumList, err := c.grpcClt.MapTFn(ctx, datum)
-	err = normalizeErr("c.grpcClt.MapTFn", err)
+	err = toUDFErr("c.grpcClt.MapTFn", err)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +94,7 @@ func (c *client) ReduceFn(ctx context.Context, datumStreamCh <-chan *functionpb.
 	datumList := make([]*functionpb.DatumResponse, 0)
 
 	stream, err := c.grpcClt.ReduceFn(ctx)
-	err = normalizeErr("c.grpcClt.ReduceFn", err)
+	err = toUDFErr("c.grpcClt.ReduceFn", err)
 	if err != nil {
 		return nil, err
 	}
@@ -120,14 +121,14 @@ outputLoop:
 	for {
 		select {
 		case <-ctx.Done():
-			return nil, normalizeErr("ReduceFn OutputLoop", status.FromContextError(ctx.Err()).Err())
+			return nil, toUDFErr("ReduceFn OutputLoop", status.FromContextError(ctx.Err()).Err())
 		default:
 			var resp *functionpb.DatumResponseList
 			resp, err = stream.Recv()
 			if err == io.EOF {
 				break outputLoop
 			}
-			err = normalizeErr("ReduceFn stream.Recv()", err)
+			err = toUDFErr("ReduceFn stream.Recv()", err)
 			if err != nil {
 				return nil, err
 			}
@@ -136,7 +137,7 @@ outputLoop:
 	}
 
 	err = g.Wait()
-	err = normalizeErr("ReduceFn errorGroup", err)
+	err = toUDFErr("ReduceFn errorGroup", err)
 	if err != nil {
 		return nil, err
 	}
@@ -144,29 +145,30 @@ outputLoop:
 	return datumList, nil
 }
 
-func normalizeErr(name string, err error) error {
+func toUDFErr(name string, err error) error {
 	if err == nil {
 		return nil
 	}
 	statusCode, ok := status.FromError(err)
-	udfError := UDFError{
-		errKind:    NonRetryable,
-		errMessage: statusCode.Message(),
-	}
+	// default udfError
+	udfError := udferr.New(udferr.NonRetryable, statusCode.Message())
+	// check if it's a standard status code
 	if !ok {
-		// not a standard status code
+		// if not, the status code will be unknown which we consider as non retryable
+		// return default udfError
 		log.Printf("failed %s: %s", name, udfError.Error())
-		return fmt.Errorf("failed %s: %w", name, udfError)
+		return udfError
 	}
 	switch statusCode.Code() {
 	case codes.OK:
 		return nil
 	case codes.DeadlineExceeded, codes.Unavailable, codes.Unknown:
-		udfError.errKind = Retryable
+		// update to retryable err
+		udfError = udferr.New(udferr.Retryable, statusCode.Message())
 		log.Printf("failed %s: %s", name, udfError.Error())
-		return fmt.Errorf("failed %s: %w", name, udfError)
+		return udfError
 	default:
 		log.Printf("failed %s: %s", name, udfError.Error())
-		return fmt.Errorf("failed %s: %w", name, udfError)
+		return udfError
 	}
 }

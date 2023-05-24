@@ -1,4 +1,4 @@
-package client
+package udferr
 
 import (
 	"fmt"
@@ -30,6 +30,13 @@ func (ek ErrKind) String() string {
 type UDFError struct {
 	errKind    ErrKind
 	errMessage string
+}
+
+func New(kind ErrKind, msg string) *UDFError {
+	return &UDFError{
+		errKind:    kind,
+		errMessage: msg,
+	}
 }
 
 func (e UDFError) Error() string {

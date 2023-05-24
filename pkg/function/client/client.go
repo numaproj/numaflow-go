@@ -18,6 +18,7 @@ import (
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	"github.com/numaproj/numaflow-go/pkg/function"
+	"github.com/numaproj/numaflow-go/pkg/function/udferr"
 	"github.com/numaproj/numaflow-go/pkg/info"
 )
 
@@ -216,10 +217,7 @@ func toUDFErr(name string, err error) error {
 	}
 	statusCode, ok := status.FromError(err)
 	// default udfError
-	udfError := UDFError{
-		errKind:    NonRetryable,
-		errMessage: statusCode.Message(), // statusCode won't be nil because we've already return if err is nil
-	}
+	udfError := udferr.New(udferr.NonRetryable, statusCode.Message())
 	// check if it's a standard status code
 	if !ok {
 		// if not, the status code will be unknown which we consider as non retryable
@@ -231,7 +229,8 @@ func toUDFErr(name string, err error) error {
 	case codes.OK:
 		return nil
 	case codes.DeadlineExceeded, codes.Unavailable, codes.Unknown:
-		udfError.errKind = Retryable
+		// update to retryable err
+		udfError = udferr.New(udferr.Retryable, statusCode.Message())
 		log.Printf("failed %s: %s", name, udfError.Error())
 		return udfError
 	default:
