@@ -304,7 +304,7 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 					if sendErr != nil {
 						// the error here is returned by stream.Send()
 						// it's already a gRPC error
-						return recvErr
+						return sendErr
 					}
 					return nil
 				})
