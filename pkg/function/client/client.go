@@ -222,7 +222,7 @@ func normalizeErr(name string, err error) error {
 	if !ok {
 		// not a standard status code
 		log.Printf("failed %s: %s", name, udfError.Error())
-		return fmt.Errorf("failed %s: %w", name, udfError)
+		return udfError
 	}
 	switch statusCode.Code() {
 	case codes.OK:
@@ -230,10 +230,10 @@ func normalizeErr(name string, err error) error {
 	case codes.DeadlineExceeded, codes.Unavailable, codes.Unknown:
 		udfError.errKind = Retryable
 		log.Printf("failed %s: %s", name, udfError.Error())
-		return fmt.Errorf("failed %s: %w", name, udfError)
+		return udfError
 	default:
 		log.Printf("failed %s: %s", name, udfError.Error())
-		return fmt.Errorf("failed %s: %w", name, udfError)
+		return udfError
 	}
 }
 
