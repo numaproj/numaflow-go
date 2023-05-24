@@ -108,7 +108,7 @@ func (c *client) IsReady(ctx context.Context, in *emptypb.Empty) (bool, error) {
 // MapFn applies a function to each datum element.
 func (c *client) MapFn(ctx context.Context, datum *functionpb.DatumRequest) ([]*functionpb.DatumResponse, error) {
 	mappedDatumList, err := c.grpcClt.MapFn(ctx, datum)
-	err = normalizeErr("c.grpcClt.MapFn", err)
+	err = toUDFErr("c.grpcClt.MapFn", err)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +146,7 @@ func (c *client) MapStreamFn(ctx context.Context, datum *functionpb.DatumRequest
 // MapTFn can be used only at source vertex by source data transformer.
 func (c *client) MapTFn(ctx context.Context, datum *functionpb.DatumRequest) ([]*functionpb.DatumResponse, error) {
 	mappedDatumList, err := c.grpcClt.MapTFn(ctx, datum)
-	err = normalizeErr("c.grpcClt.MapTFn", err)
+	err = toUDFErr("c.grpcClt.MapTFn", err)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +159,7 @@ func (c *client) ReduceFn(ctx context.Context, datumStreamCh <-chan *functionpb.
 	datumList := make([]*functionpb.DatumResponse, 0)
 
 	stream, err := c.grpcClt.ReduceFn(ctx)
-	err = normalizeErr("c.grpcClt.ReduceFn", err)
+	err = toUDFErr("c.grpcClt.ReduceFn", err)
 	if err != nil {
 		return nil, err
 	}
@@ -186,14 +186,14 @@ outputLoop:
 	for {
 		select {
 		case <-ctx.Done():
-			return nil, normalizeErr("ReduceFn OutputLoop", status.FromContextError(ctx.Err()).Err())
+			return nil, toUDFErr("ReduceFn OutputLoop", status.FromContextError(ctx.Err()).Err())
 		default:
 			var resp *functionpb.DatumResponseList
 			resp, err = stream.Recv()
 			if err == io.EOF {
 				break outputLoop
 			}
-			err = normalizeErr("ReduceFn stream.Recv()", err)
+			err = toUDFErr("ReduceFn stream.Recv()", err)
 			if err != nil {
 				return nil, err
 			}
@@ -202,7 +202,7 @@ outputLoop:
 	}
 
 	err = g.Wait()
-	err = normalizeErr("ReduceFn errorGroup", err)
+	err = toUDFErr("ReduceFn errorGroup", err)
 	if err != nil {
 		return nil, err
 	}
@@ -210,7 +210,7 @@ outputLoop:
 	return datumList, nil
 }
 
-func normalizeErr(name string, err error) error {
+func toUDFErr(name string, err error) error {
 	if err == nil {
 		return nil
 	}
