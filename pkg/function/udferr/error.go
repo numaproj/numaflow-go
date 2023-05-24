@@ -39,15 +39,15 @@ func New(kind ErrKind, msg string) *UDFError {
 	}
 }
 
-func (e UDFError) Error() string {
+func (e *UDFError) Error() string {
 	return fmt.Sprintf("%s: %s", e.errKind, e.errMessage)
 }
 
-func (e UDFError) ErrorKind() ErrKind {
+func (e *UDFError) ErrorKind() ErrKind {
 	return e.errKind
 }
 
-func (e UDFError) ErrorMessage() string {
+func (e *UDFError) ErrorMessage() string {
 	return e.errMessage
 }
 
