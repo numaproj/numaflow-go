@@ -10,7 +10,9 @@ import (
 	"time"
 
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc/codes"
 	grpcmd "google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -169,6 +171,7 @@ func (fs *Service) MapStreamFn(d *functionpb.DatumRequest, stream functionpb.Use
 				Tags:  message.tags,
 			}
 			err := stream.Send(element)
+			// the error here is returned by stream.Send() which is already a gRPC error
 			if err != nil {
 				// Channel may or may not be closed, as we are not sure leave it to GC.
 				return err
@@ -228,19 +231,22 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 
 	grpcMD, ok := grpcmd.FromIncomingContext(ctx)
 	if !ok {
-		return fmt.Errorf("keys and window information are not passed in grpc metadata")
+		statusErr := status.Errorf(codes.InvalidArgument, "keys and window information are not passed in grpc metadata")
+		return statusErr
 	}
 
 	// get window start and end time from grpc metadata
 	var st, et string
 	st, err = getValueFromMetadata(grpcMD, WinStartTime)
 	if err != nil {
-		return err
+		statusErr := status.Errorf(codes.InvalidArgument, err.Error())
+		return statusErr
 	}
 
 	et, err = getValueFromMetadata(grpcMD, WinEndTime)
 	if err != nil {
-		return err
+		statusErr := status.Errorf(codes.InvalidArgument, err.Error())
+		return statusErr
 	}
 
 	startTime, _ = strconv.ParseInt(st, 10, 64)
@@ -255,16 +261,17 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 	// read messages from the stream and write the messages to corresponding channels
 	// if the channel is not created, create the channel and invoke the HandleDo
 	for {
-		d, err := stream.Recv()
+		d, recvErr := stream.Recv()
 		// if EOF, close all the channels
-		if err == io.EOF {
+		if recvErr == io.EOF {
 			closeChannels(chanMap)
 			break
 		}
-		if err != nil {
+		if recvErr != nil {
 			closeChannels(chanMap)
-			// TODO: research on gRPC errors and revisit the error handler
-			return err
+			// the error here is returned by stream.Recv()
+			// it's already a gRPC error
+			return recvErr
 		}
 		unifiedKey := strings.Join(d.GetKeys(), Delimiter)
 		var hd = &handlerDatum{
@@ -293,10 +300,11 @@ func (fs *Service) ReduceFn(stream functionpb.UserDefinedFunction_ReduceFnServer
 					// stream.Send() is not thread safe.
 					mu.Lock()
 					defer mu.Unlock()
-					err := stream.Send(datumList)
-					if err != nil {
-						// TODO: research on gRPC errors and revisit the error handler
-						return err
+					sendErr := stream.Send(datumList)
+					if sendErr != nil {
+						// the error here is returned by stream.Send()
+						// it's already a gRPC error
+						return sendErr
 					}
 					return nil
 				})

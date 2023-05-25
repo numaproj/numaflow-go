@@ -10,12 +10,15 @@ import (
 
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/resolver"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	"github.com/numaproj/numaflow-go/pkg/function"
+	"github.com/numaproj/numaflow-go/pkg/function/udferr"
 	"github.com/numaproj/numaflow-go/pkg/info"
 )
 
@@ -62,7 +65,7 @@ func New(inputOptions ...Option) (*client, error) {
 	if serverInfo.Protocol == info.TCP {
 		// Populate connection variables for client connection
 		// based on multiprocessing enabled/disabled
-		if err := regMultProcResolver(serverInfo); err != nil {
+		if err := regMultiProcResolver(serverInfo); err != nil {
 			return nil, fmt.Errorf("failed to start Multiproc Client: %w", err)
 		}
 
@@ -106,10 +109,10 @@ func (c *client) IsReady(ctx context.Context, in *emptypb.Empty) (bool, error) {
 // MapFn applies a function to each datum element.
 func (c *client) MapFn(ctx context.Context, datum *functionpb.DatumRequest) ([]*functionpb.DatumResponse, error) {
 	mappedDatumList, err := c.grpcClt.MapFn(ctx, datum)
+	err = toUDFErr("c.grpcClt.MapFn", err)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute c.grpcClt.MapFn(): %w", err)
+		return nil, err
 	}
-
 	return mappedDatumList.GetElements(), nil
 }
 
@@ -137,8 +140,6 @@ func (c *client) MapStreamFn(ctx context.Context, datum *functionpb.DatumRequest
 			datumCh <- resp
 		}
 	}
-
-	return nil
 }
 
 // MapTFn applies a function to each datum element.
@@ -146,10 +147,10 @@ func (c *client) MapStreamFn(ctx context.Context, datum *functionpb.DatumRequest
 // MapTFn can be used only at source vertex by source data transformer.
 func (c *client) MapTFn(ctx context.Context, datum *functionpb.DatumRequest) ([]*functionpb.DatumResponse, error) {
 	mappedDatumList, err := c.grpcClt.MapTFn(ctx, datum)
+	err = toUDFErr("c.grpcClt.MapTFn", err)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute c.grpcClt.MapTFn(): %w", err)
+		return nil, err
 	}
-
 	return mappedDatumList.GetElements(), nil
 }
 
@@ -159,8 +160,9 @@ func (c *client) ReduceFn(ctx context.Context, datumStreamCh <-chan *functionpb.
 	datumList := make([]*functionpb.DatumResponse, 0)
 
 	stream, err := c.grpcClt.ReduceFn(ctx)
+	err = toUDFErr("c.grpcClt.ReduceFn", err)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute c.grpcClt.ReduceFn(): %w", err)
+		return nil, err
 	}
 	// stream the messages to server
 	g.Go(func() error {
@@ -168,7 +170,7 @@ func (c *client) ReduceFn(ctx context.Context, datumStreamCh <-chan *functionpb.
 		for datum := range datumStreamCh {
 			select {
 			case <-ctx.Done():
-				return ctx.Err()
+				return status.FromContextError(ctx.Err()).Err()
 			default:
 				if sendErr = stream.Send(datum); sendErr != nil {
 					// we don't need to invoke close on the stream
@@ -185,13 +187,14 @@ outputLoop:
 	for {
 		select {
 		case <-ctx.Done():
-			return nil, ctx.Err()
+			return nil, toUDFErr("ReduceFn OutputLoop", status.FromContextError(ctx.Err()).Err())
 		default:
 			var resp *functionpb.DatumResponseList
 			resp, err = stream.Recv()
 			if err == io.EOF {
 				break outputLoop
 			}
+			err = toUDFErr("ReduceFn stream.Recv()", err)
 			if err != nil {
 				return nil, err
 			}
@@ -200,17 +203,45 @@ outputLoop:
 	}
 
 	err = g.Wait()
+	err = toUDFErr("ReduceFn errorGroup", err)
 	if err != nil {
 		return nil, err
 	}
 
-	return datumList, err
+	return datumList, nil
+}
+
+func toUDFErr(name string, err error) error {
+	if err == nil {
+		return nil
+	}
+	statusCode, ok := status.FromError(err)
+	// default udfError
+	udfError := udferr.New(udferr.NonRetryable, statusCode.Message())
+	// check if it's a standard status code
+	if !ok {
+		// if not, the status code will be unknown which we consider as non retryable
+		// return default udfError
+		log.Printf("failed %s: %s", name, udfError.Error())
+		return udfError
+	}
+	switch statusCode.Code() {
+	case codes.OK:
+		return nil
+	case codes.DeadlineExceeded, codes.Unavailable, codes.Unknown:
+		// update to retryable err
+		udfError = udferr.New(udferr.Retryable, statusCode.Message())
+		log.Printf("failed %s: %s", name, udfError.Error())
+		return udfError
+	default:
+		log.Printf("failed %s: %s", name, udfError.Error())
+		return udfError
+	}
 }
 
 // setConn function is used to populate the connection properties based
 // on multiprocessing TCP or UDS connection
-
-func regMultProcResolver(svrInfo *info.ServerInfo) error {
+func regMultiProcResolver(svrInfo *info.ServerInfo) error {
 	numCpu, err := strconv.Atoi(svrInfo.Metadata["CPU_LIMIT"])
 	if err != nil {
 		return err
