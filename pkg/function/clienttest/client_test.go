@@ -4,19 +4,21 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"golang.org/x/sync/errgroup"
 	"io"
 	"reflect"
 	"testing"
 	"time"
 
+	"golang.org/x/sync/errgroup"
+
 	"github.com/golang/mock/gomock"
-	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
-	"github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1/funcmock"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
+	"github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1/funcmock"
 )
 
 type rpcMsg struct {
@@ -100,7 +102,7 @@ func TestMapFn(t *testing.T) {
 
 	got, err = testClient.MapFn(ctx, testRequestDatum)
 	assert.Nil(t, got)
-	assert.EqualError(t, err, "failed to execute c.grpcClt.MapFn(): mock MapFn error")
+	assert.EqualError(t, err, "NonRetryable: mock MapFn error")
 }
 
 func TestMapStreamFn(t *testing.T) {
@@ -239,7 +241,7 @@ func TestMapTFn(t *testing.T) {
 
 	got, err = testClient.MapTFn(ctx, testDatumRequest)
 	assert.Nil(t, got)
-	assert.EqualError(t, err, "failed to execute c.grpcClt.MapTFn(): mock MapTFn error")
+	assert.EqualError(t, err, "NonRetryable: mock MapTFn error")
 }
 
 func TestReduceFn(t *testing.T) {
