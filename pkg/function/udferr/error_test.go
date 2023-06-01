@@ -55,7 +55,7 @@ func TestFromError(t *testing.T) {
 		{
 			name: "good_retry",
 			args: args{
-				err: UDFError{
+				err: &UDFError{
 					errKind:    0,
 					errMessage: "Retryable Error",
 				},
@@ -66,7 +66,7 @@ func TestFromError(t *testing.T) {
 		{
 			name: "good_non_retry",
 			args: args{
-				err: UDFError{
+				err: &UDFError{
 					errKind:    1,
 					errMessage: "NonRetryable Error",
 				},
@@ -77,7 +77,7 @@ func TestFromError(t *testing.T) {
 		{
 			name: "good_unknown_1",
 			args: args{
-				err: UDFError{
+				err: &UDFError{
 					errKind:    2,
 					errMessage: "Unknown Error",
 				},
@@ -140,7 +140,6 @@ func TestUDFError_Error(t *testing.T) {
 }
 
 func TestUDFError_ErrorKind(t *testing.T) {
-	retryable := Retryable
 	type fields struct {
 		ErrKind    ErrKind
 		ErrMessage string
@@ -148,7 +147,7 @@ func TestUDFError_ErrorKind(t *testing.T) {
 	tests := []struct {
 		name   string
 		fields fields
-		want   *ErrKind
+		want   ErrKind
 	}{
 		{
 			name: "retryable",
@@ -156,7 +155,7 @@ func TestUDFError_ErrorKind(t *testing.T) {
 				ErrKind:    0,
 				ErrMessage: "deadline exceeds",
 			},
-			want: &retryable,
+			want: Retryable,
 		},
 	}
 	for _, tt := range tests {
