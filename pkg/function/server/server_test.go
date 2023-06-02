@@ -17,10 +17,10 @@ import (
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
-	"github.com/numaproj/numaflow-go/pkg/function/client"
+	"github.com/numaproj/numaflow/pkg/func-client/client"
 )
 
-func waitUntilReady(ctx context.Context, c functionsdk.Client, t *testing.T) {
+func waitUntilReady(ctx context.Context, c client.Client, t *testing.T) {
 	var in = &emptypb.Empty{}
 	isReady, _ := c.IsReady(ctx, in)
 	for !isReady {
