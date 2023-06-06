@@ -72,11 +72,6 @@ func TestServer_RegisterMapperT(t *testing.T) {
 
 func TestServer_RegisterReducer(t *testing.T) {
 	reduceHandler := functionsdk.ReduceFunc(func(ctx context.Context, keys []string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) functionsdk.Messages {
-		// sum up values for the same keys
-
-		// in this test case, md is nil
-		// intervalWindow := md.IntervalWindow()
-		// _ = intervalWindow
 		var resultKey = keys
 		var resultVal []byte
 		var sum = 0
@@ -87,5 +82,4 @@ func TestServer_RegisterReducer(t *testing.T) {
 	assert.Nil(t, serv.svc.Reducer)
 	serv.RegisterReducer(reduceHandler)
 	assert.NotNil(t, serv.svc.Reducer)
-
 }

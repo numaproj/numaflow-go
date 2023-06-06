@@ -46,7 +46,6 @@ func TestSink_Start(t *testing.T) {
 		cancel()
 	}()
 	err = New().RegisterSinker(sinkHandler).Start(ctx, WithSockAddr(socketFile.Name()), WithServerInfoFilePath(serverInfoFile.Name()))
-	//err := New().RegisterMapper(mapHandler).Start(ctx, WithSockAddr(socketFile.Name()), WithServerInfoFilePath(serverInfoFile.Name()))
 	assert.NoError(t, err)
 }
 
