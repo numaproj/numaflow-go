@@ -183,8 +183,6 @@ func (fs *Service) MapStreamFn(d *functionpb.DatumRequest, stream functionpb.Use
 			}
 		}
 	}
-
-	return nil
 }
 
 // MapTFn applies a function to each datum element.

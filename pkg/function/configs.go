@@ -9,7 +9,7 @@ const (
 	// https://github.com/grpc/grpc-go/blob/master/server.go#L58-L59
 	//   - defaultServerMaxReceiveMessageSize
 	//   - defaultServerMaxSendMessageSize
-	DefaultMaxMessageSize = 1024 * 1024 * 4
+	DefaultMaxMessageSize = 1024 * 1024 * 64
 	WinStartTime          = "x-numaflow-win-start-time"
 	WinEndTime            = "x-numaflow-win-end-time"
 	Delimiter             = ":"
