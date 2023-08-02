@@ -8,11 +8,16 @@ import "google/protobuf/empty.proto";
 package source.v1;
 
 service UserDefinedSource {
-  // Read returns a stream of datum responses from user defined source.
+  // Read returns a stream of datum responses
+  // the size of the returned DatumResponseList is smaller or equal to the num_records within ReadRequest.
   rpc Read(ReadRequest) returns (stream DatumResponseList);
 
-  rpc Ack(AckRequest) returns (AckResponse);
+  // Ack acknowledges a list of datum offsets from user defined source.
+  // it indicates that the datum stream with the offsets has been processed by the source vertex.
+  // the AckRequest contains a list of offsets with a field is_acked to indicate whether the offset is acknowledged.
+  rpc Ack(AckRequest) returns (AckResponseList);
 
+  // Pending returns the number of pending records at the user defined source.
   rpc Pending(google.protobuf.Empty) returns (PendingResponse);
 
   // IsReady is the heartbeat endpoint for gRPC.
@@ -30,9 +35,18 @@ message EventTime {
  * DatumResponse represents a datum response element.
  */
 message DatumResponse {
+  // payload is the payload of the datum.
   bytes payload = 1;
+  // offset is the offset information of the datum.
   Offset offset = 2;
+  // keys is an optional list of keys associated with the datum.
+  // key is the attribute in (key,value) as in the map-reduce paradigm.
+  // we add this optional field to support the use case where the user defined source can provide keys for the datum.
+  // e.g. Kafka and Redis Stream message usually include information about the keys.
   repeated string keys = 3;
+  // event_time is the time associated with each datum.
+  // we add this optional field to support the use case where the user defined source can provide event time for the datum.
+  // e.g. Kafka and Redis Stream message usually include information about the event time.
   EventTime event_time = 4;
 }
 
@@ -43,11 +57,18 @@ message DatumResponseList {
   repeated DatumResponse elements = 1;
 }
 
+/*
+ * AckRequest is the request for acknowledging datum stream from user defined source.
+ * it takes a list of offsets to be acknowledged.
+ */
 message AckRequest {
   repeated Offset offsets = 1;
 }
 
-message AckResponse {
+/*
+ * AckResponseList represents a list of ack response elements.
+ */
+message AckResponseList {
   repeated Offset offsets = 1;
 }
 
@@ -70,7 +91,12 @@ message ReadRequest {
  * Offset is the offset of the datum.
  */
 message Offset {
+  // offset is the offset of the datum.
+  // we define Offset as a byte array because different input data sources can have different representations for Offset.
+  // the only way to generalize it is to define it as a byte array,
+  // hence we let the UDSource to de-serialize the offset using its own interpretation logics.
   bytes offset = 1;
+  // is_acked indicates whether the offset is successfully acknowledged from the user defined source.
   bool is_acked = 2;
 }
 

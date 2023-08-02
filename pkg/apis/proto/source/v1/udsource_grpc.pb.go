@@ -23,9 +23,14 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type UserDefinedSourceClient interface {
-	// Read returns a stream of datum responses from user defined source.
+	// Read returns a stream of datum responses
+	// the size of the returned DatumResponseList is smaller or equal to the num_records within ReadRequest.
 	Read(ctx context.Context, in *ReadRequest, opts ...grpc.CallOption) (UserDefinedSource_ReadClient, error)
-	Ack(ctx context.Context, in *AckRequest, opts ...grpc.CallOption) (*AckResponse, error)
+	// Ack acknowledges a list of datum offsets from user defined source.
+	// it indicates that the datum stream with the offsets has been processed by the source vertex.
+	// the AckRequest contains a list of offsets with a field is_acked to indicate whether the offset is acknowledged.
+	Ack(ctx context.Context, in *AckRequest, opts ...grpc.CallOption) (*AckResponseList, error)
+	// Pending returns the number of pending records at the user defined source.
 	Pending(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PendingResponse, error)
 	// IsReady is the heartbeat endpoint for gRPC.
 	IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReadyResponse, error)
@@ -71,8 +76,8 @@ func (x *userDefinedSourceReadClient) Recv() (*DatumResponseList, error) {
 	return m, nil
 }
 
-func (c *userDefinedSourceClient) Ack(ctx context.Context, in *AckRequest, opts ...grpc.CallOption) (*AckResponse, error) {
-	out := new(AckResponse)
+func (c *userDefinedSourceClient) Ack(ctx context.Context, in *AckRequest, opts ...grpc.CallOption) (*AckResponseList, error) {
+	out := new(AckResponseList)
 	err := c.cc.Invoke(ctx, "/source.v1.UserDefinedSource/Ack", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -102,9 +107,14 @@ func (c *userDefinedSourceClient) IsReady(ctx context.Context, in *emptypb.Empty
 // All implementations must embed UnimplementedUserDefinedSourceServer
 // for forward compatibility
 type UserDefinedSourceServer interface {
-	// Read returns a stream of datum responses from user defined source.
+	// Read returns a stream of datum responses
+	// the size of the returned DatumResponseList is smaller or equal to the num_records within ReadRequest.
 	Read(*ReadRequest, UserDefinedSource_ReadServer) error
-	Ack(context.Context, *AckRequest) (*AckResponse, error)
+	// Ack acknowledges a list of datum offsets from user defined source.
+	// it indicates that the datum stream with the offsets has been processed by the source vertex.
+	// the AckRequest contains a list of offsets with a field is_acked to indicate whether the offset is acknowledged.
+	Ack(context.Context, *AckRequest) (*AckResponseList, error)
+	// Pending returns the number of pending records at the user defined source.
 	Pending(context.Context, *emptypb.Empty) (*PendingResponse, error)
 	// IsReady is the heartbeat endpoint for gRPC.
 	IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error)
@@ -118,7 +128,7 @@ type UnimplementedUserDefinedSourceServer struct {
 func (UnimplementedUserDefinedSourceServer) Read(*ReadRequest, UserDefinedSource_ReadServer) error {
 	return status.Errorf(codes.Unimplemented, "method Read not implemented")
 }
-func (UnimplementedUserDefinedSourceServer) Ack(context.Context, *AckRequest) (*AckResponse, error) {
+func (UnimplementedUserDefinedSourceServer) Ack(context.Context, *AckRequest) (*AckResponseList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ack not implemented")
 }
 func (UnimplementedUserDefinedSourceServer) Pending(context.Context, *emptypb.Empty) (*PendingResponse, error) {
