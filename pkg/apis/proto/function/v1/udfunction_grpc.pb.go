@@ -30,6 +30,7 @@ type UserDefinedFunctionClient interface {
 	// MapTFn applies a function to each datum request element.
 	// In addition to map function, MapTFn also supports assigning a new event time to datum.
 	// MapTFn can be used only at source vertex by source data transformer.
+	// TODO - move it to the source proto file.
 	MapTFn(ctx context.Context, in *DatumRequest, opts ...grpc.CallOption) (*DatumResponseList, error)
 	// ReduceFn applies a reduce function to a datum request stream.
 	ReduceFn(ctx context.Context, opts ...grpc.CallOption) (UserDefinedFunction_ReduceFnClient, error)
@@ -146,6 +147,7 @@ type UserDefinedFunctionServer interface {
 	// MapTFn applies a function to each datum request element.
 	// In addition to map function, MapTFn also supports assigning a new event time to datum.
 	// MapTFn can be used only at source vertex by source data transformer.
+	// TODO - move it to the source proto file.
 	MapTFn(context.Context, *DatumRequest) (*DatumResponseList, error)
 	// ReduceFn applies a reduce function to a datum request stream.
 	ReduceFn(UserDefinedFunction_ReduceFnServer) error

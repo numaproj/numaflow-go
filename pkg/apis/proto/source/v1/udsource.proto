@@ -1,0 +1,83 @@
+syntax = "proto3";
+
+option go_package = "github.com/numaproj/numaflow-go/pkg/apis/proto/source/v1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+package source.v1;
+
+service UserDefinedSource {
+  // Read returns a stream of datum responses from user defined source.
+  rpc Read(ReadRequest) returns (stream DatumResponseList);
+
+  rpc Ack(AckRequest) returns (AckResponse);
+
+  rpc Pending(google.protobuf.Empty) returns (PendingResponse);
+
+  // IsReady is the heartbeat endpoint for gRPC.
+  rpc IsReady(google.protobuf.Empty) returns (ReadyResponse);
+}
+
+message EventTime {
+  // event_time is the time associated with each datum.
+  google.protobuf.Timestamp event_time = 1;
+  // future we can add an enum to represent whether the event time is
+  // based on INGEST_TIME or EVENT_TIME or PROCESSING_TIME
+}
+
+/**
+ * DatumResponse represents a datum response element.
+ */
+message DatumResponse {
+  bytes payload = 1;
+  Offset offset = 2;
+  repeated string keys = 3;
+  EventTime event_time = 4;
+}
+
+/**
+ * DatumResponseList represents a list of datum response elements.
+ */
+message DatumResponseList {
+  repeated DatumResponse elements = 1;
+}
+
+message AckRequest {
+  repeated Offset offsets = 1;
+}
+
+message AckResponse {
+  repeated Offset offsets = 1;
+}
+
+/**
+ * ReadyResponse is the health check result.
+ */
+message ReadyResponse {
+  bool ready = 1;
+}
+
+/**
+ * ReadRequest is the request for reading datum stream from user defined source.
+ */
+message ReadRequest {
+  // num_records is the number of records to read.
+  uint64 num_records = 1;
+}
+
+/**
+ * Offset is the offset of the datum.
+ */
+message Offset {
+  bytes offset = 1;
+  bool is_acked = 2;
+}
+
+/**
+ * PendingResponse is the response for the pending request.
+ */
+message PendingResponse {
+  // count is the number of pending records at the user defined source.
+  uint64 count = 1;
+}
