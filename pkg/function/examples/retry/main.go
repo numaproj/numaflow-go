@@ -8,7 +8,7 @@ import (
 	"github.com/numaproj/numaflow-go/pkg/function/server"
 )
 
-var retryCounts map[string]int
+var counts map[string]int
 
 const SUCCESS_ITERATION = 3
 
@@ -21,16 +21,16 @@ func handle(_ context.Context, keys []string, d functionsdk.Datum) functionsdk.M
 	msgBytes := d.Value()
 	msg := string(msgBytes)
 
-	_, found := retryCounts[msg]
+	_, found := counts[msg]
 	if !found {
-		retryCounts[msg] = 1
+		counts[msg] = 1
 	} else {
-		retryCounts[msg]++
+		counts[msg]++
 	}
-	fmt.Printf("retryCount for %q=%d\n", msg, retryCounts[msg])
-	if retryCounts[msg] >= SUCCESS_ITERATION {
+	fmt.Printf("count for %q=%d\n", msg, counts[msg])
+	if counts[msg] >= SUCCESS_ITERATION {
 		// imitate successful outgoing message here
-		delete(retryCounts, msg)
+		delete(counts, msg)
 		return functionsdk.MessagesBuilder().Append(functionsdk.NewMessage(msgBytes))
 	} else {
 		return functionsdk.MessagesBuilder().Append(functionsdk.NewMessage(msgBytes).WithTags([]string{"retry"}))
@@ -40,7 +40,7 @@ func handle(_ context.Context, keys []string, d functionsdk.Datum) functionsdk.M
 
 func main() {
 
-	retryCounts = make(map[string]int)
+	counts = make(map[string]int)
 
 	server.New().RegisterMapper(functionsdk.MapFunc(handle)).Start(context.Background())
 }
