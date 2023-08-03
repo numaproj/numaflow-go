@@ -24,11 +24,10 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type UserDefinedSourceClient interface {
 	// Read returns a stream of datum responses
-	// the size of the returned DatumResponseList is smaller or equal to the num_records within ReadRequest.
+	// the size of the returned DatumResponseList is smaller or equal to the num_records specified in ReadRequest.
 	Read(ctx context.Context, in *ReadRequest, opts ...grpc.CallOption) (UserDefinedSource_ReadClient, error)
-	// Ack acknowledges a list of datum offsets from user defined source.
-	// it indicates that the datum stream with the offsets has been processed by the source vertex.
-	// the AckRequest contains a list of offsets with a field is_acked to indicate whether the offset is acknowledged.
+	// Ack acknowledges a list of datum offsets.
+	// it indicates that the datum stream has been processed by the source vertex.
 	Ack(ctx context.Context, in *AckRequest, opts ...grpc.CallOption) (*AckResponseList, error)
 	// Pending returns the number of pending records at the user defined source.
 	Pending(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PendingResponse, error)
@@ -108,11 +107,10 @@ func (c *userDefinedSourceClient) IsReady(ctx context.Context, in *emptypb.Empty
 // for forward compatibility
 type UserDefinedSourceServer interface {
 	// Read returns a stream of datum responses
-	// the size of the returned DatumResponseList is smaller or equal to the num_records within ReadRequest.
+	// the size of the returned DatumResponseList is smaller or equal to the num_records specified in ReadRequest.
 	Read(*ReadRequest, UserDefinedSource_ReadServer) error
-	// Ack acknowledges a list of datum offsets from user defined source.
-	// it indicates that the datum stream with the offsets has been processed by the source vertex.
-	// the AckRequest contains a list of offsets with a field is_acked to indicate whether the offset is acknowledged.
+	// Ack acknowledges a list of datum offsets.
+	// it indicates that the datum stream has been processed by the source vertex.
 	Ack(context.Context, *AckRequest) (*AckResponseList, error)
 	// Pending returns the number of pending records at the user defined source.
 	Pending(context.Context, *emptypb.Empty) (*PendingResponse, error)

@@ -82,7 +82,7 @@ type DatumResponse struct {
 	// offset is the offset information of the datum.
 	Offset *Offset `protobuf:"bytes,2,opt,name=offset,proto3" json:"offset,omitempty"`
 	// keys is an optional list of keys associated with the datum.
-	// key is the attribute in (key,value) as in the map-reduce paradigm.
+	// key is the "key" attribute in (key,value) as in the map-reduce paradigm.
 	// we add this optional field to support the use case where the user defined source can provide keys for the datum.
 	// e.g. Kafka and Redis Stream message usually include information about the keys.
 	Keys []string `protobuf:"bytes,3,rep,name=keys,proto3" json:"keys,omitempty"`
@@ -201,7 +201,7 @@ func (x *DatumResponseList) GetElements() []*DatumResponse {
 	return nil
 }
 
-// AckRequest is the request for acknowledging datum stream from user defined source.
+// AckRequest is the request for acknowledging datum.
 // it takes a list of offsets to be acknowledged.
 type AckRequest struct {
 	state         protoimpl.MessageState
@@ -407,9 +407,9 @@ type Offset struct {
 	// offset is the offset of the datum.
 	// we define Offset as a byte array because different input data sources can have different representations for Offset.
 	// the only way to generalize it is to define it as a byte array,
-	// hence we let the UDSource to de-serialize the offset using its own interpretation logics.
+	// such that we can let the UDSource to de-serialize the offset using its own interpretation logics.
 	Offset []byte `protobuf:"bytes,1,opt,name=offset,proto3" json:"offset,omitempty"`
-	// is_acked indicates whether the offset is successfully acknowledged from the user defined source.
+	// is_acked indicates whether the offset is successfully acknowledged by the user defined source.
 	IsAcked bool `protobuf:"varint,2,opt,name=is_acked,json=isAcked,proto3" json:"is_acked,omitempty"`
 }
 
