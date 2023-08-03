@@ -23,12 +23,12 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type UserDefinedSourceClient interface {
-	// Read returns a stream of datum responses
-	// the size of the returned DatumResponseList is smaller or equal to the num_records specified in ReadRequest.
+	// Read returns a stream of datum responses.
+	// The size of the returned ReadResponse is less than or equal to the num_records specified in ReadRequest.
 	Read(ctx context.Context, in *ReadRequest, opts ...grpc.CallOption) (UserDefinedSource_ReadClient, error)
 	// Ack acknowledges a list of datum offsets.
-	// it indicates that the datum stream has been processed by the source vertex.
-	Ack(ctx context.Context, in *AckRequest, opts ...grpc.CallOption) (*AckResponseList, error)
+	// It indicates that the datum stream has been processed by the source vertex.
+	Ack(ctx context.Context, in *AckRequest, opts ...grpc.CallOption) (*AckResponse, error)
 	// Pending returns the number of pending records at the user defined source.
 	Pending(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PendingResponse, error)
 	// IsReady is the heartbeat endpoint for gRPC.
@@ -59,7 +59,7 @@ func (c *userDefinedSourceClient) Read(ctx context.Context, in *ReadRequest, opt
 }
 
 type UserDefinedSource_ReadClient interface {
-	Recv() (*DatumResponseList, error)
+	Recv() (*ReadResponse, error)
 	grpc.ClientStream
 }
 
@@ -67,16 +67,16 @@ type userDefinedSourceReadClient struct {
 	grpc.ClientStream
 }
 
-func (x *userDefinedSourceReadClient) Recv() (*DatumResponseList, error) {
-	m := new(DatumResponseList)
+func (x *userDefinedSourceReadClient) Recv() (*ReadResponse, error) {
+	m := new(ReadResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
 	return m, nil
 }
 
-func (c *userDefinedSourceClient) Ack(ctx context.Context, in *AckRequest, opts ...grpc.CallOption) (*AckResponseList, error) {
-	out := new(AckResponseList)
+func (c *userDefinedSourceClient) Ack(ctx context.Context, in *AckRequest, opts ...grpc.CallOption) (*AckResponse, error) {
+	out := new(AckResponse)
 	err := c.cc.Invoke(ctx, "/source.v1.UserDefinedSource/Ack", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -106,12 +106,12 @@ func (c *userDefinedSourceClient) IsReady(ctx context.Context, in *emptypb.Empty
 // All implementations must embed UnimplementedUserDefinedSourceServer
 // for forward compatibility
 type UserDefinedSourceServer interface {
-	// Read returns a stream of datum responses
-	// the size of the returned DatumResponseList is smaller or equal to the num_records specified in ReadRequest.
+	// Read returns a stream of datum responses.
+	// The size of the returned ReadResponse is less than or equal to the num_records specified in ReadRequest.
 	Read(*ReadRequest, UserDefinedSource_ReadServer) error
 	// Ack acknowledges a list of datum offsets.
-	// it indicates that the datum stream has been processed by the source vertex.
-	Ack(context.Context, *AckRequest) (*AckResponseList, error)
+	// It indicates that the datum stream has been processed by the source vertex.
+	Ack(context.Context, *AckRequest) (*AckResponse, error)
 	// Pending returns the number of pending records at the user defined source.
 	Pending(context.Context, *emptypb.Empty) (*PendingResponse, error)
 	// IsReady is the heartbeat endpoint for gRPC.
@@ -126,7 +126,7 @@ type UnimplementedUserDefinedSourceServer struct {
 func (UnimplementedUserDefinedSourceServer) Read(*ReadRequest, UserDefinedSource_ReadServer) error {
 	return status.Errorf(codes.Unimplemented, "method Read not implemented")
 }
-func (UnimplementedUserDefinedSourceServer) Ack(context.Context, *AckRequest) (*AckResponseList, error) {
+func (UnimplementedUserDefinedSourceServer) Ack(context.Context, *AckRequest) (*AckResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ack not implemented")
 }
 func (UnimplementedUserDefinedSourceServer) Pending(context.Context, *emptypb.Empty) (*PendingResponse, error) {
@@ -157,7 +157,7 @@ func _UserDefinedSource_Read_Handler(srv interface{}, stream grpc.ServerStream) 
 }
 
 type UserDefinedSource_ReadServer interface {
-	Send(*DatumResponseList) error
+	Send(*ReadResponse) error
 	grpc.ServerStream
 }
 
@@ -165,7 +165,7 @@ type userDefinedSourceReadServer struct {
 	grpc.ServerStream
 }
 
-func (x *userDefinedSourceReadServer) Send(m *DatumResponseList) error {
+func (x *userDefinedSourceReadServer) Send(m *ReadResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 

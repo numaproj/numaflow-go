@@ -8,13 +8,13 @@ import "google/protobuf/empty.proto";
 package source.v1;
 
 service UserDefinedSource {
-  // Read returns a stream of datum responses
-  // the size of the returned DatumResponseList is smaller or equal to the num_records specified in ReadRequest.
-  rpc Read(ReadRequest) returns (stream DatumResponseList);
+  // Read returns a stream of datum responses.
+  // The size of the returned ReadResponse is less than or equal to the num_records specified in ReadRequest.
+  rpc Read(ReadRequest) returns (stream ReadResponse);
 
   // Ack acknowledges a list of datum offsets.
-  // it indicates that the datum stream has been processed by the source vertex.
-  rpc Ack(AckRequest) returns (AckResponseList);
+  // It indicates that the datum stream has been processed by the source vertex.
+  rpc Ack(AckRequest) returns (AckResponse);
 
   // Pending returns the number of pending records at the user defined source.
   rpc Pending(google.protobuf.Empty) returns (PendingResponse);
@@ -23,52 +23,90 @@ service UserDefinedSource {
   rpc IsReady(google.protobuf.Empty) returns (ReadyResponse);
 }
 
+/**
+ * EventTime represents the event time of the datum.
+ */
 message EventTime {
-  // event_time is the time associated with each datum.
   google.protobuf.Timestamp event_time = 1;
-  // future we can add an enum to represent whether the event time is
-  // based on INGEST_TIME or EVENT_TIME or PROCESSING_TIME
+}
+
+/**
+ * ReadRequest is the request for reading datum stream from user defined source.
+ */
+message ReadRequest {
+  message Request {
+    // num_records is the number of records to read.
+    uint64 num_records = 1;
+  }
+  Request request = 1;
+}
+
+/**
+ * ReadResponse represents a list of datum response elements.
+ */
+message ReadResponse {
+  message Result {
+    // elements is a list of datum response elements.
+    repeated DatumResponse elements = 1;
+  }
+  Result result = 1;
 }
 
 /**
  * DatumResponse represents a datum response element.
  */
 message DatumResponse {
-  // payload is the payload of the datum.
-  bytes payload = 1;
-  // offset is the offset information of the datum.
-  Offset offset = 2;
-  // keys is an optional list of keys associated with the datum.
-  // key is the "key" attribute in (key,value) as in the map-reduce paradigm.
-  // we add this optional field to support the use case where the user defined source can provide keys for the datum.
-  // e.g. Kafka and Redis Stream message usually include information about the keys.
-  repeated string keys = 3;
-  // event_time is the time associated with each datum.
-  // we add this optional field to support the use case where the user defined source can provide event time for the datum.
-  // e.g. Kafka and Redis Stream message usually include information about the event time.
-  EventTime event_time = 4;
+  message Result {
+    // payload is the payload of the datum.
+    bytes payload = 1;
+    // offset is the offset information of the datum.
+    Offset offset = 2;
+    // keys is an optional list of keys associated with the datum.
+    // Key is the "key" attribute in (key,value) as in the map-reduce paradigm.
+    // We add this optional field to support the use case where the user defined source can provide keys for the datum.
+    // e.g. Kafka and Redis Stream message usually include information about the keys.
+    repeated string keys = 3;
+    // event_time is the time associated with each datum.
+    // We add this optional field to support the use case where the user defined source can provide event time for the datum.
+    // e.g. Kafka and Redis Stream message usually include information about the event time.
+    EventTime event_time = 4;
+  }
+  Result result = 1;
 }
 
 /**
- * DatumResponseList represents a list of datum response elements.
- */
-message DatumResponseList {
-  repeated DatumResponse elements = 1;
-}
-
-/*
  * AckRequest is the request for acknowledging datum.
- * it takes a list of offsets to be acknowledged.
+ * It takes a list of offsets to be acknowledged.
  */
 message AckRequest {
-  repeated Offset offsets = 1;
+  message Request {
+    repeated Offset offsets = 1;
+  }
+  Request request = 1;
 }
 
-/*
- * AckResponseList represents a list of ack response elements.
+/**
+ * AckResponse is the response for acknowledging datum.
  */
-message AckResponseList {
-  repeated Offset offsets = 1;
+message AckResponse {
+  message Result {
+    // status is the status of the AckResponse.
+    AckStatus status = 1;
+    // non_acked_offsets is the list of offsets that are not acknowledged.
+    repeated Offset non_acked_offsets = 2;
+  }
+  Result result = 1;
+  /**
+   * AckStatus is the status of the AckResponse.
+   */
+  enum AckStatus {
+    // ALL_ACKED means all the offsets are acknowledged.
+    ALL_ACKED = 0;
+    // PARTIALLY_ACKED means some of the offsets are acknowledged.
+    PARTIALLY_ACKED = 1;
+    // NONE_ACKED means none of the offsets are acknowledged.
+    NONE_ACKED = 2;
+  }
 }
 
 /**
@@ -79,11 +117,14 @@ message ReadyResponse {
 }
 
 /**
- * ReadRequest is the request for reading datum stream from user defined source.
+ * PendingResponse is the response for the pending request.
  */
-message ReadRequest {
-  // num_records is the number of records to read.
-  uint64 num_records = 1;
+message PendingResponse {
+  message Result {
+    // count is the number of pending records at the user defined source.
+    uint64 count = 1;
+  }
+  Result result = 1;
 }
 
 /**
@@ -91,18 +132,8 @@ message ReadRequest {
  */
 message Offset {
   // offset is the offset of the datum.
-  // we define Offset as a byte array because different input data sources can have different representations for Offset.
-  // the only way to generalize it is to define it as a byte array,
-  // such that we can let the UDSource to de-serialize the offset using its own interpretation logics.
+  // We define Offset as a byte array because different input data sources can have different representations for Offset.
+  // The only way to generalize it is to define it as a byte array,
+  // Such that we can let the UDSource to de-serialize the offset using its own interpretation logics.
   bytes offset = 1;
-  // is_acked indicates whether the offset is successfully acknowledged by the user defined source.
-  bool is_acked = 2;
-}
-
-/**
- * PendingResponse is the response for the pending request.
- */
-message PendingResponse {
-  // count is the number of pending records at the user defined source.
-  uint64 count = 1;
 }

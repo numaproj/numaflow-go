@@ -22,12 +22,67 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// *
+// AckStatus is the status of the AckResponse.
+type AckResponse_AckStatus int32
+
+const (
+	// ALL_ACKED means all the offsets are acknowledged.
+	AckResponse_ALL_ACKED AckResponse_AckStatus = 0
+	// PARTIALLY_ACKED means some of the offsets are acknowledged.
+	AckResponse_PARTIALLY_ACKED AckResponse_AckStatus = 1
+	// NONE_ACKED means none of the offsets are acknowledged.
+	AckResponse_NONE_ACKED AckResponse_AckStatus = 2
+)
+
+// Enum value maps for AckResponse_AckStatus.
+var (
+	AckResponse_AckStatus_name = map[int32]string{
+		0: "ALL_ACKED",
+		1: "PARTIALLY_ACKED",
+		2: "NONE_ACKED",
+	}
+	AckResponse_AckStatus_value = map[string]int32{
+		"ALL_ACKED":       0,
+		"PARTIALLY_ACKED": 1,
+		"NONE_ACKED":      2,
+	}
+)
+
+func (x AckResponse_AckStatus) Enum() *AckResponse_AckStatus {
+	p := new(AckResponse_AckStatus)
+	*p = x
+	return p
+}
+
+func (x AckResponse_AckStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (AckResponse_AckStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_pkg_apis_proto_source_v1_udsource_proto_enumTypes[0].Descriptor()
+}
+
+func (AckResponse_AckStatus) Type() protoreflect.EnumType {
+	return &file_pkg_apis_proto_source_v1_udsource_proto_enumTypes[0]
+}
+
+func (x AckResponse_AckStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use AckResponse_AckStatus.Descriptor instead.
+func (AckResponse_AckStatus) EnumDescriptor() ([]byte, []int) {
+	return file_pkg_apis_proto_source_v1_udsource_proto_rawDescGZIP(), []int{5, 0}
+}
+
+// *
+// EventTime represents the event time of the datum.
 type EventTime struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// event_time is the time associated with each datum.
 	EventTime *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=event_time,json=eventTime,proto3" json:"event_time,omitempty"`
 }
 
@@ -71,31 +126,117 @@ func (x *EventTime) GetEventTime() *timestamppb.Timestamp {
 }
 
 // *
+// ReadRequest is the request for reading datum stream from user defined source.
+type ReadRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Request *ReadRequest_Request `protobuf:"bytes,1,opt,name=request,proto3" json:"request,omitempty"`
+}
+
+func (x *ReadRequest) Reset() {
+	*x = ReadRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ReadRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReadRequest) ProtoMessage() {}
+
+func (x *ReadRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReadRequest.ProtoReflect.Descriptor instead.
+func (*ReadRequest) Descriptor() ([]byte, []int) {
+	return file_pkg_apis_proto_source_v1_udsource_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *ReadRequest) GetRequest() *ReadRequest_Request {
+	if x != nil {
+		return x.Request
+	}
+	return nil
+}
+
+// *
+// ReadResponse represents a list of datum response elements.
+type ReadResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Result *ReadResponse_Result `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
+}
+
+func (x *ReadResponse) Reset() {
+	*x = ReadResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ReadResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReadResponse) ProtoMessage() {}
+
+func (x *ReadResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReadResponse.ProtoReflect.Descriptor instead.
+func (*ReadResponse) Descriptor() ([]byte, []int) {
+	return file_pkg_apis_proto_source_v1_udsource_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *ReadResponse) GetResult() *ReadResponse_Result {
+	if x != nil {
+		return x.Result
+	}
+	return nil
+}
+
+// *
 // DatumResponse represents a datum response element.
 type DatumResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// payload is the payload of the datum.
-	Payload []byte `protobuf:"bytes,1,opt,name=payload,proto3" json:"payload,omitempty"`
-	// offset is the offset information of the datum.
-	Offset *Offset `protobuf:"bytes,2,opt,name=offset,proto3" json:"offset,omitempty"`
-	// keys is an optional list of keys associated with the datum.
-	// key is the "key" attribute in (key,value) as in the map-reduce paradigm.
-	// we add this optional field to support the use case where the user defined source can provide keys for the datum.
-	// e.g. Kafka and Redis Stream message usually include information about the keys.
-	Keys []string `protobuf:"bytes,3,rep,name=keys,proto3" json:"keys,omitempty"`
-	// event_time is the time associated with each datum.
-	// we add this optional field to support the use case where the user defined source can provide event time for the datum.
-	// e.g. Kafka and Redis Stream message usually include information about the event time.
-	EventTime *EventTime `protobuf:"bytes,4,opt,name=event_time,json=eventTime,proto3" json:"event_time,omitempty"`
+	Result *DatumResponse_Result `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
 }
 
 func (x *DatumResponse) Reset() {
 	*x = DatumResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[1]
+		mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -108,7 +249,7 @@ func (x *DatumResponse) String() string {
 func (*DatumResponse) ProtoMessage() {}
 
 func (x *DatumResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[1]
+	mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -121,100 +262,31 @@ func (x *DatumResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DatumResponse.ProtoReflect.Descriptor instead.
 func (*DatumResponse) Descriptor() ([]byte, []int) {
-	return file_pkg_apis_proto_source_v1_udsource_proto_rawDescGZIP(), []int{1}
+	return file_pkg_apis_proto_source_v1_udsource_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *DatumResponse) GetPayload() []byte {
+func (x *DatumResponse) GetResult() *DatumResponse_Result {
 	if x != nil {
-		return x.Payload
-	}
-	return nil
-}
-
-func (x *DatumResponse) GetOffset() *Offset {
-	if x != nil {
-		return x.Offset
-	}
-	return nil
-}
-
-func (x *DatumResponse) GetKeys() []string {
-	if x != nil {
-		return x.Keys
-	}
-	return nil
-}
-
-func (x *DatumResponse) GetEventTime() *EventTime {
-	if x != nil {
-		return x.EventTime
+		return x.Result
 	}
 	return nil
 }
 
 // *
-// DatumResponseList represents a list of datum response elements.
-type DatumResponseList struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Elements []*DatumResponse `protobuf:"bytes,1,rep,name=elements,proto3" json:"elements,omitempty"`
-}
-
-func (x *DatumResponseList) Reset() {
-	*x = DatumResponseList{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[2]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *DatumResponseList) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*DatumResponseList) ProtoMessage() {}
-
-func (x *DatumResponseList) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[2]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use DatumResponseList.ProtoReflect.Descriptor instead.
-func (*DatumResponseList) Descriptor() ([]byte, []int) {
-	return file_pkg_apis_proto_source_v1_udsource_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *DatumResponseList) GetElements() []*DatumResponse {
-	if x != nil {
-		return x.Elements
-	}
-	return nil
-}
-
 // AckRequest is the request for acknowledging datum.
-// it takes a list of offsets to be acknowledged.
+// It takes a list of offsets to be acknowledged.
 type AckRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Offsets []*Offset `protobuf:"bytes,1,rep,name=offsets,proto3" json:"offsets,omitempty"`
+	Request *AckRequest_Request `protobuf:"bytes,1,opt,name=request,proto3" json:"request,omitempty"`
 }
 
 func (x *AckRequest) Reset() {
 	*x = AckRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[3]
+		mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -227,7 +299,7 @@ func (x *AckRequest) String() string {
 func (*AckRequest) ProtoMessage() {}
 
 func (x *AckRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[3]
+	mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -240,42 +312,43 @@ func (x *AckRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AckRequest.ProtoReflect.Descriptor instead.
 func (*AckRequest) Descriptor() ([]byte, []int) {
-	return file_pkg_apis_proto_source_v1_udsource_proto_rawDescGZIP(), []int{3}
+	return file_pkg_apis_proto_source_v1_udsource_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *AckRequest) GetOffsets() []*Offset {
+func (x *AckRequest) GetRequest() *AckRequest_Request {
 	if x != nil {
-		return x.Offsets
+		return x.Request
 	}
 	return nil
 }
 
-// AckResponseList represents a list of ack response elements.
-type AckResponseList struct {
+// *
+// AckResponse is the response for acknowledging datum.
+type AckResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Offsets []*Offset `protobuf:"bytes,1,rep,name=offsets,proto3" json:"offsets,omitempty"`
+	Result *AckResponse_Result `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
 }
 
-func (x *AckResponseList) Reset() {
-	*x = AckResponseList{}
+func (x *AckResponse) Reset() {
+	*x = AckResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[4]
+		mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *AckResponseList) String() string {
+func (x *AckResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*AckResponseList) ProtoMessage() {}
+func (*AckResponse) ProtoMessage() {}
 
-func (x *AckResponseList) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[4]
+func (x *AckResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -286,14 +359,14 @@ func (x *AckResponseList) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AckResponseList.ProtoReflect.Descriptor instead.
-func (*AckResponseList) Descriptor() ([]byte, []int) {
-	return file_pkg_apis_proto_source_v1_udsource_proto_rawDescGZIP(), []int{4}
+// Deprecated: Use AckResponse.ProtoReflect.Descriptor instead.
+func (*AckResponse) Descriptor() ([]byte, []int) {
+	return file_pkg_apis_proto_source_v1_udsource_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *AckResponseList) GetOffsets() []*Offset {
+func (x *AckResponse) GetResult() *AckResponse_Result {
 	if x != nil {
-		return x.Offsets
+		return x.Result
 	}
 	return nil
 }
@@ -311,7 +384,7 @@ type ReadyResponse struct {
 func (x *ReadyResponse) Reset() {
 	*x = ReadyResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[5]
+		mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -324,7 +397,7 @@ func (x *ReadyResponse) String() string {
 func (*ReadyResponse) ProtoMessage() {}
 
 func (x *ReadyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[5]
+	mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -337,124 +410,12 @@ func (x *ReadyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadyResponse.ProtoReflect.Descriptor instead.
 func (*ReadyResponse) Descriptor() ([]byte, []int) {
-	return file_pkg_apis_proto_source_v1_udsource_proto_rawDescGZIP(), []int{5}
+	return file_pkg_apis_proto_source_v1_udsource_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ReadyResponse) GetReady() bool {
 	if x != nil {
 		return x.Ready
-	}
-	return false
-}
-
-// *
-// ReadRequest is the request for reading datum stream from user defined source.
-type ReadRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// num_records is the number of records to read.
-	NumRecords uint64 `protobuf:"varint,1,opt,name=num_records,json=numRecords,proto3" json:"num_records,omitempty"`
-}
-
-func (x *ReadRequest) Reset() {
-	*x = ReadRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[6]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *ReadRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ReadRequest) ProtoMessage() {}
-
-func (x *ReadRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[6]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ReadRequest.ProtoReflect.Descriptor instead.
-func (*ReadRequest) Descriptor() ([]byte, []int) {
-	return file_pkg_apis_proto_source_v1_udsource_proto_rawDescGZIP(), []int{6}
-}
-
-func (x *ReadRequest) GetNumRecords() uint64 {
-	if x != nil {
-		return x.NumRecords
-	}
-	return 0
-}
-
-// *
-// Offset is the offset of the datum.
-type Offset struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// offset is the offset of the datum.
-	// we define Offset as a byte array because different input data sources can have different representations for Offset.
-	// the only way to generalize it is to define it as a byte array,
-	// such that we can let the UDSource to de-serialize the offset using its own interpretation logics.
-	Offset []byte `protobuf:"bytes,1,opt,name=offset,proto3" json:"offset,omitempty"`
-	// is_acked indicates whether the offset is successfully acknowledged by the user defined source.
-	IsAcked bool `protobuf:"varint,2,opt,name=is_acked,json=isAcked,proto3" json:"is_acked,omitempty"`
-}
-
-func (x *Offset) Reset() {
-	*x = Offset{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[7]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *Offset) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Offset) ProtoMessage() {}
-
-func (x *Offset) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[7]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Offset.ProtoReflect.Descriptor instead.
-func (*Offset) Descriptor() ([]byte, []int) {
-	return file_pkg_apis_proto_source_v1_udsource_proto_rawDescGZIP(), []int{7}
-}
-
-func (x *Offset) GetOffset() []byte {
-	if x != nil {
-		return x.Offset
-	}
-	return nil
-}
-
-func (x *Offset) GetIsAcked() bool {
-	if x != nil {
-		return x.IsAcked
 	}
 	return false
 }
@@ -466,14 +427,13 @@ type PendingResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// count is the number of pending records at the user defined source.
-	Count uint64 `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+	Result *PendingResponse_Result `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
 }
 
 func (x *PendingResponse) Reset() {
 	*x = PendingResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[8]
+		mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -486,7 +446,7 @@ func (x *PendingResponse) String() string {
 func (*PendingResponse) ProtoMessage() {}
 
 func (x *PendingResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[8]
+	mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -499,10 +459,391 @@ func (x *PendingResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PendingResponse.ProtoReflect.Descriptor instead.
 func (*PendingResponse) Descriptor() ([]byte, []int) {
+	return file_pkg_apis_proto_source_v1_udsource_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *PendingResponse) GetResult() *PendingResponse_Result {
+	if x != nil {
+		return x.Result
+	}
+	return nil
+}
+
+// *
+// Offset is the offset of the datum.
+type Offset struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// offset is the offset of the datum.
+	// We define Offset as a byte array because different input data sources can have different representations for Offset.
+	// The only way to generalize it is to define it as a byte array,
+	// Such that we can let the UDSource to de-serialize the offset using its own interpretation logics.
+	Offset []byte `protobuf:"bytes,1,opt,name=offset,proto3" json:"offset,omitempty"`
+}
+
+func (x *Offset) Reset() {
+	*x = Offset{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[8]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Offset) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Offset) ProtoMessage() {}
+
+func (x *Offset) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[8]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Offset.ProtoReflect.Descriptor instead.
+func (*Offset) Descriptor() ([]byte, []int) {
 	return file_pkg_apis_proto_source_v1_udsource_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *PendingResponse) GetCount() uint64 {
+func (x *Offset) GetOffset() []byte {
+	if x != nil {
+		return x.Offset
+	}
+	return nil
+}
+
+type ReadRequest_Request struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// num_records is the number of records to read.
+	NumRecords uint64 `protobuf:"varint,1,opt,name=num_records,json=numRecords,proto3" json:"num_records,omitempty"`
+}
+
+func (x *ReadRequest_Request) Reset() {
+	*x = ReadRequest_Request{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[9]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ReadRequest_Request) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReadRequest_Request) ProtoMessage() {}
+
+func (x *ReadRequest_Request) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[9]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReadRequest_Request.ProtoReflect.Descriptor instead.
+func (*ReadRequest_Request) Descriptor() ([]byte, []int) {
+	return file_pkg_apis_proto_source_v1_udsource_proto_rawDescGZIP(), []int{1, 0}
+}
+
+func (x *ReadRequest_Request) GetNumRecords() uint64 {
+	if x != nil {
+		return x.NumRecords
+	}
+	return 0
+}
+
+type ReadResponse_Result struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// elements is a list of datum response elements.
+	Elements []*DatumResponse `protobuf:"bytes,1,rep,name=elements,proto3" json:"elements,omitempty"`
+}
+
+func (x *ReadResponse_Result) Reset() {
+	*x = ReadResponse_Result{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[10]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ReadResponse_Result) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReadResponse_Result) ProtoMessage() {}
+
+func (x *ReadResponse_Result) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[10]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReadResponse_Result.ProtoReflect.Descriptor instead.
+func (*ReadResponse_Result) Descriptor() ([]byte, []int) {
+	return file_pkg_apis_proto_source_v1_udsource_proto_rawDescGZIP(), []int{2, 0}
+}
+
+func (x *ReadResponse_Result) GetElements() []*DatumResponse {
+	if x != nil {
+		return x.Elements
+	}
+	return nil
+}
+
+type DatumResponse_Result struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// payload is the payload of the datum.
+	Payload []byte `protobuf:"bytes,1,opt,name=payload,proto3" json:"payload,omitempty"`
+	// offset is the offset information of the datum.
+	Offset *Offset `protobuf:"bytes,2,opt,name=offset,proto3" json:"offset,omitempty"`
+	// keys is an optional list of keys associated with the datum.
+	// Key is the "key" attribute in (key,value) as in the map-reduce paradigm.
+	// We add this optional field to support the use case where the user defined source can provide keys for the datum.
+	// e.g. Kafka and Redis Stream message usually include information about the keys.
+	Keys []string `protobuf:"bytes,3,rep,name=keys,proto3" json:"keys,omitempty"`
+	// event_time is the time associated with each datum.
+	// We add this optional field to support the use case where the user defined source can provide event time for the datum.
+	// e.g. Kafka and Redis Stream message usually include information about the event time.
+	EventTime *EventTime `protobuf:"bytes,4,opt,name=event_time,json=eventTime,proto3" json:"event_time,omitempty"`
+}
+
+func (x *DatumResponse_Result) Reset() {
+	*x = DatumResponse_Result{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[11]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *DatumResponse_Result) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DatumResponse_Result) ProtoMessage() {}
+
+func (x *DatumResponse_Result) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[11]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DatumResponse_Result.ProtoReflect.Descriptor instead.
+func (*DatumResponse_Result) Descriptor() ([]byte, []int) {
+	return file_pkg_apis_proto_source_v1_udsource_proto_rawDescGZIP(), []int{3, 0}
+}
+
+func (x *DatumResponse_Result) GetPayload() []byte {
+	if x != nil {
+		return x.Payload
+	}
+	return nil
+}
+
+func (x *DatumResponse_Result) GetOffset() *Offset {
+	if x != nil {
+		return x.Offset
+	}
+	return nil
+}
+
+func (x *DatumResponse_Result) GetKeys() []string {
+	if x != nil {
+		return x.Keys
+	}
+	return nil
+}
+
+func (x *DatumResponse_Result) GetEventTime() *EventTime {
+	if x != nil {
+		return x.EventTime
+	}
+	return nil
+}
+
+type AckRequest_Request struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Offsets []*Offset `protobuf:"bytes,1,rep,name=offsets,proto3" json:"offsets,omitempty"`
+}
+
+func (x *AckRequest_Request) Reset() {
+	*x = AckRequest_Request{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[12]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *AckRequest_Request) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AckRequest_Request) ProtoMessage() {}
+
+func (x *AckRequest_Request) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[12]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AckRequest_Request.ProtoReflect.Descriptor instead.
+func (*AckRequest_Request) Descriptor() ([]byte, []int) {
+	return file_pkg_apis_proto_source_v1_udsource_proto_rawDescGZIP(), []int{4, 0}
+}
+
+func (x *AckRequest_Request) GetOffsets() []*Offset {
+	if x != nil {
+		return x.Offsets
+	}
+	return nil
+}
+
+type AckResponse_Result struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// status is the status of the AckResponse.
+	Status AckResponse_AckStatus `protobuf:"varint,1,opt,name=status,proto3,enum=source.v1.AckResponse_AckStatus" json:"status,omitempty"`
+	// non_acked_offsets is the list of offsets that are not acknowledged.
+	NonAckedOffsets []*Offset `protobuf:"bytes,2,rep,name=non_acked_offsets,json=nonAckedOffsets,proto3" json:"non_acked_offsets,omitempty"`
+}
+
+func (x *AckResponse_Result) Reset() {
+	*x = AckResponse_Result{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[13]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *AckResponse_Result) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AckResponse_Result) ProtoMessage() {}
+
+func (x *AckResponse_Result) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[13]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AckResponse_Result.ProtoReflect.Descriptor instead.
+func (*AckResponse_Result) Descriptor() ([]byte, []int) {
+	return file_pkg_apis_proto_source_v1_udsource_proto_rawDescGZIP(), []int{5, 0}
+}
+
+func (x *AckResponse_Result) GetStatus() AckResponse_AckStatus {
+	if x != nil {
+		return x.Status
+	}
+	return AckResponse_ALL_ACKED
+}
+
+func (x *AckResponse_Result) GetNonAckedOffsets() []*Offset {
+	if x != nil {
+		return x.NonAckedOffsets
+	}
+	return nil
+}
+
+type PendingResponse_Result struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// count is the number of pending records at the user defined source.
+	Count uint64 `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+}
+
+func (x *PendingResponse_Result) Reset() {
+	*x = PendingResponse_Result{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[14]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *PendingResponse_Result) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PendingResponse_Result) ProtoMessage() {}
+
+func (x *PendingResponse_Result) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[14]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PendingResponse_Result.ProtoReflect.Descriptor instead.
+func (*PendingResponse_Result) Descriptor() ([]byte, []int) {
+	return file_pkg_apis_proto_source_v1_udsource_proto_rawDescGZIP(), []int{7, 0}
+}
+
+func (x *PendingResponse_Result) GetCount() uint64 {
 	if x != nil {
 		return x.Count
 	}
@@ -523,62 +864,94 @@ var file_pkg_apis_proto_source_v1_udsource_proto_rawDesc = []byte{
 	0x39, 0x0a, 0x0a, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x01, 0x20,
 	0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f,
 	0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52,
-	0x09, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x54, 0x69, 0x6d, 0x65, 0x22, 0x9d, 0x01, 0x0a, 0x0d, 0x44,
-	0x61, 0x74, 0x75, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x18, 0x0a, 0x07,
-	0x70, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x07, 0x70,
-	0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x12, 0x29, 0x0a, 0x06, 0x6f, 0x66, 0x66, 0x73, 0x65, 0x74,
-	0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x11, 0x2e, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x2e,
-	0x76, 0x31, 0x2e, 0x4f, 0x66, 0x66, 0x73, 0x65, 0x74, 0x52, 0x06, 0x6f, 0x66, 0x66, 0x73, 0x65,
-	0x74, 0x12, 0x12, 0x0a, 0x04, 0x6b, 0x65, 0x79, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x09, 0x52,
-	0x04, 0x6b, 0x65, 0x79, 0x73, 0x12, 0x33, 0x0a, 0x0a, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x5f, 0x74,
-	0x69, 0x6d, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x14, 0x2e, 0x73, 0x6f, 0x75, 0x72,
-	0x63, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x54, 0x69, 0x6d, 0x65, 0x52,
-	0x09, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x54, 0x69, 0x6d, 0x65, 0x22, 0x49, 0x0a, 0x11, 0x44, 0x61,
-	0x74, 0x75, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4c, 0x69, 0x73, 0x74, 0x12,
-	0x34, 0x0a, 0x08, 0x65, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28,
-	0x0b, 0x32, 0x18, 0x2e, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x61,
-	0x74, 0x75, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x52, 0x08, 0x65, 0x6c, 0x65,
-	0x6d, 0x65, 0x6e, 0x74, 0x73, 0x22, 0x39, 0x0a, 0x0a, 0x41, 0x63, 0x6b, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x12, 0x2b, 0x0a, 0x07, 0x6f, 0x66, 0x66, 0x73, 0x65, 0x74, 0x73, 0x18, 0x01,
-	0x20, 0x03, 0x28, 0x0b, 0x32, 0x11, 0x2e, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x2e, 0x76, 0x31,
-	0x2e, 0x4f, 0x66, 0x66, 0x73, 0x65, 0x74, 0x52, 0x07, 0x6f, 0x66, 0x66, 0x73, 0x65, 0x74, 0x73,
-	0x22, 0x3e, 0x0a, 0x0f, 0x41, 0x63, 0x6b, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4c,
-	0x69, 0x73, 0x74, 0x12, 0x2b, 0x0a, 0x07, 0x6f, 0x66, 0x66, 0x73, 0x65, 0x74, 0x73, 0x18, 0x01,
-	0x20, 0x03, 0x28, 0x0b, 0x32, 0x11, 0x2e, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x2e, 0x76, 0x31,
-	0x2e, 0x4f, 0x66, 0x66, 0x73, 0x65, 0x74, 0x52, 0x07, 0x6f, 0x66, 0x66, 0x73, 0x65, 0x74, 0x73,
-	0x22, 0x25, 0x0a, 0x0d, 0x52, 0x65, 0x61, 0x64, 0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x12, 0x14, 0x0a, 0x05, 0x72, 0x65, 0x61, 0x64, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08,
-	0x52, 0x05, 0x72, 0x65, 0x61, 0x64, 0x79, 0x22, 0x2e, 0x0a, 0x0b, 0x52, 0x65, 0x61, 0x64, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1f, 0x0a, 0x0b, 0x6e, 0x75, 0x6d, 0x5f, 0x72, 0x65,
-	0x63, 0x6f, 0x72, 0x64, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0a, 0x6e, 0x75, 0x6d,
-	0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x22, 0x3b, 0x0a, 0x06, 0x4f, 0x66, 0x66, 0x73, 0x65,
-	0x74, 0x12, 0x16, 0x0a, 0x06, 0x6f, 0x66, 0x66, 0x73, 0x65, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x0c, 0x52, 0x06, 0x6f, 0x66, 0x66, 0x73, 0x65, 0x74, 0x12, 0x19, 0x0a, 0x08, 0x69, 0x73, 0x5f,
-	0x61, 0x63, 0x6b, 0x65, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x08, 0x52, 0x07, 0x69, 0x73, 0x41,
-	0x63, 0x6b, 0x65, 0x64, 0x22, 0x27, 0x0a, 0x0f, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x63, 0x6f, 0x75, 0x6e, 0x74,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x05, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x32, 0x89, 0x02,
-	0x0a, 0x11, 0x55, 0x73, 0x65, 0x72, 0x44, 0x65, 0x66, 0x69, 0x6e, 0x65, 0x64, 0x53, 0x6f, 0x75,
-	0x72, 0x63, 0x65, 0x12, 0x3e, 0x0a, 0x04, 0x52, 0x65, 0x61, 0x64, 0x12, 0x16, 0x2e, 0x73, 0x6f,
-	0x75, 0x72, 0x63, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x61, 0x64, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x1a, 0x1c, 0x2e, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x2e, 0x76, 0x31, 0x2e,
-	0x44, 0x61, 0x74, 0x75, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4c, 0x69, 0x73,
-	0x74, 0x30, 0x01, 0x12, 0x38, 0x0a, 0x03, 0x41, 0x63, 0x6b, 0x12, 0x15, 0x2e, 0x73, 0x6f, 0x75,
-	0x72, 0x63, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x63, 0x6b, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x1a, 0x1a, 0x2e, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x63,
-	0x6b, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4c, 0x69, 0x73, 0x74, 0x12, 0x3d, 0x0a,
-	0x07, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x12, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c,
-	0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79,
-	0x1a, 0x1a, 0x2e, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x65, 0x6e,
-	0x64, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x3b, 0x0a, 0x07,
-	0x49, 0x73, 0x52, 0x65, 0x61, 0x64, 0x79, 0x12, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65,
-	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a,
-	0x18, 0x2e, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x61, 0x64,
-	0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x3a, 0x5a, 0x38, 0x67, 0x69, 0x74,
-	0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6e, 0x75, 0x6d, 0x61, 0x70, 0x72, 0x6f, 0x6a,
-	0x2f, 0x6e, 0x75, 0x6d, 0x61, 0x66, 0x6c, 0x6f, 0x77, 0x2d, 0x67, 0x6f, 0x2f, 0x70, 0x6b, 0x67,
-	0x2f, 0x61, 0x70, 0x69, 0x73, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x73, 0x6f, 0x75, 0x72,
-	0x63, 0x65, 0x2f, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x09, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x54, 0x69, 0x6d, 0x65, 0x22, 0x73, 0x0a, 0x0b, 0x52, 0x65,
+	0x61, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x38, 0x0a, 0x07, 0x72, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x73, 0x6f, 0x75,
+	0x72, 0x63, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x61, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x2e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x07, 0x72, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x1a, 0x2a, 0x0a, 0x07, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1f,
+	0x0a, 0x0b, 0x6e, 0x75, 0x6d, 0x5f, 0x72, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x04, 0x52, 0x0a, 0x6e, 0x75, 0x6d, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x22,
+	0x86, 0x01, 0x0a, 0x0c, 0x52, 0x65, 0x61, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x12, 0x36, 0x0a, 0x06, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x1e, 0x2e, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x61,
+	0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x2e, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74,
+	0x52, 0x06, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x1a, 0x3e, 0x0a, 0x06, 0x52, 0x65, 0x73, 0x75,
+	0x6c, 0x74, 0x12, 0x34, 0x0a, 0x08, 0x65, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x73, 0x18, 0x01,
+	0x20, 0x03, 0x28, 0x0b, 0x32, 0x18, 0x2e, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x2e, 0x76, 0x31,
+	0x2e, 0x44, 0x61, 0x74, 0x75, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x52, 0x08,
+	0x65, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x73, 0x22, 0xe1, 0x01, 0x0a, 0x0d, 0x44, 0x61, 0x74,
+	0x75, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x37, 0x0a, 0x06, 0x72, 0x65,
+	0x73, 0x75, 0x6c, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x73, 0x6f, 0x75,
+	0x72, 0x63, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x61, 0x74, 0x75, 0x6d, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x2e, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x52, 0x06, 0x72, 0x65, 0x73,
+	0x75, 0x6c, 0x74, 0x1a, 0x96, 0x01, 0x0a, 0x06, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x12, 0x18,
+	0x0a, 0x07, 0x70, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52,
+	0x07, 0x70, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x12, 0x29, 0x0a, 0x06, 0x6f, 0x66, 0x66, 0x73,
+	0x65, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x11, 0x2e, 0x73, 0x6f, 0x75, 0x72, 0x63,
+	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4f, 0x66, 0x66, 0x73, 0x65, 0x74, 0x52, 0x06, 0x6f, 0x66, 0x66,
+	0x73, 0x65, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x6b, 0x65, 0x79, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28,
+	0x09, 0x52, 0x04, 0x6b, 0x65, 0x79, 0x73, 0x12, 0x33, 0x0a, 0x0a, 0x65, 0x76, 0x65, 0x6e, 0x74,
+	0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x14, 0x2e, 0x73, 0x6f,
+	0x75, 0x72, 0x63, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x54, 0x69, 0x6d,
+	0x65, 0x52, 0x09, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x54, 0x69, 0x6d, 0x65, 0x22, 0x7d, 0x0a, 0x0a,
+	0x41, 0x63, 0x6b, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x37, 0x0a, 0x07, 0x72, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x73, 0x6f,
+	0x75, 0x72, 0x63, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x63, 0x6b, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x2e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x07, 0x72, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x1a, 0x36, 0x0a, 0x07, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x2b,
+	0x0a, 0x07, 0x6f, 0x66, 0x66, 0x73, 0x65, 0x74, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32,
+	0x11, 0x2e, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4f, 0x66, 0x66, 0x73,
+	0x65, 0x74, 0x52, 0x07, 0x6f, 0x66, 0x66, 0x73, 0x65, 0x74, 0x73, 0x22, 0x89, 0x02, 0x0a, 0x0b,
+	0x41, 0x63, 0x6b, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x35, 0x0a, 0x06, 0x72,
+	0x65, 0x73, 0x75, 0x6c, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x73, 0x6f,
+	0x75, 0x72, 0x63, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x63, 0x6b, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x2e, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x52, 0x06, 0x72, 0x65, 0x73, 0x75,
+	0x6c, 0x74, 0x1a, 0x81, 0x01, 0x0a, 0x06, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x12, 0x38, 0x0a,
+	0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x20, 0x2e,
+	0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x63, 0x6b, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x2e, 0x41, 0x63, 0x6b, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52,
+	0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x3d, 0x0a, 0x11, 0x6e, 0x6f, 0x6e, 0x5f, 0x61,
+	0x63, 0x6b, 0x65, 0x64, 0x5f, 0x6f, 0x66, 0x66, 0x73, 0x65, 0x74, 0x73, 0x18, 0x02, 0x20, 0x03,
+	0x28, 0x0b, 0x32, 0x11, 0x2e, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4f,
+	0x66, 0x66, 0x73, 0x65, 0x74, 0x52, 0x0f, 0x6e, 0x6f, 0x6e, 0x41, 0x63, 0x6b, 0x65, 0x64, 0x4f,
+	0x66, 0x66, 0x73, 0x65, 0x74, 0x73, 0x22, 0x3f, 0x0a, 0x09, 0x41, 0x63, 0x6b, 0x53, 0x74, 0x61,
+	0x74, 0x75, 0x73, 0x12, 0x0d, 0x0a, 0x09, 0x41, 0x4c, 0x4c, 0x5f, 0x41, 0x43, 0x4b, 0x45, 0x44,
+	0x10, 0x00, 0x12, 0x13, 0x0a, 0x0f, 0x50, 0x41, 0x52, 0x54, 0x49, 0x41, 0x4c, 0x4c, 0x59, 0x5f,
+	0x41, 0x43, 0x4b, 0x45, 0x44, 0x10, 0x01, 0x12, 0x0e, 0x0a, 0x0a, 0x4e, 0x4f, 0x4e, 0x45, 0x5f,
+	0x41, 0x43, 0x4b, 0x45, 0x44, 0x10, 0x02, 0x22, 0x25, 0x0a, 0x0d, 0x52, 0x65, 0x61, 0x64, 0x79,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x72, 0x65, 0x61, 0x64,
+	0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x05, 0x72, 0x65, 0x61, 0x64, 0x79, 0x22, 0x6c,
+	0x0a, 0x0f, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x12, 0x39, 0x0a, 0x06, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x21, 0x2e, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x65,
+	0x6e, 0x64, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x2e, 0x52, 0x65,
+	0x73, 0x75, 0x6c, 0x74, 0x52, 0x06, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x1a, 0x1e, 0x0a, 0x06,
+	0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x05, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x22, 0x20, 0x0a, 0x06,
+	0x4f, 0x66, 0x66, 0x73, 0x65, 0x74, 0x12, 0x16, 0x0a, 0x06, 0x6f, 0x66, 0x66, 0x73, 0x65, 0x74,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x06, 0x6f, 0x66, 0x66, 0x73, 0x65, 0x74, 0x32, 0x80,
+	0x02, 0x0a, 0x11, 0x55, 0x73, 0x65, 0x72, 0x44, 0x65, 0x66, 0x69, 0x6e, 0x65, 0x64, 0x53, 0x6f,
+	0x75, 0x72, 0x63, 0x65, 0x12, 0x39, 0x0a, 0x04, 0x52, 0x65, 0x61, 0x64, 0x12, 0x16, 0x2e, 0x73,
+	0x6f, 0x75, 0x72, 0x63, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x61, 0x64, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x1a, 0x17, 0x2e, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x2e, 0x76, 0x31,
+	0x2e, 0x52, 0x65, 0x61, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x30, 0x01, 0x12,
+	0x34, 0x0a, 0x03, 0x41, 0x63, 0x6b, 0x12, 0x15, 0x2e, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x2e,
+	0x76, 0x31, 0x2e, 0x41, 0x63, 0x6b, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x16, 0x2e,
+	0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x63, 0x6b, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x3d, 0x0a, 0x07, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67,
+	0x12, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62,
+	0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x1a, 0x2e, 0x73, 0x6f, 0x75, 0x72, 0x63,
+	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x3b, 0x0a, 0x07, 0x49, 0x73, 0x52, 0x65, 0x61, 0x64, 0x79, 0x12,
+	0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75,
+	0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x18, 0x2e, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65,
+	0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x61, 0x64, 0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x42, 0x3a, 0x5a, 0x38, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f,
+	0x6e, 0x75, 0x6d, 0x61, 0x70, 0x72, 0x6f, 0x6a, 0x2f, 0x6e, 0x75, 0x6d, 0x61, 0x66, 0x6c, 0x6f,
+	0x77, 0x2d, 0x67, 0x6f, 0x2f, 0x70, 0x6b, 0x67, 0x2f, 0x61, 0x70, 0x69, 0x73, 0x2f, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x2f, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x2f, 0x76, 0x31, 0x62, 0x06, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -593,40 +966,55 @@ func file_pkg_apis_proto_source_v1_udsource_proto_rawDescGZIP() []byte {
 	return file_pkg_apis_proto_source_v1_udsource_proto_rawDescData
 }
 
-var file_pkg_apis_proto_source_v1_udsource_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_pkg_apis_proto_source_v1_udsource_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_pkg_apis_proto_source_v1_udsource_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_pkg_apis_proto_source_v1_udsource_proto_goTypes = []interface{}{
-	(*EventTime)(nil),             // 0: source.v1.EventTime
-	(*DatumResponse)(nil),         // 1: source.v1.DatumResponse
-	(*DatumResponseList)(nil),     // 2: source.v1.DatumResponseList
-	(*AckRequest)(nil),            // 3: source.v1.AckRequest
-	(*AckResponseList)(nil),       // 4: source.v1.AckResponseList
-	(*ReadyResponse)(nil),         // 5: source.v1.ReadyResponse
-	(*ReadRequest)(nil),           // 6: source.v1.ReadRequest
-	(*Offset)(nil),                // 7: source.v1.Offset
-	(*PendingResponse)(nil),       // 8: source.v1.PendingResponse
-	(*timestamppb.Timestamp)(nil), // 9: google.protobuf.Timestamp
-	(*emptypb.Empty)(nil),         // 10: google.protobuf.Empty
+	(AckResponse_AckStatus)(0),     // 0: source.v1.AckResponse.AckStatus
+	(*EventTime)(nil),              // 1: source.v1.EventTime
+	(*ReadRequest)(nil),            // 2: source.v1.ReadRequest
+	(*ReadResponse)(nil),           // 3: source.v1.ReadResponse
+	(*DatumResponse)(nil),          // 4: source.v1.DatumResponse
+	(*AckRequest)(nil),             // 5: source.v1.AckRequest
+	(*AckResponse)(nil),            // 6: source.v1.AckResponse
+	(*ReadyResponse)(nil),          // 7: source.v1.ReadyResponse
+	(*PendingResponse)(nil),        // 8: source.v1.PendingResponse
+	(*Offset)(nil),                 // 9: source.v1.Offset
+	(*ReadRequest_Request)(nil),    // 10: source.v1.ReadRequest.Request
+	(*ReadResponse_Result)(nil),    // 11: source.v1.ReadResponse.Result
+	(*DatumResponse_Result)(nil),   // 12: source.v1.DatumResponse.Result
+	(*AckRequest_Request)(nil),     // 13: source.v1.AckRequest.Request
+	(*AckResponse_Result)(nil),     // 14: source.v1.AckResponse.Result
+	(*PendingResponse_Result)(nil), // 15: source.v1.PendingResponse.Result
+	(*timestamppb.Timestamp)(nil),  // 16: google.protobuf.Timestamp
+	(*emptypb.Empty)(nil),          // 17: google.protobuf.Empty
 }
 var file_pkg_apis_proto_source_v1_udsource_proto_depIdxs = []int32{
-	9,  // 0: source.v1.EventTime.event_time:type_name -> google.protobuf.Timestamp
-	7,  // 1: source.v1.DatumResponse.offset:type_name -> source.v1.Offset
-	0,  // 2: source.v1.DatumResponse.event_time:type_name -> source.v1.EventTime
-	1,  // 3: source.v1.DatumResponseList.elements:type_name -> source.v1.DatumResponse
-	7,  // 4: source.v1.AckRequest.offsets:type_name -> source.v1.Offset
-	7,  // 5: source.v1.AckResponseList.offsets:type_name -> source.v1.Offset
-	6,  // 6: source.v1.UserDefinedSource.Read:input_type -> source.v1.ReadRequest
-	3,  // 7: source.v1.UserDefinedSource.Ack:input_type -> source.v1.AckRequest
-	10, // 8: source.v1.UserDefinedSource.Pending:input_type -> google.protobuf.Empty
-	10, // 9: source.v1.UserDefinedSource.IsReady:input_type -> google.protobuf.Empty
-	2,  // 10: source.v1.UserDefinedSource.Read:output_type -> source.v1.DatumResponseList
-	4,  // 11: source.v1.UserDefinedSource.Ack:output_type -> source.v1.AckResponseList
-	8,  // 12: source.v1.UserDefinedSource.Pending:output_type -> source.v1.PendingResponse
-	5,  // 13: source.v1.UserDefinedSource.IsReady:output_type -> source.v1.ReadyResponse
-	10, // [10:14] is the sub-list for method output_type
-	6,  // [6:10] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	16, // 0: source.v1.EventTime.event_time:type_name -> google.protobuf.Timestamp
+	10, // 1: source.v1.ReadRequest.request:type_name -> source.v1.ReadRequest.Request
+	11, // 2: source.v1.ReadResponse.result:type_name -> source.v1.ReadResponse.Result
+	12, // 3: source.v1.DatumResponse.result:type_name -> source.v1.DatumResponse.Result
+	13, // 4: source.v1.AckRequest.request:type_name -> source.v1.AckRequest.Request
+	14, // 5: source.v1.AckResponse.result:type_name -> source.v1.AckResponse.Result
+	15, // 6: source.v1.PendingResponse.result:type_name -> source.v1.PendingResponse.Result
+	4,  // 7: source.v1.ReadResponse.Result.elements:type_name -> source.v1.DatumResponse
+	9,  // 8: source.v1.DatumResponse.Result.offset:type_name -> source.v1.Offset
+	1,  // 9: source.v1.DatumResponse.Result.event_time:type_name -> source.v1.EventTime
+	9,  // 10: source.v1.AckRequest.Request.offsets:type_name -> source.v1.Offset
+	0,  // 11: source.v1.AckResponse.Result.status:type_name -> source.v1.AckResponse.AckStatus
+	9,  // 12: source.v1.AckResponse.Result.non_acked_offsets:type_name -> source.v1.Offset
+	2,  // 13: source.v1.UserDefinedSource.Read:input_type -> source.v1.ReadRequest
+	5,  // 14: source.v1.UserDefinedSource.Ack:input_type -> source.v1.AckRequest
+	17, // 15: source.v1.UserDefinedSource.Pending:input_type -> google.protobuf.Empty
+	17, // 16: source.v1.UserDefinedSource.IsReady:input_type -> google.protobuf.Empty
+	3,  // 17: source.v1.UserDefinedSource.Read:output_type -> source.v1.ReadResponse
+	6,  // 18: source.v1.UserDefinedSource.Ack:output_type -> source.v1.AckResponse
+	8,  // 19: source.v1.UserDefinedSource.Pending:output_type -> source.v1.PendingResponse
+	7,  // 20: source.v1.UserDefinedSource.IsReady:output_type -> source.v1.ReadyResponse
+	17, // [17:21] is the sub-list for method output_type
+	13, // [13:17] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_pkg_apis_proto_source_v1_udsource_proto_init() }
@@ -648,66 +1036,6 @@ func file_pkg_apis_proto_source_v1_udsource_proto_init() {
 			}
 		}
 		file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DatumResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DatumResponseList); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AckRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AckResponseList); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ReadyResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ReadRequest); i {
 			case 0:
 				return &v.state
@@ -719,8 +1047,68 @@ func file_pkg_apis_proto_source_v1_udsource_proto_init() {
 				return nil
 			}
 		}
+		file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ReadResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*DatumResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*AckRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*AckResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ReadyResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 		file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Offset); i {
+			switch v := v.(*PendingResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -732,7 +1120,79 @@ func file_pkg_apis_proto_source_v1_udsource_proto_init() {
 			}
 		}
 		file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PendingResponse); i {
+			switch v := v.(*Offset); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ReadRequest_Request); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ReadResponse_Result); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*DatumResponse_Result); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*AckRequest_Request); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*AckResponse_Result); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pkg_apis_proto_source_v1_udsource_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*PendingResponse_Result); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -749,13 +1209,14 @@ func file_pkg_apis_proto_source_v1_udsource_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_pkg_apis_proto_source_v1_udsource_proto_rawDesc,
-			NumEnums:      0,
-			NumMessages:   9,
+			NumEnums:      1,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_pkg_apis_proto_source_v1_udsource_proto_goTypes,
 		DependencyIndexes: file_pkg_apis_proto_source_v1_udsource_proto_depIdxs,
+		EnumInfos:         file_pkg_apis_proto_source_v1_udsource_proto_enumTypes,
 		MessageInfos:      file_pkg_apis_proto_source_v1_udsource_proto_msgTypes,
 	}.Build()
 	File_pkg_apis_proto_source_v1_udsource_proto = out.File
