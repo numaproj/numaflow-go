@@ -8,7 +8,7 @@ import "google/protobuf/empty.proto";
 package sideinput.v1;
 
 service UserDefinedSideInput {
-  // SideInputFn applies a function to update the side-input values.
+  // RetrieveSideInput applies a function to retrieve the latest side-input values.
   rpc RetrieveSideInput(google.protobuf.Empty) returns (SideInputResponse);
 
   // IsReady is the heartbeat endpoint for gRPC.
@@ -16,15 +16,18 @@ service UserDefinedSideInput {
 }
 
 message EventTime {
-  // event_time is the time associated with each datum.
+  // event_time is the time associated with side input response to indicate when was this
+  // value updated
   google.protobuf.Timestamp event_time = 1;
   // future we can add an enum to represent whether the event time is
   // based on INGEST_TIME or EVENT_TIME or PROCESSING_TIME
 }
 /**
- * SideInputResponse represents a datum response element.
+ * SideInputResponse represents a response to a given side input retrieval request.
  */
+
 message SideInputResponse {
+  // value is the
   bytes value = 1;
   EventTime event_time = 2;
 }
