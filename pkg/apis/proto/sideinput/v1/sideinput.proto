@@ -16,16 +16,16 @@ service UserDefinedSideInput {
 }
 
 message EventTime {
-  // event_time is the time associated with side input response to indicate when was this
+  // event_time is the time associated with side input value to indicate when was the
   // value updated
   google.protobuf.Timestamp event_time = 1;
   // future we can add an enum to represent whether the event time is
   // based on INGEST_TIME or EVENT_TIME or PROCESSING_TIME
 }
+
 /**
  * SideInputResponse represents a response to a given side input retrieval request.
  */
-
 message SideInputResponse {
   // value is the
   bytes value = 1;
