@@ -27,8 +27,9 @@ message EventTime {
  * SideInputResponse represents a response to a given side input retrieval request.
  */
 message SideInputResponse {
-  // value is the
+  // value is the side-input payload
   bytes value = 1;
+  // event_time represents the timestamp at which value is updated
   EventTime event_time = 2;
 }
 
