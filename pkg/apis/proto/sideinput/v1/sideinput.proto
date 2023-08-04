@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+option go_package = "github.com/numaproj/numaflow-go/pkg/apis/proto/sideinput/v1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+package sideinput.v1;
+
+service UserDefinedSideInput {
+  // SideInputFn applies a function to update the side-input values.
+  rpc RetrieveSideInput(google.protobuf.Empty) returns (SideInputResponse);
+
+  // IsReady is the heartbeat endpoint for gRPC.
+  rpc IsReady(google.protobuf.Empty) returns (ReadyResponse);
+}
+
+message EventTime {
+  // event_time is the time associated with each datum.
+  google.protobuf.Timestamp event_time = 1;
+  // future we can add an enum to represent whether the event time is
+  // based on INGEST_TIME or EVENT_TIME or PROCESSING_TIME
+}
+/**
+ * SideInputResponse represents a datum response element.
+ */
+message SideInputResponse {
+  bytes value = 1;
+  EventTime event_time = 2;
+}
+
+/**
+ * ReadyResponse is the health check result.
+ */
+message ReadyResponse {
+  bool ready = 1;
+}
