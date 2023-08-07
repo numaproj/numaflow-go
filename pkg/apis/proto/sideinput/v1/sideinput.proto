@@ -7,6 +7,10 @@ import "google/protobuf/empty.proto";
 
 package sideinput.v1;
 
+// UserDefinedSideInput is used to propagate changes in the values of the provided side-inputs
+// which allows access to slow updated data or configuration without needing to retrieve
+// it during each message processing. Through this service the vertex should be able to invoke retrieval request
+// for a single side-input, which in turn should check for updates and return its latest value.
 service UserDefinedSideInput {
   // RetrieveSideInput applies a function to retrieve the latest side-input values.
   rpc RetrieveSideInput(google.protobuf.Empty) returns (SideInputResponse);
