@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
+	functionsdk "github.com/KeranYang/numaflow-go/pkg/function"
 )
 
 func TestServer_Start(t *testing.T) {

@@ -16,7 +16,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
+	functionpb "github.com/KeranYang/numaflow-go/pkg/apis/proto/function/v1"
 )
 
 // handlerDatum implements the Datum interface and is used in the map and reduce handlers.

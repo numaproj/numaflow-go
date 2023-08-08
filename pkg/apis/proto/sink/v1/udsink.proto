@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1";
+option go_package = "github.com/KeranYang/numaflow-go/pkg/apis/proto/sink/v1";
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";

@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/numaproj/numaflow-go/pkg/function"
+	"github.com/KeranYang/numaflow-go/pkg/function"
 )
 
 func TestWithMaxMessageSize(t *testing.T) {

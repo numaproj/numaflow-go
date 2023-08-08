@@ -9,10 +9,11 @@ import (
 	"testing"
 	"time"
 
-	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	sinkpb "github.com/KeranYang/numaflow-go/pkg/apis/proto/sink/v1"
 )
 
 type UserDefinedSink_SinkFnServerTest struct {

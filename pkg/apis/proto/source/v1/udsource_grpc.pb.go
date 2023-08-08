@@ -25,10 +25,13 @@ const _ = grpc.SupportPackageIsVersion7
 type UserDefinedSourceClient interface {
 	// Read returns a stream of datum responses.
 	// The size of the returned ReadResponse is less than or equal to the num_records specified in ReadRequest.
-	// If the request timeout is reached on server side, the returned ReadResponse will contain all the datum responses that have been read.
+	// If the request timeout is reached on server side, the returned ReadResponse will contain all the datum responses that have been read (which could be an empty list).
 	Read(ctx context.Context, in *ReadRequest, opts ...grpc.CallOption) (UserDefinedSource_ReadClient, error)
 	// Ack acknowledges a list of datum offsets.
-	// It indicates that the datum stream has been processed by the source vertex.
+	// When Ack is called, it implicitly indicates that the datum stream has been processed by the source vertex.
+	// The caller (numa) expects the Ack to be successful, and it does not expect any errors.
+	// If there are some irrecoverable errors when the callee (UDSource) is processing the Ack,
+	// then it is best to crash because there are no other retry mechanisms possible.
 	Ack(ctx context.Context, in *AckRequest, opts ...grpc.CallOption) (*AckResponse, error)
 	// Pending returns the number of pending records at the user defined source.
 	Pending(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PendingResponse, error)
@@ -109,10 +112,13 @@ func (c *userDefinedSourceClient) IsReady(ctx context.Context, in *emptypb.Empty
 type UserDefinedSourceServer interface {
 	// Read returns a stream of datum responses.
 	// The size of the returned ReadResponse is less than or equal to the num_records specified in ReadRequest.
-	// If the request timeout is reached on server side, the returned ReadResponse will contain all the datum responses that have been read.
+	// If the request timeout is reached on server side, the returned ReadResponse will contain all the datum responses that have been read (which could be an empty list).
 	Read(*ReadRequest, UserDefinedSource_ReadServer) error
 	// Ack acknowledges a list of datum offsets.
-	// It indicates that the datum stream has been processed by the source vertex.
+	// When Ack is called, it implicitly indicates that the datum stream has been processed by the source vertex.
+	// The caller (numa) expects the Ack to be successful, and it does not expect any errors.
+	// If there are some irrecoverable errors when the callee (UDSource) is processing the Ack,
+	// then it is best to crash because there are no other retry mechanisms possible.
 	Ack(context.Context, *AckRequest) (*AckResponse, error)
 	// Pending returns the number of pending records at the user defined source.
 	Pending(context.Context, *emptypb.Empty) (*PendingResponse, error)
