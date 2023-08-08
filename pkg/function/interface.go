@@ -56,7 +56,7 @@ type ReduceHandler interface {
 	HandleDo(ctx context.Context, keys []string, reduceCh <-chan Datum, md Metadata) Messages
 }
 
-// MapFunc is utility type used to convert a HandleDo function to a MapHandler.
+// MapFunc is a utility type used to convert a HandleDo function to a MapHandler.
 type MapFunc func(ctx context.Context, keys []string, datum Datum) Messages
 
 // HandleDo implements the function of map function.
@@ -64,7 +64,7 @@ func (mf MapFunc) HandleDo(ctx context.Context, keys []string, datum Datum) Mess
 	return mf(ctx, keys, datum)
 }
 
-// MapStreamFunc is utility type used to convert a HandleDo function to a MapStreamHandler.
+// MapStreamFunc is a utility type used to convert a HandleDo function to a MapStreamHandler.
 type MapStreamFunc func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message)
 
 // HandleDo implements the function of map stream function.
@@ -72,7 +72,7 @@ func (msf MapStreamFunc) HandleDo(ctx context.Context, keys []string, datum Datu
 	msf(ctx, keys, datum, messageCh)
 }
 
-// MapTFunc is utility type used to convert a HandleDo function to a MapTHandler.
+// MapTFunc is a utility type used to convert a HandleDo function to a MapTHandler.
 type MapTFunc func(ctx context.Context, keys []string, datum Datum) MessageTs
 
 // HandleDo implements the function of mapT function.
@@ -80,7 +80,7 @@ func (mf MapTFunc) HandleDo(ctx context.Context, keys []string, datum Datum) Mes
 	return mf(ctx, keys, datum)
 }
 
-// ReduceFunc is utility type used to convert a HandleDo function to a ReduceHandler.
+// ReduceFunc is a utility type used to convert a HandleDo function to a ReduceHandler.
 type ReduceFunc func(ctx context.Context, keys []string, reduceCh <-chan Datum, md Metadata) Messages
 
 // HandleDo implements the function of reduce function.

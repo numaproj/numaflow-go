@@ -1,11 +1,11 @@
 // Package info is used for the gRPC server to provide the information such as protocol, sdk version, language, etc, to the client.
 //
 // The server information can be used by the client to determine:
-//   - what is right protocol to use (UDS or TCP)
+//   - what is the right protocol to use (UDS or TCP)
 //   - what is the numaflow sdk version used by the server
 //   - what is language used by the server
 //
-// The gRPC server (UDF, UDSink, etc) is supposed to have a shared file system with the client (numa container).
+// The gRPC server (UDF, UDSink, etc.) is supposed to have a shared file system with the client (numa container).
 //
 // Write()
 // The gPRC server must use this function to write the correct ServerInfo when it starts.

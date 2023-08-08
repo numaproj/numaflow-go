@@ -2,12 +2,14 @@ package server
 
 import (
 	"context"
-	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+
+	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
 )
 
 func TestServer_Start(t *testing.T) {

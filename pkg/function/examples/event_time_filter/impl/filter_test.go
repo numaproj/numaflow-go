@@ -114,7 +114,7 @@ func (d afterYear2022DatumMetadata) NumDelivered() uint64 {
 
 func Test_FilterEventTime(t *testing.T) {
 	testKeys := []string{"test-key"}
-	janFisrt2022 := time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC)
+	janFirst2022 := time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC)
 	janFirst2023 := time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)
 	tests := []struct {
 		name           string
@@ -132,7 +132,7 @@ func Test_FilterEventTime(t *testing.T) {
 			name:  "DatumWithEventTimeWithin2022GetsKeyAndEventTimeUpdated",
 			input: withinYear2022Datum{},
 			expectedOutput: functionsdk.MessageTs{
-				functionsdk.NewMessageT([]byte("test-data"), janFisrt2022).WithTags([]string{"within_year_2022"}),
+				functionsdk.NewMessageT([]byte("test-data"), janFirst2022).WithTags([]string{"within_year_2022"}),
 			},
 		},
 		{

@@ -1,10 +1,10 @@
 package function
 
 const (
-	TCP      = "tcp"
-	UDS      = "unix"
-	UDS_ADDR = "/var/run/numaflow/function.sock"
-	TCP_ADDR = ":55551"
+	TCP     = "tcp"
+	UDS     = "unix"
+	UdsAddr = "/var/run/numaflow/function.sock"
+	TcpAddr = ":55551"
 	// DefaultMaxMessageSize overrides gRPC max message size configuration
 	// https://github.com/grpc/grpc-go/blob/master/server.go#L58-L59
 	//   - defaultServerMaxReceiveMessageSize

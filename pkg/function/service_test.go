@@ -3,7 +3,6 @@ package function
 import (
 	"context"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"reflect"
 	"sort"
@@ -12,11 +11,14 @@ import (
 	"testing"
 	"time"
 
-	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
+	"github.com/stretchr/testify/assert"
+
 	"google.golang.org/grpc"
 	grpcmd "google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 )
 
 type fields struct {
