@@ -76,6 +76,7 @@ type ReadRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Required field indicating the request.
 	Request *ReadRequest_Request `protobuf:"bytes,1,opt,name=request,proto3" json:"request,omitempty"`
 }
 
@@ -124,6 +125,7 @@ type ReadResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Required field holding the result.
 	Result *ReadResponse_Result `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
 }
 
@@ -172,6 +174,7 @@ type DatumResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Required field holding the result.
 	Result *DatumResponse_Result `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
 }
 
@@ -221,6 +224,7 @@ type AckRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Required field holding the request.
 	Request *AckRequest_Request `protobuf:"bytes,1,opt,name=request,proto3" json:"request,omitempty"`
 }
 
@@ -269,6 +273,7 @@ type AckResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Required field holding the result.
 	Result *AckResponse_Result `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
 }
 
@@ -317,6 +322,7 @@ type SourceReadyResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Required field holding the health check result.
 	Ready bool `protobuf:"varint,1,opt,name=ready,proto3" json:"ready,omitempty"`
 }
 
@@ -365,6 +371,7 @@ type PendingResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Required field holding the result.
 	Result *PendingResponse_Result `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
 }
 
@@ -413,12 +420,12 @@ type Offset struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// offset is the offset of the datum.
+	// offset is the offset of the datum. This field is required.
 	// We define Offset as a byte array because different input data sources can have different representations for Offset.
 	// The only way to generalize it is to define it as a byte array,
 	// Such that we can let the UDSource to de-serialize the offset using its own interpretation logics.
 	Offset []byte `protobuf:"bytes,1,opt,name=offset,proto3" json:"offset,omitempty"`
-	// optional partition_id indicates which partition of the source the datum belongs to.
+	// Optional partition_id indicates which partition of the source the datum belongs to.
 	// It is useful for sources that have multiple partitions. e.g. Kafka.
 	// If the partition_id is not specified, it is assumed that the source has a single partition.
 	PartitionId string `protobuf:"bytes,2,opt,name=partition_id,json=partitionId,proto3" json:"partition_id,omitempty"`
@@ -475,7 +482,7 @@ type ReadRequest_Request struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// num_records is the number of records to read.
+	// Required field indicating the number of records to read.
 	NumRecords uint64 `protobuf:"varint,1,opt,name=num_records,json=numRecords,proto3" json:"num_records,omitempty"`
 }
 
@@ -523,7 +530,7 @@ type ReadResponse_Result struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// elements is a list of datum response elements.
+	// Required field holding a list of datum response elements.
 	Elements []*DatumResponse `protobuf:"bytes,1,rep,name=elements,proto3" json:"elements,omitempty"`
 }
 
@@ -571,19 +578,17 @@ type DatumResponse_Result struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// payload is the payload of the datum.
+	// Required field holding the payload of the datum.
 	Payload []byte `protobuf:"bytes,1,opt,name=payload,proto3" json:"payload,omitempty"`
-	// offset is the offset information of the datum.
+	// Required field indicating the offset information of the datum.
 	Offset *Offset `protobuf:"bytes,2,opt,name=offset,proto3" json:"offset,omitempty"`
-	// keys is an optional list of keys associated with the datum.
+	// Required field representing the time associated with each datum. It is used for watermarking.
+	EventTime *EventTime `protobuf:"bytes,3,opt,name=event_time,json=eventTime,proto3" json:"event_time,omitempty"`
+	// Optional list of keys associated with the datum.
 	// Key is the "key" attribute in (key,value) as in the map-reduce paradigm.
 	// We add this optional field to support the use case where the user defined source can provide keys for the datum.
 	// e.g. Kafka and Redis Stream message usually include information about the keys.
-	Keys []string `protobuf:"bytes,3,rep,name=keys,proto3" json:"keys,omitempty"`
-	// event_time is the time associated with each datum.
-	// We add this optional field to support the use case where the user defined source can provide event time for the datum.
-	// e.g. Kafka and Redis Stream message usually include information about the event time.
-	EventTime *EventTime `protobuf:"bytes,4,opt,name=event_time,json=eventTime,proto3" json:"event_time,omitempty"`
+	Keys []string `protobuf:"bytes,4,rep,name=keys,proto3" json:"keys,omitempty"`
 }
 
 func (x *DatumResponse_Result) Reset() {
@@ -632,16 +637,16 @@ func (x *DatumResponse_Result) GetOffset() *Offset {
 	return nil
 }
 
-func (x *DatumResponse_Result) GetKeys() []string {
+func (x *DatumResponse_Result) GetEventTime() *EventTime {
 	if x != nil {
-		return x.Keys
+		return x.EventTime
 	}
 	return nil
 }
 
-func (x *DatumResponse_Result) GetEventTime() *EventTime {
+func (x *DatumResponse_Result) GetKeys() []string {
 	if x != nil {
-		return x.EventTime
+		return x.Keys
 	}
 	return nil
 }
@@ -651,6 +656,7 @@ type AckRequest_Request struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Required field holding a list of offsets to be acknowledged.
 	Offsets []*Offset `protobuf:"bytes,1,rep,name=offsets,proto3" json:"offsets,omitempty"`
 }
 
@@ -698,7 +704,7 @@ type AckResponse_Result struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// non_acked_offsets is a list of offsets that have not been acknowledged by source.
+	// Required field holding a list of offsets that have not been acknowledged by source.
 	// numaflow will retry to acknowledge these offsets.
 	NonAckedOffsets []*Offset `protobuf:"bytes,1,rep,name=non_acked_offsets,json=nonAckedOffsets,proto3" json:"non_acked_offsets,omitempty"`
 }
@@ -747,7 +753,7 @@ type PendingResponse_Result struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// count is the number of pending records at the user defined source.
+	// Required field holding the number of pending records at the user defined source.
 	Count uint64 `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
 }
 
@@ -830,11 +836,11 @@ var file_pkg_apis_proto_source_v1_udsource_proto_rawDesc = []byte{
 	0x07, 0x70, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x12, 0x29, 0x0a, 0x06, 0x6f, 0x66, 0x66, 0x73,
 	0x65, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x11, 0x2e, 0x73, 0x6f, 0x75, 0x72, 0x63,
 	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4f, 0x66, 0x66, 0x73, 0x65, 0x74, 0x52, 0x06, 0x6f, 0x66, 0x66,
-	0x73, 0x65, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x6b, 0x65, 0x79, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28,
-	0x09, 0x52, 0x04, 0x6b, 0x65, 0x79, 0x73, 0x12, 0x33, 0x0a, 0x0a, 0x65, 0x76, 0x65, 0x6e, 0x74,
-	0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x14, 0x2e, 0x73, 0x6f,
-	0x75, 0x72, 0x63, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x54, 0x69, 0x6d,
-	0x65, 0x52, 0x09, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x54, 0x69, 0x6d, 0x65, 0x22, 0x7d, 0x0a, 0x0a,
+	0x73, 0x65, 0x74, 0x12, 0x33, 0x0a, 0x0a, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x5f, 0x74, 0x69, 0x6d,
+	0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x14, 0x2e, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65,
+	0x2e, 0x76, 0x31, 0x2e, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x54, 0x69, 0x6d, 0x65, 0x52, 0x09, 0x65,
+	0x76, 0x65, 0x6e, 0x74, 0x54, 0x69, 0x6d, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x6b, 0x65, 0x79, 0x73,
+	0x18, 0x04, 0x20, 0x03, 0x28, 0x09, 0x52, 0x04, 0x6b, 0x65, 0x79, 0x73, 0x22, 0x7d, 0x0a, 0x0a,
 	0x41, 0x63, 0x6b, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x37, 0x0a, 0x07, 0x72, 0x65,
 	0x71, 0x75, 0x65, 0x73, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x73, 0x6f,
 	0x75, 0x72, 0x63, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x63, 0x6b, 0x52, 0x65, 0x71, 0x75, 0x65,
