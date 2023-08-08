@@ -22,7 +22,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// *
 // EventTime represents the event time of the datum.
 type EventTime struct {
 	state         protoimpl.MessageState
@@ -71,7 +70,6 @@ func (x *EventTime) GetEventTime() *timestamppb.Timestamp {
 	return nil
 }
 
-// *
 // ReadRequest is the request for reading datum stream from user defined source.
 type ReadRequest struct {
 	state         protoimpl.MessageState
@@ -120,7 +118,6 @@ func (x *ReadRequest) GetRequest() *ReadRequest_Request {
 	return nil
 }
 
-// *
 // ReadResponse represents a list of datum response elements.
 type ReadResponse struct {
 	state         protoimpl.MessageState
@@ -169,7 +166,6 @@ func (x *ReadResponse) GetResult() *ReadResponse_Result {
 	return nil
 }
 
-// *
 // DatumResponse represents a datum response element.
 type DatumResponse struct {
 	state         protoimpl.MessageState
@@ -218,7 +214,6 @@ func (x *DatumResponse) GetResult() *DatumResponse_Result {
 	return nil
 }
 
-// *
 // AckRequest is the request for acknowledging datum.
 // It takes a list of offsets to be acknowledged.
 type AckRequest struct {
@@ -268,7 +263,6 @@ func (x *AckRequest) GetRequest() *AckRequest_Request {
 	return nil
 }
 
-// *
 // AckResponse is the response for acknowledging datum.
 type AckResponse struct {
 	state         protoimpl.MessageState
@@ -317,7 +311,6 @@ func (x *AckResponse) GetResult() *AckResponse_Result {
 	return nil
 }
 
-// *
 // SourceReadyResponse is the health check result for user defined source.
 type SourceReadyResponse struct {
 	state         protoimpl.MessageState
@@ -366,7 +359,6 @@ func (x *SourceReadyResponse) GetReady() bool {
 	return false
 }
 
-// *
 // PendingResponse is the response for the pending request.
 type PendingResponse struct {
 	state         protoimpl.MessageState
@@ -415,7 +407,6 @@ func (x *PendingResponse) GetResult() *PendingResponse_Result {
 	return nil
 }
 
-// *
 // Offset is the offset of the datum.
 type Offset struct {
 	state         protoimpl.MessageState

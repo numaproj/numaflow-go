@@ -23,14 +23,14 @@ service UserDefinedSource {
   rpc IsSourceReady(google.protobuf.Empty) returns (SourceReadyResponse);
 }
 
-/**
+/*
  * EventTime represents the event time of the datum.
  */
 message EventTime {
   google.protobuf.Timestamp event_time = 1;
 }
 
-/**
+/*
  * ReadRequest is the request for reading datum stream from user defined source.
  */
 message ReadRequest {
@@ -41,7 +41,7 @@ message ReadRequest {
   Request request = 1;
 }
 
-/**
+/*
  * ReadResponse represents a list of datum response elements.
  */
 message ReadResponse {
@@ -52,7 +52,7 @@ message ReadResponse {
   Result result = 1;
 }
 
-/**
+/*
  * DatumResponse represents a datum response element.
  */
 message DatumResponse {
@@ -74,7 +74,7 @@ message DatumResponse {
   Result result = 1;
 }
 
-/**
+/*
  * AckRequest is the request for acknowledging datum.
  * It takes a list of offsets to be acknowledged.
  */
@@ -85,7 +85,7 @@ message AckRequest {
   Request request = 1;
 }
 
-/**
+/*
  * AckResponse is the response for acknowledging datum.
  */
 message AckResponse {
@@ -96,14 +96,14 @@ message AckResponse {
   Result result = 1;
 }
 
-/**
+/*
  * SourceReadyResponse is the health check result for user defined source.
  */
 message SourceReadyResponse {
   bool ready = 1;
 }
 
-/**
+/*
  * PendingResponse is the response for the pending request.
  */
 message PendingResponse {
@@ -114,7 +114,7 @@ message PendingResponse {
   Result result = 1;
 }
 
-/**
+/*
  * Offset is the offset of the datum.
  */
 message Offset {
