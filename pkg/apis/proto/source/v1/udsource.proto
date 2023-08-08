@@ -90,7 +90,8 @@ message AckRequest {
  */
 message AckResponse {
   message Result {
-    // non_acked_offsets is a list of offsets that have not been acknowledged.
+    // non_acked_offsets is a list of offsets that have not been acknowledged by source.
+    // numaflow will retry to acknowledge these offsets.
     repeated Offset non_acked_offsets = 1;
   }
   Result result = 1;
