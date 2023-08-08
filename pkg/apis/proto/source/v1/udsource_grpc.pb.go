@@ -31,8 +31,8 @@ type UserDefinedSourceClient interface {
 	Ack(ctx context.Context, in *AckRequest, opts ...grpc.CallOption) (*AckResponse, error)
 	// Pending returns the number of pending records at the user defined source.
 	Pending(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PendingResponse, error)
-	// IsReady is the heartbeat endpoint for gRPC.
-	IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReadyResponse, error)
+	// IsSourceReady is the heartbeat endpoint for user defined source gRPC.
+	IsSourceReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SourceReadyResponse, error)
 }
 
 type userDefinedSourceClient struct {
@@ -93,9 +93,9 @@ func (c *userDefinedSourceClient) Pending(ctx context.Context, in *emptypb.Empty
 	return out, nil
 }
 
-func (c *userDefinedSourceClient) IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReadyResponse, error) {
-	out := new(ReadyResponse)
-	err := c.cc.Invoke(ctx, "/source.v1.UserDefinedSource/IsReady", in, out, opts...)
+func (c *userDefinedSourceClient) IsSourceReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SourceReadyResponse, error) {
+	out := new(SourceReadyResponse)
+	err := c.cc.Invoke(ctx, "/source.v1.UserDefinedSource/IsSourceReady", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -114,8 +114,8 @@ type UserDefinedSourceServer interface {
 	Ack(context.Context, *AckRequest) (*AckResponse, error)
 	// Pending returns the number of pending records at the user defined source.
 	Pending(context.Context, *emptypb.Empty) (*PendingResponse, error)
-	// IsReady is the heartbeat endpoint for gRPC.
-	IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error)
+	// IsSourceReady is the heartbeat endpoint for user defined source gRPC.
+	IsSourceReady(context.Context, *emptypb.Empty) (*SourceReadyResponse, error)
 	mustEmbedUnimplementedUserDefinedSourceServer()
 }
 
@@ -132,8 +132,8 @@ func (UnimplementedUserDefinedSourceServer) Ack(context.Context, *AckRequest) (*
 func (UnimplementedUserDefinedSourceServer) Pending(context.Context, *emptypb.Empty) (*PendingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Pending not implemented")
 }
-func (UnimplementedUserDefinedSourceServer) IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method IsReady not implemented")
+func (UnimplementedUserDefinedSourceServer) IsSourceReady(context.Context, *emptypb.Empty) (*SourceReadyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IsSourceReady not implemented")
 }
 func (UnimplementedUserDefinedSourceServer) mustEmbedUnimplementedUserDefinedSourceServer() {}
 
@@ -205,20 +205,20 @@ func _UserDefinedSource_Pending_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _UserDefinedSource_IsReady_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _UserDefinedSource_IsSourceReady_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UserDefinedSourceServer).IsReady(ctx, in)
+		return srv.(UserDefinedSourceServer).IsSourceReady(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/source.v1.UserDefinedSource/IsReady",
+		FullMethod: "/source.v1.UserDefinedSource/IsSourceReady",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserDefinedSourceServer).IsReady(ctx, req.(*emptypb.Empty))
+		return srv.(UserDefinedSourceServer).IsSourceReady(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -239,8 +239,8 @@ var UserDefinedSource_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _UserDefinedSource_Pending_Handler,
 		},
 		{
-			MethodName: "IsReady",
-			Handler:    _UserDefinedSource_IsReady_Handler,
+			MethodName: "IsSourceReady",
+			Handler:    _UserDefinedSource_IsSourceReady_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

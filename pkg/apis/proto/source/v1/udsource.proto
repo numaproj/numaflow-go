@@ -19,8 +19,8 @@ service UserDefinedSource {
   // Pending returns the number of pending records at the user defined source.
   rpc Pending(google.protobuf.Empty) returns (PendingResponse);
 
-  // IsReady is the heartbeat endpoint for gRPC.
-  rpc IsReady(google.protobuf.Empty) returns (ReadyResponse);
+  // IsSourceReady is the heartbeat endpoint for user defined source gRPC.
+  rpc IsSourceReady(google.protobuf.Empty) returns (SourceReadyResponse);
 }
 
 /**
@@ -90,29 +90,16 @@ message AckRequest {
  */
 message AckResponse {
   message Result {
-    // status is the status of the AckResponse.
-    AckStatus status = 1;
-    // non_acked_offsets is the list of offsets that are not acknowledged.
-    repeated Offset non_acked_offsets = 2;
+    // non_acked_offsets is a list of offsets that have not been acknowledged.
+    repeated Offset non_acked_offsets = 1;
   }
   Result result = 1;
-  /**
-   * AckStatus is the status of the AckResponse.
-   */
-  enum AckStatus {
-    // ALL_ACKED means all the offsets are acknowledged.
-    ALL_ACKED = 0;
-    // PARTIALLY_ACKED means some of the offsets are acknowledged.
-    PARTIALLY_ACKED = 1;
-    // NONE_ACKED means none of the offsets are acknowledged.
-    NONE_ACKED = 2;
-  }
 }
 
 /**
- * ReadyResponse is the health check result.
+ * SourceReadyResponse is the health check result for user defined source.
  */
-message ReadyResponse {
+message SourceReadyResponse {
   bool ready = 1;
 }
 
