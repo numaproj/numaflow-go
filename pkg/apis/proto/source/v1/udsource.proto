@@ -20,8 +20,8 @@ service UserDefinedSource {
   // Pending returns the number of pending records at the user defined source.
   rpc Pending(google.protobuf.Empty) returns (PendingResponse);
 
-  // IsSourceReady is the heartbeat endpoint for user defined source gRPC.
-  rpc IsSourceReady(google.protobuf.Empty) returns (SourceReadyResponse);
+  // IsReady is the heartbeat endpoint for user defined source gRPC.
+  rpc IsReady(google.protobuf.Empty) returns (ReadyResponse);
 }
 
 /*
@@ -76,9 +76,18 @@ message DatumResponse {
  * It takes a list of offsets to be acknowledged.
  */
 message AckRequest {
+  // AckInfo includes all the information needed for acknowledging an offset.
+  message AckInfo {
+    // Required field holding the offset to be acknowledged.
+    Offset offset = 1;
+    // Required field holding the index of the offset in the original batch.
+    // On the server side, the UDSource container can choose to maintain a copy of the raw(before serialization) offsets.
+    // Hence it can use this index to retrieve the original offset and acknowledge it, without deserialize the offset.
+    uint64 index_at_original_batch = 2;
+  }
   message Request {
     // Required field holding a list of offsets to be acknowledged.
-    repeated Offset offsets = 1;
+    repeated AckInfo ackInfos = 1;
   }
   // Required field holding the request.
   Request request = 1;
@@ -88,19 +97,36 @@ message AckRequest {
  * AckResponse is the response for acknowledging datum.
  */
 message AckResponse {
+  enum Status {
+    // StatusError indicates that the offset has not been acknowledged successfully.
+    StatusError = 0;
+    // Leaving rooms for more status.
+  }
+  // FailedAcknowledgement is the acknowledgement result for a single offset.
+  // It is used by the platform to retry the acknowledgement.
+  message FailedAcknowledgement {
+    // Required field holding the index of the offset in the original batch.
+    uint64 index_at_original_batch = 1;
+    // Required field holding the offset that this ack result corresponds to.
+    Offset offset = 2;
+    // Required field holding the status of the acknowledgement.
+    Status status = 3;
+    // Optional field holding the error message.
+    string error_message = 4;
+  }
   message Result {
-    // Required field holding a list of offsets that have not been acknowledged by source.
-    // numaflow will retry to acknowledge these offsets.
-    repeated Offset non_acked_offsets = 1;
+    // Required field holding a list of failed acknowledges.
+    // The platform will retry to acknowledge these offsets.
+    repeated FailedAcknowledgement failed_acknowledgements = 1;
   }
   // Required field holding the result.
   Result result = 1;
 }
 
 /*
- * SourceReadyResponse is the health check result for user defined source.
+ * ReadyResponse is the health check result for user defined source.
  */
-message SourceReadyResponse {
+message ReadyResponse {
   // Required field holding the health check result.
   bool ready = 1;
 }
