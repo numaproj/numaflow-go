@@ -2,39 +2,32 @@ syntax = "proto3";
 
 option go_package = "github.com/numaproj/numaflow-go/pkg/apis/proto/sideinput/v1";
 
-import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 
 package sideinput.v1;
 
-// UserDefinedSideInput is used to propagate changes in the values of the provided side-inputs
+// UserDefinedSideInput is the gRPC service for user-defined Side Inputs.
+// It is used to propagate changes in the values of the provided Side Inputs
 // which allows access to slow updated data or configuration without needing to retrieve
-// it during each message processing. Through this service the vertex should be able to invoke retrieval request
-// for a single side-input, which in turn should check for updates and return its latest value.
+// it during each message processing.
+// Through this service we should should be able to:-
+// 1) Invoke retrieval request for a single Side Input parameter, which in turn should
+//    check for updates and return its latest value.
+// 2) Provide a health check endpoint to indicate whether the service is ready to be used.
 service UserDefinedSideInput {
-  // RetrieveSideInput applies a function to retrieve the latest side-input values.
+  // RetrieveSideInput is the endpoint to retrieve the latest value of a given Side Input.
   rpc RetrieveSideInput(google.protobuf.Empty) returns (SideInputResponse);
 
-  // IsReady is the heartbeat endpoint for gRPC.
+  // IsReady is the health check endpoint to indicate whether the service is ready to be used.
   rpc IsReady(google.protobuf.Empty) returns (ReadyResponse);
-}
-
-message EventTime {
-  // event_time is the time associated with side input value to indicate when was the
-  // value updated
-  google.protobuf.Timestamp event_time = 1;
-  // future we can add an enum to represent whether the event time is
-  // based on INGEST_TIME or EVENT_TIME or PROCESSING_TIME
 }
 
 /**
  * SideInputResponse represents a response to a given side input retrieval request.
  */
 message SideInputResponse {
-  // value is the side-input payload
+  // value represents the latest value of the side input payload
   bytes value = 1;
-  // event_time represents the timestamp at which value is updated
-  EventTime event_time = 2;
 }
 
 /**

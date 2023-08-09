@@ -23,9 +23,9 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type UserDefinedSideInputClient interface {
-	// SideInputFn applies a function to update the side-input values.
+	// RetrieveSideInput is the endpoint to retrieve the latest value of a given Side Input.
 	RetrieveSideInput(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SideInputResponse, error)
-	// IsReady is the heartbeat endpoint for gRPC.
+	// IsReady is the health check endpoint to indicate whether the service is ready to be used.
 	IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReadyResponse, error)
 }
 
@@ -59,9 +59,9 @@ func (c *userDefinedSideInputClient) IsReady(ctx context.Context, in *emptypb.Em
 // All implementations must embed UnimplementedUserDefinedSideInputServer
 // for forward compatibility
 type UserDefinedSideInputServer interface {
-	// SideInputFn applies a function to update the side-input values.
+	// RetrieveSideInput is the endpoint to retrieve the latest value of a given Side Input.
 	RetrieveSideInput(context.Context, *emptypb.Empty) (*SideInputResponse, error)
-	// IsReady is the heartbeat endpoint for gRPC.
+	// IsReady is the health check endpoint to indicate whether the service is ready to be used.
 	IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error)
 	mustEmbedUnimplementedUserDefinedSideInputServer()
 }
