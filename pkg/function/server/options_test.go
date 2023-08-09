@@ -3,8 +3,9 @@ package server
 import (
 	"testing"
 
-	"github.com/numaproj/numaflow-go/pkg/function"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/numaproj/numaflow-go/pkg/function"
 )
 
 func TestWithMaxMessageSize(t *testing.T) {

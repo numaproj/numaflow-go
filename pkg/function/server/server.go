@@ -9,10 +9,11 @@ import (
 	"os/signal"
 	"syscall"
 
+	"google.golang.org/grpc"
+
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
 	"github.com/numaproj/numaflow-go/pkg/info"
-	"google.golang.org/grpc"
 )
 
 type server struct {
@@ -27,107 +28,59 @@ func New() *server {
 }
 
 // RegisterMapper registers the map operation handler to the server.
-// Example:
-//
-//	func handle(ctx context.Context, keys []string, data functionsdk.Datum) functionsdk.Messages {
-//		_ = data.EventTime() // Event time is available
-//		_ = data.Watermark() // Watermark is available
-//		return functionsdk.MessagesBuilder().Append(functionsdk.NewMessage(data.Value()))
-//	}
-//
-//	func main() {
-//		server.New().RegisterMapper(functionsdk.MapFunc(handle)).Start(context.Background())
-//	}
+// See an example at pkg/function/examples/flatmap/main.go
 func (s *server) RegisterMapper(m functionsdk.MapHandler) *server {
 	s.svc.Mapper = m
 	return s
 }
 
 // RegisterMapperStream registers the mapStream operation handler to the server.
-// Example:
-//
-//	func handle(ctx context.Context, keys []string, data functionsdk.Datum, messageCh chan<- functionsdk.Message) {
-//
-//		_ = data.EventTime() // Event time is available
-//		_ = data.Watermark() // Watermark is available
-//
-//		msg := d.Value()
-//		messageCh <- functionsdk.NewMessage(msg).WithKeys([]string{keys[0] + "_test"})
-//		close(messageCh)
-//	}
-//
-//	func main() {
-//		server.New().RegisterMapperStream(functionsdk.MapStreamFunc(handle)).Start(context.Background())
-//	}
+// See an example at pkg/function/examples/flatmap_stream/main.go
 func (s *server) RegisterMapperStream(m functionsdk.MapStreamHandler) *server {
 	s.svc.MapperStream = m
 	return s
 }
 
 // RegisterMapperT registers the mapT operation handler to the server.
-// Example:
-//
-//	func handle(ctx context.Context, keys []string, data functionsdk.Datum) functionsdk.MessageTs {
-//		_ = data.EventTime() // Event time is available
-//		_ = data.Watermark() // Watermark is available
-//		return functionsdk.MessageTsBuilder().Append(functionsdk.NewMessageT(time.Now(), data.Value()))
-//	}
-//
-//	func main() {
-//		server.New().RegisterMapperT(functionsdk.MapTFunc(handle)).Start(context.Background())
-//	}
+// See an example at pkg/function/examples/assign_event_time/main.go
 func (s *server) RegisterMapperT(m functionsdk.MapTHandler) *server {
 	s.svc.MapperT = m
 	return s
 }
 
 // RegisterReducer registers the reduce operation handler.
-// Example:
-//
-//	func handle(_ context.Context, keys []string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) functionsdk.Messages {
-//		var resultKeys = keys
-//		var resultVal []byte
-//		for data := range reduceCh {
-//			_ = data.EventTime() // Event time is available
-//			_ = data.Watermark() // Watermark is available
-//		}
-//		return functionsdk.MessagesBuilder().Append(functionsdk.NewMessage(resultVal).WithKeys(resultKeys))
-//	}
-//
-//	func main() {
-//		server.New().RegisterReducer(functionsdk.ReduceFunc(handle)).Start(context.Background())
-//	}
+// See an example at pkg/function/examples/sum/main.go
 func (s *server) RegisterReducer(r functionsdk.ReduceHandler) *server {
 	s.svc.Reducer = r
 	return s
 }
 
-// Start starts the gRPC server via unix domain socket at configs.Addr and return error.
+// Start starts the gRPC server via unix domain socket at configs.Addr and returns error if any.
 func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 	var opts = &options{
-		sockAddr:            functionsdk.UDS_ADDR,
-		maxMessageSize:      functionsdk.DefaultMaxMessageSize,
-		sereverInfoFilePath: info.ServerInfoFilePath,
+		sockAddr:           functionsdk.UdsAddr,
+		maxMessageSize:     functionsdk.DefaultMaxMessageSize,
+		serverInfoFilePath: info.ServerInfoFilePath,
 	}
 
 	for _, inputOption := range inputOptions {
 		inputOption(opts)
 	}
 
-	// Write server info to the file
+	// Write server info to the file.
 	serverInfo := &info.ServerInfo{Protocol: info.UDS, Language: info.Go, Version: info.GetSDKVersion()}
-	if err := info.Write(serverInfo, info.WithServerInfoFilePath(opts.sereverInfoFilePath)); err != nil {
+	if err := info.Write(serverInfo, info.WithServerInfoFilePath(opts.serverInfoFilePath)); err != nil {
 		return err
 	}
 
+	// cleanup cleans up the unix domain socket file if exists.
+	// TODO - once we support TCP, we need to update it to support TCP as well.
 	cleanup := func() error {
-		// err if no opts.sockAddr should be ignored
 		if _, err := os.Stat(opts.sockAddr); err == nil {
 			return os.RemoveAll(opts.sockAddr)
 		}
 		return nil
 	}
-
 	if err := cleanup(); err != nil {
 		return err
 	}
@@ -136,7 +89,7 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 	defer stop()
 	lis, err := net.Listen(functionsdk.UDS, opts.sockAddr)
 	if err != nil {
-		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", functionsdk.UDS, functionsdk.UDS_ADDR, err)
+		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", functionsdk.UDS, functionsdk.UdsAddr, err)
 	}
 	defer func() { _ = lis.Close() }()
 	grpcServer := grpc.NewServer(
