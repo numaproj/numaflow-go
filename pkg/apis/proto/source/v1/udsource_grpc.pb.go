@@ -25,6 +25,7 @@ const _ = grpc.SupportPackageIsVersion7
 type UserDefinedSourceClient interface {
 	// Read returns a stream of datum responses.
 	// The size of the returned ReadResponse is less than or equal to the num_records specified in ReadRequest.
+	// If the request timeout is reached on server side, the returned ReadResponse will contain all the datum responses that have been read.
 	Read(ctx context.Context, in *ReadRequest, opts ...grpc.CallOption) (UserDefinedSource_ReadClient, error)
 	// Ack acknowledges a list of datum offsets.
 	// It indicates that the datum stream has been processed by the source vertex.
@@ -108,6 +109,7 @@ func (c *userDefinedSourceClient) IsSourceReady(ctx context.Context, in *emptypb
 type UserDefinedSourceServer interface {
 	// Read returns a stream of datum responses.
 	// The size of the returned ReadResponse is less than or equal to the num_records specified in ReadRequest.
+	// If the request timeout is reached on server side, the returned ReadResponse will contain all the datum responses that have been read.
 	Read(*ReadRequest, UserDefinedSource_ReadServer) error
 	// Ack acknowledges a list of datum offsets.
 	// It indicates that the datum stream has been processed by the source vertex.
