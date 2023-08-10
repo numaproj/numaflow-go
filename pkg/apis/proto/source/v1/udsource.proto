@@ -14,7 +14,10 @@ service UserDefinedSource {
   rpc Read(ReadRequest) returns (stream ReadResponse);
 
   // Ack acknowledges a list of datum offsets.
-  // It indicates that the datum stream has been processed by the source vertex.
+  // When Ack is called, it implicitly indicates that the datum stream has been processed by the source vertex.
+  // The caller (numa) expects the Ack to be successful, and it does not expect any errors. 
+  // If there are some irrecoverable errors when the callee (UDSource) is processing the Ack,
+  // then it is best to crash because there are no other retry mechanisms possible. 
   rpc Ack(AckRequest) returns (AckResponse);
 
   // Pending returns the number of pending records at the user defined source.
