@@ -10,7 +10,7 @@ package source.v1;
 service UserDefinedSource {
   // Read returns a stream of datum responses.
   // The size of the returned ReadResponse is less than or equal to the num_records specified in ReadRequest.
-  // If the request timeout is reached on server side, the returned ReadResponse will contain all the datum responses that have been read.
+  // If the request timeout is reached on server side, the returned ReadResponse will contain all the datum responses that have been read (which could be an empty list).
   rpc Read(ReadRequest) returns (stream ReadResponse);
 
   // Ack acknowledges a list of datum offsets.
@@ -86,7 +86,7 @@ message AckRequest {
     // By enforcing ordering, we can save deserialization effort on the server side, assuming the server keeps a local copy of the raw/un-serialized offsets.
     repeated Offset offset = 1;
   }
-  // Required field holding the request.
+  // Required field holding the request. The list will be ordered and will have the same order as the original Read response.
   Request request = 1;
 }
 
