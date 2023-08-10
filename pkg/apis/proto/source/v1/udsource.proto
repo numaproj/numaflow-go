@@ -76,50 +76,31 @@ message DatumResponse {
  * It takes a list of offsets to be acknowledged.
  */
 message AckRequest {
-  // AckInfo includes all the information needed for acknowledging an offset.
-  message AckInfo {
-    // Required field holding the offset to be acknowledged.
-    Offset offset = 1;
-    // Required field holding the index of the offset in the original batch.
-    // On the server side, the UDSource container can choose to maintain a copy of the raw(before serialization) offsets.
-    // Hence it can use this index to retrieve the original offset and acknowledge it, without deserialize the offset.
-    uint64 index_at_original_batch = 2;
-  }
   message Request {
     // Required field holding a list of offsets to be acknowledged.
-    repeated AckInfo ackInfos = 1;
+    // The offsets must be strictly corresponding to the previously read batch,
+    // meaning the offsets must be in the same order as the datum responses in the ReadResponse.
+    // By enforcing ordering, we can save deserialization effort on the server side, assuming the server keeps a local copy of the raw/un-serialized offsets.
+    repeated Offset offset = 1;
   }
   // Required field holding the request.
   Request request = 1;
 }
 
 /*
- * AckResponse is the response for acknowledging datum.
+ * AckResponse is the response for acknowledging datum. It contains one empty field confirming
+ * the batch of offsets that have been successfully acknowledged. The contract between client and server
+ * is that the server will only return the AckResponse if the ack request is successful.
+ * If the server hangs during the ack request, the client can decide to timeout and error out the data forwarder.
+ * The reason why we define such contract is that we always expect the server to be able to process the ack request.
+ * Client is expected to send the AckRequest to the server with offsets that are strictly
+ * corresponding to the previously read batch. If the client sends the AckRequest with offsets that are not,
+ * it is considered as a client error and the server will not return the AckResponse.
  */
 message AckResponse {
-  enum Status {
-    // StatusTimeoutError indicates that the offset has not been acknowledged due to AckRequest timeout.
-    StatusTimeoutError = 0;
-    // StatusApiError indicates that the offset has not been acknowledged due to the user defined source API error.
-    StatusApiError = 1;
-    // Leaving rooms for more status.
-  }
-  // FailedAcknowledgement is the acknowledgement result for a single offset.
-  // It is used by the platform to retry the acknowledgement.
-  message FailedAcknowledgement {
-    // Required field holding the index of the offset in the original batch.
-    uint64 index_at_original_batch = 1;
-    // Required field holding the offset that this ack result corresponds to.
-    Offset offset = 2;
-    // Required field holding the status of the acknowledgement.
-    Status status = 3;
-    // Optional field holding the error message.
-    string error_message = 4;
-  }
   message Result {
-    // Required field holding a list of failed acknowledges.
-    // The platform will retry to acknowledge these offsets.
-    repeated FailedAcknowledgement failed_acknowledgements = 1;
+    // Required field indicating the ack request is successful.
+    google.protobuf.Empty success = 1;
   }
   // Required field holding the result.
   Result result = 1;
