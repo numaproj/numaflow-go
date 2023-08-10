@@ -98,8 +98,10 @@ message AckRequest {
  */
 message AckResponse {
   enum Status {
-    // StatusError indicates that the offset has not been acknowledged successfully.
-    StatusError = 0;
+    // StatusTimeoutError indicates that the offset has not been acknowledged due to AckRequest timeout.
+    StatusTimeoutError = 0;
+    // StatusApiError indicates that the offset has not been acknowledged due to the user defined source API error.
+    StatusApiError = 1;
     // Leaving rooms for more status.
   }
   // FailedAcknowledgement is the acknowledgement result for a single offset.
