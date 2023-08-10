@@ -31,6 +31,6 @@ func TestServer_Start(t *testing.T) {
 		time.Sleep(3 * time.Second)
 		cancel()
 	}()
-	err := New().RegisterPendingHandler(pendingHandler).Start(ctx, WithSockAddr(socketFile.Name()), WithServerInfoFilePath(serverInfoFile.Name()))
+	err := New(pendingHandler).Start(ctx, WithSockAddr(socketFile.Name()), WithServerInfoFilePath(serverInfoFile.Name()))
 	assert.NoError(t, err)
 }

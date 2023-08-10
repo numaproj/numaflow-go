@@ -21,14 +21,12 @@ type server struct {
 }
 
 // New creates a new server object.
-func New() *server {
+func New(
+	pendingHandler sourcesdk.PendingHandler,
+) *server {
 	s := new(server)
 	s.svc = new(sourcesdk.Service)
-	return s
-}
-
-func (s *server) RegisterPendingHandler(m sourcesdk.PendingHandler) *server {
-	s.svc.PendingHandler = m
+	s.svc.PendingHandler = pendingHandler
 	return s
 }
 
