@@ -2,6 +2,7 @@ package source
 
 import (
 	"context"
+	"time"
 
 	"github.com/numaproj/numaflow-go/pkg/source/model"
 )
@@ -10,6 +11,8 @@ import (
 type ReadRequest interface {
 	// Count returns the number of records to read.
 	Count() uint64
+	// TimeOut returns the timeout of the read request.
+	TimeOut() time.Duration
 }
 
 // PendingHandler is the interface of pending function implementation.

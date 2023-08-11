@@ -2,6 +2,7 @@ package source
 
 import (
 	"context"
+	"time"
 
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -12,7 +13,12 @@ import (
 
 // readRequest implements the ReadRequest interface and is used in the read handler.
 type readRequest struct {
-	count uint64
+	count   uint64
+	timeout time.Duration
+}
+
+func (r *readRequest) TimeOut() time.Duration {
+	return r.timeout
 }
 
 func (r *readRequest) Count() uint64 {
@@ -41,7 +47,8 @@ func (fs *Service) Pending(ctx context.Context, _ *emptypb.Empty) (*sourcepb.Pen
 // Read reads the data from the source.
 func (fs *Service) Read(d *sourcepb.ReadRequest, stream sourcepb.Source_ReadFnServer) error {
 	request := readRequest{
-		count: d.Request.GetNumRecords(),
+		count:   d.Request.GetNumRecords(),
+		timeout: time.Duration(int64(d.Request.GetTimeoutInMs()) * time.Millisecond.Nanoseconds()),
 	}
 	ctx := stream.Context()
 	messageCh := make(chan model.Message)
