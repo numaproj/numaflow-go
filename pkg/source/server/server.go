@@ -24,11 +24,13 @@ type server struct {
 func New(
 	pendingHandler sourcesdk.PendingHandler,
 	readHandler sourcesdk.ReadHandler,
+	ackHandler sourcesdk.AckHandler,
 ) *server {
 	s := new(server)
 	s.svc = new(sourcesdk.Service)
 	s.svc.PendingHandler = pendingHandler
 	s.svc.ReadHandler = readHandler
+	s.svc.AckHandler = ackHandler
 	return s
 }
 

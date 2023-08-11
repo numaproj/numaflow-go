@@ -48,6 +48,11 @@ type Offset struct {
 	partitionId string
 }
 
+// NewOffset creates an Offset with value and partition id
+func NewOffset(value []byte, partitionId string) Offset {
+	return Offset{value: value, partitionId: partitionId}
+}
+
 // Value returns value of the offset
 func (o Offset) Value() []byte {
 	return o.value

@@ -29,6 +29,9 @@ func TestServer_Start(t *testing.T) {
 	readHandler := sourcesdk.ReadFunc(func(ctx context.Context, readRequest sourcesdk.ReadRequest, messageCh chan<- model.Message) {
 		return
 	})
+	ackHandler := sourcesdk.AckFunc(func(ctx context.Context, request sourcesdk.AckRequest) {
+		return
+	})
 
 	// note: using actual UDS connection
 	ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
@@ -36,6 +39,6 @@ func TestServer_Start(t *testing.T) {
 		time.Sleep(3 * time.Second)
 		cancel()
 	}()
-	err := New(pendingHandler, readHandler).Start(ctx, WithSockAddr(socketFile.Name()), WithServerInfoFilePath(serverInfoFile.Name()))
+	err := New(pendingHandler, readHandler, ackHandler).Start(ctx, WithSockAddr(socketFile.Name()), WithServerInfoFilePath(serverInfoFile.Name()))
 	assert.NoError(t, err)
 }
