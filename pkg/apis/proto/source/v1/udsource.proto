@@ -7,21 +7,21 @@ import "google/protobuf/empty.proto";
 
 package source.v1;
 
-service UserDefinedSource {
+service Source {
   // Read returns a stream of datum responses.
   // The size of the returned ReadResponse is less than or equal to the num_records specified in ReadRequest.
   // If the request timeout is reached on server side, the returned ReadResponse will contain all the datum responses that have been read (which could be an empty list).
-  rpc Read(ReadRequest) returns (stream ReadResponse);
+  rpc ReadFn(ReadRequest) returns (stream DatumResponse);
 
-  // Ack acknowledges a list of datum offsets.
-  // When Ack is called, it implicitly indicates that the datum stream has been processed by the source vertex.
-  // The caller (numa) expects the Ack to be successful, and it does not expect any errors. 
-  // If there are some irrecoverable errors when the callee (UDSource) is processing the Ack,
+  // AckFn acknowledges a list of datum offsets.
+  // When AckFn is called, it implicitly indicates that the datum stream has been processed by the source vertex.
+  // The caller (numa) expects the AckFn to be successful, and it does not expect any errors.
+  // If there are some irrecoverable errors when the callee (UDSource) is processing the AckFn request,
   // then it is best to crash because there are no other retry mechanisms possible. 
-  rpc Ack(AckRequest) returns (AckResponse);
+  rpc AckFn(AckRequest) returns (AckResponse);
 
-  // Pending returns the number of pending records at the user defined source.
-  rpc Pending(google.protobuf.Empty) returns (PendingResponse);
+  // PendingFn returns the number of pending records at the user defined source.
+  rpc PendingFn(google.protobuf.Empty) returns (PendingResponse);
 
   // IsReady is the heartbeat endpoint for user defined source gRPC.
   rpc IsReady(google.protobuf.Empty) returns (ReadyResponse);
@@ -39,18 +39,6 @@ message ReadRequest {
   }
   // Required field indicating the request.
   Request request = 1;
-}
-
-/*
- * ReadResponse represents a list of datum response elements.
- */
-message ReadResponse {
-  message Result {
-    // Required field holding a list of datum response elements.
-    repeated DatumResponse elements = 1;
-  }
-  // Required field holding the result.
-  Result result = 1;
 }
 
 /*

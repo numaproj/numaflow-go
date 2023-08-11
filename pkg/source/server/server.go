@@ -23,10 +23,12 @@ type server struct {
 // New creates a new server object.
 func New(
 	pendingHandler sourcesdk.PendingHandler,
+	readHandler sourcesdk.ReadHandler,
 ) *server {
 	s := new(server)
 	s.svc = new(sourcesdk.Service)
 	s.svc.PendingHandler = pendingHandler
+	s.svc.ReadHandler = readHandler
 	return s
 }
 
@@ -48,8 +50,9 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 		return err
 	}
 
+	// cleanup cleans up the unix domain socket file if exists.
+	// TODO - once we support TCP, we need to update it to support TCP as well.
 	cleanup := func() error {
-		// err if no opts.sockAddr should be ignored
 		if _, err := os.Stat(opts.sockAddr); err == nil {
 			return os.RemoveAll(opts.sockAddr)
 		}
@@ -73,7 +76,7 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 	)
 	defer log.Println("Successfully stopped the gRPC server")
 	defer grpcServer.GracefulStop()
-	sourcepb.RegisterUserDefinedSourceServer(grpcServer, s.svc)
+	sourcepb.RegisterSourceServer(grpcServer, s.svc)
 
 	errCh := make(chan error, 1)
 	defer close(errCh)
@@ -92,6 +95,5 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 	case <-ctxWithSignal.Done():
 		log.Println("Got a signal: terminating gRPC server...")
 	}
-
 	return nil
 }

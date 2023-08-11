@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	sourcesdk "github.com/numaproj/numaflow-go/pkg/source"
+	"github.com/numaproj/numaflow-go/pkg/source/model"
 )
 
 func TestServer_Start(t *testing.T) {
@@ -22,15 +23,19 @@ func TestServer_Start(t *testing.T) {
 		_ = os.RemoveAll(serverInfoFile.Name())
 	}()
 
-	var pendingHandler = sourcesdk.PendingFunc(func(ctx context.Context) uint64 {
+	pendingHandler := sourcesdk.PendingFunc(func(ctx context.Context) uint64 {
 		return 1
 	})
+	readHandler := sourcesdk.ReadFunc(func(ctx context.Context, readRequest sourcesdk.ReadRequest, messageCh chan<- model.Message) {
+		return
+	})
+
 	// note: using actual UDS connection
 	ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
 	go func() {
 		time.Sleep(3 * time.Second)
 		cancel()
 	}()
-	err := New(pendingHandler).Start(ctx, WithSockAddr(socketFile.Name()), WithServerInfoFilePath(serverInfoFile.Name()))
+	err := New(pendingHandler, readHandler).Start(ctx, WithSockAddr(socketFile.Name()), WithServerInfoFilePath(serverInfoFile.Name()))
 	assert.NoError(t, err)
 }
