@@ -5,7 +5,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	sourcepb "github.com/KeranYang/numaflow-go/pkg/apis/proto/source/v1"
+	sourcepb "github.com/numaproj/numaflow-go/pkg/apis/proto/source/v1"
 )
 
 // Service implements the proto gen server interface

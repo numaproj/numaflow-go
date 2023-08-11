@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/KeranYang/numaflow-go/pkg/function/server"
+	"github.com/numaproj/numaflow-go/pkg/function/server"
 
-	functionsdk "github.com/KeranYang/numaflow-go/pkg/function"
+	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
 )
 
 func mapTHandle(_ context.Context, keys []string, d functionsdk.Datum) functionsdk.MessageTs {

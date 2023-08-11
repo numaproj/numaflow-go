@@ -18,7 +18,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	functionpb "github.com/KeranYang/numaflow-go/pkg/apis/proto/function/v1"
+	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 )
 
 type fields struct {

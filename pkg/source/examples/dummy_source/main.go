@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 
-	sourcesdk "github.com/KeranYang/numaflow-go/pkg/source"
-	"github.com/KeranYang/numaflow-go/pkg/source/server"
+	sourcesdk "github.com/numaproj/numaflow-go/pkg/source"
+	"github.com/numaproj/numaflow-go/pkg/source/server"
 )
 
 func handle(_ context.Context) uint64 {

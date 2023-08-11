@@ -8,7 +8,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	sinkpb "github.com/KeranYang/numaflow-go/pkg/apis/proto/sink/v1"
+	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
 )
 
 // handlerDatum implements the Datum interface and is used in the sink handlers.

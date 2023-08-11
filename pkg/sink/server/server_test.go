@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	sinksdk "github.com/KeranYang/numaflow-go/pkg/sink"
+	sinksdk "github.com/numaproj/numaflow-go/pkg/sink"
 )
 
 func TestSink_Start(t *testing.T) {

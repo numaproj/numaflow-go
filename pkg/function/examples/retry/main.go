@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sync"
 
-	functionsdk "github.com/KeranYang/numaflow-go/pkg/function"
-	"github.com/KeranYang/numaflow-go/pkg/function/server"
+	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
+	"github.com/numaproj/numaflow-go/pkg/function/server"
 )
 
 var counts sync.Map

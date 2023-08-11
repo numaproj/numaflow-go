@@ -11,10 +11,10 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/KeranYang/numaflow-go/pkg/info"
-	sinksdk "github.com/KeranYang/numaflow-go/pkg/sink"
+	"github.com/numaproj/numaflow-go/pkg/info"
+	sinksdk "github.com/numaproj/numaflow-go/pkg/sink"
 
-	sinkpb "github.com/KeranYang/numaflow-go/pkg/apis/proto/sink/v1"
+	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
 )
 
 type server struct {

@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	sourcesdk "github.com/KeranYang/numaflow-go/pkg/source"
+	sourcesdk "github.com/numaproj/numaflow-go/pkg/source"
 )
 
 func TestServer_Start(t *testing.T) {

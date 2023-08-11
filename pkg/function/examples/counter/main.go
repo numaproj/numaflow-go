@@ -4,8 +4,8 @@ import (
 	"context"
 	"strconv"
 
-	functionsdk "github.com/KeranYang/numaflow-go/pkg/function"
-	"github.com/KeranYang/numaflow-go/pkg/function/server"
+	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
+	"github.com/numaproj/numaflow-go/pkg/function/server"
 )
 
 func reduceHandle(_ context.Context, keys []string, reduceCh <-chan functionsdk.Datum, md functionsdk.Metadata) functionsdk.Messages {

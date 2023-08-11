@@ -11,9 +11,9 @@ import (
 
 	"google.golang.org/grpc"
 
-	sourcepb "github.com/KeranYang/numaflow-go/pkg/apis/proto/source/v1"
-	"github.com/KeranYang/numaflow-go/pkg/info"
-	sourcesdk "github.com/KeranYang/numaflow-go/pkg/source"
+	sourcepb "github.com/numaproj/numaflow-go/pkg/apis/proto/source/v1"
+	"github.com/numaproj/numaflow-go/pkg/info"
+	sourcesdk "github.com/numaproj/numaflow-go/pkg/source"
 )
 
 type server struct {

@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	functionsdk "github.com/KeranYang/numaflow-go/pkg/function"
+	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
 
 	"github.com/stretchr/testify/assert"
 )
