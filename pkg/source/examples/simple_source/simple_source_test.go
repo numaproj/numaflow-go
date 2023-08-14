@@ -9,6 +9,9 @@ import (
 	"github.com/numaproj/numaflow-go/pkg/source/model"
 )
 
+// Notes: the unit test cases below demonstrate the basic contract between Read and Ack functions of a data source.
+// These test cases should be applicable to all data sources, not just SimpleSource.
+
 type TestReadRequest struct {
 	count   uint64
 	timeout time.Duration

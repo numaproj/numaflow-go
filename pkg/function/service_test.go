@@ -231,7 +231,6 @@ func TestService_MapFnStream(t *testing.T) {
 		input       *functionpb.DatumRequest
 		expected    []*functionpb.DatumResponse
 		expectedErr bool
-		streamErr   bool
 	}{
 		{
 			name: "map_stream_fn_forward_msg",
@@ -361,7 +360,7 @@ func TestService_MapFnStream(t *testing.T) {
 			result := make([]*functionpb.DatumResponse, 0)
 
 			var udfMapStreamFnStream functionpb.UserDefinedFunction_MapStreamFnServer
-			if tt.streamErr {
+			if tt.expectedErr {
 				udfMapStreamFnStream = NewUserDefinedFunctionMapStreamFnServerErrTest(ctx)
 			} else {
 				udfMapStreamFnStream = NewUserDefinedFunctionMapStreamFnServerTest(ctx, outputCh)
@@ -381,8 +380,10 @@ func TestService_MapFnStream(t *testing.T) {
 			close(outputCh)
 			wg.Wait()
 
-			if err != nil {
-				assert.True(t, tt.expectedErr, "MapStreamFn() error = %v, expectedErr %v", err, tt.expectedErr)
+			if tt.expectedErr {
+				assert.Error(t, err)
+				// when the stream function returns an error, the message channel may or may not be closed.
+				// so we skip asserting the result here.
 				return
 			}
 

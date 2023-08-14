@@ -24,7 +24,7 @@ func TestServer_Start(t *testing.T) {
 	}()
 
 	pendingHandler := sourcesdk.PendingFunc(func(ctx context.Context) uint64 {
-		return 1
+		return 0
 	})
 	readHandler := sourcesdk.ReadFunc(func(ctx context.Context, readRequest sourcesdk.ReadRequest, messageCh chan<- model.Message) {
 		return

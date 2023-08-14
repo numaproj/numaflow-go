@@ -2,8 +2,6 @@ package model
 
 import "time"
 
-// TODO - force the user to use the builder pattern to create a Message
-
 // Message is used to wrap the data return by UDSource
 type Message struct {
 	value     []byte

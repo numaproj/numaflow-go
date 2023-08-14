@@ -24,8 +24,8 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*sourcepb.ReadyResp
 	return &sourcepb.ReadyResponse{Ready: true}, nil
 }
 
-// Pending returns the number of pending messages.
-func (fs *Service) Pending(ctx context.Context, _ *emptypb.Empty) (*sourcepb.PendingResponse, error) {
+// PendingFn returns the number of pending messages.
+func (fs *Service) PendingFn(ctx context.Context, _ *emptypb.Empty) (*sourcepb.PendingResponse, error) {
 	return &sourcepb.PendingResponse{Result: &sourcepb.PendingResponse_Result{
 		Count: fs.PendingHandler.HandleDo(ctx),
 	}}, nil
@@ -45,8 +45,8 @@ func (r *readRequest) Count() uint64 {
 	return r.count
 }
 
-// Read reads the data from the source.
-func (fs *Service) Read(d *sourcepb.ReadRequest, stream sourcepb.Source_ReadFnServer) error {
+// ReadFn reads the data from the source.
+func (fs *Service) ReadFn(d *sourcepb.ReadRequest, stream sourcepb.Source_ReadFnServer) error {
 	request := readRequest{
 		count:   d.Request.GetNumRecords(),
 		timeout: time.Duration(d.Request.GetTimeoutInMs()) * time.Millisecond,
