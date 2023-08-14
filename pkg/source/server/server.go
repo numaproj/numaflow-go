@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os/signal"
+	"syscall"
 
 	"github.com/numaproj/numaflow-go/pkg"
 	"github.com/numaproj/numaflow-go/pkg/apis/proto/source/transformerfn"
@@ -18,7 +20,7 @@ type SourceTransformerServer struct {
 }
 
 // NewSourceTransformerServer creates a new map server.
-func NewSourceTransformerServer(ctx context.Context, m source.MapTHandler, inputOptions ...Option) numaflow.Server {
+func NewSourceTransformerServer(m source.MapTHandler, inputOptions ...Option) numaflow.Server {
 	opts := DefaultOptions()
 	for _, inputOption := range inputOptions {
 		inputOption(opts)
@@ -31,6 +33,9 @@ func NewSourceTransformerServer(ctx context.Context, m source.MapTHandler, input
 }
 
 func (m *SourceTransformerServer) Start(ctx context.Context) error {
+	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
 	// write server info to the file
 	// start listening on unix domain socket
 	lis, err := util.PrepareServer(m.opts.sockAddr, m.opts.serverInfoFilePath)
@@ -49,5 +54,5 @@ func (m *SourceTransformerServer) Start(ctx context.Context) error {
 	transformerfn.RegisterSourceTransformerServer(grpcServer, m.svc)
 
 	// start the grpc server
-	return util.StartGRPCServer(ctx, grpcServer, lis)
+	return util.StartGRPCServer(ctxWithSignal, grpcServer, lis)
 }

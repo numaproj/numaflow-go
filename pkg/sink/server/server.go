@@ -4,30 +4,34 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net"
-	"os"
 	"os/signal"
 	"syscall"
 
-	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
-	"github.com/numaproj/numaflow-go/pkg/info"
+	numaflow "github.com/numaproj/numaflow-go/pkg"
+	"github.com/numaproj/numaflow-go/pkg/apis/proto/sinkfn"
 	sinksdk "github.com/numaproj/numaflow-go/pkg/sink"
 	"github.com/numaproj/numaflow-go/pkg/util"
-	"google.golang.org/grpc"
 )
 
-type server struct {
-	svc *sinksdk.Service
+type sinkServer struct {
+	svc  *sinksdk.Service
+	opts *options
 }
 
-// New creates a new server object.
-func New() *server {
-	s := new(server)
+// NewSinkServer creates a new sinkServer object.
+func NewSinkServer(h sinksdk.SinkHandler, inputOptions ...Option) numaflow.Server {
+	opts := DefaultOptions()
+	for _, inputOption := range inputOptions {
+		inputOption(opts)
+	}
+	s := new(sinkServer)
 	s.svc = new(sinksdk.Service)
+	s.svc.Sinker = h
+	s.opts = opts
 	return s
 }
 
-// RegisterSinker registers the sink operation handler to the server.
+// RegisterSinker registers the sink operation handler to the sinkServer.
 // Example:
 //
 //	func handle(ctx context.Context, datumStreamCh <-chan sinksdk.Datum) sinksdk.Responses {
@@ -40,75 +44,32 @@ func New() *server {
 //	}
 //
 //	func main() {
-//		server.New().RegisterSinker(sinksdk.SinkFunc(handle)).Start(context.Background())
+//		server.NewSinkServer().RegisterSinker(sinksdk.SinkFunc(handle)).Start(context.Background())
 //	}
-func (s *server) RegisterSinker(h sinksdk.SinkHandler) *server {
-	s.svc.Sinker = h
-	return s
-}
 
-// Start starts the gRPC server via unix domain socket at configs.SinkAddr and return error.
-func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
-	var opts = &options{
-		sockAddr:            util.SinkAddr,
-		maxMessageSize:      util.DefaultMaxMessageSize,
-		sereverInfoFilePath: info.ServerInfoFilePath,
-	}
+// Start starts the gRPC sinkServer via unix domain socket at configs.SinkAddr and return error.
+func (s *sinkServer) Start(ctx context.Context) error {
 
-	for _, inputOption := range inputOptions {
-		inputOption(opts)
-	}
-
-	// Write server info to the file
-	serverInfo := &info.ServerInfo{Protocol: info.UDS, Language: info.Go, Version: info.GetSDKVersion()}
-	if err := info.Write(serverInfo, info.WithServerInfoFilePath(opts.sereverInfoFilePath)); err != nil {
-		return err
-	}
-
-	cleanup := func() error {
-		// err if no opts.sockAddr should be ignored
-		if _, err := os.Stat(opts.sockAddr); err == nil {
-			return os.RemoveAll(opts.sockAddr)
-		}
-		return nil
-	}
-
-	if err := cleanup(); err != nil {
-		return err
+	// write server info to the file
+	// start listening on unix domain socket
+	lis, err := util.PrepareServer(s.opts.sockAddr, s.opts.serverInfoFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", util.UDS, util.FunctionAddr, err)
 	}
 
 	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	lis, err := net.Listen(util.UDS, opts.sockAddr)
-	if err != nil {
-		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", util.UDS, util.SinkAddr, err)
-	}
+	// close the listener
 	defer func() { _ = lis.Close() }()
-	grpcServer := grpc.NewServer(
-		grpc.MaxRecvMsgSize(opts.maxMessageSize),
-		grpc.MaxSendMsgSize(opts.maxMessageSize),
-	)
+	// create a grpc server
+	grpcServer := util.CreateGRPCServer(s.opts.maxMessageSize)
 	defer log.Println("Successfully stopped the gRPC server")
 	defer grpcServer.GracefulStop()
-	sinkpb.RegisterUserDefinedSinkServer(grpcServer, s.svc)
 
-	errCh := make(chan error, 1)
-	defer close(errCh)
+	// register the map service
+	sinkfn.RegisterSinkServer(grpcServer, s.svc)
+
 	// start the grpc server
-	go func(ch chan<- error) {
-		log.Println("starting the gRPC server with unix domain socket...")
-		err = grpcServer.Serve(lis)
-		if err != nil {
-			ch <- fmt.Errorf("failed to start the gRPC server: %v", err)
-		}
-	}(errCh)
-
-	select {
-	case err := <-errCh:
-		return err
-	case <-ctxWithSignal.Done():
-		log.Println("Got a signal: terminating gRPC server...")
-	}
-	return nil
+	return util.StartGRPCServer(ctxWithSignal, grpcServer, lis)
 }

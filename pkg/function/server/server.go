@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os/signal"
+	"syscall"
 
 	"github.com/numaproj/numaflow-go/pkg"
 	"github.com/numaproj/numaflow-go/pkg/apis/proto/function/mapfn"
@@ -35,6 +37,9 @@ func NewMapServer(ctx context.Context, m functionsdk.MapHandler, inputOptions ..
 }
 
 func (m *mapServer) Start(ctx context.Context) error {
+	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
 	// write server info to the file
 	// start listening on unix domain socket
 	lis, err := util.PrepareServer(m.opts.sockAddr, m.opts.serverInfoFilePath)
@@ -53,7 +58,7 @@ func (m *mapServer) Start(ctx context.Context) error {
 	mapfn.RegisterMapServer(grpcServer, m.svc)
 
 	// start the grpc server
-	return util.StartGRPCServer(ctx, grpcServer, lis)
+	return util.StartGRPCServer(ctxWithSignal, grpcServer, lis)
 }
 
 type reduceServer struct {
@@ -75,6 +80,9 @@ func NewReduceServer(ctx context.Context, r functionsdk.ReduceHandler, inputOpti
 }
 
 func (r *reduceServer) Start(ctx context.Context) error {
+	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
 	// write server info to the file
 	// start listening on unix domain socket
 	lis, err := util.PrepareServer(r.opts.serverInfoFilePath, r.opts.sockAddr)
@@ -92,7 +100,7 @@ func (r *reduceServer) Start(ctx context.Context) error {
 	reducefn.RegisterReduceServer(grpcServer, r.svc)
 
 	// start the grpc server
-	return util.StartGRPCServer(ctx, grpcServer, lis)
+	return util.StartGRPCServer(ctxWithSignal, grpcServer, lis)
 }
 
 type mapStreamServer struct {
@@ -114,6 +122,9 @@ func NewMapStreamServer(ctx context.Context, ms functionsdk.MapStreamHandler, in
 }
 
 func (m *mapStreamServer) Start(ctx context.Context) error {
+	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
 	// write server info to the file
 	// start listening on unix domain socket
 	lis, err := util.PrepareServer(m.opts.serverInfoFilePath, m.opts.sockAddr)
@@ -131,5 +142,5 @@ func (m *mapStreamServer) Start(ctx context.Context) error {
 	smapfn.RegisterMapStreamServer(grpcServer, m.svc)
 
 	// start the grpc server
-	return util.StartGRPCServer(ctx, grpcServer, lis)
+	return util.StartGRPCServer(ctxWithSignal, grpcServer, lis)
 }

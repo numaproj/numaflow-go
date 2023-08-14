@@ -21,5 +21,5 @@ func handle(_ context.Context, datumStreamCh <-chan sinksdk.Datum) sinksdk.Respo
 }
 
 func main() {
-	server.New().RegisterSinker(sinksdk.SinkFunc(handle)).Start(context.Background())
+	server.NewSinkServer(sinksdk.SinkFunc(handle)).Start(context.Background())
 }

@@ -6,11 +6,11 @@ import (
 	"sync"
 	"time"
 
-	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
+	"github.com/numaproj/numaflow-go/pkg/apis/proto/sinkfn"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-// handlerDatum implements the Datum interface and is used in the sink handlers.
+// handlerDatum implements the Datum interface and is used in the sinkfn handlers.
 type handlerDatum struct {
 	id        string
 	keys      []string
@@ -39,22 +39,22 @@ func (h *handlerDatum) Watermark() time.Time {
 	return h.watermark
 }
 
-// Service implements the proto gen server interface and contains the sink operation handler.
+// Service implements the proto gen server interface and contains the sinkfn operation handler.
 type Service struct {
-	sinkpb.UnimplementedUserDefinedSinkServer
+	sinkfn.UnimplementedSinkServer
 
 	Sinker SinkHandler
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
-func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*sinkpb.ReadyResponse, error) {
-	return &sinkpb.ReadyResponse{Ready: true}, nil
+func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*sinkfn.ReadyResponse, error) {
+	return &sinkfn.ReadyResponse{Ready: true}, nil
 }
 
 // SinkFn applies a function to a list of datum element.
-func (fs *Service) SinkFn(stream sinkpb.UserDefinedSink_SinkFnServer) error {
+func (fs *Service) SinkFn(stream sinkfn.Sink_SinkFnServer) error {
 	var (
-		responseList  []*sinkpb.Response
+		responseList  []*sinkfn.SinkResponse
 		wg            sync.WaitGroup
 		datumStreamCh = make(chan Datum)
 		ctx           = stream.Context()
@@ -65,7 +65,7 @@ func (fs *Service) SinkFn(stream sinkpb.UserDefinedSink_SinkFnServer) error {
 		defer wg.Done()
 		messages := fs.Sinker.HandleDo(ctx, datumStreamCh)
 		for _, msg := range messages {
-			responseList = append(responseList, &sinkpb.Response{
+			responseList = append(responseList, &sinkfn.SinkResponse{
 				Id:      msg.ID,
 				Success: msg.Success,
 				ErrMsg:  msg.Err,
@@ -94,7 +94,7 @@ func (fs *Service) SinkFn(stream sinkpb.UserDefinedSink_SinkFnServer) error {
 	}
 
 	wg.Wait()
-	return stream.SendAndClose(&sinkpb.ResponseList{
+	return stream.SendAndClose(&sinkfn.SinkResponseList{
 		Responses: responseList,
 	})
 }

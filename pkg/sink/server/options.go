@@ -1,31 +1,44 @@
 package server
 
+import (
+	"github.com/numaproj/numaflow-go/pkg/info"
+	"github.com/numaproj/numaflow-go/pkg/util"
+)
+
 type options struct {
-	sockAddr            string
-	maxMessageSize      int
-	sereverInfoFilePath string
+	sockAddr           string
+	maxMessageSize     int
+	serverInfoFilePath string
 }
 
 // Option is the interface to apply options.
 type Option func(*options)
 
-// WithMaxMessageSize sets the server max receive message size and the server max send message size to the given size.
+func DefaultOptions() *options {
+	return &options{
+		sockAddr:           util.SinkAddr,
+		maxMessageSize:     util.DefaultMaxMessageSize,
+		serverInfoFilePath: info.ServerInfoFilePath,
+	}
+}
+
+// WithMaxMessageSize sets the sinkServer max receive message size and the sinkServer max send message size to the given size.
 func WithMaxMessageSize(size int) Option {
 	return func(opts *options) {
 		opts.maxMessageSize = size
 	}
 }
 
-// WithSockAddr start the server with the given sock addr. This is mainly used for testing purpose.
+// WithSockAddr start the sinkServer with the given sock addr. This is mainly used for testing purpose.
 func WithSockAddr(addr string) Option {
 	return func(opts *options) {
 		opts.sockAddr = addr
 	}
 }
 
-// WithServerInfoFilePath sets the server info file path.
+// WithServerInfoFilePath sets the sinkServer info file path.
 func WithServerInfoFilePath(path string) Option {
 	return func(opts *options) {
-		opts.sereverInfoFilePath = path
+		opts.serverInfoFilePath = path
 	}
 }

@@ -45,7 +45,7 @@ func TestSink_Start(t *testing.T) {
 		time.Sleep(3 * time.Second)
 		cancel()
 	}()
-	err = New().RegisterSinker(sinkHandler).Start(ctx, WithSockAddr(socketFile.Name()), WithServerInfoFilePath(serverInfoFile.Name()))
+	err = NewSinkServer().RegisterSinker(sinkHandler).Start(ctx, WithSockAddr(socketFile.Name()), WithServerInfoFilePath(serverInfoFile.Name()))
 	assert.NoError(t, err)
 }
 
@@ -65,7 +65,7 @@ func TestSink_RegisterSinker(t *testing.T) {
 		return result
 	})
 
-	serv := New()
+	serv := NewSinkServer()
 	assert.Nil(t, serv.svc.Sinker)
 	serv.RegisterSinker(sinkHandler)
 	assert.NotNil(t, serv.svc.Sinker)

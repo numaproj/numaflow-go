@@ -13,5 +13,5 @@ func mapTHandle(_ context.Context, keys []string, d source.Datum) source.Message
 }
 
 func main() {
-	server.NewSourceTransformerServer(context.Background(), source.MapTFunc(mapTHandle)).Start(context.Background())
+	server.NewSourceTransformerServer(source.MapTFunc(mapTHandle)).Start(context.Background())
 }
