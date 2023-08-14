@@ -1,17 +1,15 @@
 syntax = "proto3";
 
-option go_package = "github.com/numaproj/numaflow-go/pkg/apis/proto/source/v1";
+option go_package = "github.com/numaproj/numaflow-go/pkg/apis/proto/function/map_streaming/v1";
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 
-package source.v1;
+package function.v1;
 
-service SourceTransformer {
-  // MapTFn applies a function to each datum request element.
-  // In addition to map function, MapTFn also supports assigning a new event time to datum.
-  // MapTFn can be used only at source vertex by source data transformer.
-  rpc SourceTransformer(SourceTransformerRequest) returns (SourceTransformerResponseList);
+service MapStream {
+  // MapStreamFn applies a function to each datum element and returns a stream.
+  rpc MapStreamFn(MapStreamRequest) returns (stream MapStreamResponse);
 
   // IsReady is the heartbeat endpoint for gRPC.
   rpc IsReady(google.protobuf.Empty) returns (ReadyResponse);
@@ -33,7 +31,7 @@ message Watermark {
 /**
  * DatumRequest represents a datum request element.
  */
-message SourceTransformerRequest {
+message MapStreamRequest {
   repeated string keys = 1;
   bytes value = 2;
   EventTime event_time = 3;
@@ -43,18 +41,17 @@ message SourceTransformerRequest {
 /**
  * DatumResponse represents a datum response element.
  */
-message SourceTransformerResponse {
+message MapStreamResponse {
   repeated string keys = 1;
   bytes value = 2;
-  EventTime event_time = 3;
-  repeated string tags = 4;
+  repeated string tags = 3;
 }
 
 /**
  * DatumResponseList represents a list of datum response elements.
  */
-message SourceTransformerResponseList {
-  repeated SourceTransformerResponse elements = 1;
+message MapStreamResponseList {
+  repeated MapStreamResponseList elements = 1;
 }
 
 /**

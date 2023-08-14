@@ -1,15 +1,15 @@
 syntax = "proto3";
 
-option go_package = "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1";
+option go_package = "github.com/numaproj/numaflow-go/pkg/apis/proto/function/map/v1";
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 
-package function.v1;
+package function.map.v1;
 
-service Reduce {
-  // ReduceFn applies a reduce function to a datum request stream.
-  rpc ReduceFn(stream ReduceRequest) returns (stream ReduceResponseList);
+service Map {
+  // MapFn applies a function to each map request element.
+  rpc MapFn(MapRequest) returns (MapResponseList);
 
   // IsReady is the heartbeat endpoint for gRPC.
   rpc IsReady(google.protobuf.Empty) returns (ReadyResponse);
@@ -29,9 +29,9 @@ message Watermark {
 }
 
 /**
- * DatumRequest represents a datum request element.
+ * MapRequest represents a datum request element.
  */
-message ReduceRequest {
+message MapRequest {
   repeated string keys = 1;
   bytes value = 2;
   EventTime event_time = 3;
@@ -39,19 +39,19 @@ message ReduceRequest {
 }
 
 /**
- * DatumResponse represents a datum response element.
+ * MapResponse represents a datum response element.
  */
-message ReduceResponse {
+message MapResponse {
   repeated string keys = 1;
   bytes value = 2;
   repeated string tags = 3;
 }
 
 /**
- * DatumResponseList represents a list of datum response elements.
+ * MapResponseList represents a list of datum response elements.
  */
-message ReduceResponseList {
-  repeated ReduceResponse elements = 1;
+message MapResponseList {
+  repeated MapResponse elements = 1;
 }
 
 /**

@@ -160,7 +160,7 @@ func (x *DatumRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DatumRequest.ProtoReflect.Descriptor instead.
+// Deprecated: Use MapRequest.ProtoReflect.Descriptor instead.
 func (*DatumRequest) Descriptor() ([]byte, []int) {
 	return file_pkg_apis_proto_sink_v1_udsink_proto_rawDescGZIP(), []int{2}
 }
@@ -439,7 +439,7 @@ var file_pkg_apis_proto_sink_v1_udsink_proto_msgTypes = make([]protoimpl.Message
 var file_pkg_apis_proto_sink_v1_udsink_proto_goTypes = []interface{}{
 	(*EventTime)(nil),             // 0: sink.v1.EventTime
 	(*Watermark)(nil),             // 1: sink.v1.Watermark
-	(*DatumRequest)(nil),          // 2: sink.v1.DatumRequest
+	(*DatumRequest)(nil),          // 2: sink.v1.MapRequest
 	(*ReadyResponse)(nil),         // 3: sink.v1.ReadyResponse
 	(*Response)(nil),              // 4: sink.v1.Response
 	(*ResponseList)(nil),          // 5: sink.v1.ResponseList
@@ -449,10 +449,10 @@ var file_pkg_apis_proto_sink_v1_udsink_proto_goTypes = []interface{}{
 var file_pkg_apis_proto_sink_v1_udsink_proto_depIdxs = []int32{
 	6, // 0: sink.v1.EventTime.event_time:type_name -> google.protobuf.Timestamp
 	6, // 1: sink.v1.Watermark.watermark:type_name -> google.protobuf.Timestamp
-	0, // 2: sink.v1.DatumRequest.event_time:type_name -> sink.v1.EventTime
-	1, // 3: sink.v1.DatumRequest.watermark:type_name -> sink.v1.Watermark
+	0, // 2: sink.v1.MapRequest.event_time:type_name -> sink.v1.EventTime
+	1, // 3: sink.v1.MapRequest.watermark:type_name -> sink.v1.Watermark
 	4, // 4: sink.v1.ResponseList.responses:type_name -> sink.v1.Response
-	2, // 5: sink.v1.UserDefinedSink.SinkFn:input_type -> sink.v1.DatumRequest
+	2, // 5: sink.v1.UserDefinedSink.SinkFn:input_type -> sink.v1.MapRequest
 	7, // 6: sink.v1.UserDefinedSink.IsReady:input_type -> google.protobuf.Empty
 	5, // 7: sink.v1.UserDefinedSink.SinkFn:output_type -> sink.v1.ResponseList
 	3, // 8: sink.v1.UserDefinedSink.IsReady:output_type -> sink.v1.ReadyResponse

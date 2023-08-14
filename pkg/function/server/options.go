@@ -1,5 +1,10 @@
 package server
 
+import (
+	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
+	"github.com/numaproj/numaflow-go/pkg/info"
+)
+
 type options struct {
 	sockAddr           string
 	maxMessageSize     int
@@ -8,6 +13,14 @@ type options struct {
 
 // Option is the interface to apply options.
 type Option func(*options)
+
+func DefaultOptions() *options {
+	return &options{
+		sockAddr:           functionsdk.UdsAddr,
+		maxMessageSize:     functionsdk.DefaultMaxMessageSize,
+		serverInfoFilePath: info.ServerInfoFilePath,
+	}
+}
 
 // WithMaxMessageSize sets the server max receive message size and the server max send message size to the given size.
 func WithMaxMessageSize(size int) Option {

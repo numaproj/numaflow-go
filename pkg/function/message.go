@@ -46,6 +46,11 @@ func (m Message) Value() []byte {
 	return m.value
 }
 
+// Tags returns message tags
+func (m Message) Tags() []string {
+	return m.tags
+}
+
 type Messages []Message
 
 // MessagesBuilder returns an empty instance of Messages

@@ -46,6 +46,11 @@ func (m MessageT) Value() []byte {
 	return m.value
 }
 
+// Tags returns message tags
+func (m MessageT) Tags() []string {
+	return m.tags
+}
+
 // MessageTToDrop creates a MessageT to be dropped
 func MessageTToDrop() MessageT {
 	return MessageT{eventTime: time.Time{}, value: []byte{}, tags: []string{DROP}}

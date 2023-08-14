@@ -216,7 +216,7 @@ func (x *DatumRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DatumRequest.ProtoReflect.Descriptor instead.
+// Deprecated: Use MapRequest.ProtoReflect.Descriptor instead.
 func (*DatumRequest) Descriptor() ([]byte, []int) {
 	return file_pkg_apis_proto_function_v1_udfunction_proto_rawDescGZIP(), []int{3}
 }
@@ -538,7 +538,7 @@ var file_pkg_apis_proto_function_v1_udfunction_proto_goTypes = []interface{}{
 	(*EventTime)(nil),             // 0: function.v1.EventTime
 	(*Watermark)(nil),             // 1: function.v1.Watermark
 	(*Metadata)(nil),              // 2: function.v1.Metadata
-	(*DatumRequest)(nil),          // 3: function.v1.DatumRequest
+	(*DatumRequest)(nil),          // 3: function.v1.MapRequest
 	(*DatumResponse)(nil),         // 4: function.v1.DatumResponse
 	(*DatumResponseList)(nil),     // 5: function.v1.DatumResponseList
 	(*ReadyResponse)(nil),         // 6: function.v1.ReadyResponse
@@ -548,16 +548,16 @@ var file_pkg_apis_proto_function_v1_udfunction_proto_goTypes = []interface{}{
 var file_pkg_apis_proto_function_v1_udfunction_proto_depIdxs = []int32{
 	7,  // 0: function.v1.EventTime.event_time:type_name -> google.protobuf.Timestamp
 	7,  // 1: function.v1.Watermark.watermark:type_name -> google.protobuf.Timestamp
-	0,  // 2: function.v1.DatumRequest.event_time:type_name -> function.v1.EventTime
-	1,  // 3: function.v1.DatumRequest.watermark:type_name -> function.v1.Watermark
-	2,  // 4: function.v1.DatumRequest.metadata:type_name -> function.v1.Metadata
+	0,  // 2: function.v1.MapRequest.event_time:type_name -> function.v1.EventTime
+	1,  // 3: function.v1.MapRequest.watermark:type_name -> function.v1.Watermark
+	2,  // 4: function.v1.MapRequest.metadata:type_name -> function.v1.Metadata
 	0,  // 5: function.v1.DatumResponse.event_time:type_name -> function.v1.EventTime
 	1,  // 6: function.v1.DatumResponse.watermark:type_name -> function.v1.Watermark
 	4,  // 7: function.v1.DatumResponseList.elements:type_name -> function.v1.DatumResponse
-	3,  // 8: function.v1.UserDefinedFunction.MapFn:input_type -> function.v1.DatumRequest
-	3,  // 9: function.v1.UserDefinedFunction.MapStreamFn:input_type -> function.v1.DatumRequest
-	3,  // 10: function.v1.UserDefinedFunction.MapTFn:input_type -> function.v1.DatumRequest
-	3,  // 11: function.v1.UserDefinedFunction.ReduceFn:input_type -> function.v1.DatumRequest
+	3,  // 8: function.v1.UserDefinedFunction.MapFn:input_type -> function.v1.MapRequest
+	3,  // 9: function.v1.UserDefinedFunction.MapStreamFn:input_type -> function.v1.MapRequest
+	3,  // 10: function.v1.UserDefinedFunction.MapTFn:input_type -> function.v1.MapRequest
+	3,  // 11: function.v1.UserDefinedFunction.ReduceFn:input_type -> function.v1.MapRequest
 	8,  // 12: function.v1.UserDefinedFunction.IsReady:input_type -> google.protobuf.Empty
 	5,  // 13: function.v1.UserDefinedFunction.MapFn:output_type -> function.v1.DatumResponseList
 	4,  // 14: function.v1.UserDefinedFunction.MapStreamFn:output_type -> function.v1.DatumResponse

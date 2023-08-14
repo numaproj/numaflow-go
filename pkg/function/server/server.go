@@ -9,12 +9,21 @@ import (
 	"os/signal"
 	"syscall"
 
+	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/function/map/v1"
+	v12 "github.com/numaproj/numaflow-go/pkg/apis/proto/function/reduce/v1"
+	mapsvc "github.com/numaproj/numaflow-go/pkg/function/map"
+	"github.com/numaproj/numaflow-go/pkg/function/reduce"
 	"google.golang.org/grpc"
 
 	functionpb "github.com/numaproj/numaflow-go/pkg/apis/proto/function/v1"
 	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
 	"github.com/numaproj/numaflow-go/pkg/info"
 )
+
+type Server interface {
+	// Start starts the server.
+	Start(ctx context.Context) error
+}
 
 type server struct {
 	svc *functionsdk.Service
@@ -118,5 +127,145 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 		log.Println("Got a signal: terminating gRPC server...")
 	}
 
+	return nil
+}
+
+type mapServer struct {
+	svc  *mapsvc.Service
+	opts *options
+}
+
+func NewMapServer(ctx context.Context, inputOptions ...Option) Server {
+	opts := DefaultOptions()
+	for _, inputOption := range inputOptions {
+		inputOption(opts)
+	}
+	s := new(mapServer)
+	s.svc = new(mapsvc.Service)
+	s.opts = opts
+	return s
+}
+
+func (m *mapServer) Start(ctx context.Context) error {
+	err := writeServerInfoToFile(m.opts.serverInfoFilePath)
+	if err != nil {
+		return err
+	}
+
+	cleanup := func() error {
+		if _, err := os.Stat(m.opts.sockAddr); err == nil {
+			return os.RemoveAll(m.opts.sockAddr)
+		}
+		return nil
+	}
+	if err := cleanup(); err != nil {
+		return err
+	}
+
+	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+	lis, err := net.Listen(functionsdk.UDS, m.opts.sockAddr)
+	if err != nil {
+		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", functionsdk.UDS, functionsdk.UdsAddr, err)
+	}
+	defer func() { _ = lis.Close() }()
+	grpcServer := grpc.NewServer(
+		grpc.MaxRecvMsgSize(m.opts.maxMessageSize),
+		grpc.MaxSendMsgSize(m.opts.maxMessageSize),
+	)
+	defer log.Println("Successfully stopped the gRPC server")
+	defer grpcServer.GracefulStop()
+	v1.RegisterMapServer(grpcServer, m.svc)
+
+	errCh := make(chan error, 1)
+	defer close(errCh)
+	// start the grpc server
+	go func(ch chan<- error) {
+		log.Println("starting the gRPC server with unix domain socket...", lis.Addr())
+		err = grpcServer.Serve(lis)
+		if err != nil {
+			ch <- fmt.Errorf("failed to start the gRPC server: %v", err)
+		}
+	}(errCh)
+
+	select {
+	case err := <-errCh:
+		return err
+	case <-ctxWithSignal.Done():
+		log.Println("Got a signal: terminating gRPC server...")
+	}
+
+	return nil
+}
+
+func writeServerInfoToFile(filePath string) error {
+	serverInfo := &info.ServerInfo{Protocol: info.UDS, Language: info.Go, Version: info.GetSDKVersion()}
+	return info.Write(serverInfo, info.WithServerInfoFilePath(filePath))
+}
+
+type reduceServer struct {
+	svc  *reduce.Service
+	opts *options
+}
+
+func NewReduceServer(ctx context.Context, inputOptions ...Option) Server {
+	opts := DefaultOptions()
+	for _, inputOption := range inputOptions {
+		inputOption(opts)
+	}
+	s := new(reduceServer)
+	s.svc = new(reduce.Service)
+	s.opts = opts
+	return s
+}
+
+func (r *reduceServer) Start(ctx context.Context) error {
+	err := writeServerInfoToFile(r.opts.serverInfoFilePath)
+	if err != nil {
+		return err
+	}
+
+	cleanup := func() error {
+		if _, err := os.Stat(r.opts.sockAddr); err == nil {
+			return os.RemoveAll(r.opts.sockAddr)
+		}
+		return nil
+	}
+	if err := cleanup(); err != nil {
+		return err
+	}
+
+	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+	lis, err := net.Listen(functionsdk.UDS, r.opts.sockAddr)
+	if err != nil {
+		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", functionsdk.UDS, functionsdk.UdsAddr, err)
+	}
+	defer func() { _ = lis.Close() }()
+	grpcServer := grpc.NewServer(
+		grpc.MaxRecvMsgSize(r.opts.maxMessageSize),
+		grpc.MaxSendMsgSize(r.opts.maxMessageSize),
+	)
+	defer log.Println("Successfully stopped the gRPC server")
+	defer grpcServer.GracefulStop()
+	v12.RegisterReduceServer(grpcServer, r.svc)
+
+	errCh := make(chan error, 1)
+	defer close(errCh)
+	// start the grpc server
+	go func(ch chan<- error) {
+		log.Println("starting the gRPC server with unix domain socket...", lis.Addr())
+		err = grpcServer.Serve(lis)
+		if err != nil {
+			ch <- fmt.Errorf("failed to start the gRPC server: %v", err)
+		}
+	}(errCh)
+
+	select {
+	case err := <-errCh:
+		return err
+	case <-ctxWithSignal.Done():
+		log.Println("Got a signal: terminating gRPC server...")
+	}
 	return nil
 }
