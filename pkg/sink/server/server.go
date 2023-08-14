@@ -12,6 +12,7 @@ import (
 	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
 	"github.com/numaproj/numaflow-go/pkg/info"
 	sinksdk "github.com/numaproj/numaflow-go/pkg/sink"
+	"github.com/numaproj/numaflow-go/pkg/util"
 	"google.golang.org/grpc"
 )
 
@@ -46,11 +47,11 @@ func (s *server) RegisterSinker(h sinksdk.SinkHandler) *server {
 	return s
 }
 
-// Start starts the gRPC server via unix domain socket at configs.Addr and return error.
+// Start starts the gRPC server via unix domain socket at configs.SinkAddr and return error.
 func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 	var opts = &options{
-		sockAddr:            sinksdk.Addr,
-		maxMessageSize:      sinksdk.DefaultMaxMessageSize,
+		sockAddr:            util.SinkAddr,
+		maxMessageSize:      util.DefaultMaxMessageSize,
 		sereverInfoFilePath: info.ServerInfoFilePath,
 	}
 
@@ -79,9 +80,9 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	lis, err := net.Listen(sinksdk.Protocol, opts.sockAddr)
+	lis, err := net.Listen(util.UDS, opts.sockAddr)
 	if err != nil {
-		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", sinksdk.Protocol, sinksdk.Addr, err)
+		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", util.UDS, util.SinkAddr, err)
 	}
 	defer func() { _ = lis.Close() }()
 	grpcServer := grpc.NewServer(

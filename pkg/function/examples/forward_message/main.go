@@ -21,5 +21,5 @@ func mapHandle(_ context.Context, keys []string, d functionsdk.Datum) functionsd
 }
 
 func main() {
-	server.New().RegisterMapper(functionsdk.MapFunc(mapHandle)).Start(context.Background())
+	server.NewMapServer(context.Background(), functionsdk.MapFunc(mapHandle)).Start(context.Background())
 }

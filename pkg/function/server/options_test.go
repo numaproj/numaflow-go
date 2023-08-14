@@ -3,16 +3,15 @@ package server
 import (
 	"testing"
 
+	"github.com/numaproj/numaflow-go/pkg/util"
 	"github.com/stretchr/testify/assert"
-
-	"github.com/numaproj/numaflow-go/pkg/function"
 )
 
 func TestWithMaxMessageSize(t *testing.T) {
 	var (
 		size = 1024 * 1024 * 10
 		opts = &options{
-			maxMessageSize: function.DefaultMaxMessageSize,
+			maxMessageSize: util.DefaultMaxMessageSize,
 		}
 	)
 	WithMaxMessageSize(1024 * 1024 * 10)(opts)

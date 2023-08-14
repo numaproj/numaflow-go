@@ -4,16 +4,16 @@ import (
 	"context"
 	"time"
 
-	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
-	"github.com/numaproj/numaflow-go/pkg/function/server"
+	"github.com/numaproj/numaflow-go/pkg/source"
+	"github.com/numaproj/numaflow-go/pkg/source/server"
 )
 
-func mapTHandle(_ context.Context, keys []string, d functionsdk.Datum) functionsdk.MessageTs {
+func mapTHandle(_ context.Context, keys []string, d source.Datum) source.MessageTs {
 	// Update message event time to time.Now()
 	eventTime := time.Now()
-	return functionsdk.MessageTsBuilder().Append(functionsdk.NewMessageT(d.Value(), eventTime).WithKeys(keys))
+	return source.MessageTsBuilder().Append(source.NewMessageT(d.Value(), eventTime).WithKeys(keys))
 }
 
 func main() {
-	server.New().RegisterMapperT(functionsdk.MapTFunc(mapTHandle)).Start(context.Background())
+	server.NewSourceTransformerServer(context.Background(), source.MapTFunc(mapTHandle)).Start(context.Background())
 }

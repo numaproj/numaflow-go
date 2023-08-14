@@ -45,12 +45,6 @@ type MapStreamHandler interface {
 	HandleDo(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message)
 }
 
-// MapTHandler is the interface of mapT function implementation.
-type MapTHandler interface {
-	// HandleDo is the function to process each coming message.
-	HandleDo(ctx context.Context, keys []string, datum Datum) MessageTs
-}
-
 // ReduceHandler is the interface of reduce function implementation.
 type ReduceHandler interface {
 	HandleDo(ctx context.Context, keys []string, reduceCh <-chan Datum, md Metadata) Messages
@@ -70,14 +64,6 @@ type MapStreamFunc func(ctx context.Context, keys []string, datum Datum, message
 // HandleDo implements the function of map stream function.
 func (msf MapStreamFunc) HandleDo(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
 	msf(ctx, keys, datum, messageCh)
-}
-
-// MapTFunc is a utility type used to convert a HandleDo function to a MapTHandler.
-type MapTFunc func(ctx context.Context, keys []string, datum Datum) MessageTs
-
-// HandleDo implements the function of mapT function.
-func (mf MapTFunc) HandleDo(ctx context.Context, keys []string, datum Datum) MessageTs {
-	return mf(ctx, keys, datum)
 }
 
 // ReduceFunc is a utility type used to convert a HandleDo function to a ReduceHandler.

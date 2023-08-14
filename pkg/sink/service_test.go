@@ -35,8 +35,8 @@ func (t *UserDefinedSink_SinkFnServerTest) Recv() (*sinkpb.DatumRequest, error) 
 	return val, nil
 }
 
-func (u *UserDefinedSink_SinkFnServerTest) Context() context.Context {
-	return u.ctx
+func (t *UserDefinedSink_SinkFnServerTest) Context() context.Context {
+	return t.ctx
 }
 
 func TestService_SinkFn(t *testing.T) {

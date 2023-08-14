@@ -9,8 +9,9 @@ import (
 	"sync"
 	"time"
 
-	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/function/reduce/v1"
+	"github.com/numaproj/numaflow-go/pkg/apis/proto/function/reducefn"
 	"github.com/numaproj/numaflow-go/pkg/function"
+	"github.com/numaproj/numaflow-go/pkg/util"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 	grpcmd "google.golang.org/grpc/metadata"
@@ -18,21 +19,20 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-// Service implements the proto gen server interface and contains the map operation
-// handler and the reduce operation handler.
+// Service implements the proto gen server interface and contains the reduce operation handler.
 type Service struct {
-	v1.UnimplementedReduceServer
+	reducefn.UnimplementedReduceServer
 
 	Reducer function.ReduceHandler
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
-func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*v1.ReadyResponse, error) {
-	return &v1.ReadyResponse{Ready: true}, nil
+func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*reducefn.ReadyResponse, error) {
+	return &reducefn.ReadyResponse{Ready: true}, nil
 }
 
 // ReduceFn applies a reduce function to a datum stream.
-func (fs *Service) ReduceFn(stream v1.Reduce_ReduceFnServer) error {
+func (fs *Service) ReduceFn(stream reducefn.Reduce_ReduceFnServer) error {
 	var (
 		md        function.Metadata
 		err       error
@@ -52,13 +52,13 @@ func (fs *Service) ReduceFn(stream v1.Reduce_ReduceFnServer) error {
 
 	// get window start and end time from grpc metadata
 	var st, et string
-	st, err = getValueFromMetadata(grpcMD, function.WinStartTime)
+	st, err = getValueFromMetadata(grpcMD, util.WinStartTime)
 	if err != nil {
 		statusErr := status.Errorf(codes.InvalidArgument, err.Error())
 		return statusErr
 	}
 
-	et, err = getValueFromMetadata(grpcMD, function.WinEndTime)
+	et, err = getValueFromMetadata(grpcMD, util.WinEndTime)
 	if err != nil {
 		statusErr := status.Errorf(codes.InvalidArgument, err.Error())
 		return statusErr
@@ -88,8 +88,8 @@ func (fs *Service) ReduceFn(stream v1.Reduce_ReduceFnServer) error {
 			// it's already a gRPC error
 			return recvErr
 		}
-		unifiedKey := strings.Join(d.GetKeys(), function.Delimiter)
-		var hd = function.NewHandlerDatum(d.GetValue(), d.GetEventTime().EventTime.AsTime(), d.GetWatermark().Watermark.AsTime(), nil)
+		unifiedKey := strings.Join(d.GetKeys(), util.Delimiter)
+		var hd = function.NewHandlerDatum(d.GetValue(), d.GetEventTime().EventTime.AsTime(), d.GetWatermark().Watermark.AsTime(), function.NewHandlerDatumMetadata("id", 1))
 
 		ch, chok := chanMap[unifiedKey]
 		if !chok {
@@ -124,10 +124,10 @@ func (fs *Service) ReduceFn(stream v1.Reduce_ReduceFnServer) error {
 	return g.Wait()
 }
 
-func buildDatumList(messages function.Messages) *v1.ReduceResponseList {
-	datumList := &v1.ReduceResponseList{}
+func buildDatumList(messages function.Messages) *reducefn.ReduceResponseList {
+	datumList := &reducefn.ReduceResponseList{}
 	for _, msg := range messages {
-		datumList.Elements = append(datumList.Elements, &v1.ReduceResponse{
+		datumList.Elements = append(datumList.Elements, &reducefn.ReduceResponse{
 			Keys:  msg.Keys(),
 			Value: msg.Value(),
 			Tags:  msg.Tags(),

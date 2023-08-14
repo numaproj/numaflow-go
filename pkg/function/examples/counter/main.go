@@ -21,5 +21,5 @@ func reduceHandle(_ context.Context, keys []string, reduceCh <-chan functionsdk.
 }
 
 func main() {
-	server.New().RegisterReducer(functionsdk.ReduceFunc(reduceHandle)).Start(context.Background())
+	server.NewReduceServer(context.Background(), functionsdk.ReduceFunc(reduceHandle)).Start(context.Background())
 }

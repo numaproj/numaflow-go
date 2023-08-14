@@ -1,8 +1,8 @@
 package server
 
 import (
-	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
 	"github.com/numaproj/numaflow-go/pkg/info"
+	"github.com/numaproj/numaflow-go/pkg/util"
 )
 
 type options struct {
@@ -16,8 +16,8 @@ type Option func(*options)
 
 func DefaultOptions() *options {
 	return &options{
-		sockAddr:           functionsdk.UdsAddr,
-		maxMessageSize:     functionsdk.DefaultMaxMessageSize,
+		sockAddr:           util.FunctionAddr,
+		maxMessageSize:     util.DefaultMaxMessageSize,
 		serverInfoFilePath: info.ServerInfoFilePath,
 	}
 }

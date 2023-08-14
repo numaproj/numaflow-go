@@ -21,5 +21,5 @@ func handle(_ context.Context, _ []string, d functionsdk.Datum, messageCh chan<-
 }
 
 func main() {
-	server.New().RegisterMapperStream(functionsdk.MapStreamFunc(handle)).Start(context.Background())
+	server.NewMapStreamServer(context.Background(), functionsdk.MapStreamFunc(handle)).Start(context.Background())
 }
