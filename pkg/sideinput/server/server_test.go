@@ -31,18 +31,6 @@ func TestServer_Start(t *testing.T) {
 		time.Sleep(3 * time.Second)
 		cancel()
 	}()
-	err := New().RegisterRetriever(retrieveHandler).Start(ctx, WithSockAddr(socketFile.Name()))
+	err := NewSideInputServer(retrieveHandler).Start(ctx, WithSockAddr(socketFile.Name()))
 	assert.NoError(t, err)
-}
-
-// TestServer_RegisterRetriever tests the RegisterRetriever method to check whether the
-// handler is correctly registered to the server.
-func TestServer_RegisterRetriever(t *testing.T) {
-	retrieverHandler := sideinputsdk.RetrieveSideInput(func(ctx context.Context) sideinputsdk.MessageSI {
-		return sideinputsdk.NewMessageSI([]byte("test"))
-	})
-	serv := New()
-	assert.Nil(t, serv.svc.Retriever)
-	serv.RegisterRetriever(retrieverHandler)
-	assert.NotNil(t, serv.svc.Retriever)
 }

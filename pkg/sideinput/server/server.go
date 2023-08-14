@@ -19,10 +19,11 @@ type server struct {
 	svc *sideinputsdk.Service
 }
 
-// New creates a new server object.
-func New() *server {
+// NewSideInputServer creates a new server object.
+func NewSideInputServer(handler sideinputsdk.RetrieveSideInputHandler) *server {
 	s := new(server)
 	s.svc = new(sideinputsdk.Service)
+	s.svc.Retriever = handler
 	return s
 }
 
@@ -34,7 +35,7 @@ func New() *server {
 //	}
 //
 //	func main() {
-//		server.New().RegisterRetriever(sideinputsdk.RetrieveSideInputFunc(handle)).Start(context.Background())
+//		server.NewSideInputServer().RegisterRetriever(sideinputsdk.RetrieveSideInputFunc(handle)).Start(context.Background())
 //	}
 func (s *server) RegisterRetriever(m sideinputsdk.RetrieveSideInputHandler) *server {
 	s.svc.Retriever = m
