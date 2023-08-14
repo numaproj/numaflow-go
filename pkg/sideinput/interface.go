@@ -4,7 +4,7 @@ import (
 	"context"
 )
 
-// RetrieveSideInputHandler is the interface of map function implementation.
+// RetrieveSideInputHandler is the interface of the RetrieveSideInput function implementation.
 type RetrieveSideInputHandler interface {
 	// HandleDo is the function to process each side-input request.
 	HandleDo(ctx context.Context) MessageSI
