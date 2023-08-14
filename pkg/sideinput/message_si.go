@@ -1,7 +1,7 @@
 package sideinput
 
 // MessageSI is used to wrap the data return by UserSideInput function.
-// It contains the data value and the event time, extracted from the payload.
+// It contains the data value for the given side input parameter requested.
 type MessageSI struct {
 	value []byte
 }
