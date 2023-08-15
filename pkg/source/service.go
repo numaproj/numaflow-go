@@ -73,8 +73,8 @@ func (fs *Service) ReadFn(d *sourcepb.ReadRequest, stream sourcepb.Source_ReadFn
 				Offset:      message.Offset().Value(),
 				PartitionId: message.Offset().PartitionId(),
 			}
-			element := &sourcepb.DatumResponse{
-				Result: &sourcepb.DatumResponse_Result{
+			element := &sourcepb.ReadResponse{
+				Result: &sourcepb.ReadResponse_Result{
 					Payload:   message.Value(),
 					Offset:    offset,
 					EventTime: timestamppb.New(message.EventTime()),

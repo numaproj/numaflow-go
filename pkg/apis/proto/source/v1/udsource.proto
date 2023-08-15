@@ -10,8 +10,8 @@ package source.v1;
 service Source {
   // Read returns a stream of datum responses.
   // The size of the returned ReadResponse is less than or equal to the num_records specified in ReadRequest.
-  // If the request timeout is reached on server side, the returned ReadResponse will contain all the datum responses that have been read (which could be an empty list).
-  rpc ReadFn(ReadRequest) returns (stream DatumResponse);
+  // If the request timeout is reached on server side, the returned ReadResponse will contain all the datum that have been read (which could be an empty list).
+  rpc ReadFn(ReadRequest) returns (stream ReadResponse);
 
   // AckFn acknowledges a list of datum offsets.
   // When AckFn is called, it implicitly indicates that the datum stream has been processed by the source vertex.
@@ -44,9 +44,9 @@ message ReadRequest {
 }
 
 /*
- * DatumResponse represents a datum response element.
+ * ReadResponse is the response for reading datum stream from user defined source.
  */
-message DatumResponse {
+message ReadResponse {
   message Result {
     // Required field holding the payload of the datum.
     bytes payload = 1;

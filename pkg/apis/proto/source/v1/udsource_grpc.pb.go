@@ -25,7 +25,7 @@ const _ = grpc.SupportPackageIsVersion7
 type SourceClient interface {
 	// Read returns a stream of datum responses.
 	// The size of the returned ReadResponse is less than or equal to the num_records specified in ReadRequest.
-	// If the request timeout is reached on server side, the returned ReadResponse will contain all the datum responses that have been read (which could be an empty list).
+	// If the request timeout is reached on server side, the returned ReadResponse will contain all the datum that have been read (which could be an empty list).
 	ReadFn(ctx context.Context, in *ReadRequest, opts ...grpc.CallOption) (Source_ReadFnClient, error)
 	// AckFn acknowledges a list of datum offsets.
 	// When AckFn is called, it implicitly indicates that the datum stream has been processed by the source vertex.
@@ -63,7 +63,7 @@ func (c *sourceClient) ReadFn(ctx context.Context, in *ReadRequest, opts ...grpc
 }
 
 type Source_ReadFnClient interface {
-	Recv() (*DatumResponse, error)
+	Recv() (*ReadResponse, error)
 	grpc.ClientStream
 }
 
@@ -71,8 +71,8 @@ type sourceReadFnClient struct {
 	grpc.ClientStream
 }
 
-func (x *sourceReadFnClient) Recv() (*DatumResponse, error) {
-	m := new(DatumResponse)
+func (x *sourceReadFnClient) Recv() (*ReadResponse, error) {
+	m := new(ReadResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -112,7 +112,7 @@ func (c *sourceClient) IsReady(ctx context.Context, in *emptypb.Empty, opts ...g
 type SourceServer interface {
 	// Read returns a stream of datum responses.
 	// The size of the returned ReadResponse is less than or equal to the num_records specified in ReadRequest.
-	// If the request timeout is reached on server side, the returned ReadResponse will contain all the datum responses that have been read (which could be an empty list).
+	// If the request timeout is reached on server side, the returned ReadResponse will contain all the datum that have been read (which could be an empty list).
 	ReadFn(*ReadRequest, Source_ReadFnServer) error
 	// AckFn acknowledges a list of datum offsets.
 	// When AckFn is called, it implicitly indicates that the datum stream has been processed by the source vertex.
@@ -165,7 +165,7 @@ func _Source_ReadFn_Handler(srv interface{}, stream grpc.ServerStream) error {
 }
 
 type Source_ReadFnServer interface {
-	Send(*DatumResponse) error
+	Send(*ReadResponse) error
 	grpc.ServerStream
 }
 
@@ -173,7 +173,7 @@ type sourceReadFnServer struct {
 	grpc.ServerStream
 }
 
-func (x *sourceReadFnServer) Send(m *DatumResponse) error {
+func (x *sourceReadFnServer) Send(m *ReadResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 

@@ -73,13 +73,13 @@ func TestService_IsReady(t *testing.T) {
 
 type ReadFnServerTest struct {
 	ctx      context.Context
-	outputCh chan sourcepb.DatumResponse
+	outputCh chan sourcepb.ReadResponse
 	grpc.ServerStream
 }
 
 func NewReadFnServerTest(
 	ctx context.Context,
-	outputCh chan sourcepb.DatumResponse,
+	outputCh chan sourcepb.ReadResponse,
 ) *ReadFnServerTest {
 	return &ReadFnServerTest{
 		ctx:      ctx,
@@ -87,7 +87,7 @@ func NewReadFnServerTest(
 	}
 }
 
-func (t *ReadFnServerTest) Send(d *sourcepb.DatumResponse) error {
+func (t *ReadFnServerTest) Send(d *sourcepb.ReadResponse) error {
 	t.outputCh <- *d
 	return nil
 }
@@ -109,7 +109,7 @@ func NewReadFnServerErrTest(
 	}
 }
 
-func (te *ReadFnServerErrTest) Send(_ *sourcepb.DatumResponse) error {
+func (te *ReadFnServerErrTest) Send(_ *sourcepb.ReadResponse) error {
 	return fmt.Errorf("send error")
 }
 
@@ -123,7 +123,7 @@ func TestService_ReadFn(t *testing.T) {
 		name        string
 		fields      fields
 		input       *sourcepb.ReadRequest
-		expected    []*sourcepb.DatumResponse
+		expected    []*sourcepb.ReadResponse
 		expectedErr bool
 	}{
 		{
@@ -141,9 +141,9 @@ func TestService_ReadFn(t *testing.T) {
 					TimeoutInMs: 1000,
 				},
 			},
-			expected: []*sourcepb.DatumResponse{
+			expected: []*sourcepb.ReadResponse{
 				{
-					Result: &sourcepb.DatumResponse_Result{
+					Result: &sourcepb.ReadResponse_Result{
 						Payload:   []byte(`test`),
 						Offset:    &sourcepb.Offset{},
 						EventTime: timestamppb.New(testEventTime),
@@ -168,9 +168,9 @@ func TestService_ReadFn(t *testing.T) {
 					TimeoutInMs: 1000,
 				},
 			},
-			expected: []*sourcepb.DatumResponse{
+			expected: []*sourcepb.ReadResponse{
 				{
-					Result: &sourcepb.DatumResponse_Result{
+					Result: &sourcepb.ReadResponse_Result{
 						Payload:   []byte(`test`),
 						Offset:    &sourcepb.Offset{},
 						EventTime: timestamppb.New(testEventTime),
@@ -192,8 +192,8 @@ func TestService_ReadFn(t *testing.T) {
 			// because we are not using gRPC, we directly set a new incoming ctx
 			// instead of the regular outgoing context in the real gRPC connection.
 			ctx := context.Background()
-			outputCh := make(chan sourcepb.DatumResponse)
-			result := make([]*sourcepb.DatumResponse, 0)
+			outputCh := make(chan sourcepb.ReadResponse)
+			result := make([]*sourcepb.ReadResponse, 0)
 
 			var readFnStream sourcepb.Source_ReadFnServer
 			if tt.expectedErr {

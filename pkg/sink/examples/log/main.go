@@ -4,9 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/numaproj/numaflow-go/pkg/sink/server"
-
 	sinksdk "github.com/numaproj/numaflow-go/pkg/sink"
+	"github.com/numaproj/numaflow-go/pkg/sink/server"
 )
 
 func handle(_ context.Context, datumStreamCh <-chan sinksdk.Datum) sinksdk.Responses {
