@@ -4,7 +4,7 @@ build:
 
 .PHONY: image
 image: build
-	docker build -t "quay.io/keranyang/numaflow-go/source-simple-source:latest" --target simple-source .
+	docker build -t "quay.io/numaio/numaflow-go/source-simple-source:latest" --target simple-source .
 
 clean:
 	-rm -rf ./dist
