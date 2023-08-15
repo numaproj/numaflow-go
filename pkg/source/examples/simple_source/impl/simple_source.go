@@ -40,6 +40,11 @@ func (s *SimpleSource) Read(_ context.Context, readRequest sourcesdk.ReadRequest
 	defer cancel()
 
 	// If we have un-acked data, we return without reading any new data.
+	// TODO - we should have a better way to handle this.
+	// In real world, there can be the case when the numa container restarted before acknowledging a batch,
+	// leaving the toAckSet not empty on the UDSource container side.
+	// In this case, we should read the data from the last acked offset instead of returning.
+	// Our built-in Kafka source follows this logic.
 	if len(s.toAckSet) > 0 {
 		return
 	}
