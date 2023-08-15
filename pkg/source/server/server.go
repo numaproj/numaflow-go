@@ -22,15 +22,11 @@ type server struct {
 
 // New creates a new server object.
 func New(
-	pendingHandler sourcesdk.PendingHandler,
-	readHandler sourcesdk.ReadHandler,
-	ackHandler sourcesdk.AckHandler,
+	source sourcesdk.Source,
 ) *server {
 	s := new(server)
 	s.svc = new(sourcesdk.Service)
-	s.svc.PendingHandler = pendingHandler
-	s.svc.ReadHandler = readHandler
-	s.svc.AckHandler = ackHandler
+	s.svc.Source = source
 	return s
 }
 

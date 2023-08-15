@@ -14,9 +14,7 @@ import (
 // Service implements the proto gen server interface
 type Service struct {
 	sourcepb.UnimplementedSourceServer
-	PendingHandler PendingHandler
-	ReadHandler    ReadHandler
-	AckHandler     AckHandler
+	Source Source
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
@@ -27,7 +25,7 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*sourcepb.ReadyResp
 // PendingFn returns the number of pending messages.
 func (fs *Service) PendingFn(ctx context.Context, _ *emptypb.Empty) (*sourcepb.PendingResponse, error) {
 	return &sourcepb.PendingResponse{Result: &sourcepb.PendingResponse_Result{
-		Count: fs.PendingHandler.HandleDo(ctx),
+		Count: fs.Source.Pending(ctx),
 	}}, nil
 }
 
@@ -56,7 +54,7 @@ func (fs *Service) ReadFn(d *sourcepb.ReadRequest, stream sourcepb.Source_ReadFn
 
 	done := make(chan bool)
 	go func() {
-		fs.ReadHandler.HandleDo(ctx, &request, messageCh)
+		fs.Source.Read(ctx, &request, messageCh)
 		done <- true
 	}()
 	finished := false
@@ -116,7 +114,7 @@ func (fs *Service) AckFn(ctx context.Context, d *sourcepb.AckRequest) (*sourcepb
 	request := ackRequest{
 		offsets: offsets,
 	}
-	fs.AckHandler.HandleDo(ctx, &request)
+	fs.Source.Ack(ctx, &request)
 	return &sourcepb.AckResponse{
 		Result: &sourcepb.AckResponse_Result{},
 	}, nil

@@ -17,58 +17,36 @@ import (
 	"github.com/numaproj/numaflow-go/pkg/source/model"
 )
 
-type fields struct {
-	pendingHandler PendingHandler
-	ackHandler     AckHandler
-	readHandler    ReadHandler
+var TestEventTime = time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
+var TestKey = "test-key"
+var TestPendingNumber uint64 = 123
+
+type TestSource struct{}
+
+func (ts TestSource) Read(_ context.Context, _ ReadRequest, messageCh chan<- model.Message) {
+	msg := model.NewMessage([]byte(`test`), model.Offset{}, TestEventTime)
+	messageCh <- msg.WithKeys([]string{TestKey})
+	close(messageCh)
+}
+
+func (ts TestSource) Ack(_ context.Context, _ AckRequest) {
+	// Do nothing and return, to mimic a successful ack.
+	return
+}
+
+func (ts TestSource) Pending(_ context.Context) uint64 {
+	return TestPendingNumber
 }
 
 func TestService_IsReady(t *testing.T) {
-	type args struct {
-		in0 context.Context
-		in1 *emptypb.Empty
+	fs := &Service{
+		Source: nil,
 	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    *sourcepb.ReadyResponse
-		wantErr bool
-	}{
-		{
-			name: "is_ready",
-			fields: fields{
-				pendingHandler: nil,
-				ackHandler:     nil,
-				readHandler:    nil,
-			},
-			args: args{
-				in0: nil,
-				in1: &emptypb.Empty{},
-			},
-			want: &sourcepb.ReadyResponse{
-				Ready: true,
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			fs := &Service{
-				PendingHandler: tt.fields.pendingHandler,
-				AckHandler:     tt.fields.ackHandler,
-				ReadHandler:    tt.fields.readHandler,
-			}
-			got, err := fs.IsReady(tt.args.in0, tt.args.in1)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("IsReady() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("IsReady() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
+	got, err := fs.IsReady(nil, &emptypb.Empty{})
+	assert.NoError(t, err)
+	assert.Equal(t, got, &sourcepb.ReadyResponse{
+		Ready: true,
+	})
 }
 
 type ReadFnServerTest struct {
@@ -118,23 +96,14 @@ func (te *ReadFnServerErrTest) Context() context.Context {
 }
 
 func TestService_ReadFn(t *testing.T) {
-	testEventTime := time.Now()
 	tests := []struct {
 		name        string
-		fields      fields
 		input       *sourcepb.ReadRequest
 		expected    []*sourcepb.ReadResponse
 		expectedErr bool
 	}{
 		{
 			name: "read_fn_read_msg",
-			fields: fields{
-				readHandler: ReadFunc(func(ctx context.Context, request ReadRequest, messageCh chan<- model.Message) {
-					msg := model.NewMessage([]byte(`test`), model.Offset{}, testEventTime)
-					messageCh <- msg.WithKeys([]string{"test-key"})
-					close(messageCh)
-				}),
-			},
 			input: &sourcepb.ReadRequest{
 				Request: &sourcepb.ReadRequest_Request{
 					NumRecords:  1,
@@ -146,8 +115,8 @@ func TestService_ReadFn(t *testing.T) {
 					Result: &sourcepb.ReadResponse_Result{
 						Payload:   []byte(`test`),
 						Offset:    &sourcepb.Offset{},
-						EventTime: timestamppb.New(testEventTime),
-						Keys:      []string{"test-key"},
+						EventTime: timestamppb.New(TestEventTime),
+						Keys:      []string{TestKey},
 					},
 				},
 			},
@@ -155,13 +124,6 @@ func TestService_ReadFn(t *testing.T) {
 		},
 		{
 			name: "read_fn_err",
-			fields: fields{
-				readHandler: ReadFunc(func(ctx context.Context, request ReadRequest, messageCh chan<- model.Message) {
-					msg := model.NewMessage([]byte(`test`), model.Offset{}, testEventTime)
-					messageCh <- msg.WithKeys([]string{"test-key"})
-					close(messageCh)
-				}),
-			},
 			input: &sourcepb.ReadRequest{
 				Request: &sourcepb.ReadRequest_Request{
 					NumRecords:  1,
@@ -173,8 +135,8 @@ func TestService_ReadFn(t *testing.T) {
 					Result: &sourcepb.ReadResponse_Result{
 						Payload:   []byte(`test`),
 						Offset:    &sourcepb.Offset{},
-						EventTime: timestamppb.New(testEventTime),
-						Keys:      []string{"test-key"},
+						EventTime: timestamppb.New(TestEventTime),
+						Keys:      []string{TestKey},
 					},
 				},
 			},
@@ -183,11 +145,7 @@ func TestService_ReadFn(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &Service{
-				ReadHandler:    tt.fields.readHandler,
-				AckHandler:     tt.fields.ackHandler,
-				PendingHandler: tt.fields.pendingHandler,
-			}
+			fs := &Service{Source: TestSource{}}
 			// here's a trick for testing:
 			// because we are not using gRPC, we directly set a new incoming ctx
 			// instead of the regular outgoing context in the real gRPC connection.
@@ -231,13 +189,7 @@ func TestService_ReadFn(t *testing.T) {
 }
 
 func TestService_AckFn(t *testing.T) {
-	ackHandler := AckFunc(func(ctx context.Context, request AckRequest) {
-		// Do nothing and return, to mimic a successful ack.
-		return
-	})
-	fs := &Service{
-		AckHandler: ackHandler,
-	}
+	fs := &Service{Source: TestSource{}}
 	ctx := context.Background()
 	got, err := fs.AckFn(ctx, &sourcepb.AckRequest{
 		Request: &sourcepb.AckRequest_Request{
@@ -256,18 +208,12 @@ func TestService_AckFn(t *testing.T) {
 }
 
 func TestService_PendingFn(t *testing.T) {
-	pendingHandler := PendingFunc(func(ctx context.Context) uint64 {
-		// Return 123, to mimic a pending func.
-		return 123
-	})
-	fs := &Service{
-		PendingHandler: pendingHandler,
-	}
+	fs := &Service{Source: TestSource{}}
 	ctx := context.Background()
 	got, err := fs.PendingFn(ctx, &emptypb.Empty{})
 	assert.Equal(t, got, &sourcepb.PendingResponse{
 		Result: &sourcepb.PendingResponse_Result{
-			Count: 123,
+			Count: TestPendingNumber,
 		},
 	})
 	assert.NoError(t, err)
