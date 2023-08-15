@@ -4,11 +4,12 @@ import (
 	"context"
 
 	sourcesdk "github.com/numaproj/numaflow-go/pkg/source"
+	"github.com/numaproj/numaflow-go/pkg/source/examples/simple_source/impl"
 	"github.com/numaproj/numaflow-go/pkg/source/server"
 )
 
 func main() {
-	simpleSource := NewSimpleSource(10)
+	simpleSource := impl.NewSimpleSource(10)
 	server.New(
 		sourcesdk.PendingFunc(simpleSource.Pending),
 		sourcesdk.ReadFunc(simpleSource.Read),

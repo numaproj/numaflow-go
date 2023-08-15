@@ -6,8 +6,8 @@ RUN apk update && apk upgrade && \
     apk add ca-certificates && \
     apk --no-cache add tzdata
 
-COPY dist/simple-example /bin/simple-example
-RUN chmod +x /bin/simple-example
+COPY dist/simple-source-example /bin/simple-source-example
+RUN chmod +x /bin/simple-source-example
 
 ####################################################################################################
 # simple-source
