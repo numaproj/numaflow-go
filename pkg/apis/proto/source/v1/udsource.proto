@@ -35,9 +35,9 @@ message ReadRequest {
     // Required field indicating the number of records to read.
     uint64 num_records = 1;
     // Required field indicating the request timeout in milliseconds.
-    // Using int32 such that when converting to time.Duration, it will not overflow.
-    // int32 can cover 2^31 milliseconds, which is 24 days.
-    int32 timeout_in_ms = 2;
+    // uint32 can represent 2^32 milliseconds, which is about 49 days.
+    // We don't use uint64 because time.Duration takes int64 as nano seconds. Using uint64 for milli will cause overflow.
+    uint32 timeout_in_ms = 2;
   }
   // Required field indicating the request.
   Request request = 1;

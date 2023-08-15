@@ -34,7 +34,7 @@ func (ar TestAckRequest) Offsets() []model.Offset {
 }
 
 func Test_SimpleSource_HappyPath(t *testing.T) {
-	// Create a new UDSource with 10 messages
+	// Initialize the simple source with 10 messages
 	underTest := NewSimpleSource(10)
 	// Prepare a channel to receive messages
 	// The channel size is 20 to make sure it can hold all messages
@@ -111,7 +111,7 @@ func Test_SimpleSource_HappyPath(t *testing.T) {
 }
 
 func Test_SimpleSource_NotSoHappyPath(t *testing.T) {
-	// Create a new UDSource with 10 messages
+	// Initialize the simple source with 10 messages
 	underTest := NewSimpleSource(10)
 	// Prepare a channel to receive messages
 	// The channel size is 20 to make sure it can hold all messages
@@ -123,7 +123,7 @@ func Test_SimpleSource_NotSoHappyPath(t *testing.T) {
 		timeout: time.Second,
 	}, messageCh)
 
-	// Try Acknowledging the batch, but passing in wrong offsets
+	// Try acknowledging the batch, but passing in wrong offsets
 	// The AckRequest contains 3 offsets, which is more than the number of messages we read
 	// The Ack function should ack none of the messages and panic
 	batch1Msg1 := <-messageCh
@@ -141,7 +141,7 @@ func Test_SimpleSource_NotSoHappyPath(t *testing.T) {
 	}, messageCh)
 	assert.Equal(t, 0, len(messageCh))
 
-	// Try Acknowledging the batch, but passing in wrong offsets
+	// Try acknowledging the batch, but passing in wrong offsets
 	// The AckRequest contains 2 offsets, but one of them doesn't match the message we read
 	// The Ack function should ack none of the messages and panic
 	assertPanic(t, func() {
@@ -156,7 +156,7 @@ func Test_SimpleSource_NotSoHappyPath(t *testing.T) {
 	}, messageCh)
 	assert.Equal(t, 0, len(messageCh))
 
-	// Try Acknowledging the batch, but passing in wrong offsets
+	// Try acknowledging the batch, but passing in wrong offsets
 	// The AckRequest contains 1 offset, it matches one of the messages we read
 	// The Ack function should ack none of the messages and panic, because we can't ack a subset of the batch
 	assertPanic(t, func() {

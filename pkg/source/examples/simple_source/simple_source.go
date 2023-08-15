@@ -83,8 +83,9 @@ func (s *SimpleSource) Read(_ context.Context, readRequest sourcesdk.ReadRequest
 // Ack acknowledges the data from the source.
 // If the offsets in the request do not match the offsets to be acked, the function panics.
 // Note:
-// If the method panics at any point of the execution,
-// it ensures beforehand that all the offsets in the request are NOT acked.
+// If the method is about to panic at any point of the execution,
+// before it panics, it ensures that all the offsets in the request are NOT acked.
+// This is to maintain the contract of the Ack method - either acknowledge ALL or NONE.
 func (s *SimpleSource) Ack(_ context.Context, request sourcesdk.AckRequest) {
 	offsetsToAck := request.Offsets()
 	if len(offsetsToAck) != len(s.toAckSet) {

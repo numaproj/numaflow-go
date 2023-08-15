@@ -229,3 +229,46 @@ func TestService_ReadFn(t *testing.T) {
 		})
 	}
 }
+
+func TestService_AckFn(t *testing.T) {
+	ackHandler := AckFunc(func(ctx context.Context, request AckRequest) {
+		// Do nothing and return, to mimic a successful ack.
+		return
+	})
+	fs := &Service{
+		AckHandler: ackHandler,
+	}
+	ctx := context.Background()
+	got, err := fs.AckFn(ctx, &sourcepb.AckRequest{
+		Request: &sourcepb.AckRequest_Request{
+			Offsets: []*sourcepb.Offset{
+				{
+					PartitionId: "0",
+					Offset:      []byte("test"),
+				},
+			},
+		},
+	})
+	assert.Equal(t, got, &sourcepb.AckResponse{
+		Result: &sourcepb.AckResponse_Result{},
+	})
+	assert.NoError(t, err)
+}
+
+func TestService_PendingFn(t *testing.T) {
+	pendingHandler := PendingFunc(func(ctx context.Context) uint64 {
+		// Return 123, to mimic a pending func.
+		return 123
+	})
+	fs := &Service{
+		PendingHandler: pendingHandler,
+	}
+	ctx := context.Background()
+	got, err := fs.PendingFn(ctx, &emptypb.Empty{})
+	assert.Equal(t, got, &sourcepb.PendingResponse{
+		Result: &sourcepb.PendingResponse_Result{
+			Count: 123,
+		},
+	})
+	assert.NoError(t, err)
+}
