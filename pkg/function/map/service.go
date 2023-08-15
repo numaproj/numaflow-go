@@ -3,9 +3,10 @@ package mapsvc
 import (
 	"context"
 
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	"github.com/numaproj/numaflow-go/pkg/apis/proto/function/mapfn"
 	"github.com/numaproj/numaflow-go/pkg/function"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // Service implements the proto gen server interface and contains the map operation
@@ -20,9 +21,9 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*mapfn.ReadyRespons
 	return &mapfn.ReadyResponse{Ready: true}, nil
 }
 
-// MapFn applies a function to each datum element.
+// MapFn applies a user defined function to each request element and returns a list of results.
 func (fs *Service) MapFn(ctx context.Context, d *mapfn.MapRequest) (*mapfn.MapResponseList, error) {
-	var hd = function.NewHandlerDatum(d.GetValue(), d.GetEventTime().EventTime.AsTime(), d.GetWatermark().Watermark.AsTime(), function.NewHandlerDatumMetadata("id", 1))
+	var hd = function.NewHandlerDatum(d.GetValue(), d.GetEventTime().EventTime.AsTime(), d.GetWatermark().Watermark.AsTime())
 	messages := fs.Mapper.HandleDo(ctx, d.GetKeys(), hd)
 	var elements []*mapfn.MapResponse
 	for _, m := range messages.Items() {

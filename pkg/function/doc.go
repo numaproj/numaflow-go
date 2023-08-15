@@ -5,55 +5,24 @@
   package main
 
   import (
-
     "context"
 
     functionsdk "github.com/numaproj/numaflow-go/pkg/function"
     "github.com/numaproj/numaflow-go/pkg/function/server"
-
   )
 
-  // Simply return the same msg
+  func mapHandle(_ context.Context, keys []string, d functionsdk.Datum) functionsdk.Messages {
+    // directly forward the input to the output
+	val := d.Value()
 
-  func handle(ctx context.Context, keys []string, data functionsdk.Datum) functionsdk.Messages {
-    _ = data.EventTime() // Event time is available
-    _ = data.Watermark() // Watermark is available
-    return functionsdk.MessagesBuilder().Append(functionsdk.NewMessage(data.Value()))
+	var resultKeys = keys
+	var resultVal = val
+	return functionsdk.MessagesBuilder().Append(functionsdk.NewMessage(resultVal).WithKeys(resultKeys))
   }
 
-  func main() {
-    server.New().RegisterMapper(functionsdk.MapFunc(handle)).Start(context.Background())
-  }
-*/
-//
-// Example MapT (extracting event time from the datum payload)
-// MapT includes both Map and EventTime assignment functionalities.
-// Although the input datum already contains EventTime and Watermark, it's up to the MapT implementor to
-// decide on whether to use them for generating new EventTime.
-// MapT can be used only at source vertex by source data transformer.
-/*
-  package main
-
-  import (
-	"context"
-	"time"
-
-	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
-	"github.com/numaproj/numaflow-go/pkg/function/server"
-  )
-
-  func mapTHandle(_ context.Context, keys []string, d functionsdk.Datum) functionsdk.MessageTs {
-	eventTime := getEventTime(d.Value())
-	return functionsdk.MessageTsBuilder().Append(functionsdk.NewMessageT(eventTime, d.Value()).WithKeys(keys)))
-  }
-
-  func getEventTime(val []byte) time.Time {
-	...
-  }
-
-  func main() {
-	server.New().RegisterMapperT(functionsdk.MapTFunc(mapTHandle)).Start(context.Background())
-  }
+	func main() {
+		server.NewMapServer(functionsdk.MapFunc(mapHandle)).Start(context.Background())
+	}
 */
 //
 // Example Reduce
@@ -82,7 +51,7 @@
   }
 
   func main() {
-    server.New().RegisterReducer(functionsdk.ReduceFunc(handle)).Start(context.Background())
+    server.NewReduceServer(functionsdk.ReduceFunc(handle)).Start(context.Background())
   }
 */
 // The Datum object contains the message payload and metadata. Currently, there are two fields in metadata:

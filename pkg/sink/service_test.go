@@ -9,10 +9,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/numaproj/numaflow-go/pkg/apis/proto/sinkfn"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"github.com/numaproj/numaflow-go/pkg/apis/proto/common"
+	"github.com/numaproj/numaflow-go/pkg/apis/proto/sinkfn"
 )
 
 type UserDefinedSink_SinkFnServerTest struct {
@@ -54,22 +56,22 @@ func TestService_SinkFn(t *testing.T) {
 					Id:        "one-processed",
 					Keys:      []string{"sink-test"},
 					Value:     []byte(strconv.Itoa(10)),
-					EventTime: &sinkfn.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &sinkfn.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
 					Id:        "two-processed",
 					Keys:      []string{"sink-test"},
 					Value:     []byte(strconv.Itoa(20)),
-					EventTime: &sinkfn.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &sinkfn.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
 					Id:        "three-processed",
 					Keys:      []string{"sink-test"},
 					Value:     []byte(strconv.Itoa(30)),
-					EventTime: &sinkfn.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &sinkfn.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 			},
 			sh: SinkFunc(func(ctx context.Context, rch <-chan Datum) Responses {
@@ -106,22 +108,22 @@ func TestService_SinkFn(t *testing.T) {
 					Id:        "one-processed",
 					Keys:      []string{"sink-test-1", "sink-test-2"},
 					Value:     []byte(strconv.Itoa(10)),
-					EventTime: &sinkfn.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &sinkfn.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
 					Id:        "two-processed",
 					Keys:      []string{"sink-test-1", "sink-test-2"},
 					Value:     []byte(strconv.Itoa(20)),
-					EventTime: &sinkfn.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &sinkfn.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
 					Id:        "three-processed",
 					Keys:      []string{"sink-test-1", "sink-test-2"},
 					Value:     []byte(strconv.Itoa(30)),
-					EventTime: &sinkfn.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &sinkfn.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 			},
 			sh: SinkFunc(func(ctx context.Context, rch <-chan Datum) Responses {

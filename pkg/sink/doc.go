@@ -5,13 +5,11 @@
   package main
 
   import (
+	"context"
+	"fmt"
 
-    "context"
-    "fmt"
-
-    sinksdk "github.com/numaproj/numaflow-go/pkg/sink"
-    "github.com/numaproj/numaflow-go/pkg/sink/server"
-
+	sinksdk "github.com/numaproj/numaflow-go/pkg/sink"
+	"github.com/numaproj/numaflow-go/pkg/sink/server"
   )
 
   func handle(ctx context.Context, datumStreamCh <-chan sinksdk.Datum) sinksdk.Responses {
@@ -24,7 +22,7 @@
   }
 
   func main() {
-    server.New().RegisterSinker(sinksdk.SinkFunc(handle)).Start(context.Background())
+    server.NewSinkServer(sinksdk.SinkFunc(handle)).Start(context.Background())
   }
 */
 package sink

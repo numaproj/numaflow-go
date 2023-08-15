@@ -7,15 +7,13 @@ type handlerDatum struct {
 	value     []byte
 	eventTime time.Time
 	watermark time.Time
-	metadata  handlerDatumMetadata
 }
 
-func NewHandlerDatum(value []byte, eventTime time.Time, watermark time.Time, metadata DatumMetadata) Datum {
+func NewHandlerDatum(value []byte, eventTime time.Time, watermark time.Time) Datum {
 	return &handlerDatum{
 		value:     value,
 		eventTime: eventTime,
 		watermark: watermark,
-		metadata:  metadata.(handlerDatumMetadata),
 	}
 }
 
@@ -29,33 +27,6 @@ func (h *handlerDatum) EventTime() time.Time {
 
 func (h *handlerDatum) Watermark() time.Time {
 	return h.watermark
-}
-
-func (h *handlerDatum) Metadata() DatumMetadata {
-	return h.metadata
-}
-
-// handlerDatumMetadata implements the DatumMetadata interface and is used in the map and reduce handlers.
-type handlerDatumMetadata struct {
-	id           string
-	numDelivered uint64
-}
-
-func NewHandlerDatumMetadata(id string, numDelivered uint64) DatumMetadata {
-	return handlerDatumMetadata{
-		id:           id,
-		numDelivered: numDelivered,
-	}
-}
-
-// ID returns the ID of the datum.
-func (h handlerDatumMetadata) ID() string {
-	return h.id
-}
-
-// NumDelivered returns the number of times the datum has been delivered.
-func (h handlerDatumMetadata) NumDelivered() uint64 {
-	return h.numDelivered
 }
 
 // intervalWindow implements IntervalWindow interface which will be passed as metadata

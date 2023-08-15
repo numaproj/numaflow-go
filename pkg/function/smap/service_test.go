@@ -8,11 +8,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/numaproj/numaflow-go/pkg/apis/proto/function/smapfn"
-	"github.com/numaproj/numaflow-go/pkg/function"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"github.com/numaproj/numaflow-go/pkg/apis/proto/common"
+	"github.com/numaproj/numaflow-go/pkg/apis/proto/function/smapfn"
+	"github.com/numaproj/numaflow-go/pkg/function"
 )
 
 type MapStreamFnServerTest struct {
@@ -81,8 +83,8 @@ func TestService_MapFnStream(t *testing.T) {
 			input: &smapfn.MapStreamRequest{
 				Keys:      []string{"client"},
 				Value:     []byte(`test`),
-				EventTime: &smapfn.EventTime{EventTime: timestamppb.New(time.Time{})},
-				Watermark: &smapfn.Watermark{Watermark: timestamppb.New(time.Time{})},
+				EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
+				Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
 			},
 			expected: []*smapfn.MapStreamResponse{
 				{
@@ -101,8 +103,8 @@ func TestService_MapFnStream(t *testing.T) {
 			input: &smapfn.MapStreamRequest{
 				Keys:      []string{"client"},
 				Value:     []byte(`test`),
-				EventTime: &smapfn.EventTime{EventTime: timestamppb.New(time.Time{})},
-				Watermark: &smapfn.Watermark{Watermark: timestamppb.New(time.Time{})},
+				EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
+				Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
 			},
 			expected: []*smapfn.MapStreamResponse{
 				{
@@ -122,8 +124,8 @@ func TestService_MapFnStream(t *testing.T) {
 			input: &smapfn.MapStreamRequest{
 				Keys:      []string{"client"},
 				Value:     []byte(`test`),
-				EventTime: &smapfn.EventTime{EventTime: timestamppb.New(time.Time{})},
-				Watermark: &smapfn.Watermark{Watermark: timestamppb.New(time.Time{})},
+				EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
+				Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
 			},
 			expected: []*smapfn.MapStreamResponse{
 				{
@@ -141,8 +143,8 @@ func TestService_MapFnStream(t *testing.T) {
 			input: &smapfn.MapStreamRequest{
 				Keys:      []string{"client"},
 				Value:     []byte(`test`),
-				EventTime: &smapfn.EventTime{EventTime: timestamppb.New(time.Time{})},
-				Watermark: &smapfn.Watermark{Watermark: timestamppb.New(time.Time{})},
+				EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
+				Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
 			},
 			expected: []*smapfn.MapStreamResponse{
 				{
@@ -161,8 +163,8 @@ func TestService_MapFnStream(t *testing.T) {
 			input: &smapfn.MapStreamRequest{
 				Keys:      []string{"client"},
 				Value:     []byte(`test`),
-				EventTime: &smapfn.EventTime{EventTime: timestamppb.New(time.Time{})},
-				Watermark: &smapfn.Watermark{Watermark: timestamppb.New(time.Time{})},
+				EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
+				Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
 			},
 			expected: []*smapfn.MapStreamResponse{
 				{

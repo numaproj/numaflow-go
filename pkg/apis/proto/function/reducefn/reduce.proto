@@ -2,44 +2,32 @@ syntax = "proto3";
 
 option go_package = "github.com/numaproj/numaflow-go/pkg/apis/proto/function/reducefn";
 
-import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
+import "pkg/apis/proto/common/common.proto";
+
 
 package function.reducefn;
 
 service Reduce {
-  // ReduceFn applies a reduce function to a datum request stream.
+  // ReduceFn applies a reduce function to a request stream.
   rpc ReduceFn(stream ReduceRequest) returns (stream ReduceResponseList);
 
   // IsReady is the heartbeat endpoint for gRPC.
   rpc IsReady(google.protobuf.Empty) returns (ReadyResponse);
 }
 
-message EventTime {
-  // event_time is the time associated with each datum.
-  google.protobuf.Timestamp event_time = 1;
-  // future we can add an enum to represent whether the event time is
-  // based on INGEST_TIME or EVENT_TIME or PROCESSING_TIME
-}
-
-message Watermark {
-  // watermark is the monotonically increasing time which denotes completeness for the given time for the given vertex.
-  google.protobuf.Timestamp watermark = 1;
-  // future we can add LATE, ON_TIME etc.
-}
-
 /**
- * DatumRequest represents a datum request element.
+ * ReduceRequest represents a request element.
  */
 message ReduceRequest {
   repeated string keys = 1;
   bytes value = 2;
-  EventTime event_time = 3;
-  Watermark watermark = 4;
+  common.EventTime event_time = 3;
+  common.Watermark watermark = 4;
 }
 
 /**
- * DatumResponse represents a datum response element.
+ * ReduceResponse represents a response element.
  */
 message ReduceResponse {
   repeated string keys = 1;
@@ -48,7 +36,7 @@ message ReduceResponse {
 }
 
 /**
- * DatumResponseList represents a list of datum response elements.
+ * ReduceResponseList represents a list of response elements.
  */
 message ReduceResponseList {
   repeated ReduceResponse elements = 1;

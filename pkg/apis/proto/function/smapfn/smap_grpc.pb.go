@@ -23,7 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MapStreamClient interface {
-	// MapStreamFn applies a function to each datum element and returns a stream.
+	// MapStreamFn applies a function to each request element and returns a stream.
 	MapStreamFn(ctx context.Context, in *MapStreamRequest, opts ...grpc.CallOption) (MapStream_MapStreamFnClient, error)
 	// IsReady is the heartbeat endpoint for gRPC.
 	IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReadyResponse, error)
@@ -82,7 +82,7 @@ func (c *mapStreamClient) IsReady(ctx context.Context, in *emptypb.Empty, opts .
 // All implementations must embed UnimplementedMapStreamServer
 // for forward compatibility
 type MapStreamServer interface {
-	// MapStreamFn applies a function to each datum element and returns a stream.
+	// MapStreamFn applies a function to each request element and returns a stream.
 	MapStreamFn(*MapStreamRequest, MapStream_MapStreamFnServer) error
 	// IsReady is the heartbeat endpoint for gRPC.
 	IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error)

@@ -7,8 +7,9 @@ import (
 	"testing"
 	"time"
 
-	sinksdk "github.com/numaproj/numaflow-go/pkg/sink"
 	"github.com/stretchr/testify/assert"
+
+	sinksdk "github.com/numaproj/numaflow-go/pkg/sink"
 )
 
 func TestSink_Start(t *testing.T) {
@@ -45,28 +46,6 @@ func TestSink_Start(t *testing.T) {
 		time.Sleep(3 * time.Second)
 		cancel()
 	}()
-	err = NewSinkServer().RegisterSinker(sinkHandler).Start(ctx, WithSockAddr(socketFile.Name()), WithServerInfoFilePath(serverInfoFile.Name()))
+	err = NewSinkServer(sinkHandler, WithSockAddr(socketFile.Name()), WithServerInfoFilePath(serverInfoFile.Name())).Start(ctx)
 	assert.NoError(t, err)
-}
-
-func TestSink_RegisterSinker(t *testing.T) {
-
-	sinkHandler := sinksdk.SinkFunc(func(ctx context.Context, datumStreamCh <-chan sinksdk.Datum) sinksdk.Responses {
-		result := sinksdk.ResponsesBuilder()
-		for d := range datumStreamCh {
-			id := d.ID()
-			if strings.Contains(string(d.Value()), "err") {
-				result = result.Append(sinksdk.ResponseFailure(id, "mock sink message error"))
-			} else {
-				result = result.Append(sinksdk.ResponseOK(id))
-			}
-
-		}
-		return result
-	})
-
-	serv := NewSinkServer()
-	assert.Nil(t, serv.svc.Sinker)
-	serv.RegisterSinker(sinkHandler)
-	assert.NotNil(t, serv.svc.Sinker)
 }

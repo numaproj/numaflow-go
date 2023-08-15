@@ -9,14 +9,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/numaproj/numaflow-go/pkg/apis/proto/function/reducefn"
-	"github.com/numaproj/numaflow-go/pkg/function"
-	"github.com/numaproj/numaflow-go/pkg/util"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 	grpcmd "google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
+
+	"github.com/numaproj/numaflow-go/pkg/apis/proto/function/reducefn"
+	"github.com/numaproj/numaflow-go/pkg/function"
+	"github.com/numaproj/numaflow-go/pkg/util"
 )
 
 // Service implements the proto gen server interface and contains the reduce operation handler.
@@ -31,7 +32,7 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*reducefn.ReadyResp
 	return &reducefn.ReadyResponse{Ready: true}, nil
 }
 
-// ReduceFn applies a reduce function to a datum stream.
+// ReduceFn applies a reduce function to a request stream and returns a list of results.
 func (fs *Service) ReduceFn(stream reducefn.Reduce_ReduceFnServer) error {
 	var (
 		md        function.Metadata
@@ -89,7 +90,7 @@ func (fs *Service) ReduceFn(stream reducefn.Reduce_ReduceFnServer) error {
 			return recvErr
 		}
 		unifiedKey := strings.Join(d.GetKeys(), util.Delimiter)
-		var hd = function.NewHandlerDatum(d.GetValue(), d.GetEventTime().EventTime.AsTime(), d.GetWatermark().Watermark.AsTime(), function.NewHandlerDatumMetadata("id", 1))
+		var hd = function.NewHandlerDatum(d.GetValue(), d.GetEventTime().EventTime.AsTime(), d.GetWatermark().Watermark.AsTime())
 
 		ch, chok := chanMap[unifiedKey]
 		if !chok {

@@ -42,5 +42,5 @@ func handle(_ context.Context, keys []string, d functionsdk.Datum) functionsdk.M
 }
 
 func main() {
-	server.NewMapServer(context.Background(), functionsdk.MapFunc(handle)).Start(context.Background())
+	server.NewMapServer(functionsdk.MapFunc(handle)).Start(context.Background())
 }

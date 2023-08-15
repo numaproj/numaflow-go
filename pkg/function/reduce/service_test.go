@@ -10,12 +10,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/numaproj/numaflow-go/pkg/apis/proto/function/reducefn"
-	"github.com/numaproj/numaflow-go/pkg/function"
-	"github.com/numaproj/numaflow-go/pkg/util"
 	"google.golang.org/grpc"
 	grpcmd "google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"github.com/numaproj/numaflow-go/pkg/apis/proto/common"
+	"github.com/numaproj/numaflow-go/pkg/apis/proto/function/reducefn"
+	"github.com/numaproj/numaflow-go/pkg/function"
+	"github.com/numaproj/numaflow-go/pkg/util"
 )
 
 type ReduceFnServerTest struct {
@@ -75,20 +77,20 @@ func TestService_ReduceFn(t *testing.T) {
 				{
 					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(10)),
-					EventTime: &reducefn.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &reducefn.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
 					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(20)),
-					EventTime: &reducefn.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &reducefn.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
 					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(30)),
-					EventTime: &reducefn.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &reducefn.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 			},
 			expected: &reducefn.ReduceResponseList{
@@ -115,38 +117,38 @@ func TestService_ReduceFn(t *testing.T) {
 				{
 					Keys:      []string{"client1"},
 					Value:     []byte(strconv.Itoa(10)),
-					EventTime: &reducefn.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &reducefn.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
 					Keys:      []string{"client2"},
 					Value:     []byte(strconv.Itoa(20)),
-					EventTime: &reducefn.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &reducefn.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
 					Keys:      []string{"client3"},
 					Value:     []byte(strconv.Itoa(30)),
-					EventTime: &reducefn.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &reducefn.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
 					Keys:      []string{"client1"},
 					Value:     []byte(strconv.Itoa(10)),
-					EventTime: &reducefn.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &reducefn.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
 					Keys:      []string{"client2"},
 					Value:     []byte(strconv.Itoa(20)),
-					EventTime: &reducefn.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &reducefn.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
 					Keys:      []string{"client3"},
 					Value:     []byte(strconv.Itoa(30)),
-					EventTime: &reducefn.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &reducefn.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 			},
 			expected: &reducefn.ReduceResponseList{
@@ -181,20 +183,20 @@ func TestService_ReduceFn(t *testing.T) {
 				{
 					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(10)),
-					EventTime: &reducefn.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &reducefn.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
 					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(20)),
-					EventTime: &reducefn.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &reducefn.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
 					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(30)),
-					EventTime: &reducefn.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &reducefn.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 			},
 			expected: &reducefn.ReduceResponseList{
@@ -220,20 +222,20 @@ func TestService_ReduceFn(t *testing.T) {
 				{
 					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(10)),
-					EventTime: &reducefn.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &reducefn.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
 					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(20)),
-					EventTime: &reducefn.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &reducefn.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
 					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(30)),
-					EventTime: &reducefn.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &reducefn.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 			},
 			expected: &reducefn.ReduceResponseList{

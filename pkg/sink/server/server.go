@@ -13,6 +13,7 @@ import (
 	"github.com/numaproj/numaflow-go/pkg/util"
 )
 
+// sinkServer is a sink gRPC server.
 type sinkServer struct {
 	svc  *sinksdk.Service
 	opts *options

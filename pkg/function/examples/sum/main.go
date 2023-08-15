@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"strconv"
 
 	functionsdk "github.com/numaproj/numaflow-go/pkg/function"
@@ -36,5 +37,8 @@ func reduceHandle(_ context.Context, keys []string, reduceCh <-chan functionsdk.
 }
 
 func main() {
-	server.NewReduceServer(context.Background(), functionsdk.ReduceFunc(reduceHandle)).Start(context.Background())
+	err := server.NewReduceServer(functionsdk.ReduceFunc(reduceHandle)).Start(context.Background())
+	if err != nil {
+		log.Panic("unable to start the server due to: ", err)
+	}
 }

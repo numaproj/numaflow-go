@@ -23,7 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ReduceClient interface {
-	// ReduceFn applies a reduce function to a datum request stream.
+	// ReduceFn applies a reduce function to a request stream.
 	ReduceFn(ctx context.Context, opts ...grpc.CallOption) (Reduce_ReduceFnClient, error)
 	// IsReady is the heartbeat endpoint for gRPC.
 	IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReadyResponse, error)
@@ -81,7 +81,7 @@ func (c *reduceClient) IsReady(ctx context.Context, in *emptypb.Empty, opts ...g
 // All implementations must embed UnimplementedReduceServer
 // for forward compatibility
 type ReduceServer interface {
-	// ReduceFn applies a reduce function to a datum request stream.
+	// ReduceFn applies a reduce function to a request stream.
 	ReduceFn(Reduce_ReduceFnServer) error
 	// IsReady is the heartbeat endpoint for gRPC.
 	IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error)

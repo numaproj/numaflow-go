@@ -18,13 +18,14 @@ import (
 	"github.com/numaproj/numaflow-go/pkg/util"
 )
 
+// mapServer is a map gRPC server.
 type mapServer struct {
 	svc  *mapsvc.Service
 	opts *options
 }
 
 // NewMapServer creates a new map server.
-func NewMapServer(ctx context.Context, m functionsdk.MapHandler, inputOptions ...Option) numaflow.Server {
+func NewMapServer(m functionsdk.MapHandler, inputOptions ...Option) numaflow.Server {
 	opts := DefaultOptions()
 	for _, inputOption := range inputOptions {
 		inputOption(opts)
@@ -36,6 +37,7 @@ func NewMapServer(ctx context.Context, m functionsdk.MapHandler, inputOptions ..
 	return s
 }
 
+// Start starts the map server.
 func (m *mapServer) Start(ctx context.Context) error {
 	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -61,13 +63,14 @@ func (m *mapServer) Start(ctx context.Context) error {
 	return util.StartGRPCServer(ctxWithSignal, grpcServer, lis)
 }
 
+// reduceServer is a reduce gRPC server.
 type reduceServer struct {
 	svc  *reduce.Service
 	opts *options
 }
 
 // NewReduceServer creates a new reduce server.
-func NewReduceServer(ctx context.Context, r functionsdk.ReduceHandler, inputOptions ...Option) numaflow.Server {
+func NewReduceServer(r functionsdk.ReduceHandler, inputOptions ...Option) numaflow.Server {
 	opts := DefaultOptions()
 	for _, inputOption := range inputOptions {
 		inputOption(opts)
@@ -79,6 +82,7 @@ func NewReduceServer(ctx context.Context, r functionsdk.ReduceHandler, inputOpti
 	return s
 }
 
+// Start starts the reduce gRPC server.
 func (r *reduceServer) Start(ctx context.Context) error {
 	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -103,6 +107,7 @@ func (r *reduceServer) Start(ctx context.Context) error {
 	return util.StartGRPCServer(ctxWithSignal, grpcServer, lis)
 }
 
+// mapStreamServer is a map streaming gRPC server.
 type mapStreamServer struct {
 	svc  *smap.Service
 	opts *options
@@ -121,6 +126,7 @@ func NewMapStreamServer(ctx context.Context, ms functionsdk.MapStreamHandler, in
 	return s
 }
 
+// Start starts the map streaming gRPC server.
 func (m *mapStreamServer) Start(ctx context.Context) error {
 	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()

@@ -23,7 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SinkClient interface {
-	// SinkFn writes the Datum to a user defined sink.
+	// SinkFn writes the request to a user defined sink.
 	SinkFn(ctx context.Context, opts ...grpc.CallOption) (Sink_SinkFnClient, error)
 	// IsReady is the heartbeat endpoint for gRPC.
 	IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReadyResponse, error)
@@ -84,7 +84,7 @@ func (c *sinkClient) IsReady(ctx context.Context, in *emptypb.Empty, opts ...grp
 // All implementations must embed UnimplementedSinkServer
 // for forward compatibility
 type SinkServer interface {
-	// SinkFn writes the Datum to a user defined sink.
+	// SinkFn writes the request to a user defined sink.
 	SinkFn(Sink_SinkFnServer) error
 	// IsReady is the heartbeat endpoint for gRPC.
 	IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error)

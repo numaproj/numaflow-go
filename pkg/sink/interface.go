@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// Datum is the interface of incoming message payload for user defined sink function.
 type Datum interface {
 	Keys() []string
 	Value() []byte

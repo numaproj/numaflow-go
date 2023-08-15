@@ -6,9 +6,11 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"github.com/numaproj/numaflow-go/pkg/apis/proto/common"
 	"github.com/numaproj/numaflow-go/pkg/apis/proto/function/mapfn"
 	"github.com/numaproj/numaflow-go/pkg/function"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestService_MapFn(t *testing.T) {
@@ -34,8 +36,8 @@ func TestService_MapFn(t *testing.T) {
 				d: &mapfn.MapRequest{
 					Keys:      []string{"client"},
 					Value:     []byte(`test`),
-					EventTime: &mapfn.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &mapfn.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 			},
 			want: &mapfn.MapResponseList{
@@ -59,8 +61,8 @@ func TestService_MapFn(t *testing.T) {
 				d: &mapfn.MapRequest{
 					Keys:      []string{"client"},
 					Value:     []byte(`test`),
-					EventTime: &mapfn.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &mapfn.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 			},
 			want: &mapfn.MapResponseList{
@@ -82,8 +84,8 @@ func TestService_MapFn(t *testing.T) {
 				d: &mapfn.MapRequest{
 					Keys:      []string{"client"},
 					Value:     []byte(`test`),
-					EventTime: &mapfn.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &mapfn.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 			},
 			want: &mapfn.MapResponseList{
