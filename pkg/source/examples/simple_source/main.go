@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	simpleSource := impl.NewSimpleSource(10)
+	simpleSource := impl.NewSimpleSource()
 	server.New(
 		sourcesdk.PendingFunc(simpleSource.Pending),
 		sourcesdk.ReadFunc(simpleSource.Read),

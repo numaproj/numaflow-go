@@ -12,22 +12,13 @@ import (
 
 // SimpleSource is a simple source implementation.
 type SimpleSource struct {
-	size     int64
-	messages []string
 	readIdx  int64
 	toAckSet map[int64]struct{}
 	lock     *sync.Mutex
 }
 
-// NewSimpleSource creates a SimpleSource by populating the messages array with random strings
-func NewSimpleSource(size int64) *SimpleSource {
-	messages := make([]string, size)
-	for i := int64(0); i < size; i++ {
-		messages[i] = strconv.FormatInt(i, 10)
-	}
+func NewSimpleSource() *SimpleSource {
 	return &SimpleSource{
-		size:     size,
-		messages: messages,
 		readIdx:  0,
 		toAckSet: make(map[int64]struct{}),
 		lock:     new(sync.Mutex),
@@ -48,9 +39,8 @@ func (s *SimpleSource) Read(_ context.Context, readRequest sourcesdk.ReadRequest
 	ctx, cancel := context.WithTimeout(context.Background(), readRequest.TimeOut())
 	defer cancel()
 
-	// If we have un-acked data, or if we have read all the data,
-	// we return without reading any new data.
-	if len(s.toAckSet) > 0 || s.readIdx >= s.size {
+	// If we have un-acked data, we return without reading any new data.
+	if len(s.toAckSet) > 0 {
 		return
 	}
 
@@ -65,49 +55,21 @@ func (s *SimpleSource) Read(_ context.Context, readRequest sourcesdk.ReadRequest
 			// Otherwise, we read the data from the source and send the data to the message channel.
 			offsetValue := serializeOffset(s.readIdx)
 			messageCh <- model.NewMessage(
-				[]byte(s.messages[s.readIdx]),
+				[]byte(strconv.FormatInt(s.readIdx, 10)),
 				model.NewOffset(offsetValue, "0"),
 				time.Now())
 			// Mark the offset as to be acked, and increment the read index.
 			s.toAckSet[s.readIdx] = struct{}{}
 			s.readIdx++
 			s.lock.Unlock()
-			if s.readIdx >= s.size {
-				// If we have read all the data, we return.
-				return
-			}
 		}
 	}
 }
 
 // Ack acknowledges the data from the source.
-// If the offsets in the request do not match the offsets to be acked, the function panics.
-// Note:
-// If the method is about to panic at any point of the execution,
-// before it panics, it ensures that all the offsets in the request are NOT acked.
-// This is to maintain the contract of the Ack method - either acknowledge ALL or NONE.
 func (s *SimpleSource) Ack(_ context.Context, request sourcesdk.AckRequest) {
-	offsetsToAck := request.Offsets()
-	if len(offsetsToAck) != len(s.toAckSet) {
-		panic("offsets to ack do not match the toAckSet")
-	}
-
-	copyOfOriginalToAckSet := make(map[int64]struct{})
-	for k, v := range s.toAckSet {
-		copyOfOriginalToAckSet[k] = v
-	}
-
-	for _, offset := range offsetsToAck {
-		dk := deserializeOffset(offset.Value())
-		if _, ok := s.toAckSet[dk]; !ok {
-			// One of the input offsets is not in the toAckSet.
-			// Revoke all the previous acknowledgements and panic.
-			s.toAckSet = copyOfOriginalToAckSet
-			panic("offsets to ack do not match the toAckSet")
-		} else {
-			// Remove the offset from the toAckSet.
-			delete(s.toAckSet, dk)
-		}
+	for _, offset := range request.Offsets() {
+		delete(s.toAckSet, deserializeOffset(offset.Value()))
 	}
 }
 
