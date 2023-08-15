@@ -52,46 +52,33 @@ func (fs *Service) ReadFn(d *sourcepb.ReadRequest, stream sourcepb.Source_ReadFn
 	ctx := stream.Context()
 	messageCh := make(chan model.Message)
 
-	done := make(chan bool)
+	// Start the read in a goroutine
 	go func() {
+		defer close(messageCh)
 		fs.Source.Read(ctx, &request, messageCh)
-		done <- true
 	}()
-	finished := false
-	for {
-		select {
-		case <-done:
-			finished = true
-		case message, ok := <-messageCh:
-			if !ok {
-				// Channel already closed, not closing again.
-				return nil
-			}
-			offset := &sourcepb.Offset{
-				Offset:      message.Offset().Value(),
-				PartitionId: message.Offset().PartitionId(),
-			}
-			element := &sourcepb.ReadResponse{
-				Result: &sourcepb.ReadResponse_Result{
-					Payload:   message.Value(),
-					Offset:    offset,
-					EventTime: timestamppb.New(message.EventTime()),
-					Keys:      message.Keys(),
-				},
-			}
-			err := stream.Send(element)
-			// stream returns the error here.Send() which is already a gRPC error
-			if err != nil {
-				// The channel may or may not be closed, as we are not sure, leave it to GC.
-				return err
-			}
-		default:
-			if finished {
-				close(messageCh)
-				return nil
-			}
+
+	// Read messages from the channel and send them to the stream, until the channel is closed
+	for msg := range messageCh {
+		offset := &sourcepb.Offset{
+			Offset:      msg.Offset().Value(),
+			PartitionId: msg.Offset().PartitionId(),
+		}
+		element := &sourcepb.ReadResponse{
+			Result: &sourcepb.ReadResponse_Result{
+				Payload:   msg.Value(),
+				Offset:    offset,
+				EventTime: timestamppb.New(msg.EventTime()),
+				Keys:      msg.Keys(),
+			},
+		}
+		// The error here is returned by the stream, which is already a gRPC error
+		if err := stream.Send(element); err != nil {
+			// The channel may or may not be closed, as we are not sure, we leave it to GC.
+			return err
 		}
 	}
+	return nil
 }
 
 // ackRequest implements the AckRequest interface and is used in the ack handler.

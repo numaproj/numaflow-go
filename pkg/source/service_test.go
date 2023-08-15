@@ -26,7 +26,6 @@ type TestSource struct{}
 func (ts TestSource) Read(_ context.Context, _ ReadRequest, messageCh chan<- model.Message) {
 	msg := model.NewMessage([]byte(`test`), model.Offset{}, TestEventTime)
 	messageCh <- msg.WithKeys([]string{TestKey})
-	close(messageCh)
 }
 
 func (ts TestSource) Ack(_ context.Context, _ AckRequest) {

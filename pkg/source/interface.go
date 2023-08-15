@@ -8,7 +8,8 @@ import (
 )
 
 type Source interface {
-	// Read reads the data from the source.
+	// Read reads the data from the source and sends the data to the message channel.
+	// Read should never attempt to close the message channel as the caller owns the channel.
 	Read(ctx context.Context, readRequest ReadRequest, messageCh chan<- model.Message)
 	// Ack acknowledges the data from the source.
 	Ack(ctx context.Context, request AckRequest)
