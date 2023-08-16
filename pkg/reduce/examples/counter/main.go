@@ -7,7 +7,7 @@ import (
 	"github.com/numaproj/numaflow-go/pkg/reduce"
 )
 
-func reduceHandle(_ context.Context, keys []string, reduceCh <-chan reduce.Datum, md reduce.Metadata) reduce.Messages {
+func reduceCounter(_ context.Context, keys []string, reduceCh <-chan reduce.Datum, md reduce.Metadata) reduce.Messages {
 	// count the incoming events
 	var resultKeys = keys
 	var resultVal []byte
@@ -20,5 +20,5 @@ func reduceHandle(_ context.Context, keys []string, reduceCh <-chan reduce.Datum
 }
 
 func main() {
-	reduce.NewServer(reduce.ReduceFunc(reduceHandle)).Start(context.Background())
+	reduce.NewServer(reduce.ReducerFunc(reduceCounter)).Start(context.Background())
 }

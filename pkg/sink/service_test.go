@@ -43,7 +43,7 @@ func (t *UserDefinedSink_SinkFnServerTest) Context() context.Context {
 func TestService_SinkFn(t *testing.T) {
 	tests := []struct {
 		name     string
-		sh       SinkHandler
+		sh       Sinker
 		input    []*v1.SinkRequest
 		expected []*v1.SinkResponse
 	}{
@@ -73,7 +73,7 @@ func TestService_SinkFn(t *testing.T) {
 					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 			},
-			sh: SinkFunc(func(ctx context.Context, rch <-chan Datum) Responses {
+			sh: SinkerFunc(func(ctx context.Context, rch <-chan Datum) Responses {
 				result := ResponsesBuilder()
 				for d := range rch {
 					id := d.ID()
@@ -125,7 +125,7 @@ func TestService_SinkFn(t *testing.T) {
 					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 			},
-			sh: SinkFunc(func(ctx context.Context, rch <-chan Datum) Responses {
+			sh: SinkerFunc(func(ctx context.Context, rch <-chan Datum) Responses {
 				result := ResponsesBuilder()
 				for d := range rch {
 					id := d.ID()
@@ -192,7 +192,7 @@ func TestService_IsReady(t *testing.T) {
 	}
 	tests := []struct {
 		name        string
-		sinkHandler SinkHandler
+		sinkHandler Sinker
 		args        args
 		want        *v1.ReadyResponse
 		wantErr     bool

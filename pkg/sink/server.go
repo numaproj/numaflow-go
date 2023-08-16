@@ -19,7 +19,7 @@ type sinkServer struct {
 }
 
 // NewSinkServer creates a new sinkServer object.
-func NewSinkServer(h SinkHandler, inputOptions ...Option) numaflow.Server {
+func NewSinkServer(h Sinker, inputOptions ...Option) numaflow.Server {
 	opts := DefaultOptions()
 	for _, inputOption := range inputOptions {
 		inputOption(opts)
@@ -44,7 +44,7 @@ func NewSinkServer(h SinkHandler, inputOptions ...Option) numaflow.Server {
 //	}
 //
 //	func main() {
-//		server.NewSinkServer().RegisterSinker(sinksdk.SinkFunc(handle)).Start(context.Background())
+//		server.NewSinkServer().RegisterSinker(sinksdk.SinkerFunc(handle)).Start(context.Background())
 //	}
 
 // Start starts the gRPC sinkServer via unix domain socket at configs.SinkAddr and return error.
@@ -54,7 +54,7 @@ func (s *sinkServer) Start(ctx context.Context) error {
 	// start listening on unix domain socket
 	lis, err := shared.PrepareServer(s.opts.sockAddr, s.opts.serverInfoFilePath)
 	if err != nil {
-		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", shared.UDS, shared.FunctionAddr, err)
+		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", shared.UDS, shared.SinkAddr, err)
 	}
 
 	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)

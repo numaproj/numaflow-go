@@ -1,10 +1,16 @@
 package shared
 
 const (
-	TCP          = "tcp"
-	UDS          = "unix"
-	FunctionAddr = "/var/run/numaflow/function.sock"
-	TcpAddr      = ":55551"
+	TCP                   = "tcp"
+	UDS                   = "unix"
+	FunctionAddr          = "/var/run/numaflow/function.sock"
+	MapAddr               = "/var/run/numaflow/map.sock"
+	MapStreamAddr         = "/var/run/numaflow/mapstream.sock"
+	ReduceAddr            = "/var/run/numaflow/reduce.sock"
+	SourceAddr            = "/var/run/numaflow/source.sock"
+	SinkAddr              = "/var/run/numaflow/sink.sock"
+	SourceTransformerAddr = "/var/run/numaflow/sourcetransformer.sock"
+	TcpAddr               = ":55551"
 	// DefaultMaxMessageSize overrides gRPC max message size configuration
 	// https://github.com/grpc/grpc-go/blob/master/server.go#L58-L59
 	//   - defaultServerMaxReceiveMessageSize
@@ -13,5 +19,4 @@ const (
 	WinStartTime          = "x-numaflow-win-start-time"
 	WinEndTime            = "x-numaflow-win-end-time"
 	Delimiter             = ":"
-	SinkAddr              = "/var/run/numaflow/udsink.sock"
 )

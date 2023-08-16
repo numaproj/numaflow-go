@@ -2,12 +2,16 @@ package main
 
 import (
 	"context"
+	"log"
 	"strings"
 
 	"github.com/numaproj/numaflow-go/pkg/mapstream"
 )
 
-func handle(_ context.Context, _ []string, d mapstream.Datum, messageCh chan<- mapstream.Message) {
+type FlatMap struct {
+}
+
+func (f *FlatMap) MapStream(ctx context.Context, keys []string, d mapstream.Datum, messageCh chan<- mapstream.Message) {
 	defer close(messageCh)
 	msg := d.Value()
 	_ = d.EventTime() // Event time is available
@@ -20,5 +24,8 @@ func handle(_ context.Context, _ []string, d mapstream.Datum, messageCh chan<- m
 }
 
 func main() {
-	mapstream.NewServer(context.Background(), mapstream.MapStreamFunc(handle)).Start(context.Background())
+	err := mapstream.NewServer(&FlatMap{}).Start(context.Background())
+	if err != nil {
+		log.Panic("Failed to start map stream function server: ", err)
+	}
 }

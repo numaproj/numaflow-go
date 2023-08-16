@@ -44,7 +44,7 @@ func (h *handlerDatum) Watermark() time.Time {
 type Service struct {
 	v1.UnimplementedSinkServer
 
-	Sinker SinkHandler
+	Sinker Sinker
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
@@ -64,7 +64,7 @@ func (fs *Service) SinkFn(stream v1.Sink_SinkFnServer) error {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		messages := fs.Sinker.HandleDo(ctx, datumStreamCh)
+		messages := fs.Sinker.Sink(ctx, datumStreamCh)
 		for _, msg := range messages {
 			responseList = append(responseList, &v1.SinkResponse{
 				Id:      msg.ID,

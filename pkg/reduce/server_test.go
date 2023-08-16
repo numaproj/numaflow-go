@@ -21,7 +21,7 @@ func TestReduceServer_Start(t *testing.T) {
 		_ = os.RemoveAll(serverInfoFile.Name())
 	}()
 
-	var reduceHandler = ReduceFunc(func(ctx context.Context, keys []string, rch <-chan Datum, md Metadata) Messages {
+	var reduceHandler = ReducerFunc(func(ctx context.Context, keys []string, rch <-chan Datum, md Metadata) Messages {
 		sum := 0
 		for val := range rch {
 			msgVal, _ := strconv.Atoi(string(val.Value()))

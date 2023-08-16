@@ -9,7 +9,10 @@ import (
 	"github.com/numaproj/numaflow-go/pkg/reduce"
 )
 
-func reduceHandle(_ context.Context, keys []string, reduceCh <-chan reduce.Datum, md reduce.Metadata) reduce.Messages {
+type Sum struct {
+}
+
+func (s *Sum) Reduce(ctx context.Context, keys []string, reduceCh <-chan reduce.Datum, md reduce.Metadata) reduce.Messages {
 	// sum up values for the same keys
 	intervalWindow := md.IntervalWindow()
 	_ = intervalWindow
@@ -36,7 +39,7 @@ func reduceHandle(_ context.Context, keys []string, reduceCh <-chan reduce.Datum
 }
 
 func main() {
-	err := reduce.NewServer(reduce.ReduceFunc(reduceHandle)).Start(context.Background())
+	err := reduce.NewServer(&Sum{}).Start(context.Background())
 	if err != nil {
 		log.Panic("unable to start the server due to: ", err)
 	}

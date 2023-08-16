@@ -7,7 +7,7 @@ import (
 	"github.com/numaproj/numaflow-go/pkg/map"
 )
 
-func mapHandle(_ context.Context, keys []string, d _map.Datum) _map.Messages {
+func mapFn(_ context.Context, keys []string, d _map.Datum) _map.Messages {
 	// directly forward the input to the output
 	val := d.Value()
 	eventTime := d.EventTime()
@@ -21,7 +21,7 @@ func mapHandle(_ context.Context, keys []string, d _map.Datum) _map.Messages {
 }
 
 func main() {
-	err := _map.NewServer(_map.MapFunc(mapHandle)).Start(context.Background())
+	err := _map.NewServer(_map.MapperFunc(mapFn)).Start(context.Background())
 	if err != nil {
 		log.Panic("Failed to start map function server: ", err)
 	}

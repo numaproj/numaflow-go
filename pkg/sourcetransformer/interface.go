@@ -12,16 +12,16 @@ type Datum interface {
 	Watermark() time.Time
 }
 
-// MapTHandler is the interface of mapT function implementation.
-type MapTHandler interface {
-	// HandleDo is the function to process each coming message.
-	HandleDo(ctx context.Context, keys []string, datum Datum) Messages
+// SourceTransformer is the interface of SourceTransformer function implementation.
+type SourceTransformer interface {
+	// SourceTransformer is the function to process each coming message.
+	SourceTransformer(ctx context.Context, keys []string, datum Datum) Messages
 }
 
-// MapTFunc is a utility type used to convert a HandleDo function to a MapTHandler.
-type MapTFunc func(ctx context.Context, keys []string, datum Datum) Messages
+// SourceTransformFunc is a utility type used to convert a function to a SourceTransformer.
+type SourceTransformFunc func(ctx context.Context, keys []string, datum Datum) Messages
 
-// HandleDo implements the function of mapT function.
-func (mf MapTFunc) HandleDo(ctx context.Context, keys []string, datum Datum) Messages {
+// SourceTransformer implements the function of source transformer function.
+func (mf SourceTransformFunc) SourceTransformer(ctx context.Context, keys []string, datum Datum) Messages {
 	return mf(ctx, keys, datum)
 }

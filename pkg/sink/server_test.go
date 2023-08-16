@@ -25,7 +25,7 @@ func TestSink_Start(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	sinkHandler := SinkFunc(func(ctx context.Context, datumStreamCh <-chan Datum) Responses {
+	sinkHandler := SinkerFunc(func(ctx context.Context, datumStreamCh <-chan Datum) Responses {
 		result := ResponsesBuilder()
 		for d := range datumStreamCh {
 			id := d.ID()

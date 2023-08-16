@@ -20,7 +20,7 @@ func TestMapServer_Start(t *testing.T) {
 		_ = os.RemoveAll(serverInfoFile.Name())
 	}()
 
-	var mapHandler = MapFunc(func(ctx context.Context, keys []string, d Datum) Messages {
+	var mapHandler = MapperFunc(func(ctx context.Context, keys []string, d Datum) Messages {
 		msg := d.Value()
 		return MessagesBuilder().Append(NewMessage(msg).WithKeys([]string{keys[0] + "_test"}))
 	})

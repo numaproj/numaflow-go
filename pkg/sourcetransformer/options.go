@@ -17,7 +17,7 @@ type Option func(*options)
 func DefaultOptions() *options {
 	// TODO: for source we should use a different default sock addr
 	return &options{
-		sockAddr:           shared.FunctionAddr,
+		sockAddr:           shared.SourceTransformerAddr,
 		maxMessageSize:     shared.DefaultMaxMessageSize,
 		serverInfoFilePath: info.ServerInfoFilePath,
 	}

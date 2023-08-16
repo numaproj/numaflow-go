@@ -23,7 +23,7 @@ import (
 type Service struct {
 	v1.UnimplementedReduceServer
 
-	Reducer ReduceHandler
+	Reducer Reducer
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
@@ -74,7 +74,7 @@ func (fs *Service) ReduceFn(stream v1.Reduce_ReduceFnServer) error {
 	md = NewMetadata(iw)
 
 	// read messages from the stream and write the messages to corresponding channels
-	// if the channel is not created, create the channel and invoke the HandleDo
+	// if the channel is not created, create the channel and invoke the mapfn
 	for {
 		d, recvErr := stream.Recv()
 		// if EOF, close all the channels
@@ -101,7 +101,7 @@ func (fs *Service) ReduceFn(stream v1.Reduce_ReduceFnServer) error {
 					// we stream the messages to the user by writing messages
 					// to channel and wait until we get the result and stream
 					// the result back to the client (numaflow).
-					messages := fs.Reducer.HandleDo(ctx, k, ch, md)
+					messages := fs.Reducer.Reduce(ctx, k, ch, md)
 					datumList := buildDatumList(messages)
 
 					// stream.Send() is not thread safe.
@@ -120,7 +120,7 @@ func (fs *Service) ReduceFn(stream v1.Reduce_ReduceFnServer) error {
 		ch <- hd
 	}
 
-	// wait until all the HandleDo return
+	// wait until all the mapfn return
 	return g.Wait()
 }
 

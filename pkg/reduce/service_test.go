@@ -56,14 +56,14 @@ func TestService_ReduceFn(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		handler     ReduceHandler
+		handler     Reducer
 		input       []*v1.ReduceRequest
 		expected    *v1.ReduceResponseList
 		expectedErr bool
 	}{
 		{
 			name: "reduce_fn_forward_msg_same_keys",
-			handler: ReduceFunc(func(ctx context.Context, keys []string, rch <-chan Datum, md Metadata) Messages {
+			handler: ReducerFunc(func(ctx context.Context, keys []string, rch <-chan Datum, md Metadata) Messages {
 				sum := 0
 				for val := range rch {
 					msgVal, _ := strconv.Atoi(string(val.Value()))
@@ -103,7 +103,7 @@ func TestService_ReduceFn(t *testing.T) {
 		},
 		{
 			name: "reduce_fn_forward_msg_multiple_keys",
-			handler: ReduceFunc(func(ctx context.Context, keys []string, rch <-chan Datum, md Metadata) Messages {
+			handler: ReducerFunc(func(ctx context.Context, keys []string, rch <-chan Datum, md Metadata) Messages {
 				sum := 0
 				for val := range rch {
 					msgVal, _ := strconv.Atoi(string(val.Value()))
@@ -169,7 +169,7 @@ func TestService_ReduceFn(t *testing.T) {
 		},
 		{
 			name: "reduce_fn_forward_msg_forward_to_all",
-			handler: ReduceFunc(func(ctx context.Context, keys []string, rch <-chan Datum, md Metadata) Messages {
+			handler: ReducerFunc(func(ctx context.Context, keys []string, rch <-chan Datum, md Metadata) Messages {
 				sum := 0
 				for val := range rch {
 					msgVal, _ := strconv.Atoi(string(val.Value()))
@@ -208,7 +208,7 @@ func TestService_ReduceFn(t *testing.T) {
 		},
 		{
 			name: "reduce_fn_forward_msg_drop_msg",
-			handler: ReduceFunc(func(ctx context.Context, keys []string, rch <-chan Datum, md Metadata) Messages {
+			handler: ReducerFunc(func(ctx context.Context, keys []string, rch <-chan Datum, md Metadata) Messages {
 				sum := 0
 				for val := range rch {
 					msgVal, _ := strconv.Atoi(string(val.Value()))

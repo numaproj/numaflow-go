@@ -65,7 +65,7 @@ func (u *MapStreamFnServerErrTest) Context() context.Context {
 func TestService_MapFnStream(t *testing.T) {
 	tests := []struct {
 		name        string
-		handler     MapStreamHandler
+		handler     MapStreamer
 		input       *v1.MapStreamRequest
 		expected    []*v1.MapStreamResponse
 		expectedErr bool
@@ -73,7 +73,7 @@ func TestService_MapFnStream(t *testing.T) {
 	}{
 		{
 			name: "map_stream_fn_forward_msg",
-			handler: MapStreamFunc(func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
+			handler: MapStreamerFunc(func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
 				msg := datum.Value()
 				messageCh <- NewMessage(msg).WithKeys([]string{keys[0] + "_test"})
 				close(messageCh)
@@ -94,7 +94,7 @@ func TestService_MapFnStream(t *testing.T) {
 		},
 		{
 			name: "map_stream_fn_forward_msg_without_close_stream",
-			handler: MapStreamFunc(func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
+			handler: MapStreamerFunc(func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
 				msg := datum.Value()
 				messageCh <- NewMessage(msg).WithKeys([]string{keys[0] + "_test"})
 			}),
@@ -114,7 +114,7 @@ func TestService_MapFnStream(t *testing.T) {
 		},
 		{
 			name: "map_stream_fn_forward_msg_forward_to_all",
-			handler: MapStreamFunc(func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
+			handler: MapStreamerFunc(func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
 				msg := datum.Value()
 				messageCh <- NewMessage(msg)
 				close(messageCh)
@@ -134,7 +134,7 @@ func TestService_MapFnStream(t *testing.T) {
 		},
 		{
 			name: "map_stream_fn_forward_msg_drop_msg",
-			handler: MapStreamFunc(func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
+			handler: MapStreamerFunc(func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
 				messageCh <- MessageToDrop()
 				close(messageCh)
 			}),
@@ -154,7 +154,7 @@ func TestService_MapFnStream(t *testing.T) {
 		},
 		{
 			name: "map_stream_fn_forward_err",
-			handler: MapStreamFunc(func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
+			handler: MapStreamerFunc(func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
 				messageCh <- MessageToDrop()
 				close(messageCh)
 			}),

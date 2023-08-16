@@ -23,13 +23,13 @@ func NewMessage(value []byte, eventTime time.Time) Message {
 	return Message{value: value, eventTime: eventTime}
 }
 
-// WithKeys is used to assign the keys to messageT
+// WithKeys is used to assign the keys to message
 func (m Message) WithKeys(keys []string) Message {
 	m.keys = keys
 	return m
 }
 
-// WithTags is used to assign the tags to messageT
+// WithTags is used to assign the tags to message
 // tags will be used for conditional forwarding
 func (m Message) WithTags(tags []string) Message {
 	m.tags = tags

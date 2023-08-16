@@ -12,17 +12,17 @@ type Datum interface {
 	Watermark() time.Time
 }
 
-// MapStreamHandler is the interface of map stream function implementation.
-type MapStreamHandler interface {
-	// HandleDo is the function to process each coming message and streams
+// MapStreamer is the interface of map stream function implementation.
+type MapStreamer interface {
+	// MapStream is the function to process each coming message and streams
 	// the result back using a channel.
-	HandleDo(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message)
+	MapStream(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message)
 }
 
-// MapStreamFunc is a utility type used to convert a HandleDo function to a MapStreamHandler.
-type MapStreamFunc func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message)
+// MapStreamerFunc is a utility type used to convert a reduceFn function to a MapStreamer.
+type MapStreamerFunc func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message)
 
-// HandleDo implements the function of map stream function.
-func (msf MapStreamFunc) HandleDo(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
+// MapStream implements the function of map stream function.
+func (msf MapStreamerFunc) MapStream(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
 	msf(ctx, keys, datum, messageCh)
 }

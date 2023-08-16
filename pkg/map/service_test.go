@@ -18,14 +18,14 @@ func TestService_MapFn(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		handler MapHandler
+		handler Mapper
 		args    args
 		want    *v1.MapResponseList
 		wantErr bool
 	}{
 		{
 			name: "map_fn_forward_msg",
-			handler: MapFunc(func(ctx context.Context, keys []string, datum Datum) Messages {
+			handler: MapperFunc(func(ctx context.Context, keys []string, datum Datum) Messages {
 				msg := datum.Value()
 				return MessagesBuilder().Append(NewMessage(msg).WithKeys([]string{keys[0] + "_test"}))
 			}),
@@ -50,7 +50,7 @@ func TestService_MapFn(t *testing.T) {
 		},
 		{
 			name: "map_fn_forward_msg_forward_to_all",
-			handler: MapFunc(func(ctx context.Context, keys []string, datum Datum) Messages {
+			handler: MapperFunc(func(ctx context.Context, keys []string, datum Datum) Messages {
 				msg := datum.Value()
 				return MessagesBuilder().Append(NewMessage(msg))
 			}),
@@ -74,7 +74,7 @@ func TestService_MapFn(t *testing.T) {
 		},
 		{
 			name: "map_fn_forward_msg_drop_msg",
-			handler: MapFunc(func(ctx context.Context, keys []string, datum Datum) Messages {
+			handler: MapperFunc(func(ctx context.Context, keys []string, datum Datum) Messages {
 				return MessagesBuilder().Append(MessageToDrop())
 			}),
 			args: args{

@@ -12,16 +12,16 @@ type Datum interface {
 	Watermark() time.Time
 }
 
-// MapHandler is the interface of map function implementation.
-type MapHandler interface {
-	// HandleDo is the function to process each coming message.
-	HandleDo(ctx context.Context, keys []string, datum Datum) Messages
+// Mapper is the interface of map function implementation.
+type Mapper interface {
+	// Map is the function to process each coming message.
+	Map(ctx context.Context, keys []string, datum Datum) Messages
 }
 
-// MapFunc is a utility type used to convert a HandleDo function to a MapHandler.
-type MapFunc func(ctx context.Context, keys []string, datum Datum) Messages
+// MapperFunc is a utility type used to convert a mapStreamFn function to a Mapper.
+type MapperFunc func(ctx context.Context, keys []string, datum Datum) Messages
 
-// HandleDo implements the function of map function.
-func (mf MapFunc) HandleDo(ctx context.Context, keys []string, datum Datum) Messages {
+// Map implements the function of map function.
+func (mf MapperFunc) Map(ctx context.Context, keys []string, datum Datum) Messages {
 	return mf(ctx, keys, datum)
 }

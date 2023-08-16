@@ -18,7 +18,7 @@ type server struct {
 }
 
 // NewServer creates a new map streaming server.
-func NewServer(ms MapStreamHandler, inputOptions ...Option) numaflow.Server {
+func NewServer(ms MapStreamer, inputOptions ...Option) numaflow.Server {
 	opts := DefaultOptions()
 	for _, inputOption := range inputOptions {
 		inputOption(opts)
@@ -39,7 +39,7 @@ func (m *server) Start(ctx context.Context) error {
 	// start listening on unix domain socket
 	lis, err := shared.PrepareServer(m.opts.serverInfoFilePath, m.opts.sockAddr)
 	if err != nil {
-		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", shared.UDS, shared.FunctionAddr, err)
+		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", shared.UDS, shared.MapStreamAddr, err)
 	}
 	// close the listener
 	defer func() { _ = lis.Close() }()

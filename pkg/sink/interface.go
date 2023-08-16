@@ -14,16 +14,16 @@ type Datum interface {
 	ID() string
 }
 
-// SinkHandler is the interface of sink function implementation.
-type SinkHandler interface {
-	// HandleDo is the function to process a list of incoming messages
-	HandleDo(ctx context.Context, datumStreamCh <-chan Datum) Responses
+// Sinker is the interface of sink function implementation.
+type Sinker interface {
+	// Sink is the function to process a list of incoming messages
+	Sink(ctx context.Context, datumStreamCh <-chan Datum) Responses
 }
 
-// SinkFunc is utility type used to convert a HandleDo function to a SinkHandler.
-type SinkFunc func(ctx context.Context, datumStreamCh <-chan Datum) Responses
+// SinkerFunc is utility type used to convert a Sink function to a Sinker.
+type SinkerFunc func(ctx context.Context, datumStreamCh <-chan Datum) Responses
 
-// HandleDo implements the function of sink function.
-func (sf SinkFunc) HandleDo(ctx context.Context, datumStreamCh <-chan Datum) Responses {
+// Sink implements the function of sink function.
+func (sf SinkerFunc) Sink(ctx context.Context, datumStreamCh <-chan Datum) Responses {
 	return sf(ctx, datumStreamCh)
 }

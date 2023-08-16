@@ -27,7 +27,7 @@ type ResultPayload struct {
 	Time  string
 }
 
-func handle(_ context.Context, keys []string, d _map.Datum) _map.Messages {
+func mapFn(_ context.Context, keys []string, d _map.Datum) _map.Messages {
 	msg := d.Value()
 	var p = payload{}
 	results := _map.MessagesBuilder()
@@ -46,7 +46,7 @@ func handle(_ context.Context, keys []string, d _map.Datum) _map.Messages {
 }
 
 func main() {
-	err := _map.NewServer(_map.MapFunc(handle)).Start(context.Background())
+	err := _map.NewServer(_map.MapperFunc(mapFn)).Start(context.Background())
 	if err != nil {
 		log.Panic("Failed to start map function server: ", err)
 	}

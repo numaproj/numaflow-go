@@ -1,4 +1,4 @@
-// Package sink implements the server code for User Defined Sink in golang.
+// Package sink implements the server code for user defined sink.
 //
 // Example:
 /*
@@ -12,7 +12,7 @@
 	"github.com/numaproj/numaflow-go/pkg/sink/server"
   )
 
-  func handle(ctx context.Context, datumStreamCh <-chan sinksdk.Datum) sinksdk.Responses {
+  func logSink(ctx context.Context, datumStreamCh <-chan sinksdk.Datum) sinksdk.Responses {
     result := sinksdk.ResponsesBuilder()
     for datum := range datumStreamCh {
       fmt.Println(string(datum.Value()))
@@ -22,7 +22,7 @@
   }
 
   func main() {
-    server.NewSinkServer(sinksdk.SinkFunc(handle)).Start(context.Background())
+    server.NewSinkServer(sinksdk.SinkerFunc(logSink)).Start(context.Background())
   }
 */
 package sink

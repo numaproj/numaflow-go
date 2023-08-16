@@ -13,7 +13,7 @@ import (
 type Service struct {
 	v1.UnimplementedMapStreamServer
 
-	MapperStream MapStreamHandler
+	MapperStream MapStreamer
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
@@ -29,7 +29,7 @@ func (fs *Service) MapStreamFn(d *v1.MapStreamRequest, stream v1.MapStream_MapSt
 
 	done := make(chan bool)
 	go func() {
-		fs.MapperStream.HandleDo(ctx, d.GetKeys(), hd, messageCh)
+		fs.MapperStream.MapStream(ctx, d.GetKeys(), hd, messageCh)
 		done <- true
 	}()
 	finished := false

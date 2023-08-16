@@ -3,11 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 
 	sinksdk "github.com/numaproj/numaflow-go/pkg/sink"
 )
 
-func handle(_ context.Context, datumStreamCh <-chan sinksdk.Datum) sinksdk.Responses {
+func logSink(_ context.Context, datumStreamCh <-chan sinksdk.Datum) sinksdk.Responses {
 	result := sinksdk.ResponsesBuilder()
 	for d := range datumStreamCh {
 		_ = d.EventTime()
@@ -20,5 +21,8 @@ func handle(_ context.Context, datumStreamCh <-chan sinksdk.Datum) sinksdk.Respo
 }
 
 func main() {
-	sinksdk.NewSinkServer(sinksdk.SinkFunc(handle)).Start(context.Background())
+	err := sinksdk.NewSinkServer(sinksdk.SinkerFunc(logSink)).Start(context.Background())
+	if err != nil {
+		log.Panic("Failed to start sink function server: ", err)
+	}
 }

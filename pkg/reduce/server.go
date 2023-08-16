@@ -18,7 +18,7 @@ type server struct {
 }
 
 // NewServer creates a new reduce server.
-func NewServer(r ReduceHandler, inputOptions ...Option) numaflow.Server {
+func NewServer(r Reducer, inputOptions ...Option) numaflow.Server {
 	opts := DefaultOptions()
 	for _, inputOption := range inputOptions {
 		inputOption(opts)
@@ -39,7 +39,7 @@ func (r *server) Start(ctx context.Context) error {
 	// start listening on unix domain socket
 	lis, err := shared.PrepareServer(r.opts.serverInfoFilePath, r.opts.sockAddr)
 	if err != nil {
-		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", shared.UDS, shared.FunctionAddr, err)
+		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", shared.UDS, shared.ReduceAddr, err)
 	}
 	// close the listener
 	defer func() { _ = lis.Close() }()

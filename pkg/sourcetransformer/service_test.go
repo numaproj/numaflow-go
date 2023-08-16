@@ -20,14 +20,14 @@ func TestService_MapTFn(t *testing.T) {
 	testTime := time.Date(2021, 8, 15, 14, 30, 45, 100, time.Local)
 	tests := []struct {
 		name    string
-		handler MapTHandler
+		handler SourceTransformer
 		args    args
 		want    *v1.SourceTransformerResponseList
 		wantErr bool
 	}{
 		{
 			name: "mapT_fn_forward_msg",
-			handler: MapTFunc(func(ctx context.Context, keys []string, datum Datum) Messages {
+			handler: SourceTransformFunc(func(ctx context.Context, keys []string, datum Datum) Messages {
 				msg := datum.Value()
 				return MessagesBuilder().Append(NewMessage(msg, testTime).WithKeys([]string{keys[0] + "_test"}))
 			}),
@@ -53,7 +53,7 @@ func TestService_MapTFn(t *testing.T) {
 		},
 		{
 			name: "mapT_fn_forward_msg_forward_to_all",
-			handler: MapTFunc(func(ctx context.Context, keys []string, datum Datum) Messages {
+			handler: SourceTransformFunc(func(ctx context.Context, keys []string, datum Datum) Messages {
 				msg := datum.Value()
 				return MessagesBuilder().Append(NewMessage(msg, testTime))
 			}),
@@ -78,7 +78,7 @@ func TestService_MapTFn(t *testing.T) {
 		},
 		{
 			name: "mapT_fn_forward_msg_drop_msg",
-			handler: MapTFunc(func(ctx context.Context, keys []string, datum Datum) Messages {
+			handler: SourceTransformFunc(func(ctx context.Context, keys []string, datum Datum) Messages {
 				return MessagesBuilder().Append(MessageToDrop())
 			}),
 			args: args{

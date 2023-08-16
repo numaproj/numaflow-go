@@ -20,7 +20,7 @@ func TestMapStreamServer_Start(t *testing.T) {
 		_ = os.RemoveAll(serverInfoFile.Name())
 	}()
 
-	var mapStreamHandler = MapStreamFunc(func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
+	var mapStreamHandler = MapStreamerFunc(func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
 		msg := datum.Value()
 		messageCh <- NewMessage(msg).WithKeys([]string{keys[0] + "_test"})
 		close(messageCh)

@@ -18,7 +18,7 @@ const SUCCESS_ITERATION = 3
 // When it fails, it applies a "retry" Tag to the outgoing message, which causes the message to cycle back to it
 // (this is designed to be used as a Map Vertex which Conditionally Forwards back to
 // itself when the "retry" Tag is set, and forwards onto the next Vertex when it's not set).
-func handle(_ context.Context, keys []string, d _map.Datum) _map.Messages {
+func mapFn(_ context.Context, keys []string, d _map.Datum) _map.Messages {
 	msgBytes := d.Value()
 	msg := string(msgBytes)
 
@@ -42,7 +42,7 @@ func handle(_ context.Context, keys []string, d _map.Datum) _map.Messages {
 }
 
 func main() {
-	err := _map.NewServer(_map.MapFunc(handle)).Start(context.Background())
+	err := _map.NewServer(_map.MapperFunc(mapFn)).Start(context.Background())
 	if err != nil {
 		log.Panic("Failed to start map function server: ", err)
 	}

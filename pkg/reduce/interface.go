@@ -23,15 +23,15 @@ type IntervalWindow interface {
 	EndTime() time.Time
 }
 
-// ReduceHandler is the interface of reduce function implementation.
-type ReduceHandler interface {
-	HandleDo(ctx context.Context, keys []string, reduceCh <-chan Datum, md Metadata) Messages
+// Reducer is the interface of reduce function implementation.
+type Reducer interface {
+	Reduce(ctx context.Context, keys []string, reduceCh <-chan Datum, md Metadata) Messages
 }
 
-// ReduceFunc is a utility type used to convert a HandleDo function to a ReduceHandler.
-type ReduceFunc func(ctx context.Context, keys []string, reduceCh <-chan Datum, md Metadata) Messages
+// ReducerFunc is a utility type used to convert a Reduce function to a Reducer.
+type ReducerFunc func(ctx context.Context, keys []string, reduceCh <-chan Datum, md Metadata) Messages
 
-// HandleDo implements the function of reduce function.
-func (rf ReduceFunc) HandleDo(ctx context.Context, keys []string, reduceCh <-chan Datum, md Metadata) Messages {
+// Reduce implements the function of reduce function.
+func (rf ReducerFunc) Reduce(ctx context.Context, keys []string, reduceCh <-chan Datum, md Metadata) Messages {
 	return rf(ctx, keys, reduceCh, md)
 }
