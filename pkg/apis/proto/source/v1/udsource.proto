@@ -7,21 +7,21 @@ import "google/protobuf/empty.proto";
 
 package source.v1;
 
-service UserDefinedSource {
+service Source {
   // Read returns a stream of datum responses.
   // The size of the returned ReadResponse is less than or equal to the num_records specified in ReadRequest.
-  // If the request timeout is reached on server side, the returned ReadResponse will contain all the datum responses that have been read (which could be an empty list).
-  rpc Read(ReadRequest) returns (stream ReadResponse);
+  // If the request timeout is reached on server side, the returned ReadResponse will contain all the datum that have been read (which could be an empty list).
+  rpc ReadFn(ReadRequest) returns (stream ReadResponse);
 
-  // Ack acknowledges a list of datum offsets.
-  // When Ack is called, it implicitly indicates that the datum stream has been processed by the source vertex.
-  // The caller (numa) expects the Ack to be successful, and it does not expect any errors. 
-  // If there are some irrecoverable errors when the callee (UDSource) is processing the Ack,
+  // AckFn acknowledges a list of datum offsets.
+  // When AckFn is called, it implicitly indicates that the datum stream has been processed by the source vertex.
+  // The caller (numa) expects the AckFn to be successful, and it does not expect any errors.
+  // If there are some irrecoverable errors when the callee (UDSource) is processing the AckFn request,
   // then it is best to crash because there are no other retry mechanisms possible. 
-  rpc Ack(AckRequest) returns (AckResponse);
+  rpc AckFn(AckRequest) returns (AckResponse);
 
-  // Pending returns the number of pending records at the user defined source.
-  rpc Pending(google.protobuf.Empty) returns (PendingResponse);
+  // PendingFn returns the number of pending records at the user defined source.
+  rpc PendingFn(google.protobuf.Empty) returns (PendingResponse);
 
   // IsReady is the heartbeat endpoint for user defined source gRPC.
   rpc IsReady(google.protobuf.Empty) returns (ReadyResponse);
@@ -35,28 +35,18 @@ message ReadRequest {
     // Required field indicating the number of records to read.
     uint64 num_records = 1;
     // Required field indicating the request timeout in milliseconds.
-    uint64 timeout_in_ms = 2;
+    // uint32 can represent 2^32 milliseconds, which is about 49 days.
+    // We don't use uint64 because time.Duration takes int64 as nano seconds. Using uint64 for milli will cause overflow.
+    uint32 timeout_in_ms = 2;
   }
   // Required field indicating the request.
   Request request = 1;
 }
 
 /*
- * ReadResponse represents a list of datum response elements.
+ * ReadResponse is the response for reading datum stream from user defined source.
  */
 message ReadResponse {
-  message Result {
-    // Required field holding a list of datum response elements.
-    repeated DatumResponse elements = 1;
-  }
-  // Required field holding the result.
-  Result result = 1;
-}
-
-/*
- * DatumResponse represents a datum response element.
- */
-message DatumResponse {
   message Result {
     // Required field holding the payload of the datum.
     bytes payload = 1;
@@ -84,7 +74,7 @@ message AckRequest {
     // The offsets must be strictly corresponding to the previously read batch,
     // meaning the offsets must be in the same order as the datum responses in the ReadResponse.
     // By enforcing ordering, we can save deserialization effort on the server side, assuming the server keeps a local copy of the raw/un-serialized offsets.
-    repeated Offset offset = 1;
+    repeated Offset offsets = 1;
   }
   // Required field holding the request. The list will be ordered and will have the same order as the original Read response.
   Request request = 1;

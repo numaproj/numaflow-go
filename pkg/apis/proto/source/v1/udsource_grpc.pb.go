@@ -19,37 +19,40 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// UserDefinedSourceClient is the client API for UserDefinedSource service.
+// SourceClient is the client API for Source service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type UserDefinedSourceClient interface {
+type SourceClient interface {
 	// Read returns a stream of datum responses.
 	// The size of the returned ReadResponse is less than or equal to the num_records specified in ReadRequest.
-	// If the request timeout is reached on server side, the returned ReadResponse will contain all the datum responses that have been read.
-	Read(ctx context.Context, in *ReadRequest, opts ...grpc.CallOption) (UserDefinedSource_ReadClient, error)
-	// Ack acknowledges a list of datum offsets.
-	// It indicates that the datum stream has been processed by the source vertex.
-	Ack(ctx context.Context, in *AckRequest, opts ...grpc.CallOption) (*AckResponse, error)
-	// Pending returns the number of pending records at the user defined source.
-	Pending(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PendingResponse, error)
+	// If the request timeout is reached on server side, the returned ReadResponse will contain all the datum that have been read (which could be an empty list).
+	ReadFn(ctx context.Context, in *ReadRequest, opts ...grpc.CallOption) (Source_ReadFnClient, error)
+	// AckFn acknowledges a list of datum offsets.
+	// When AckFn is called, it implicitly indicates that the datum stream has been processed by the source vertex.
+	// The caller (numa) expects the AckFn to be successful, and it does not expect any errors.
+	// If there are some irrecoverable errors when the callee (UDSource) is processing the AckFn request,
+	// then it is best to crash because there are no other retry mechanisms possible.
+	AckFn(ctx context.Context, in *AckRequest, opts ...grpc.CallOption) (*AckResponse, error)
+	// PendingFn returns the number of pending records at the user defined source.
+	PendingFn(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PendingResponse, error)
 	// IsReady is the heartbeat endpoint for user defined source gRPC.
 	IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReadyResponse, error)
 }
 
-type userDefinedSourceClient struct {
+type sourceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewUserDefinedSourceClient(cc grpc.ClientConnInterface) UserDefinedSourceClient {
-	return &userDefinedSourceClient{cc}
+func NewSourceClient(cc grpc.ClientConnInterface) SourceClient {
+	return &sourceClient{cc}
 }
 
-func (c *userDefinedSourceClient) Read(ctx context.Context, in *ReadRequest, opts ...grpc.CallOption) (UserDefinedSource_ReadClient, error) {
-	stream, err := c.cc.NewStream(ctx, &UserDefinedSource_ServiceDesc.Streams[0], "/source.v1.UserDefinedSource/Read", opts...)
+func (c *sourceClient) ReadFn(ctx context.Context, in *ReadRequest, opts ...grpc.CallOption) (Source_ReadFnClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Source_ServiceDesc.Streams[0], "/source.v1.Source/ReadFn", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &userDefinedSourceReadClient{stream}
+	x := &sourceReadFnClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -59,16 +62,16 @@ func (c *userDefinedSourceClient) Read(ctx context.Context, in *ReadRequest, opt
 	return x, nil
 }
 
-type UserDefinedSource_ReadClient interface {
+type Source_ReadFnClient interface {
 	Recv() (*ReadResponse, error)
 	grpc.ClientStream
 }
 
-type userDefinedSourceReadClient struct {
+type sourceReadFnClient struct {
 	grpc.ClientStream
 }
 
-func (x *userDefinedSourceReadClient) Recv() (*ReadResponse, error) {
+func (x *sourceReadFnClient) Recv() (*ReadResponse, error) {
 	m := new(ReadResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -76,179 +79,182 @@ func (x *userDefinedSourceReadClient) Recv() (*ReadResponse, error) {
 	return m, nil
 }
 
-func (c *userDefinedSourceClient) Ack(ctx context.Context, in *AckRequest, opts ...grpc.CallOption) (*AckResponse, error) {
+func (c *sourceClient) AckFn(ctx context.Context, in *AckRequest, opts ...grpc.CallOption) (*AckResponse, error) {
 	out := new(AckResponse)
-	err := c.cc.Invoke(ctx, "/source.v1.UserDefinedSource/Ack", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/source.v1.Source/AckFn", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *userDefinedSourceClient) Pending(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PendingResponse, error) {
+func (c *sourceClient) PendingFn(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PendingResponse, error) {
 	out := new(PendingResponse)
-	err := c.cc.Invoke(ctx, "/source.v1.UserDefinedSource/Pending", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/source.v1.Source/PendingFn", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *userDefinedSourceClient) IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReadyResponse, error) {
+func (c *sourceClient) IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReadyResponse, error) {
 	out := new(ReadyResponse)
-	err := c.cc.Invoke(ctx, "/source.v1.UserDefinedSource/IsReady", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/source.v1.Source/IsReady", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// UserDefinedSourceServer is the server API for UserDefinedSource service.
-// All implementations must embed UnimplementedUserDefinedSourceServer
+// SourceServer is the server API for Source service.
+// All implementations must embed UnimplementedSourceServer
 // for forward compatibility
-type UserDefinedSourceServer interface {
+type SourceServer interface {
 	// Read returns a stream of datum responses.
 	// The size of the returned ReadResponse is less than or equal to the num_records specified in ReadRequest.
-	// If the request timeout is reached on server side, the returned ReadResponse will contain all the datum responses that have been read.
-	Read(*ReadRequest, UserDefinedSource_ReadServer) error
-	// Ack acknowledges a list of datum offsets.
-	// It indicates that the datum stream has been processed by the source vertex.
-	Ack(context.Context, *AckRequest) (*AckResponse, error)
-	// Pending returns the number of pending records at the user defined source.
-	Pending(context.Context, *emptypb.Empty) (*PendingResponse, error)
+	// If the request timeout is reached on server side, the returned ReadResponse will contain all the datum that have been read (which could be an empty list).
+	ReadFn(*ReadRequest, Source_ReadFnServer) error
+	// AckFn acknowledges a list of datum offsets.
+	// When AckFn is called, it implicitly indicates that the datum stream has been processed by the source vertex.
+	// The caller (numa) expects the AckFn to be successful, and it does not expect any errors.
+	// If there are some irrecoverable errors when the callee (UDSource) is processing the AckFn request,
+	// then it is best to crash because there are no other retry mechanisms possible.
+	AckFn(context.Context, *AckRequest) (*AckResponse, error)
+	// PendingFn returns the number of pending records at the user defined source.
+	PendingFn(context.Context, *emptypb.Empty) (*PendingResponse, error)
 	// IsReady is the heartbeat endpoint for user defined source gRPC.
 	IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error)
-	mustEmbedUnimplementedUserDefinedSourceServer()
+	mustEmbedUnimplementedSourceServer()
 }
 
-// UnimplementedUserDefinedSourceServer must be embedded to have forward compatible implementations.
-type UnimplementedUserDefinedSourceServer struct {
+// UnimplementedSourceServer must be embedded to have forward compatible implementations.
+type UnimplementedSourceServer struct {
 }
 
-func (UnimplementedUserDefinedSourceServer) Read(*ReadRequest, UserDefinedSource_ReadServer) error {
-	return status.Errorf(codes.Unimplemented, "method Read not implemented")
+func (UnimplementedSourceServer) ReadFn(*ReadRequest, Source_ReadFnServer) error {
+	return status.Errorf(codes.Unimplemented, "method ReadFn not implemented")
 }
-func (UnimplementedUserDefinedSourceServer) Ack(context.Context, *AckRequest) (*AckResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Ack not implemented")
+func (UnimplementedSourceServer) AckFn(context.Context, *AckRequest) (*AckResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AckFn not implemented")
 }
-func (UnimplementedUserDefinedSourceServer) Pending(context.Context, *emptypb.Empty) (*PendingResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Pending not implemented")
+func (UnimplementedSourceServer) PendingFn(context.Context, *emptypb.Empty) (*PendingResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PendingFn not implemented")
 }
-func (UnimplementedUserDefinedSourceServer) IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error) {
+func (UnimplementedSourceServer) IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsReady not implemented")
 }
-func (UnimplementedUserDefinedSourceServer) mustEmbedUnimplementedUserDefinedSourceServer() {}
+func (UnimplementedSourceServer) mustEmbedUnimplementedSourceServer() {}
 
-// UnsafeUserDefinedSourceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to UserDefinedSourceServer will
+// UnsafeSourceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to SourceServer will
 // result in compilation errors.
-type UnsafeUserDefinedSourceServer interface {
-	mustEmbedUnimplementedUserDefinedSourceServer()
+type UnsafeSourceServer interface {
+	mustEmbedUnimplementedSourceServer()
 }
 
-func RegisterUserDefinedSourceServer(s grpc.ServiceRegistrar, srv UserDefinedSourceServer) {
-	s.RegisterService(&UserDefinedSource_ServiceDesc, srv)
+func RegisterSourceServer(s grpc.ServiceRegistrar, srv SourceServer) {
+	s.RegisterService(&Source_ServiceDesc, srv)
 }
 
-func _UserDefinedSource_Read_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _Source_ReadFn_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(ReadRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(UserDefinedSourceServer).Read(m, &userDefinedSourceReadServer{stream})
+	return srv.(SourceServer).ReadFn(m, &sourceReadFnServer{stream})
 }
 
-type UserDefinedSource_ReadServer interface {
+type Source_ReadFnServer interface {
 	Send(*ReadResponse) error
 	grpc.ServerStream
 }
 
-type userDefinedSourceReadServer struct {
+type sourceReadFnServer struct {
 	grpc.ServerStream
 }
 
-func (x *userDefinedSourceReadServer) Send(m *ReadResponse) error {
+func (x *sourceReadFnServer) Send(m *ReadResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _UserDefinedSource_Ack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Source_AckFn_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AckRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UserDefinedSourceServer).Ack(ctx, in)
+		return srv.(SourceServer).AckFn(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/source.v1.UserDefinedSource/Ack",
+		FullMethod: "/source.v1.Source/AckFn",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserDefinedSourceServer).Ack(ctx, req.(*AckRequest))
+		return srv.(SourceServer).AckFn(ctx, req.(*AckRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _UserDefinedSource_Pending_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Source_PendingFn_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UserDefinedSourceServer).Pending(ctx, in)
+		return srv.(SourceServer).PendingFn(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/source.v1.UserDefinedSource/Pending",
+		FullMethod: "/source.v1.Source/PendingFn",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserDefinedSourceServer).Pending(ctx, req.(*emptypb.Empty))
+		return srv.(SourceServer).PendingFn(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _UserDefinedSource_IsReady_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Source_IsReady_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UserDefinedSourceServer).IsReady(ctx, in)
+		return srv.(SourceServer).IsReady(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/source.v1.UserDefinedSource/IsReady",
+		FullMethod: "/source.v1.Source/IsReady",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserDefinedSourceServer).IsReady(ctx, req.(*emptypb.Empty))
+		return srv.(SourceServer).IsReady(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// UserDefinedSource_ServiceDesc is the grpc.ServiceDesc for UserDefinedSource service.
+// Source_ServiceDesc is the grpc.ServiceDesc for Source service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var UserDefinedSource_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "source.v1.UserDefinedSource",
-	HandlerType: (*UserDefinedSourceServer)(nil),
+var Source_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "source.v1.Source",
+	HandlerType: (*SourceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Ack",
-			Handler:    _UserDefinedSource_Ack_Handler,
+			MethodName: "AckFn",
+			Handler:    _Source_AckFn_Handler,
 		},
 		{
-			MethodName: "Pending",
-			Handler:    _UserDefinedSource_Pending_Handler,
+			MethodName: "PendingFn",
+			Handler:    _Source_PendingFn_Handler,
 		},
 		{
 			MethodName: "IsReady",
-			Handler:    _UserDefinedSource_IsReady_Handler,
+			Handler:    _Source_IsReady_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "Read",
-			Handler:       _UserDefinedSource_Read_Handler,
+			StreamName:    "ReadFn",
+			Handler:       _Source_ReadFn_Handler,
 			ServerStreams: true,
 		},
 	},

@@ -11,48 +11,31 @@ import (
 
 	"google.golang.org/grpc"
 
-	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
+	sourcepb "github.com/numaproj/numaflow-go/pkg/apis/proto/source/v1"
 	"github.com/numaproj/numaflow-go/pkg/info"
-	sinksdk "github.com/numaproj/numaflow-go/pkg/sink"
+	sourcesdk "github.com/numaproj/numaflow-go/pkg/source"
 )
 
 type server struct {
-	svc *sinksdk.Service
+	svc *sourcesdk.Service
 }
 
 // New creates a new server object.
-func New() *server {
+func New(
+	source sourcesdk.Source,
+) *server {
 	s := new(server)
-	s.svc = new(sinksdk.Service)
-	return s
-}
-
-// RegisterSinker registers the sink operation handler to the server.
-// Example:
-//
-//	func handle(ctx context.Context, datumStreamCh <-chan sinksdk.Datum) sinksdk.Responses {
-//		result := sinksdk.ResponsesBuilder()
-//		for _, datum := range datumList {
-//			fmt.Println(string(datum.Value()))
-//			result = result.Append(sinksdk.ResponseOK(datum.ID()))
-//		}
-//		return result
-//	}
-//
-//	func main() {
-//		server.New().RegisterSinker(sinksdk.SinkFunc(handle)).Start(context.Background())
-//	}
-func (s *server) RegisterSinker(h sinksdk.SinkHandler) *server {
-	s.svc.Sinker = h
+	s.svc = new(sourcesdk.Service)
+	s.svc.Source = source
 	return s
 }
 
 // Start starts the gRPC server via unix domain socket at configs.Addr and return error.
 func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 	var opts = &options{
-		sockAddr:            sinksdk.Addr,
-		maxMessageSize:      sinksdk.DefaultMaxMessageSize,
-		sereverInfoFilePath: info.ServerInfoFilePath,
+		sockAddr:           sourcesdk.UdsAddr,
+		maxMessageSize:     sourcesdk.DefaultMaxMessageSize,
+		serverInfoFilePath: info.ServerInfoFilePath,
 	}
 
 	for _, inputOption := range inputOptions {
@@ -61,12 +44,13 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 
 	// Write server info to the file
 	serverInfo := &info.ServerInfo{Protocol: info.UDS, Language: info.Go, Version: info.GetSDKVersion()}
-	if err := info.Write(serverInfo, info.WithServerInfoFilePath(opts.sereverInfoFilePath)); err != nil {
+	if err := info.Write(serverInfo, info.WithServerInfoFilePath(opts.serverInfoFilePath)); err != nil {
 		return err
 	}
 
+	// cleanup cleans up the unix domain socket file if exists.
+	// TODO - once we support TCP, we need to update it to support TCP as well.
 	cleanup := func() error {
-		// err if no opts.sockAddr should be ignored
 		if _, err := os.Stat(opts.sockAddr); err == nil {
 			return os.RemoveAll(opts.sockAddr)
 		}
@@ -79,10 +63,9 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 
 	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
-
-	lis, err := net.Listen(sinksdk.Protocol, opts.sockAddr)
+	lis, err := net.Listen(sourcesdk.UDS, opts.sockAddr)
 	if err != nil {
-		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", sinksdk.Protocol, sinksdk.Addr, err)
+		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", sourcesdk.UDS, sourcesdk.UdsAddr, err)
 	}
 	defer func() { _ = lis.Close() }()
 	grpcServer := grpc.NewServer(
@@ -91,13 +74,13 @@ func (s *server) Start(ctx context.Context, inputOptions ...Option) error {
 	)
 	defer log.Println("Successfully stopped the gRPC server")
 	defer grpcServer.GracefulStop()
-	sinkpb.RegisterUserDefinedSinkServer(grpcServer, s.svc)
+	sourcepb.RegisterSourceServer(grpcServer, s.svc)
 
 	errCh := make(chan error, 1)
 	defer close(errCh)
 	// start the grpc server
 	go func(ch chan<- error) {
-		log.Println("starting the gRPC server with unix domain socket...")
+		log.Println("starting the gRPC server with unix domain socket...", lis.Addr())
 		err = grpcServer.Serve(lis)
 		if err != nil {
 			ch <- fmt.Errorf("failed to start the gRPC server: %v", err)
