@@ -31,6 +31,6 @@ func TestServer_Start(t *testing.T) {
 		time.Sleep(3 * time.Second)
 		cancel()
 	}()
-	err := NewSideInputServer(retrieveHandler).Start(ctx, WithSockAddr(socketFile.Name()))
+	err := NewSideInputServer().RegisterRetriever(retrieveHandler).Start(ctx, WithSockAddr(socketFile.Name()))
 	assert.NoError(t, err)
 }

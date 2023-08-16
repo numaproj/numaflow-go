@@ -20,10 +20,10 @@ type server struct {
 }
 
 // NewSideInputServer creates a new server object.
-func NewSideInputServer(handler sideinputsdk.RetrieveSideInputHandler) *server {
+func NewSideInputServer() *server {
 	s := new(server)
 	s.svc = new(sideinputsdk.Service)
-	s.svc.Retriever = handler
+	//s.svc.Retriever = handler
 	return s
 }
 
