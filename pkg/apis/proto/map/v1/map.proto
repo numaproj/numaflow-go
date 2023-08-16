@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+option go_package = "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+package map.v1;
+
+service Map {
+  // MapFn applies a function to each map request element.
+  rpc MapFn(MapRequest) returns (MapResponseList);
+
+  // IsReady is the heartbeat endpoint for gRPC.
+  rpc IsReady(google.protobuf.Empty) returns (ReadyResponse);
+}
+
+/**
+ * MapRequest represents a request element.
+ */
+message MapRequest {
+  repeated string keys = 1;
+  bytes value = 2;
+  EventTime event_time = 3;
+  Watermark watermark = 4;
+}
+
+/**
+ * MapResponse represents a response element.
+ */
+message MapResponse {
+  repeated string keys = 1;
+  bytes value = 2;
+  repeated string tags = 3;
+}
+
+/**
+ * MapResponseList represents a list of response elements.
+ */
+message MapResponseList {
+  repeated MapResponse elements = 1;
+}
+
+/**
+ * ReadyResponse is the health check result.
+ */
+message ReadyResponse {
+  bool ready = 1;
+}
+
+message EventTime {
+  // event_time is the time associated with each datum.
+  google.protobuf.Timestamp event_time = 1;
+  // future we can add an enum to represent whether the event time is
+  // based on INGEST_TIME or EVENT_TIME or PROCESSING_TIME
+}
+
+message Watermark {
+  // watermark is the monotonically increasing time which denotes completeness for the given time for the given vertex.
+  google.protobuf.Timestamp watermark = 1;
+  // future we can add LATE, ON_TIME etc.
+}

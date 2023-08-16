@@ -1,0 +1,305 @@
+package reduce
+
+import (
+	"context"
+	"io"
+	"reflect"
+	"sort"
+	"strconv"
+	"sync"
+	"testing"
+	"time"
+
+	"google.golang.org/grpc"
+	grpcmd "google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/reduce/v1"
+	"github.com/numaproj/numaflow-go/pkg/shared"
+)
+
+type ReduceFnServerTest struct {
+	ctx      context.Context
+	inputCh  chan *v1.ReduceRequest
+	outputCh chan *v1.ReduceResponseList
+	grpc.ServerStream
+}
+
+func NewReduceFnServerTest(ctx context.Context,
+	inputCh chan *v1.ReduceRequest,
+	outputCh chan *v1.ReduceResponseList) *ReduceFnServerTest {
+	return &ReduceFnServerTest{
+		ctx:      ctx,
+		inputCh:  inputCh,
+		outputCh: outputCh,
+	}
+}
+
+func (u *ReduceFnServerTest) Send(list *v1.ReduceResponseList) error {
+	u.outputCh <- list
+	return nil
+}
+
+func (u *ReduceFnServerTest) Recv() (*v1.ReduceRequest, error) {
+	val, ok := <-u.inputCh
+	if !ok {
+		return val, io.EOF
+	}
+	return val, nil
+}
+
+func (u *ReduceFnServerTest) Context() context.Context {
+	return u.ctx
+}
+
+func TestService_ReduceFn(t *testing.T) {
+
+	tests := []struct {
+		name        string
+		handler     ReduceHandler
+		input       []*v1.ReduceRequest
+		expected    *v1.ReduceResponseList
+		expectedErr bool
+	}{
+		{
+			name: "reduce_fn_forward_msg_same_keys",
+			handler: ReduceFunc(func(ctx context.Context, keys []string, rch <-chan Datum, md Metadata) Messages {
+				sum := 0
+				for val := range rch {
+					msgVal, _ := strconv.Atoi(string(val.Value()))
+					sum += msgVal
+				}
+				return MessagesBuilder().Append(NewMessage([]byte(strconv.Itoa(sum))).WithKeys([]string{keys[0] + "_test"}))
+			}),
+			input: []*v1.ReduceRequest{
+				{
+					Keys:      []string{"client"},
+					Value:     []byte(strconv.Itoa(10)),
+					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+				},
+				{
+					Keys:      []string{"client"},
+					Value:     []byte(strconv.Itoa(20)),
+					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+				},
+				{
+					Keys:      []string{"client"},
+					Value:     []byte(strconv.Itoa(30)),
+					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+				},
+			},
+			expected: &v1.ReduceResponseList{
+				Elements: []*v1.ReduceResponse{
+					{
+						Keys:  []string{"client_test"},
+						Value: []byte(strconv.Itoa(60)),
+					},
+				},
+			},
+			expectedErr: false,
+		},
+		{
+			name: "reduce_fn_forward_msg_multiple_keys",
+			handler: ReduceFunc(func(ctx context.Context, keys []string, rch <-chan Datum, md Metadata) Messages {
+				sum := 0
+				for val := range rch {
+					msgVal, _ := strconv.Atoi(string(val.Value()))
+					sum += msgVal
+				}
+				return MessagesBuilder().Append(NewMessage([]byte(strconv.Itoa(sum))).WithKeys([]string{keys[0] + "_test"}))
+			}),
+			input: []*v1.ReduceRequest{
+				{
+					Keys:      []string{"client1"},
+					Value:     []byte(strconv.Itoa(10)),
+					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+				},
+				{
+					Keys:      []string{"client2"},
+					Value:     []byte(strconv.Itoa(20)),
+					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+				},
+				{
+					Keys:      []string{"client3"},
+					Value:     []byte(strconv.Itoa(30)),
+					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+				},
+				{
+					Keys:      []string{"client1"},
+					Value:     []byte(strconv.Itoa(10)),
+					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+				},
+				{
+					Keys:      []string{"client2"},
+					Value:     []byte(strconv.Itoa(20)),
+					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+				},
+				{
+					Keys:      []string{"client3"},
+					Value:     []byte(strconv.Itoa(30)),
+					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+				},
+			},
+			expected: &v1.ReduceResponseList{
+				Elements: []*v1.ReduceResponse{
+					{
+						Keys:  []string{"client1_test"},
+						Value: []byte(strconv.Itoa(20)),
+					},
+					{
+						Keys:  []string{"client2_test"},
+						Value: []byte(strconv.Itoa(40)),
+					},
+					{
+						Keys:  []string{"client3_test"},
+						Value: []byte(strconv.Itoa(60)),
+					},
+				},
+			},
+			expectedErr: false,
+		},
+		{
+			name: "reduce_fn_forward_msg_forward_to_all",
+			handler: ReduceFunc(func(ctx context.Context, keys []string, rch <-chan Datum, md Metadata) Messages {
+				sum := 0
+				for val := range rch {
+					msgVal, _ := strconv.Atoi(string(val.Value()))
+					sum += msgVal
+				}
+				return MessagesBuilder().Append(NewMessage([]byte(strconv.Itoa(sum))))
+			}),
+			input: []*v1.ReduceRequest{
+				{
+					Keys:      []string{"client"},
+					Value:     []byte(strconv.Itoa(10)),
+					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+				},
+				{
+					Keys:      []string{"client"},
+					Value:     []byte(strconv.Itoa(20)),
+					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+				},
+				{
+					Keys:      []string{"client"},
+					Value:     []byte(strconv.Itoa(30)),
+					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+				},
+			},
+			expected: &v1.ReduceResponseList{
+				Elements: []*v1.ReduceResponse{
+					{
+						Value: []byte(strconv.Itoa(60)),
+					},
+				},
+			},
+			expectedErr: false,
+		},
+		{
+			name: "reduce_fn_forward_msg_drop_msg",
+			handler: ReduceFunc(func(ctx context.Context, keys []string, rch <-chan Datum, md Metadata) Messages {
+				sum := 0
+				for val := range rch {
+					msgVal, _ := strconv.Atoi(string(val.Value()))
+					sum += msgVal
+				}
+				return MessagesBuilder().Append(MessageToDrop())
+			}),
+			input: []*v1.ReduceRequest{
+				{
+					Keys:      []string{"client"},
+					Value:     []byte(strconv.Itoa(10)),
+					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+				},
+				{
+					Keys:      []string{"client"},
+					Value:     []byte(strconv.Itoa(20)),
+					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+				},
+				{
+					Keys:      []string{"client"},
+					Value:     []byte(strconv.Itoa(30)),
+					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+				},
+			},
+			expected: &v1.ReduceResponseList{
+				Elements: []*v1.ReduceResponse{
+					{
+						Tags:  []string{DROP},
+						Value: []byte{},
+					},
+				},
+			},
+			expectedErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fs := &Service{
+				Reducer: tt.handler,
+			}
+			// here's a trick for testing:
+			// because we are not using gRPC, we directly set a new incoming ctx
+			// instead of the regular outgoing context in the real gRPC connection.
+			ctx := grpcmd.NewIncomingContext(context.Background(), grpcmd.New(map[string]string{shared.WinStartTime: "60000", shared.WinEndTime: "120000"}))
+
+			inputCh := make(chan *v1.ReduceRequest)
+			outputCh := make(chan *v1.ReduceResponseList)
+			result := &v1.ReduceResponseList{}
+
+			udfReduceFnStream := NewReduceFnServerTest(ctx, inputCh, outputCh)
+
+			var wg sync.WaitGroup
+			var err error
+
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				err = fs.ReduceFn(udfReduceFnStream)
+				close(outputCh)
+			}()
+
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				for msg := range outputCh {
+					result.Elements = append(result.Elements, msg.Elements...)
+				}
+			}()
+
+			for _, val := range tt.input {
+				udfReduceFnStream.inputCh <- val
+			}
+			close(udfReduceFnStream.inputCh)
+			wg.Wait()
+
+			if (err != nil) != tt.expectedErr {
+				t.Errorf("ReduceFn() error = %v, wantErr %v", err, tt.expectedErr)
+				return
+			}
+
+			//sort and compare, since order of the output doesn't matter
+			sort.Slice(result.Elements, func(i, j int) bool {
+				return string(result.Elements[i].Value) < string(result.Elements[j].Value)
+			})
+
+			if !reflect.DeepEqual(result, tt.expected) {
+				t.Errorf("ReduceFn() got = %v, want %v", result, tt.expected)
+			}
+		})
+	}
+}

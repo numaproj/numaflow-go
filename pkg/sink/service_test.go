@@ -13,23 +13,22 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/numaproj/numaflow-go/pkg/apis/proto/common"
-	"github.com/numaproj/numaflow-go/pkg/apis/proto/sinkfn"
+	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
 )
 
 type UserDefinedSink_SinkFnServerTest struct {
 	ctx     context.Context
-	inputCh chan *sinkfn.SinkRequest
-	rl      *sinkfn.SinkResponseList
+	inputCh chan *v1.SinkRequest
+	rl      *v1.SinkResponseList
 	grpc.ServerStream
 }
 
-func (t *UserDefinedSink_SinkFnServerTest) SendAndClose(list *sinkfn.SinkResponseList) error {
+func (t *UserDefinedSink_SinkFnServerTest) SendAndClose(list *v1.SinkResponseList) error {
 	t.rl = list
 	return nil
 }
 
-func (t *UserDefinedSink_SinkFnServerTest) Recv() (*sinkfn.SinkRequest, error) {
+func (t *UserDefinedSink_SinkFnServerTest) Recv() (*v1.SinkRequest, error) {
 	val, ok := <-t.inputCh
 	if !ok {
 		return val, io.EOF
@@ -45,33 +44,33 @@ func TestService_SinkFn(t *testing.T) {
 	tests := []struct {
 		name     string
 		sh       SinkHandler
-		input    []*sinkfn.SinkRequest
-		expected []*sinkfn.SinkResponse
+		input    []*v1.SinkRequest
+		expected []*v1.SinkResponse
 	}{
 		{
 			name: "sink_fn_test_success",
 
-			input: []*sinkfn.SinkRequest{
+			input: []*v1.SinkRequest{
 				{
 					Id:        "one-processed",
 					Keys:      []string{"sink-test"},
 					Value:     []byte(strconv.Itoa(10)),
-					EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
 					Id:        "two-processed",
 					Keys:      []string{"sink-test"},
 					Value:     []byte(strconv.Itoa(20)),
-					EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
 					Id:        "three-processed",
 					Keys:      []string{"sink-test"},
 					Value:     []byte(strconv.Itoa(30)),
-					EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 			},
 			sh: SinkFunc(func(ctx context.Context, rch <-chan Datum) Responses {
@@ -82,7 +81,7 @@ func TestService_SinkFn(t *testing.T) {
 				}
 				return result
 			}),
-			expected: []*sinkfn.SinkResponse{
+			expected: []*v1.SinkResponse{
 				{
 					Success: true,
 					Id:      "one-processed",
@@ -103,27 +102,27 @@ func TestService_SinkFn(t *testing.T) {
 		{
 			name: "sink_fn_test_failure",
 
-			input: []*sinkfn.SinkRequest{
+			input: []*v1.SinkRequest{
 				{
 					Id:        "one-processed",
 					Keys:      []string{"sink-test-1", "sink-test-2"},
 					Value:     []byte(strconv.Itoa(10)),
-					EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
 					Id:        "two-processed",
 					Keys:      []string{"sink-test-1", "sink-test-2"},
 					Value:     []byte(strconv.Itoa(20)),
-					EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
 					Id:        "three-processed",
 					Keys:      []string{"sink-test-1", "sink-test-2"},
 					Value:     []byte(strconv.Itoa(30)),
-					EventTime: &common.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &common.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 			},
 			sh: SinkFunc(func(ctx context.Context, rch <-chan Datum) Responses {
@@ -134,7 +133,7 @@ func TestService_SinkFn(t *testing.T) {
 				}
 				return result
 			}),
-			expected: []*sinkfn.SinkResponse{
+			expected: []*v1.SinkResponse{
 				{
 					Success: false,
 					Id:      "one-processed",
@@ -158,7 +157,7 @@ func TestService_SinkFn(t *testing.T) {
 			ss := Service{
 				Sinker: tt.sh,
 			}
-			ich := make(chan *sinkfn.SinkRequest)
+			ich := make(chan *v1.SinkRequest)
 			udfReduceFnStream := &UserDefinedSink_SinkFnServerTest{
 				ctx:     context.Background(),
 				inputCh: ich,
@@ -195,7 +194,7 @@ func TestService_IsReady(t *testing.T) {
 		name        string
 		sinkHandler SinkHandler
 		args        args
-		want        *sinkfn.ReadyResponse
+		want        *v1.ReadyResponse
 		wantErr     bool
 	}{
 		{
@@ -204,7 +203,7 @@ func TestService_IsReady(t *testing.T) {
 				in0: nil,
 				in1: &emptypb.Empty{},
 			},
-			want: &sinkfn.ReadyResponse{
+			want: &v1.ReadyResponse{
 				Ready: true,
 			},
 			wantErr: false,

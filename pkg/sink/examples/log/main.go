@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	sinksdk "github.com/numaproj/numaflow-go/pkg/sink"
-	"github.com/numaproj/numaflow-go/pkg/sink/server"
 )
 
 func handle(_ context.Context, datumStreamCh <-chan sinksdk.Datum) sinksdk.Responses {
@@ -21,5 +20,5 @@ func handle(_ context.Context, datumStreamCh <-chan sinksdk.Datum) sinksdk.Respo
 }
 
 func main() {
-	server.NewSinkServer(sinksdk.SinkFunc(handle)).Start(context.Background())
+	sinksdk.NewSinkServer(sinksdk.SinkFunc(handle)).Start(context.Background())
 }
