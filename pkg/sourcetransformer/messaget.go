@@ -9,7 +9,7 @@ var (
 	DROP = fmt.Sprintf("%U__DROP__", '\\') // U+005C__DROP__
 )
 
-// Message is used to wrap the data return by UDF functions.
+// Message is used to wrap the data return by SourceTransformer functions.
 // Compared with Message, Message contains one more field, the event time, usually extracted from the payload.
 type Message struct {
 	value     []byte

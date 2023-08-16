@@ -8,9 +8,9 @@ import "google/protobuf/empty.proto";
 package sourcetransformer.v1;
 
 service SourceTransformer {
-  // MapTFn applies a function to each datum request element.
-  // In addition to map function, MapTFn also supports assigning a new event time to datum.
-  // MapTFn can be used only at source vertex by source data transformer.
+  // SourceTransformer applies a function to each request element.
+  // In addition to map function, SourceTransformer also supports assigning a new event time to datum.
+  // SourceTransformer can be used only at source vertex by source data transformer.
   rpc SourceTransformer(SourceTransformerRequest) returns (SourceTransformerResponseList);
 
   // IsReady is the heartbeat endpoint for gRPC.
@@ -31,7 +31,7 @@ message Watermark {
 }
 
 /**
- * DatumRequest represents a datum request element.
+ * SourceTransformerRequest represents a request element.
  */
 message SourceTransformerRequest {
   repeated string keys = 1;
@@ -41,7 +41,7 @@ message SourceTransformerRequest {
 }
 
 /**
- * DatumResponse represents a datum response element.
+ * SourceTransformerResponse represents a response element.
  */
 message SourceTransformerResponse {
   repeated string keys = 1;
@@ -51,7 +51,7 @@ message SourceTransformerResponse {
 }
 
 /**
- * DatumResponseList represents a list of datum response elements.
+ * SourceTransformerResponseList represents a list of response elements.
  */
 message SourceTransformerResponseList {
   repeated SourceTransformerResponse elements = 1;

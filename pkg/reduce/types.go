@@ -2,7 +2,7 @@ package reduce
 
 import "time"
 
-// handlerDatum implements the Datum interface and is used in the map and reduce handlers.
+// handlerDatum implements the Datum interface and is used in the reduce functions.
 type handlerDatum struct {
 	value     []byte
 	eventTime time.Time
@@ -51,7 +51,7 @@ func (i *intervalWindow) EndTime() time.Time {
 	return i.endTime
 }
 
-// metadata implements Metadata interface which will be passed to reduce handlers
+// metadata implements Metadata interface which will be passed to reduce function.
 type metadata struct {
 	intervalWindow IntervalWindow
 }

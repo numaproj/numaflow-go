@@ -17,7 +17,7 @@ type server struct {
 	opts *options
 }
 
-// NewServer creates a new map server.
+// NewServer creates a new SourceTransformer server.
 func NewServer(m SourceTransformer, inputOptions ...Option) numaflow.Server {
 	opts := DefaultOptions()
 	for _, inputOption := range inputOptions {
@@ -25,11 +25,12 @@ func NewServer(m SourceTransformer, inputOptions ...Option) numaflow.Server {
 	}
 	s := new(server)
 	s.svc = new(Service)
-	s.svc.MapperT = m
+	s.svc.Transformer = m
 	s.opts = opts
 	return s
 }
 
+// Start starts the SourceTransformer server.
 func (m *server) Start(ctx context.Context) error {
 	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()

@@ -19,7 +19,7 @@ type MapStreamer interface {
 	MapStream(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message)
 }
 
-// MapStreamerFunc is a utility type used to convert a reduceFn function to a MapStreamer.
+// MapStreamerFunc is a utility type used to convert a function to a MapStreamer.
 type MapStreamerFunc func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message)
 
 // MapStream implements the function of map stream function.

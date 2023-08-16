@@ -1,4 +1,4 @@
-// Package mapstream implements the server code for Map Operation.
+// Package mapstream implements the server code for Map Stream Operation.
 //
 // Example MapStream
 /*

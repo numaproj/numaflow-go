@@ -2,7 +2,7 @@ package mapstream
 
 import "time"
 
-// handlerDatum implements the Datum interface and is used in the map and reduce handlers.
+// handlerDatum implements the Datum interface and is used in the map stream functions.
 type handlerDatum struct {
 	value     []byte
 	eventTime time.Time

@@ -31,22 +31,6 @@ func NewSinkServer(h Sinker, inputOptions ...Option) numaflow.Server {
 	return s
 }
 
-// RegisterSinker registers the sink operation handler to the sinkServer.
-// Example:
-//
-//	func handle(ctx context.Context, datumStreamCh <-chan sinksdk.Datum) sinksdk.Responses {
-//		result := sinksdk.ResponsesBuilder()
-//		for _, datum := range datumList {
-//			fmt.Println(string(datum.Value()))
-//			result = result.Append(sinksdk.ResponseOK(datum.ID()))
-//		}
-//		return result
-//	}
-//
-//	func main() {
-//		server.NewSinkServer().RegisterSinker(sinksdk.SinkerFunc(handle)).Start(context.Background())
-//	}
-
 // Start starts the gRPC sinkServer via unix domain socket at configs.SinkAddr and return error.
 func (s *sinkServer) Start(ctx context.Context) error {
 

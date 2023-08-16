@@ -18,7 +18,7 @@ type Mapper interface {
 	Map(ctx context.Context, keys []string, datum Datum) Messages
 }
 
-// MapperFunc is a utility type used to convert a mapStreamFn function to a Mapper.
+// MapperFunc is a utility type used to convert a map function to a Mapper.
 type MapperFunc func(ctx context.Context, keys []string, datum Datum) Messages
 
 // Map implements the function of map function.

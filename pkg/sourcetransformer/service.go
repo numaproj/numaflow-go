@@ -13,7 +13,7 @@ import (
 // handler.
 type Service struct {
 	v1.UnimplementedSourceTransformerServer
-	MapperT SourceTransformer
+	Transformer SourceTransformer
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
@@ -26,7 +26,7 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*v1.ReadyResponse, 
 // MapTFn can be used only at source vertex by source data transformer.
 func (fs *Service) MapTFn(ctx context.Context, d *v1.SourceTransformerRequest) (*v1.SourceTransformerResponseList, error) {
 	var hd = NewHandlerDatum(d.GetValue(), d.GetEventTime().EventTime.AsTime(), d.GetWatermark().Watermark.AsTime())
-	messageTs := fs.MapperT.SourceTransformer(ctx, d.GetKeys(), hd)
+	messageTs := fs.Transformer.SourceTransformer(ctx, d.GetKeys(), hd)
 	var elements []*v1.SourceTransformerResponse
 	for _, m := range messageTs.Items() {
 		elements = append(elements, &v1.SourceTransformerResponse{

@@ -1,10 +1,10 @@
-// Package source implements the server code for User Defined Source Transformer in golang.
+// Package source implements the server code for Source Transformer in golang.
 //
 // Example SourceTransformer (extracting event time from the datum payload)
-// MapT includes both Map and EventTime assignment functionalities.
-// Although the input datum already contains EventTime and Watermark, it's up to the MapT implementor to
+// SourceTransformer includes both Map and EventTime assignment functionalities.
+// Although the input datum already contains EventTime and Watermark, it's up to the SourceTransformer implementor to
 // decide on whether to use them for generating new EventTime.
-// MapT can be used only at source vertex by source data transformer.
+// SourceTransformer can be used only at source vertex by source data transformer.
 /*
   package main
 
