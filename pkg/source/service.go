@@ -8,7 +8,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	sourcepb "github.com/numaproj/numaflow-go/pkg/apis/proto/source/v1"
-	"github.com/numaproj/numaflow-go/pkg/source/model"
 )
 
 // Service implements the proto gen server interface
@@ -50,7 +49,7 @@ func (fs *Service) ReadFn(d *sourcepb.ReadRequest, stream sourcepb.Source_ReadFn
 		timeout: time.Duration(d.Request.GetTimeoutInMs()) * time.Millisecond,
 	}
 	ctx := stream.Context()
-	messageCh := make(chan model.Message)
+	messageCh := make(chan Message)
 
 	// Start the read in a goroutine
 	go func() {
@@ -83,19 +82,19 @@ func (fs *Service) ReadFn(d *sourcepb.ReadRequest, stream sourcepb.Source_ReadFn
 
 // ackRequest implements the AckRequest interface and is used in the ack handler.
 type ackRequest struct {
-	offsets []model.Offset
+	offsets []Offset
 }
 
 // Offsets returns the offsets of the records to ack.
-func (a *ackRequest) Offsets() []model.Offset {
+func (a *ackRequest) Offsets() []Offset {
 	return a.offsets
 }
 
 // AckFn applies a function to each datum element.
 func (fs *Service) AckFn(ctx context.Context, d *sourcepb.AckRequest) (*sourcepb.AckResponse, error) {
-	offsets := make([]model.Offset, len(d.Request.GetOffsets()))
+	offsets := make([]Offset, len(d.Request.GetOffsets()))
 	for i, offset := range d.Request.GetOffsets() {
-		offsets[i] = model.NewOffset(offset.GetOffset(), offset.GetPartitionId())
+		offsets[i] = NewOffset(offset.GetOffset(), offset.GetPartitionId())
 	}
 
 	request := ackRequest{

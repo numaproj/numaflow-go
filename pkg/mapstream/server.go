@@ -7,7 +7,7 @@ import (
 	"syscall"
 
 	"github.com/numaproj/numaflow-go/pkg"
-	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/mapstream/v1"
+	mapstreampb "github.com/numaproj/numaflow-go/pkg/apis/proto/mapstream/v1"
 	"github.com/numaproj/numaflow-go/pkg/shared"
 )
 
@@ -49,7 +49,7 @@ func (m *server) Start(ctx context.Context) error {
 	defer grpcServer.GracefulStop()
 
 	// register the map streaming service
-	v1.RegisterMapStreamServer(grpcServer, m.svc)
+	mapstreampb.RegisterMapStreamServer(grpcServer, m.svc)
 
 	// start the grpc server
 	return shared.StartGRPCServer(ctxWithSignal, grpcServer, lis)

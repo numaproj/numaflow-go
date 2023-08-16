@@ -7,7 +7,6 @@ import (
 	"time"
 
 	sourcesdk "github.com/numaproj/numaflow-go/pkg/source"
-	"github.com/numaproj/numaflow-go/pkg/source/model"
 )
 
 // SimpleSource is a simple source implementation.
@@ -34,7 +33,7 @@ func (s *SimpleSource) Pending(_ context.Context) uint64 {
 // Read reads messages from the source and sends the messages to the message channel.
 // If the read request is timed out, the function returns without reading new data.
 // Right after reading a message, the function marks the offset as to be acked.
-func (s *SimpleSource) Read(_ context.Context, readRequest sourcesdk.ReadRequest, messageCh chan<- model.Message) {
+func (s *SimpleSource) Read(_ context.Context, readRequest sourcesdk.ReadRequest, messageCh chan<- sourcesdk.Message) {
 	// Handle the timeout specification in the read request.
 	ctx, cancel := context.WithTimeout(context.Background(), readRequest.TimeOut())
 	defer cancel()
@@ -59,9 +58,9 @@ func (s *SimpleSource) Read(_ context.Context, readRequest sourcesdk.ReadRequest
 			s.lock.Lock()
 			// Otherwise, we read the data from the source and send the data to the message channel.
 			offsetValue := serializeOffset(s.readIdx)
-			messageCh <- model.NewMessage(
+			messageCh <- sourcesdk.NewMessage(
 				[]byte(strconv.FormatInt(s.readIdx, 10)),
-				model.NewOffset(offsetValue, "0"),
+				sourcesdk.NewOffset(offsetValue, "0"),
 				time.Now())
 			// Mark the offset as to be acked, and increment the read index.
 			s.toAckSet[s.readIdx] = struct{}{}

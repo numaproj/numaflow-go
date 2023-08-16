@@ -15,24 +15,24 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/reduce/v1"
+	reducepb "github.com/numaproj/numaflow-go/pkg/apis/proto/reduce/v1"
 	"github.com/numaproj/numaflow-go/pkg/shared"
 )
 
 // Service implements the proto gen server interface and contains the reduce operation handler.
 type Service struct {
-	v1.UnimplementedReduceServer
+	reducepb.UnimplementedReduceServer
 
 	Reducer Reducer
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
-func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*v1.ReadyResponse, error) {
-	return &v1.ReadyResponse{Ready: true}, nil
+func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*reducepb.ReadyResponse, error) {
+	return &reducepb.ReadyResponse{Ready: true}, nil
 }
 
 // ReduceFn applies a reduce function to a request stream and returns a list of results.
-func (fs *Service) ReduceFn(stream v1.Reduce_ReduceFnServer) error {
+func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
 	var (
 		md        Metadata
 		err       error
@@ -124,10 +124,10 @@ func (fs *Service) ReduceFn(stream v1.Reduce_ReduceFnServer) error {
 	return g.Wait()
 }
 
-func buildDatumList(messages Messages) *v1.ReduceResponseList {
-	datumList := &v1.ReduceResponseList{}
+func buildDatumList(messages Messages) *reducepb.ReduceResponseList {
+	datumList := &reducepb.ReduceResponseList{}
 	for _, msg := range messages {
-		datumList.Elements = append(datumList.Elements, &v1.ReduceResponse{
+		datumList.Elements = append(datumList.Elements, &reducepb.ReduceResponse{
 			Keys:  msg.Keys(),
 			Value: msg.Value(),
 			Tags:  msg.Tags(),

@@ -1,18 +1,18 @@
-package server
+package source
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
-	sourcesdk "github.com/numaproj/numaflow-go/pkg/source"
+	"github.com/numaproj/numaflow-go/pkg/shared"
 )
 
 func TestWithMaxMessageSize(t *testing.T) {
 	var (
 		testSize = 1024 * 1024 * 10
 		opts     = &options{
-			maxMessageSize: sourcesdk.DefaultMaxMessageSize,
+			maxMessageSize: shared.DefaultMaxMessageSize,
 		}
 	)
 	WithMaxMessageSize(testSize)(opts)
@@ -23,7 +23,7 @@ func TestWithSockAddr(t *testing.T) {
 	var (
 		testSocketAddr = "test-socket-address"
 		opts           = &options{
-			sockAddr: sourcesdk.UdsAddr,
+			sockAddr: shared.SourceAddr,
 		}
 	)
 	WithSockAddr(testSocketAddr)(opts)
@@ -34,7 +34,7 @@ func TestWithServerInfoFilePath(t *testing.T) {
 	var (
 		testServerInfoFilePath = "test-server-info-file-path"
 		opts                   = &options{
-			maxMessageSize: sourcesdk.DefaultMaxMessageSize,
+			maxMessageSize: shared.DefaultMaxMessageSize,
 		}
 	)
 	WithServerInfoFilePath(testServerInfoFilePath)(opts)

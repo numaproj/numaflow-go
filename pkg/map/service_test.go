@@ -8,19 +8,19 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1"
+	mappb "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1"
 )
 
 func TestService_MapFn(t *testing.T) {
 	type args struct {
 		ctx context.Context
-		d   *v1.MapRequest
+		d   *mappb.MapRequest
 	}
 	tests := []struct {
 		name    string
 		handler Mapper
 		args    args
-		want    *v1.MapResponseList
+		want    *mappb.MapResponseList
 		wantErr bool
 	}{
 		{
@@ -31,15 +31,15 @@ func TestService_MapFn(t *testing.T) {
 			}),
 			args: args{
 				ctx: context.Background(),
-				d: &v1.MapRequest{
+				d: &mappb.MapRequest{
 					Keys:      []string{"client"},
 					Value:     []byte(`test`),
-					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &mappb.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &mappb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 			},
-			want: &v1.MapResponseList{
-				Elements: []*v1.MapResponse{
+			want: &mappb.MapResponseList{
+				Elements: []*mappb.MapResponse{
 					{
 						Keys:  []string{"client_test"},
 						Value: []byte(`test`),
@@ -56,15 +56,15 @@ func TestService_MapFn(t *testing.T) {
 			}),
 			args: args{
 				ctx: context.Background(),
-				d: &v1.MapRequest{
+				d: &mappb.MapRequest{
 					Keys:      []string{"client"},
 					Value:     []byte(`test`),
-					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &mappb.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &mappb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 			},
-			want: &v1.MapResponseList{
-				Elements: []*v1.MapResponse{
+			want: &mappb.MapResponseList{
+				Elements: []*mappb.MapResponse{
 					{
 						Value: []byte(`test`),
 					},
@@ -79,15 +79,15 @@ func TestService_MapFn(t *testing.T) {
 			}),
 			args: args{
 				ctx: context.Background(),
-				d: &v1.MapRequest{
+				d: &mappb.MapRequest{
 					Keys:      []string{"client"},
 					Value:     []byte(`test`),
-					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &mappb.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &mappb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 			},
-			want: &v1.MapResponseList{
-				Elements: []*v1.MapResponse{
+			want: &mappb.MapResponseList{
+				Elements: []*mappb.MapResponse{
 					{
 						Tags:  []string{DROP},
 						Value: []byte{},

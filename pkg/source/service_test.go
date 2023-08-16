@@ -14,7 +14,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	sourcepb "github.com/numaproj/numaflow-go/pkg/apis/proto/source/v1"
-	"github.com/numaproj/numaflow-go/pkg/source/model"
 )
 
 var TestEventTime = time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -23,8 +22,8 @@ var TestPendingNumber uint64 = 123
 
 type TestSource struct{}
 
-func (ts TestSource) Read(_ context.Context, _ ReadRequest, messageCh chan<- model.Message) {
-	msg := model.NewMessage([]byte(`test`), model.Offset{}, TestEventTime)
+func (ts TestSource) Read(_ context.Context, _ ReadRequest, messageCh chan<- Message) {
+	msg := NewMessage([]byte(`test`), Offset{}, TestEventTime)
 	messageCh <- msg.WithKeys([]string{TestKey})
 }
 

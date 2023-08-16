@@ -14,20 +14,20 @@ import (
 	grpcmd "google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/reduce/v1"
+	reducepb "github.com/numaproj/numaflow-go/pkg/apis/proto/reduce/v1"
 	"github.com/numaproj/numaflow-go/pkg/shared"
 )
 
 type ReduceFnServerTest struct {
 	ctx      context.Context
-	inputCh  chan *v1.ReduceRequest
-	outputCh chan *v1.ReduceResponseList
+	inputCh  chan *reducepb.ReduceRequest
+	outputCh chan *reducepb.ReduceResponseList
 	grpc.ServerStream
 }
 
 func NewReduceFnServerTest(ctx context.Context,
-	inputCh chan *v1.ReduceRequest,
-	outputCh chan *v1.ReduceResponseList) *ReduceFnServerTest {
+	inputCh chan *reducepb.ReduceRequest,
+	outputCh chan *reducepb.ReduceResponseList) *ReduceFnServerTest {
 	return &ReduceFnServerTest{
 		ctx:      ctx,
 		inputCh:  inputCh,
@@ -35,12 +35,12 @@ func NewReduceFnServerTest(ctx context.Context,
 	}
 }
 
-func (u *ReduceFnServerTest) Send(list *v1.ReduceResponseList) error {
+func (u *ReduceFnServerTest) Send(list *reducepb.ReduceResponseList) error {
 	u.outputCh <- list
 	return nil
 }
 
-func (u *ReduceFnServerTest) Recv() (*v1.ReduceRequest, error) {
+func (u *ReduceFnServerTest) Recv() (*reducepb.ReduceRequest, error) {
 	val, ok := <-u.inputCh
 	if !ok {
 		return val, io.EOF
@@ -57,8 +57,8 @@ func TestService_ReduceFn(t *testing.T) {
 	tests := []struct {
 		name        string
 		handler     Reducer
-		input       []*v1.ReduceRequest
-		expected    *v1.ReduceResponseList
+		input       []*reducepb.ReduceRequest
+		expected    *reducepb.ReduceResponseList
 		expectedErr bool
 	}{
 		{
@@ -71,28 +71,28 @@ func TestService_ReduceFn(t *testing.T) {
 				}
 				return MessagesBuilder().Append(NewMessage([]byte(strconv.Itoa(sum))).WithKeys([]string{keys[0] + "_test"}))
 			}),
-			input: []*v1.ReduceRequest{
+			input: []*reducepb.ReduceRequest{
 				{
 					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(10)),
-					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &reducepb.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &reducepb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
 					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(20)),
-					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &reducepb.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &reducepb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
 					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(30)),
-					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &reducepb.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &reducepb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 			},
-			expected: &v1.ReduceResponseList{
-				Elements: []*v1.ReduceResponse{
+			expected: &reducepb.ReduceResponseList{
+				Elements: []*reducepb.ReduceResponse{
 					{
 						Keys:  []string{"client_test"},
 						Value: []byte(strconv.Itoa(60)),
@@ -111,46 +111,46 @@ func TestService_ReduceFn(t *testing.T) {
 				}
 				return MessagesBuilder().Append(NewMessage([]byte(strconv.Itoa(sum))).WithKeys([]string{keys[0] + "_test"}))
 			}),
-			input: []*v1.ReduceRequest{
+			input: []*reducepb.ReduceRequest{
 				{
 					Keys:      []string{"client1"},
 					Value:     []byte(strconv.Itoa(10)),
-					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &reducepb.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &reducepb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
 					Keys:      []string{"client2"},
 					Value:     []byte(strconv.Itoa(20)),
-					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &reducepb.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &reducepb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
 					Keys:      []string{"client3"},
 					Value:     []byte(strconv.Itoa(30)),
-					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &reducepb.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &reducepb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
 					Keys:      []string{"client1"},
 					Value:     []byte(strconv.Itoa(10)),
-					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &reducepb.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &reducepb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
 					Keys:      []string{"client2"},
 					Value:     []byte(strconv.Itoa(20)),
-					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &reducepb.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &reducepb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
 					Keys:      []string{"client3"},
 					Value:     []byte(strconv.Itoa(30)),
-					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &reducepb.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &reducepb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 			},
-			expected: &v1.ReduceResponseList{
-				Elements: []*v1.ReduceResponse{
+			expected: &reducepb.ReduceResponseList{
+				Elements: []*reducepb.ReduceResponse{
 					{
 						Keys:  []string{"client1_test"},
 						Value: []byte(strconv.Itoa(20)),
@@ -177,28 +177,28 @@ func TestService_ReduceFn(t *testing.T) {
 				}
 				return MessagesBuilder().Append(NewMessage([]byte(strconv.Itoa(sum))))
 			}),
-			input: []*v1.ReduceRequest{
+			input: []*reducepb.ReduceRequest{
 				{
 					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(10)),
-					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &reducepb.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &reducepb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
 					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(20)),
-					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &reducepb.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &reducepb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
 					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(30)),
-					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &reducepb.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &reducepb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 			},
-			expected: &v1.ReduceResponseList{
-				Elements: []*v1.ReduceResponse{
+			expected: &reducepb.ReduceResponseList{
+				Elements: []*reducepb.ReduceResponse{
 					{
 						Value: []byte(strconv.Itoa(60)),
 					},
@@ -216,28 +216,28 @@ func TestService_ReduceFn(t *testing.T) {
 				}
 				return MessagesBuilder().Append(MessageToDrop())
 			}),
-			input: []*v1.ReduceRequest{
+			input: []*reducepb.ReduceRequest{
 				{
 					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(10)),
-					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &reducepb.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &reducepb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
 					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(20)),
-					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &reducepb.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &reducepb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 				{
 					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(30)),
-					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: &reducepb.EventTime{EventTime: timestamppb.New(time.Time{})},
+					Watermark: &reducepb.Watermark{Watermark: timestamppb.New(time.Time{})},
 				},
 			},
-			expected: &v1.ReduceResponseList{
-				Elements: []*v1.ReduceResponse{
+			expected: &reducepb.ReduceResponseList{
+				Elements: []*reducepb.ReduceResponse{
 					{
 						Tags:  []string{DROP},
 						Value: []byte{},
@@ -257,9 +257,9 @@ func TestService_ReduceFn(t *testing.T) {
 			// instead of the regular outgoing context in the real gRPC connection.
 			ctx := grpcmd.NewIncomingContext(context.Background(), grpcmd.New(map[string]string{shared.WinStartTime: "60000", shared.WinEndTime: "120000"}))
 
-			inputCh := make(chan *v1.ReduceRequest)
-			outputCh := make(chan *v1.ReduceResponseList)
-			result := &v1.ReduceResponseList{}
+			inputCh := make(chan *reducepb.ReduceRequest)
+			outputCh := make(chan *reducepb.ReduceResponseList)
+			result := &reducepb.ReduceResponseList{}
 
 			udfReduceFnStream := NewReduceFnServerTest(ctx, inputCh, outputCh)
 

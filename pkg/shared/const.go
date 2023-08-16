@@ -3,7 +3,6 @@ package shared
 const (
 	TCP                   = "tcp"
 	UDS                   = "unix"
-	FunctionAddr          = "/var/run/numaflow/function.sock"
 	MapAddr               = "/var/run/numaflow/map.sock"
 	MapStreamAddr         = "/var/run/numaflow/mapstream.sock"
 	ReduceAddr            = "/var/run/numaflow/reduce.sock"

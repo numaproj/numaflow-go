@@ -7,7 +7,7 @@ import (
 	"syscall"
 
 	"github.com/numaproj/numaflow-go/pkg"
-	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/reduce/v1"
+	reducepb "github.com/numaproj/numaflow-go/pkg/apis/proto/reduce/v1"
 	"github.com/numaproj/numaflow-go/pkg/shared"
 )
 
@@ -49,7 +49,7 @@ func (r *server) Start(ctx context.Context) error {
 	defer grpcServer.GracefulStop()
 
 	// register the reduce service
-	v1.RegisterReduceServer(grpcServer, r.svc)
+	reducepb.RegisterReduceServer(grpcServer, r.svc)
 
 	// start the grpc server
 	return shared.StartGRPCServer(ctxWithSignal, grpcServer, lis)

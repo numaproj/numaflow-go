@@ -23,9 +23,9 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SourceTransformerClient interface {
-	// MapTFn applies a function to each datum request element.
-	// In addition to map function, MapTFn also supports assigning a new event time to datum.
-	// MapTFn can be used only at source vertex by source data transformer.
+	// SourceTransformer applies a function to each request element.
+	// In addition to map function, SourceTransformer also supports assigning a new event time to datum.
+	// SourceTransformer can be used only at source vertex by source data transformer.
 	SourceTransformer(ctx context.Context, in *SourceTransformerRequest, opts ...grpc.CallOption) (*SourceTransformerResponseList, error)
 	// IsReady is the heartbeat endpoint for gRPC.
 	IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReadyResponse, error)
@@ -61,9 +61,9 @@ func (c *sourceTransformerClient) IsReady(ctx context.Context, in *emptypb.Empty
 // All implementations must embed UnimplementedSourceTransformerServer
 // for forward compatibility
 type SourceTransformerServer interface {
-	// MapTFn applies a function to each datum request element.
-	// In addition to map function, MapTFn also supports assigning a new event time to datum.
-	// MapTFn can be used only at source vertex by source data transformer.
+	// SourceTransformer applies a function to each request element.
+	// In addition to map function, SourceTransformer also supports assigning a new event time to datum.
+	// SourceTransformer can be used only at source vertex by source data transformer.
 	SourceTransformer(context.Context, *SourceTransformerRequest) (*SourceTransformerResponseList, error)
 	// IsReady is the heartbeat endpoint for gRPC.
 	IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error)

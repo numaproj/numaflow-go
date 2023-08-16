@@ -3,14 +3,12 @@ package source
 import (
 	"context"
 	"time"
-
-	"github.com/numaproj/numaflow-go/pkg/source/model"
 )
 
 type Source interface {
 	// Read reads the data from the source and sends the data to the message channel.
 	// Read should never attempt to close the message channel as the caller owns the channel.
-	Read(ctx context.Context, readRequest ReadRequest, messageCh chan<- model.Message)
+	Read(ctx context.Context, readRequest ReadRequest, messageCh chan<- Message)
 	// Ack acknowledges the data from the source.
 	Ack(ctx context.Context, request AckRequest)
 	// Pending returns the number of pending messages.
@@ -28,5 +26,5 @@ type ReadRequest interface {
 // AckRequest is the interface of ack request.
 type AckRequest interface {
 	// Offsets returns the offsets of the records to ack.
-	Offsets() []model.Offset
+	Offsets() []Offset
 }

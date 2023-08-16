@@ -1,4 +1,9 @@
-package server
+package source
+
+import (
+	"github.com/numaproj/numaflow-go/pkg/info"
+	"github.com/numaproj/numaflow-go/pkg/shared"
+)
 
 type options struct {
 	sockAddr           string
@@ -8,6 +13,14 @@ type options struct {
 
 // Option is the interface to apply options.
 type Option func(*options)
+
+func DefaultOptions() *options {
+	return &options{
+		sockAddr:           shared.SourceAddr,
+		maxMessageSize:     shared.DefaultMaxMessageSize,
+		serverInfoFilePath: info.ServerInfoFilePath,
+	}
+}
 
 // WithMaxMessageSize sets the server max receive message size and the server max send message size to the given size.
 func WithMaxMessageSize(size int) Option {

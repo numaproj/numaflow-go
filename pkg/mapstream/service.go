@@ -5,24 +5,24 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/mapstream/v1"
+	mapstreampb "github.com/numaproj/numaflow-go/pkg/apis/proto/mapstream/v1"
 )
 
 // Service implements the proto gen server interface and contains the map
 // streaming handler
 type Service struct {
-	v1.UnimplementedMapStreamServer
+	mapstreampb.UnimplementedMapStreamServer
 
 	MapperStream MapStreamer
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
-func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*v1.ReadyResponse, error) {
-	return &v1.ReadyResponse{Ready: true}, nil
+func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*mapstreampb.ReadyResponse, error) {
+	return &mapstreampb.ReadyResponse{Ready: true}, nil
 }
 
 // MapStreamFn applies a function to each request element and streams the results back.
-func (fs *Service) MapStreamFn(d *v1.MapStreamRequest, stream v1.MapStream_MapStreamFnServer) error {
+func (fs *Service) MapStreamFn(d *mapstreampb.MapStreamRequest, stream mapstreampb.MapStream_MapStreamFnServer) error {
 	var hd = NewHandlerDatum(d.GetValue(), d.GetEventTime().EventTime.AsTime(), d.GetWatermark().Watermark.AsTime())
 	ctx := stream.Context()
 	messageCh := make(chan Message)
@@ -42,7 +42,7 @@ func (fs *Service) MapStreamFn(d *v1.MapStreamRequest, stream v1.MapStream_MapSt
 				// Channel already closed, not closing again.
 				return nil
 			}
-			element := &v1.MapStreamResponse{
+			element := &mapstreampb.MapStreamResponse{
 				Keys:  message.Keys(),
 				Value: message.Value(),
 				Tags:  message.Tags(),

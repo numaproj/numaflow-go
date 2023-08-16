@@ -119,7 +119,7 @@ func (x *Watermark) GetWatermark() *timestamppb.Timestamp {
 }
 
 // *
-// DatumRequest represents a datum request element.
+// SourceTransformerRequest represents a request element.
 type SourceTransformerRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -192,7 +192,7 @@ func (x *SourceTransformerRequest) GetWatermark() *Watermark {
 }
 
 // *
-// DatumResponse represents a datum response element.
+// SourceTransformerResponse represents a response element.
 type SourceTransformerResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -265,7 +265,7 @@ func (x *SourceTransformerResponse) GetTags() []string {
 }
 
 // *
-// DatumResponseList represents a list of datum response elements.
+// SourceTransformerResponseList represents a list of response elements.
 type SourceTransformerResponseList struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

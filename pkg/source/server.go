@@ -1,4 +1,4 @@
-package sink
+package source
 
 import (
 	"context"
@@ -8,31 +8,33 @@ import (
 	"syscall"
 
 	numaflow "github.com/numaproj/numaflow-go/pkg"
-	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
+	sourcepb "github.com/numaproj/numaflow-go/pkg/apis/proto/source/v1"
 	"github.com/numaproj/numaflow-go/pkg/shared"
 )
 
-// sinkServer is a sink gRPC server.
-type sinkServer struct {
+type server struct {
 	svc  *Service
 	opts *options
 }
 
-// NewSinkServer creates a new sinkServer object.
-func NewSinkServer(h Sinker, inputOptions ...Option) numaflow.Server {
-	opts := DefaultOptions()
+// NewServer creates a new server object.
+func NewServer(
+	source Source,
+	inputOptions ...Option) numaflow.Server {
+	var opts = DefaultOptions()
+
 	for _, inputOption := range inputOptions {
 		inputOption(opts)
 	}
-	s := new(sinkServer)
+	s := new(server)
 	s.svc = new(Service)
-	s.svc.Sinker = h
+	s.svc.Source = source
 	s.opts = opts
 	return s
 }
 
-// Start starts the gRPC sinkServer via unix domain socket at configs.SinkAddr and return error.
-func (s *sinkServer) Start(ctx context.Context) error {
+// Start starts the gRPC server via unix domain socket at shared.SourceAddr and return error.
+func (s *server) Start(ctx context.Context) error {
 
 	// write server info to the file
 	// start listening on unix domain socket
@@ -51,8 +53,8 @@ func (s *sinkServer) Start(ctx context.Context) error {
 	defer log.Println("Successfully stopped the gRPC server")
 	defer grpcServer.GracefulStop()
 
-	// register the sink service
-	sinkpb.RegisterSinkServer(grpcServer, s.svc)
+	// register the source service
+	sourcepb.RegisterSourceServer(grpcServer, s.svc)
 
 	// start the grpc server
 	return shared.StartGRPCServer(ctxWithSignal, grpcServer, lis)

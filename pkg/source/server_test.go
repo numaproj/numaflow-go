@@ -1,4 +1,4 @@
-package server
+package source
 
 import (
 	"context"
@@ -7,22 +7,19 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-
-	sourcesdk "github.com/numaproj/numaflow-go/pkg/source"
-	"github.com/numaproj/numaflow-go/pkg/source/model"
 )
 
-type TestSource struct{}
+type TestNoopSource struct{}
 
-func (ts TestSource) Read(ctx context.Context, readRequest sourcesdk.ReadRequest, messageCh chan<- model.Message) {
+func (ts TestNoopSource) Read(ctx context.Context, readRequest ReadRequest, messageCh chan<- Message) {
 	return
 }
 
-func (ts TestSource) Ack(ctx context.Context, request sourcesdk.AckRequest) {
+func (ts TestNoopSource) Ack(ctx context.Context, request AckRequest) {
 	return
 }
 
-func (ts TestSource) Pending(ctx context.Context) uint64 {
+func (ts TestNoopSource) Pending(ctx context.Context) uint64 {
 	return 0
 }
 
@@ -43,6 +40,6 @@ func TestServer_Start(t *testing.T) {
 		time.Sleep(3 * time.Second)
 		cancel()
 	}()
-	err := New(TestSource{}).Start(ctx, WithSockAddr(socketFile.Name()), WithServerInfoFilePath(serverInfoFile.Name()))
+	err := NewServer(TestNoopSource{}, WithSockAddr(socketFile.Name()), WithServerInfoFilePath(serverInfoFile.Name())).Start(ctx)
 	assert.NoError(t, err)
 }

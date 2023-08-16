@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/numaproj/numaflow-go/pkg/source/model"
+	"github.com/numaproj/numaflow-go/pkg/source"
 )
 
 // Notes: the unit test cases below demonstrate the basic contract between Read and Ack functions of a data source.
@@ -26,17 +26,17 @@ func (rr TestReadRequest) TimeOut() time.Duration {
 }
 
 type TestAckRequest struct {
-	offsets []model.Offset
+	offsets []source.Offset
 }
 
-func (ar TestAckRequest) Offsets() []model.Offset {
+func (ar TestAckRequest) Offsets() []source.Offset {
 	return ar.offsets
 }
 
 func Test_SimpleSource(t *testing.T) {
 	underTest := NewSimpleSource()
 	// Prepare a channel to receive messages
-	messageCh := make(chan model.Message, 20)
+	messageCh := make(chan source.Message, 20)
 
 	// Read 2 messages
 	underTest.Read(nil, TestReadRequest{
@@ -58,7 +58,7 @@ func Test_SimpleSource(t *testing.T) {
 	msg1 := <-messageCh
 	msg2 := <-messageCh
 	underTest.Ack(nil, TestAckRequest{
-		offsets: []model.Offset{msg1.Offset(), msg2.Offset()},
+		offsets: []source.Offset{msg1.Offset(), msg2.Offset()},
 	})
 
 	// Try reading 6 more messages
@@ -79,7 +79,7 @@ func Test_SimpleSource(t *testing.T) {
 	msg8 := <-messageCh
 	assert.Equal(t, 0, len(messageCh))
 	underTest.Ack(nil, TestAckRequest{
-		offsets: []model.Offset{
+		offsets: []source.Offset{
 			msg3.Offset(), msg4.Offset(),
 			msg5.Offset(), msg6.Offset(),
 			msg7.Offset(), msg8.Offset(),

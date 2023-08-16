@@ -8,7 +8,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
+	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
 )
 
 // handlerDatum implements the Datum interface and is used in the sink functions.
@@ -42,20 +42,20 @@ func (h *handlerDatum) Watermark() time.Time {
 
 // Service implements the proto gen server interface and contains the sinkfn operation handler.
 type Service struct {
-	v1.UnimplementedSinkServer
+	sinkpb.UnimplementedSinkServer
 
 	Sinker Sinker
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
-func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*v1.ReadyResponse, error) {
-	return &v1.ReadyResponse{Ready: true}, nil
+func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*sinkpb.ReadyResponse, error) {
+	return &sinkpb.ReadyResponse{Ready: true}, nil
 }
 
 // SinkFn applies a function to a list of datum element.
-func (fs *Service) SinkFn(stream v1.Sink_SinkFnServer) error {
+func (fs *Service) SinkFn(stream sinkpb.Sink_SinkFnServer) error {
 	var (
-		responseList  []*v1.SinkResponse
+		responseList  []*sinkpb.SinkResponse
 		wg            sync.WaitGroup
 		datumStreamCh = make(chan Datum)
 		ctx           = stream.Context()
@@ -66,7 +66,7 @@ func (fs *Service) SinkFn(stream v1.Sink_SinkFnServer) error {
 		defer wg.Done()
 		messages := fs.Sinker.Sink(ctx, datumStreamCh)
 		for _, msg := range messages {
-			responseList = append(responseList, &v1.SinkResponse{
+			responseList = append(responseList, &sinkpb.SinkResponse{
 				Id:      msg.ID,
 				Success: msg.Success,
 				ErrMsg:  msg.Err,
@@ -95,7 +95,7 @@ func (fs *Service) SinkFn(stream v1.Sink_SinkFnServer) error {
 	}
 
 	wg.Wait()
-	return stream.SendAndClose(&v1.SinkResponseList{
+	return stream.SendAndClose(&sinkpb.SinkResponseList{
 		Responses: responseList,
 	})
 }
