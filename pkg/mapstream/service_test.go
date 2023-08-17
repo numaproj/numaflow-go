@@ -17,13 +17,13 @@ import (
 
 type MapStreamFnServerTest struct {
 	ctx      context.Context
-	outputCh chan mapstreampb.MapStreamResponse
+	outputCh chan mapstreampb.MapStreamResponse_Result
 	grpc.ServerStream
 }
 
 func NewMapStreamFnServerTest(
 	ctx context.Context,
-	outputCh chan mapstreampb.MapStreamResponse,
+	outputCh chan mapstreampb.MapStreamResponse_Result,
 ) *MapStreamFnServerTest {
 	return &MapStreamFnServerTest{
 		ctx:      ctx,
@@ -31,7 +31,7 @@ func NewMapStreamFnServerTest(
 	}
 }
 
-func (u *MapStreamFnServerTest) Send(d *mapstreampb.MapStreamResponse) error {
+func (u *MapStreamFnServerTest) Send(d *mapstreampb.MapStreamResponse_Result) error {
 	u.outputCh <- *d
 	return nil
 }
@@ -54,7 +54,7 @@ func NewMapStreamFnServerErrTest(
 	}
 }
 
-func (u *MapStreamFnServerErrTest) Send(_ *mapstreampb.MapStreamResponse) error {
+func (u *MapStreamFnServerErrTest) Send(_ *mapstreampb.MapStreamResponse_Result) error {
 	return fmt.Errorf("send error")
 }
 
@@ -67,7 +67,7 @@ func TestService_MapFnStream(t *testing.T) {
 		name        string
 		handler     MapStreamer
 		input       *mapstreampb.MapStreamRequest
-		expected    []*mapstreampb.MapStreamResponse
+		expected    []*mapstreampb.MapStreamResponse_Result
 		expectedErr bool
 		streamErr   bool
 	}{
@@ -81,10 +81,10 @@ func TestService_MapFnStream(t *testing.T) {
 			input: &mapstreampb.MapStreamRequest{
 				Keys:      []string{"client"},
 				Value:     []byte(`test`),
-				EventTime: &mapstreampb.EventTime{EventTime: timestamppb.New(time.Time{})},
-				Watermark: &mapstreampb.Watermark{Watermark: timestamppb.New(time.Time{})},
+				EventTime: timestamppb.New(time.Time{}),
+				Watermark: timestamppb.New(time.Time{}),
 			},
-			expected: []*mapstreampb.MapStreamResponse{
+			expected: []*mapstreampb.MapStreamResponse_Result{
 				{
 					Keys:  []string{"client_test"},
 					Value: []byte(`test`),
@@ -101,10 +101,10 @@ func TestService_MapFnStream(t *testing.T) {
 			input: &mapstreampb.MapStreamRequest{
 				Keys:      []string{"client"},
 				Value:     []byte(`test`),
-				EventTime: &mapstreampb.EventTime{EventTime: timestamppb.New(time.Time{})},
-				Watermark: &mapstreampb.Watermark{Watermark: timestamppb.New(time.Time{})},
+				EventTime: timestamppb.New(time.Time{}),
+				Watermark: timestamppb.New(time.Time{}),
 			},
-			expected: []*mapstreampb.MapStreamResponse{
+			expected: []*mapstreampb.MapStreamResponse_Result{
 				{
 					Keys:  []string{"client_test"},
 					Value: []byte(`test`),
@@ -122,10 +122,10 @@ func TestService_MapFnStream(t *testing.T) {
 			input: &mapstreampb.MapStreamRequest{
 				Keys:      []string{"client"},
 				Value:     []byte(`test`),
-				EventTime: &mapstreampb.EventTime{EventTime: timestamppb.New(time.Time{})},
-				Watermark: &mapstreampb.Watermark{Watermark: timestamppb.New(time.Time{})},
+				EventTime: timestamppb.New(time.Time{}),
+				Watermark: timestamppb.New(time.Time{}),
 			},
-			expected: []*mapstreampb.MapStreamResponse{
+			expected: []*mapstreampb.MapStreamResponse_Result{
 				{
 					Value: []byte(`test`),
 				},
@@ -141,10 +141,10 @@ func TestService_MapFnStream(t *testing.T) {
 			input: &mapstreampb.MapStreamRequest{
 				Keys:      []string{"client"},
 				Value:     []byte(`test`),
-				EventTime: &mapstreampb.EventTime{EventTime: timestamppb.New(time.Time{})},
-				Watermark: &mapstreampb.Watermark{Watermark: timestamppb.New(time.Time{})},
+				EventTime: timestamppb.New(time.Time{}),
+				Watermark: timestamppb.New(time.Time{}),
 			},
-			expected: []*mapstreampb.MapStreamResponse{
+			expected: []*mapstreampb.MapStreamResponse_Result{
 				{
 					Tags:  []string{DROP},
 					Value: []byte{},
@@ -161,10 +161,10 @@ func TestService_MapFnStream(t *testing.T) {
 			input: &mapstreampb.MapStreamRequest{
 				Keys:      []string{"client"},
 				Value:     []byte(`test`),
-				EventTime: &mapstreampb.EventTime{EventTime: timestamppb.New(time.Time{})},
-				Watermark: &mapstreampb.Watermark{Watermark: timestamppb.New(time.Time{})},
+				EventTime: timestamppb.New(time.Time{}),
+				Watermark: timestamppb.New(time.Time{}),
 			},
-			expected: []*mapstreampb.MapStreamResponse{
+			expected: []*mapstreampb.MapStreamResponse_Result{
 				{
 					Tags:  []string{DROP},
 					Value: []byte{},
@@ -182,8 +182,8 @@ func TestService_MapFnStream(t *testing.T) {
 			// because we are not using gRPC, we directly set a new incoming ctx
 			// instead of the regular outgoing context in the real gRPC connection.
 			ctx := context.Background()
-			outputCh := make(chan mapstreampb.MapStreamResponse)
-			result := make([]*mapstreampb.MapStreamResponse, 0)
+			outputCh := make(chan mapstreampb.MapStreamResponse_Result)
+			result := make([]*mapstreampb.MapStreamResponse_Result, 0)
 
 			var udfMapStreamFnStream mapstreampb.MapStream_MapStreamFnServer
 			if tt.streamErr {

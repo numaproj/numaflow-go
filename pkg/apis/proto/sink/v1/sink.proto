@@ -10,7 +10,7 @@ package sink.v1;
 
 service Sink {
   // SinkFn writes the request to a user defined sink.
-  rpc SinkFn(stream SinkRequest) returns (SinkResponseList);
+  rpc SinkFn(stream SinkRequest) returns (SinkResponse);
 
   // IsReady is the heartbeat endpoint for gRPC.
   rpc IsReady(google.protobuf.Empty) returns (ReadyResponse);
@@ -38,20 +38,15 @@ message ReadyResponse {
  * SinkResponse is the individual response of each message written to the sink.
  */
 message SinkResponse {
-  // id is the ID of the message, can be used to uniquely identify the message.
-  string id = 1;
-  // success denotes the status of persisting to disk. if set to false, it means writing to sink for the message failed.
-  bool success = 2;
-  // err_msg is the error message, set it if success is set to false.
-  string err_msg = 3;
-}
-
-/**
- * SinkResponseList is the list of responses. The number of elements in this list will be equal to the number of requests
- * passed to the SinkFn.
- */
-message SinkResponseList {
-  repeated SinkResponse responses = 1;
+  message Result {
+    // id is the ID of the message, can be used to uniquely identify the message.
+    string id = 1;
+    // success denotes the status of persisting to disk. if set to false, it means writing to sink for the message failed.
+    bool success = 2;
+    // err_msg is the error message, set it if success is set to false.
+    string err_msg = 3;
+  }
+  repeated Result results = 1;
 }
 
 message EventTime {

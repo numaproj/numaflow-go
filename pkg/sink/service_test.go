@@ -16,19 +16,19 @@ import (
 	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
 )
 
-type UserDefinedSink_SinkFnServerTest struct {
+type SinkFnServerTest struct {
 	ctx     context.Context
 	inputCh chan *sinkpb.SinkRequest
-	rl      *sinkpb.SinkResponseList
+	rl      *sinkpb.SinkResponse
 	grpc.ServerStream
 }
 
-func (t *UserDefinedSink_SinkFnServerTest) SendAndClose(list *sinkpb.SinkResponseList) error {
+func (t *SinkFnServerTest) SendAndClose(list *sinkpb.SinkResponse) error {
 	t.rl = list
 	return nil
 }
 
-func (t *UserDefinedSink_SinkFnServerTest) Recv() (*sinkpb.SinkRequest, error) {
+func (t *SinkFnServerTest) Recv() (*sinkpb.SinkRequest, error) {
 	val, ok := <-t.inputCh
 	if !ok {
 		return val, io.EOF
@@ -36,7 +36,7 @@ func (t *UserDefinedSink_SinkFnServerTest) Recv() (*sinkpb.SinkRequest, error) {
 	return val, nil
 }
 
-func (t *UserDefinedSink_SinkFnServerTest) Context() context.Context {
+func (t *SinkFnServerTest) Context() context.Context {
 	return t.ctx
 }
 
@@ -45,7 +45,7 @@ func TestService_SinkFn(t *testing.T) {
 		name     string
 		sh       Sinker
 		input    []*sinkpb.SinkRequest
-		expected []*sinkpb.SinkResponse
+		expected []*sinkpb.SinkResponse_Result
 	}{
 		{
 			name: "sink_fn_test_success",
@@ -81,7 +81,7 @@ func TestService_SinkFn(t *testing.T) {
 				}
 				return result
 			}),
-			expected: []*sinkpb.SinkResponse{
+			expected: []*sinkpb.SinkResponse_Result{
 				{
 					Success: true,
 					Id:      "one-processed",
@@ -133,7 +133,7 @@ func TestService_SinkFn(t *testing.T) {
 				}
 				return result
 			}),
-			expected: []*sinkpb.SinkResponse{
+			expected: []*sinkpb.SinkResponse_Result{
 				{
 					Success: false,
 					Id:      "one-processed",
@@ -158,7 +158,7 @@ func TestService_SinkFn(t *testing.T) {
 				Sinker: tt.sh,
 			}
 			ich := make(chan *sinkpb.SinkRequest)
-			udfReduceFnStream := &UserDefinedSink_SinkFnServerTest{
+			udfReduceFnStream := &SinkFnServerTest{
 				ctx:     context.Background(),
 				inputCh: ich,
 			}
@@ -178,8 +178,8 @@ func TestService_SinkFn(t *testing.T) {
 
 			wg.Wait()
 
-			if !reflect.DeepEqual(udfReduceFnStream.rl.Responses, tt.expected) {
-				t.Errorf("ReduceFn() got = %v, want %v", udfReduceFnStream.rl.Responses, tt.expected)
+			if !reflect.DeepEqual(udfReduceFnStream.rl.Results, tt.expected) {
+				t.Errorf("ReduceFn() got = %v, want %v", udfReduceFnStream.rl.Results, tt.expected)
 			}
 		})
 	}

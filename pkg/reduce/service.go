@@ -89,7 +89,7 @@ func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
 			return recvErr
 		}
 		unifiedKey := strings.Join(d.GetKeys(), shared.Delimiter)
-		var hd = NewHandlerDatum(d.GetValue(), d.GetEventTime().EventTime.AsTime(), d.GetWatermark().Watermark.AsTime())
+		var hd = NewHandlerDatum(d.GetValue(), d.EventTime.AsTime(), d.Watermark.AsTime())
 
 		ch, chok := chanMap[unifiedKey]
 		if !chok {
@@ -124,17 +124,17 @@ func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
 	return g.Wait()
 }
 
-func buildDatumList(messages Messages) *reducepb.ReduceResponseList {
-	datumList := &reducepb.ReduceResponseList{}
+func buildDatumList(messages Messages) *reducepb.ReduceResponse {
+	response := &reducepb.ReduceResponse{}
 	for _, msg := range messages {
-		datumList.Elements = append(datumList.Elements, &reducepb.ReduceResponse{
+		response.Results = append(response.Results, &reducepb.ReduceResponse_Result{
 			Keys:  msg.Keys(),
 			Value: msg.Value(),
 			Tags:  msg.Tags(),
 		})
 	}
 
-	return datumList
+	return response
 }
 
 func closeChannels(chanMap map[string]chan Datum) {

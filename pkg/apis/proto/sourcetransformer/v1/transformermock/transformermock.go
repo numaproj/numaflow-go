@@ -58,14 +58,14 @@ func (mr *MockSourceTransformerClientMockRecorder) IsReady(arg0, arg1 interface{
 }
 
 // SourceTransformer mocks base method.
-func (m *MockSourceTransformerClient) SourceTransformer(arg0 context.Context, arg1 *v1.SourceTransformerRequest, arg2 ...grpc.CallOption) (*v1.SourceTransformerResponseList, error) {
+func (m *MockSourceTransformerClient) SourceTransformer(arg0 context.Context, arg1 *v1.SourceTransformerRequest, arg2 ...grpc.CallOption) (*v1.SourceTransformerResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "SourceTransformer", varargs...)
-	ret0, _ := ret[0].(*v1.SourceTransformerResponseList)
+	ret0, _ := ret[0].(*v1.SourceTransformerResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

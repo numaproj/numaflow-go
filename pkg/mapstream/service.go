@@ -23,7 +23,7 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*mapstreampb.ReadyR
 
 // MapStreamFn applies a function to each request element and streams the results back.
 func (fs *Service) MapStreamFn(d *mapstreampb.MapStreamRequest, stream mapstreampb.MapStream_MapStreamFnServer) error {
-	var hd = NewHandlerDatum(d.GetValue(), d.GetEventTime().EventTime.AsTime(), d.GetWatermark().Watermark.AsTime())
+	var hd = NewHandlerDatum(d.GetValue(), d.EventTime.AsTime(), d.Watermark.AsTime())
 	ctx := stream.Context()
 	messageCh := make(chan Message)
 
@@ -42,7 +42,7 @@ func (fs *Service) MapStreamFn(d *mapstreampb.MapStreamRequest, stream mapstream
 				// Channel already closed, not closing again.
 				return nil
 			}
-			element := &mapstreampb.MapStreamResponse{
+			element := &mapstreampb.MapStreamResponse_Result{
 				Keys:  message.Keys(),
 				Value: message.Value(),
 				Tags:  message.Tags(),

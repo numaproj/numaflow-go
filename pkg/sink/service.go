@@ -55,7 +55,7 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*sinkpb.ReadyRespon
 // SinkFn applies a function to a list of datum element.
 func (fs *Service) SinkFn(stream sinkpb.Sink_SinkFnServer) error {
 	var (
-		responseList  []*sinkpb.SinkResponse
+		resultList    []*sinkpb.SinkResponse_Result
 		wg            sync.WaitGroup
 		datumStreamCh = make(chan Datum)
 		ctx           = stream.Context()
@@ -66,7 +66,7 @@ func (fs *Service) SinkFn(stream sinkpb.Sink_SinkFnServer) error {
 		defer wg.Done()
 		messages := fs.Sinker.Sink(ctx, datumStreamCh)
 		for _, msg := range messages {
-			responseList = append(responseList, &sinkpb.SinkResponse{
+			resultList = append(resultList, &sinkpb.SinkResponse_Result{
 				Id:      msg.ID,
 				Success: msg.Success,
 				ErrMsg:  msg.Err,
@@ -95,7 +95,7 @@ func (fs *Service) SinkFn(stream sinkpb.Sink_SinkFnServer) error {
 	}
 
 	wg.Wait()
-	return stream.SendAndClose(&sinkpb.SinkResponseList{
-		Responses: responseList,
+	return stream.SendAndClose(&sinkpb.SinkResponse{
+		Results: resultList,
 	})
 }

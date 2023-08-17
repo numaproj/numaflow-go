@@ -21,13 +21,13 @@ import (
 type ReduceFnServerTest struct {
 	ctx      context.Context
 	inputCh  chan *reducepb.ReduceRequest
-	outputCh chan *reducepb.ReduceResponseList
+	outputCh chan *reducepb.ReduceResponse
 	grpc.ServerStream
 }
 
 func NewReduceFnServerTest(ctx context.Context,
 	inputCh chan *reducepb.ReduceRequest,
-	outputCh chan *reducepb.ReduceResponseList) *ReduceFnServerTest {
+	outputCh chan *reducepb.ReduceResponse) *ReduceFnServerTest {
 	return &ReduceFnServerTest{
 		ctx:      ctx,
 		inputCh:  inputCh,
@@ -35,7 +35,7 @@ func NewReduceFnServerTest(ctx context.Context,
 	}
 }
 
-func (u *ReduceFnServerTest) Send(list *reducepb.ReduceResponseList) error {
+func (u *ReduceFnServerTest) Send(list *reducepb.ReduceResponse) error {
 	u.outputCh <- list
 	return nil
 }
@@ -58,7 +58,7 @@ func TestService_ReduceFn(t *testing.T) {
 		name        string
 		handler     Reducer
 		input       []*reducepb.ReduceRequest
-		expected    *reducepb.ReduceResponseList
+		expected    *reducepb.ReduceResponse
 		expectedErr bool
 	}{
 		{
@@ -75,24 +75,24 @@ func TestService_ReduceFn(t *testing.T) {
 				{
 					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(10)),
-					EventTime: &reducepb.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &reducepb.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: timestamppb.New(time.Time{}),
+					Watermark: timestamppb.New(time.Time{}),
 				},
 				{
 					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(20)),
-					EventTime: &reducepb.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &reducepb.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: timestamppb.New(time.Time{}),
+					Watermark: timestamppb.New(time.Time{}),
 				},
 				{
 					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(30)),
-					EventTime: &reducepb.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &reducepb.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: timestamppb.New(time.Time{}),
+					Watermark: timestamppb.New(time.Time{}),
 				},
 			},
-			expected: &reducepb.ReduceResponseList{
-				Elements: []*reducepb.ReduceResponse{
+			expected: &reducepb.ReduceResponse{
+				Results: []*reducepb.ReduceResponse_Result{
 					{
 						Keys:  []string{"client_test"},
 						Value: []byte(strconv.Itoa(60)),
@@ -115,42 +115,42 @@ func TestService_ReduceFn(t *testing.T) {
 				{
 					Keys:      []string{"client1"},
 					Value:     []byte(strconv.Itoa(10)),
-					EventTime: &reducepb.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &reducepb.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: timestamppb.New(time.Time{}),
+					Watermark: timestamppb.New(time.Time{}),
 				},
 				{
 					Keys:      []string{"client2"},
 					Value:     []byte(strconv.Itoa(20)),
-					EventTime: &reducepb.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &reducepb.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: timestamppb.New(time.Time{}),
+					Watermark: timestamppb.New(time.Time{}),
 				},
 				{
 					Keys:      []string{"client3"},
 					Value:     []byte(strconv.Itoa(30)),
-					EventTime: &reducepb.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &reducepb.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: timestamppb.New(time.Time{}),
+					Watermark: timestamppb.New(time.Time{}),
 				},
 				{
 					Keys:      []string{"client1"},
 					Value:     []byte(strconv.Itoa(10)),
-					EventTime: &reducepb.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &reducepb.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: timestamppb.New(time.Time{}),
+					Watermark: timestamppb.New(time.Time{}),
 				},
 				{
 					Keys:      []string{"client2"},
 					Value:     []byte(strconv.Itoa(20)),
-					EventTime: &reducepb.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &reducepb.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: timestamppb.New(time.Time{}),
+					Watermark: timestamppb.New(time.Time{}),
 				},
 				{
 					Keys:      []string{"client3"},
 					Value:     []byte(strconv.Itoa(30)),
-					EventTime: &reducepb.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &reducepb.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: timestamppb.New(time.Time{}),
+					Watermark: timestamppb.New(time.Time{}),
 				},
 			},
-			expected: &reducepb.ReduceResponseList{
-				Elements: []*reducepb.ReduceResponse{
+			expected: &reducepb.ReduceResponse{
+				Results: []*reducepb.ReduceResponse_Result{
 					{
 						Keys:  []string{"client1_test"},
 						Value: []byte(strconv.Itoa(20)),
@@ -181,24 +181,24 @@ func TestService_ReduceFn(t *testing.T) {
 				{
 					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(10)),
-					EventTime: &reducepb.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &reducepb.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: timestamppb.New(time.Time{}),
+					Watermark: timestamppb.New(time.Time{}),
 				},
 				{
 					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(20)),
-					EventTime: &reducepb.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &reducepb.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: timestamppb.New(time.Time{}),
+					Watermark: timestamppb.New(time.Time{}),
 				},
 				{
 					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(30)),
-					EventTime: &reducepb.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &reducepb.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: timestamppb.New(time.Time{}),
+					Watermark: timestamppb.New(time.Time{}),
 				},
 			},
-			expected: &reducepb.ReduceResponseList{
-				Elements: []*reducepb.ReduceResponse{
+			expected: &reducepb.ReduceResponse{
+				Results: []*reducepb.ReduceResponse_Result{
 					{
 						Value: []byte(strconv.Itoa(60)),
 					},
@@ -220,24 +220,24 @@ func TestService_ReduceFn(t *testing.T) {
 				{
 					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(10)),
-					EventTime: &reducepb.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &reducepb.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: timestamppb.New(time.Time{}),
+					Watermark: timestamppb.New(time.Time{}),
 				},
 				{
 					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(20)),
-					EventTime: &reducepb.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &reducepb.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: timestamppb.New(time.Time{}),
+					Watermark: timestamppb.New(time.Time{}),
 				},
 				{
 					Keys:      []string{"client"},
 					Value:     []byte(strconv.Itoa(30)),
-					EventTime: &reducepb.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &reducepb.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: timestamppb.New(time.Time{}),
+					Watermark: timestamppb.New(time.Time{}),
 				},
 			},
-			expected: &reducepb.ReduceResponseList{
-				Elements: []*reducepb.ReduceResponse{
+			expected: &reducepb.ReduceResponse{
+				Results: []*reducepb.ReduceResponse_Result{
 					{
 						Tags:  []string{DROP},
 						Value: []byte{},
@@ -258,8 +258,8 @@ func TestService_ReduceFn(t *testing.T) {
 			ctx := grpcmd.NewIncomingContext(context.Background(), grpcmd.New(map[string]string{shared.WinStartTime: "60000", shared.WinEndTime: "120000"}))
 
 			inputCh := make(chan *reducepb.ReduceRequest)
-			outputCh := make(chan *reducepb.ReduceResponseList)
-			result := &reducepb.ReduceResponseList{}
+			outputCh := make(chan *reducepb.ReduceResponse)
+			result := &reducepb.ReduceResponse{}
 
 			udfReduceFnStream := NewReduceFnServerTest(ctx, inputCh, outputCh)
 
@@ -277,7 +277,7 @@ func TestService_ReduceFn(t *testing.T) {
 			go func() {
 				defer wg.Done()
 				for msg := range outputCh {
-					result.Elements = append(result.Elements, msg.Elements...)
+					result.Results = append(result.Results, msg.Results...)
 				}
 			}()
 
@@ -293,8 +293,8 @@ func TestService_ReduceFn(t *testing.T) {
 			}
 
 			//sort and compare, since order of the output doesn't matter
-			sort.Slice(result.Elements, func(i, j int) bool {
-				return string(result.Elements[i].Value) < string(result.Elements[j].Value)
+			sort.Slice(result.Results, func(i, j int) bool {
+				return string(result.Results[i].Value) < string(result.Results[j].Value)
 			})
 
 			if !reflect.DeepEqual(result, tt.expected) {

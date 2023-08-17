@@ -48,7 +48,7 @@ func (c *reduceClient) ReduceFn(ctx context.Context, opts ...grpc.CallOption) (R
 
 type Reduce_ReduceFnClient interface {
 	Send(*ReduceRequest) error
-	Recv() (*ReduceResponseList, error)
+	Recv() (*ReduceResponse, error)
 	grpc.ClientStream
 }
 
@@ -60,8 +60,8 @@ func (x *reduceReduceFnClient) Send(m *ReduceRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *reduceReduceFnClient) Recv() (*ReduceResponseList, error) {
-	m := new(ReduceResponseList)
+func (x *reduceReduceFnClient) Recv() (*ReduceResponse, error) {
+	m := new(ReduceResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -116,7 +116,7 @@ func _Reduce_ReduceFn_Handler(srv interface{}, stream grpc.ServerStream) error {
 }
 
 type Reduce_ReduceFnServer interface {
-	Send(*ReduceResponseList) error
+	Send(*ReduceResponse) error
 	Recv() (*ReduceRequest, error)
 	grpc.ServerStream
 }
@@ -125,7 +125,7 @@ type reduceReduceFnServer struct {
 	grpc.ServerStream
 }
 
-func (x *reduceReduceFnServer) Send(m *ReduceResponseList) error {
+func (x *reduceReduceFnServer) Send(m *ReduceResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 

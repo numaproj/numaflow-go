@@ -24,7 +24,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MapClient interface {
 	// MapFn applies a function to each map request element.
-	MapFn(ctx context.Context, in *MapRequest, opts ...grpc.CallOption) (*MapResponseList, error)
+	MapFn(ctx context.Context, in *MapRequest, opts ...grpc.CallOption) (*MapResponse, error)
 	// IsReady is the heartbeat endpoint for gRPC.
 	IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReadyResponse, error)
 }
@@ -37,8 +37,8 @@ func NewMapClient(cc grpc.ClientConnInterface) MapClient {
 	return &mapClient{cc}
 }
 
-func (c *mapClient) MapFn(ctx context.Context, in *MapRequest, opts ...grpc.CallOption) (*MapResponseList, error) {
-	out := new(MapResponseList)
+func (c *mapClient) MapFn(ctx context.Context, in *MapRequest, opts ...grpc.CallOption) (*MapResponse, error) {
+	out := new(MapResponse)
 	err := c.cc.Invoke(ctx, "/map.v1.Map/MapFn", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -60,7 +60,7 @@ func (c *mapClient) IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc
 // for forward compatibility
 type MapServer interface {
 	// MapFn applies a function to each map request element.
-	MapFn(context.Context, *MapRequest) (*MapResponseList, error)
+	MapFn(context.Context, *MapRequest) (*MapResponse, error)
 	// IsReady is the heartbeat endpoint for gRPC.
 	IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error)
 	mustEmbedUnimplementedMapServer()
@@ -70,7 +70,7 @@ type MapServer interface {
 type UnimplementedMapServer struct {
 }
 
-func (UnimplementedMapServer) MapFn(context.Context, *MapRequest) (*MapResponseList, error) {
+func (UnimplementedMapServer) MapFn(context.Context, *MapRequest) (*MapResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MapFn not implemented")
 }
 func (UnimplementedMapServer) IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error) {

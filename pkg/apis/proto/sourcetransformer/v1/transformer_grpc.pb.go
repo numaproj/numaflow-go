@@ -26,7 +26,7 @@ type SourceTransformerClient interface {
 	// SourceTransformer applies a function to each request element.
 	// In addition to map function, SourceTransformer also supports assigning a new event time to datum.
 	// SourceTransformer can be used only at source vertex by source data transformer.
-	SourceTransformer(ctx context.Context, in *SourceTransformerRequest, opts ...grpc.CallOption) (*SourceTransformerResponseList, error)
+	SourceTransformer(ctx context.Context, in *SourceTransformerRequest, opts ...grpc.CallOption) (*SourceTransformerResponse, error)
 	// IsReady is the heartbeat endpoint for gRPC.
 	IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReadyResponse, error)
 }
@@ -39,8 +39,8 @@ func NewSourceTransformerClient(cc grpc.ClientConnInterface) SourceTransformerCl
 	return &sourceTransformerClient{cc}
 }
 
-func (c *sourceTransformerClient) SourceTransformer(ctx context.Context, in *SourceTransformerRequest, opts ...grpc.CallOption) (*SourceTransformerResponseList, error) {
-	out := new(SourceTransformerResponseList)
+func (c *sourceTransformerClient) SourceTransformer(ctx context.Context, in *SourceTransformerRequest, opts ...grpc.CallOption) (*SourceTransformerResponse, error) {
+	out := new(SourceTransformerResponse)
 	err := c.cc.Invoke(ctx, "/sourcetransformer.v1.SourceTransformer/SourceTransformer", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -64,7 +64,7 @@ type SourceTransformerServer interface {
 	// SourceTransformer applies a function to each request element.
 	// In addition to map function, SourceTransformer also supports assigning a new event time to datum.
 	// SourceTransformer can be used only at source vertex by source data transformer.
-	SourceTransformer(context.Context, *SourceTransformerRequest) (*SourceTransformerResponseList, error)
+	SourceTransformer(context.Context, *SourceTransformerRequest) (*SourceTransformerResponse, error)
 	// IsReady is the heartbeat endpoint for gRPC.
 	IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error)
 	mustEmbedUnimplementedSourceTransformerServer()
@@ -74,7 +74,7 @@ type SourceTransformerServer interface {
 type UnimplementedSourceTransformerServer struct {
 }
 
-func (UnimplementedSourceTransformerServer) SourceTransformer(context.Context, *SourceTransformerRequest) (*SourceTransformerResponseList, error) {
+func (UnimplementedSourceTransformerServer) SourceTransformer(context.Context, *SourceTransformerRequest) (*SourceTransformerResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SourceTransformer not implemented")
 }
 func (UnimplementedSourceTransformerServer) IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error) {

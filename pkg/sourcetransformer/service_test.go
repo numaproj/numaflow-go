@@ -8,13 +8,13 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/sourcetransformer/v1"
+	stpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sourcetransformer/v1"
 )
 
 func TestService_MapTFn(t *testing.T) {
 	type args struct {
 		ctx context.Context
-		d   *v1.SourceTransformerRequest
+		d   *stpb.SourceTransformerRequest
 	}
 
 	testTime := time.Date(2021, 8, 15, 14, 30, 45, 100, time.Local)
@@ -22,7 +22,7 @@ func TestService_MapTFn(t *testing.T) {
 		name    string
 		handler SourceTransformer
 		args    args
-		want    *v1.SourceTransformerResponseList
+		want    *stpb.SourceTransformerResponse
 		wantErr bool
 	}{
 		{
@@ -33,17 +33,17 @@ func TestService_MapTFn(t *testing.T) {
 			}),
 			args: args{
 				ctx: context.Background(),
-				d: &v1.SourceTransformerRequest{
+				d: &stpb.SourceTransformerRequest{
 					Keys:      []string{"client"},
 					Value:     []byte(`test`),
-					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: timestamppb.New(time.Time{}),
+					Watermark: timestamppb.New(time.Time{}),
 				},
 			},
-			want: &v1.SourceTransformerResponseList{
-				Elements: []*v1.SourceTransformerResponse{
+			want: &stpb.SourceTransformerResponse{
+				Results: []*stpb.SourceTransformerResponse_Result{
 					{
-						EventTime: &v1.EventTime{EventTime: timestamppb.New(testTime)},
+						EventTime: timestamppb.New(testTime),
 						Keys:      []string{"client_test"},
 						Value:     []byte(`test`),
 					},
@@ -59,17 +59,17 @@ func TestService_MapTFn(t *testing.T) {
 			}),
 			args: args{
 				ctx: context.Background(),
-				d: &v1.SourceTransformerRequest{
+				d: &stpb.SourceTransformerRequest{
 					Keys:      []string{"client"},
 					Value:     []byte(`test`),
-					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: timestamppb.New(time.Time{}),
+					Watermark: timestamppb.New(time.Time{}),
 				},
 			},
-			want: &v1.SourceTransformerResponseList{
-				Elements: []*v1.SourceTransformerResponse{
+			want: &stpb.SourceTransformerResponse{
+				Results: []*stpb.SourceTransformerResponse_Result{
 					{
-						EventTime: &v1.EventTime{EventTime: timestamppb.New(testTime)},
+						EventTime: timestamppb.New(testTime),
 						Value:     []byte(`test`),
 					},
 				},
@@ -83,17 +83,17 @@ func TestService_MapTFn(t *testing.T) {
 			}),
 			args: args{
 				ctx: context.Background(),
-				d: &v1.SourceTransformerRequest{
+				d: &stpb.SourceTransformerRequest{
 					Keys:      []string{"client"},
 					Value:     []byte(`test`),
-					EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &v1.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: timestamppb.New(time.Time{}),
+					Watermark: timestamppb.New(time.Time{}),
 				},
 			},
-			want: &v1.SourceTransformerResponseList{
-				Elements: []*v1.SourceTransformerResponse{
+			want: &stpb.SourceTransformerResponse{
+				Results: []*stpb.SourceTransformerResponse_Result{
 					{
-						EventTime: &v1.EventTime{EventTime: timestamppb.New(time.Time{})},
+						EventTime: timestamppb.New(time.Time{}),
 						Tags:      []string{DROP},
 						Value:     []byte{},
 					},

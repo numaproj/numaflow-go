@@ -20,7 +20,7 @@ func TestService_MapFn(t *testing.T) {
 		name    string
 		handler Mapper
 		args    args
-		want    *mappb.MapResponseList
+		want    *mappb.MapResponse
 		wantErr bool
 	}{
 		{
@@ -34,12 +34,12 @@ func TestService_MapFn(t *testing.T) {
 				d: &mappb.MapRequest{
 					Keys:      []string{"client"},
 					Value:     []byte(`test`),
-					EventTime: &mappb.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &mappb.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: timestamppb.New(time.Time{}),
+					Watermark: timestamppb.New(time.Time{}),
 				},
 			},
-			want: &mappb.MapResponseList{
-				Elements: []*mappb.MapResponse{
+			want: &mappb.MapResponse{
+				Results: []*mappb.MapResponse_Result{
 					{
 						Keys:  []string{"client_test"},
 						Value: []byte(`test`),
@@ -59,12 +59,12 @@ func TestService_MapFn(t *testing.T) {
 				d: &mappb.MapRequest{
 					Keys:      []string{"client"},
 					Value:     []byte(`test`),
-					EventTime: &mappb.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &mappb.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: timestamppb.New(time.Time{}),
+					Watermark: timestamppb.New(time.Time{}),
 				},
 			},
-			want: &mappb.MapResponseList{
-				Elements: []*mappb.MapResponse{
+			want: &mappb.MapResponse{
+				Results: []*mappb.MapResponse_Result{
 					{
 						Value: []byte(`test`),
 					},
@@ -82,12 +82,12 @@ func TestService_MapFn(t *testing.T) {
 				d: &mappb.MapRequest{
 					Keys:      []string{"client"},
 					Value:     []byte(`test`),
-					EventTime: &mappb.EventTime{EventTime: timestamppb.New(time.Time{})},
-					Watermark: &mappb.Watermark{Watermark: timestamppb.New(time.Time{})},
+					EventTime: timestamppb.New(time.Time{}),
+					Watermark: timestamppb.New(time.Time{}),
 				},
 			},
-			want: &mappb.MapResponseList{
-				Elements: []*mappb.MapResponse{
+			want: &mappb.MapResponse{
+				Results: []*mappb.MapResponse_Result{
 					{
 						Tags:  []string{DROP},
 						Value: []byte{},
