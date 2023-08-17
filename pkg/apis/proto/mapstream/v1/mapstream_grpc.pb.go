@@ -53,7 +53,7 @@ func (c *mapStreamClient) MapStreamFn(ctx context.Context, in *MapStreamRequest,
 }
 
 type MapStream_MapStreamFnClient interface {
-	Recv() (*MapStreamResponse_Result, error)
+	Recv() (*MapStreamResponse, error)
 	grpc.ClientStream
 }
 
@@ -61,8 +61,8 @@ type mapStreamMapStreamFnClient struct {
 	grpc.ClientStream
 }
 
-func (x *mapStreamMapStreamFnClient) Recv() (*MapStreamResponse_Result, error) {
-	m := new(MapStreamResponse_Result)
+func (x *mapStreamMapStreamFnClient) Recv() (*MapStreamResponse, error) {
+	m := new(MapStreamResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -121,7 +121,7 @@ func _MapStream_MapStreamFn_Handler(srv interface{}, stream grpc.ServerStream) e
 }
 
 type MapStream_MapStreamFnServer interface {
-	Send(*MapStreamResponse_Result) error
+	Send(*MapStreamResponse) error
 	grpc.ServerStream
 }
 
@@ -129,7 +129,7 @@ type mapStreamMapStreamFnServer struct {
 	grpc.ServerStream
 }
 
-func (x *mapStreamMapStreamFnServer) Send(m *MapStreamResponse_Result) error {
+func (x *mapStreamMapStreamFnServer) Send(m *MapStreamResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 

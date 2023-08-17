@@ -8,10 +8,10 @@ import "google/protobuf/empty.proto";
 package sourcetransformer.v1;
 
 service SourceTransformer {
-  // SourceTransformer applies a function to each request element.
-  // In addition to map function, SourceTransformer also supports assigning a new event time to datum.
-  // SourceTransformer can be used only at source vertex by source data transformer.
-  rpc SourceTransformer(SourceTransformerRequest) returns (SourceTransformerResponse);
+  // SourceTransformFn applies a function to each request element.
+  // In addition to map function, SourceTransformFn also supports assigning a new event time to response.
+  // SourceTransformFn can be used only at source vertex by source data transformer.
+  rpc SourceTransformFn(SourceTransformerRequest) returns (SourceTransformerResponse);
 
   // IsReady is the heartbeat endpoint for gRPC.
   rpc IsReady(google.protobuf.Empty) returns (ReadyResponse);

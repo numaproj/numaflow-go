@@ -17,13 +17,13 @@ import (
 
 type MapStreamFnServerTest struct {
 	ctx      context.Context
-	outputCh chan mapstreampb.MapStreamResponse_Result
+	outputCh chan mapstreampb.MapStreamResponse
 	grpc.ServerStream
 }
 
 func NewMapStreamFnServerTest(
 	ctx context.Context,
-	outputCh chan mapstreampb.MapStreamResponse_Result,
+	outputCh chan mapstreampb.MapStreamResponse,
 ) *MapStreamFnServerTest {
 	return &MapStreamFnServerTest{
 		ctx:      ctx,
@@ -31,7 +31,7 @@ func NewMapStreamFnServerTest(
 	}
 }
 
-func (u *MapStreamFnServerTest) Send(d *mapstreampb.MapStreamResponse_Result) error {
+func (u *MapStreamFnServerTest) Send(d *mapstreampb.MapStreamResponse) error {
 	u.outputCh <- *d
 	return nil
 }
@@ -54,7 +54,7 @@ func NewMapStreamFnServerErrTest(
 	}
 }
 
-func (u *MapStreamFnServerErrTest) Send(_ *mapstreampb.MapStreamResponse_Result) error {
+func (u *MapStreamFnServerErrTest) Send(_ *mapstreampb.MapStreamResponse) error {
 	return fmt.Errorf("send error")
 }
 
@@ -67,7 +67,7 @@ func TestService_MapFnStream(t *testing.T) {
 		name        string
 		handler     MapStreamer
 		input       *mapstreampb.MapStreamRequest
-		expected    []*mapstreampb.MapStreamResponse_Result
+		expected    []*mapstreampb.MapStreamResponse
 		expectedErr bool
 		streamErr   bool
 	}{
@@ -84,10 +84,12 @@ func TestService_MapFnStream(t *testing.T) {
 				EventTime: timestamppb.New(time.Time{}),
 				Watermark: timestamppb.New(time.Time{}),
 			},
-			expected: []*mapstreampb.MapStreamResponse_Result{
+			expected: []*mapstreampb.MapStreamResponse{
 				{
-					Keys:  []string{"client_test"},
-					Value: []byte(`test`),
+					Result: &mapstreampb.MapStreamResponse_Result{
+						Keys:  []string{"client_test"},
+						Value: []byte(`test`),
+					},
 				},
 			},
 			expectedErr: false,
@@ -104,10 +106,12 @@ func TestService_MapFnStream(t *testing.T) {
 				EventTime: timestamppb.New(time.Time{}),
 				Watermark: timestamppb.New(time.Time{}),
 			},
-			expected: []*mapstreampb.MapStreamResponse_Result{
+			expected: []*mapstreampb.MapStreamResponse{
 				{
-					Keys:  []string{"client_test"},
-					Value: []byte(`test`),
+					Result: &mapstreampb.MapStreamResponse_Result{
+						Keys:  []string{"client_test"},
+						Value: []byte(`test`),
+					},
 				},
 			},
 			expectedErr: false,
@@ -125,9 +129,11 @@ func TestService_MapFnStream(t *testing.T) {
 				EventTime: timestamppb.New(time.Time{}),
 				Watermark: timestamppb.New(time.Time{}),
 			},
-			expected: []*mapstreampb.MapStreamResponse_Result{
+			expected: []*mapstreampb.MapStreamResponse{
 				{
-					Value: []byte(`test`),
+					Result: &mapstreampb.MapStreamResponse_Result{
+						Value: []byte(`test`),
+					},
 				},
 			},
 			expectedErr: false,
@@ -144,10 +150,12 @@ func TestService_MapFnStream(t *testing.T) {
 				EventTime: timestamppb.New(time.Time{}),
 				Watermark: timestamppb.New(time.Time{}),
 			},
-			expected: []*mapstreampb.MapStreamResponse_Result{
+			expected: []*mapstreampb.MapStreamResponse{
 				{
-					Tags:  []string{DROP},
-					Value: []byte{},
+					Result: &mapstreampb.MapStreamResponse_Result{
+						Tags:  []string{DROP},
+						Value: []byte{},
+					},
 				},
 			},
 			expectedErr: false,
@@ -164,10 +172,12 @@ func TestService_MapFnStream(t *testing.T) {
 				EventTime: timestamppb.New(time.Time{}),
 				Watermark: timestamppb.New(time.Time{}),
 			},
-			expected: []*mapstreampb.MapStreamResponse_Result{
+			expected: []*mapstreampb.MapStreamResponse{
 				{
-					Tags:  []string{DROP},
-					Value: []byte{},
+					Result: &mapstreampb.MapStreamResponse_Result{
+						Tags:  []string{DROP},
+						Value: []byte{},
+					},
 				},
 			},
 			expectedErr: true,
@@ -182,8 +192,8 @@ func TestService_MapFnStream(t *testing.T) {
 			// because we are not using gRPC, we directly set a new incoming ctx
 			// instead of the regular outgoing context in the real gRPC connection.
 			ctx := context.Background()
-			outputCh := make(chan mapstreampb.MapStreamResponse_Result)
-			result := make([]*mapstreampb.MapStreamResponse_Result, 0)
+			outputCh := make(chan mapstreampb.MapStreamResponse)
+			result := make([]*mapstreampb.MapStreamResponse, 0)
 
 			var udfMapStreamFnStream mapstreampb.MapStream_MapStreamFnServer
 			if tt.streamErr {

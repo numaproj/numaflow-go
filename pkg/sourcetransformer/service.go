@@ -21,10 +21,10 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*v1.ReadyResponse, 
 	return &v1.ReadyResponse{Ready: true}, nil
 }
 
-// MapTFn applies a function to each datum element.
-// In addition to map function, MapTFn also supports assigning a new event time to datum.
-// MapTFn can be used only at source vertex by source data transformer.
-func (fs *Service) MapTFn(ctx context.Context, d *v1.SourceTransformerRequest) (*v1.SourceTransformerResponse, error) {
+// SourceTransformFn applies a function to each request element.
+// In addition to map function, SourceTransformFn also supports assigning a new event time to response.
+// SourceTransformFn can be used only at source vertex by source data transformer.
+func (fs *Service) SourceTransformFn(ctx context.Context, d *v1.SourceTransformerRequest) (*v1.SourceTransformerResponse, error) {
 	var hd = NewHandlerDatum(d.GetValue(), d.EventTime.AsTime(), d.Watermark.AsTime())
 	messageTs := fs.Transformer.Transform(ctx, d.GetKeys(), hd)
 	var results []*v1.SourceTransformerResponse_Result

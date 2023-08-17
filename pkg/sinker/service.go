@@ -52,7 +52,7 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*sinkpb.ReadyRespon
 	return &sinkpb.ReadyResponse{Ready: true}, nil
 }
 
-// SinkFn applies a function to a list of datum element.
+// SinkFn applies a sink function to a every element.
 func (fs *Service) SinkFn(stream sinkpb.Sink_SinkFnServer) error {
 	var (
 		resultList    []*sinkpb.SinkResponse_Result

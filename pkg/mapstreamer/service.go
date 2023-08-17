@@ -9,7 +9,7 @@ import (
 )
 
 // Service implements the proto gen server interface and contains the map
-// streaming handler
+// streaming function.
 type Service struct {
 	mapstreampb.UnimplementedMapStreamServer
 
@@ -42,10 +42,12 @@ func (fs *Service) MapStreamFn(d *mapstreampb.MapStreamRequest, stream mapstream
 				// Channel already closed, not closing again.
 				return nil
 			}
-			element := &mapstreampb.MapStreamResponse_Result{
-				Keys:  message.Keys(),
-				Value: message.Value(),
-				Tags:  message.Tags(),
+			element := &mapstreampb.MapStreamResponse{
+				Result: &mapstreampb.MapStreamResponse_Result{
+					Keys:  message.Keys(),
+					Value: message.Value(),
+					Tags:  message.Tags(),
+				},
 			}
 			err := stream.Send(element)
 			// the error here is returned by stream.Send() which is already a gRPC error

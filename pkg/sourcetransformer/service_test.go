@@ -11,7 +11,7 @@ import (
 	stpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sourcetransformer/v1"
 )
 
-func TestService_MapTFn(t *testing.T) {
+func TestService_sourceTransformFn(t *testing.T) {
 	type args struct {
 		ctx context.Context
 		d   *stpb.SourceTransformerRequest
@@ -26,7 +26,7 @@ func TestService_MapTFn(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "mapT_fn_forward_msg",
+			name: "sourceTransform_fn_forward_msg",
 			handler: SourceTransformFunc(func(ctx context.Context, keys []string, datum Datum) Messages {
 				msg := datum.Value()
 				return MessagesBuilder().Append(NewMessage(msg, testTime).WithKeys([]string{keys[0] + "_test"}))
@@ -52,7 +52,7 @@ func TestService_MapTFn(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "mapT_fn_forward_msg_forward_to_all",
+			name: "sourceTransform_fn_forward_msg_forward_to_all",
 			handler: SourceTransformFunc(func(ctx context.Context, keys []string, datum Datum) Messages {
 				msg := datum.Value()
 				return MessagesBuilder().Append(NewMessage(msg, testTime))
@@ -77,7 +77,7 @@ func TestService_MapTFn(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "mapT_fn_forward_msg_drop_msg",
+			name: "sourceTransform_fn_forward_msg_drop_msg",
 			handler: SourceTransformFunc(func(ctx context.Context, keys []string, datum Datum) Messages {
 				return MessagesBuilder().Append(MessageToDrop())
 			}),
@@ -111,13 +111,13 @@ func TestService_MapTFn(t *testing.T) {
 			// because we are not using gRPC, we directly set a new incoming ctx
 			// instead of the regular outgoing context in the real gRPC connection.
 			ctx := context.Background()
-			got, err := fs.MapTFn(ctx, tt.args.d)
+			got, err := fs.SourceTransformFn(ctx, tt.args.d)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("MapTFn() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("SourceTransformFn() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("MapTFn() got = %v, want %v", got, tt.want)
+				t.Errorf("SourceTransformFn() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

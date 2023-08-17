@@ -23,10 +23,10 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SourceTransformerClient interface {
-	// SourceTransformer applies a function to each request element.
-	// In addition to map function, SourceTransformer also supports assigning a new event time to datum.
-	// SourceTransformer can be used only at source vertex by source data transformer.
-	SourceTransformer(ctx context.Context, in *SourceTransformerRequest, opts ...grpc.CallOption) (*SourceTransformerResponse, error)
+	// SourceTransformFn applies a function to each request element.
+	// In addition to map function, SourceTransformFn also supports assigning a new event time to response.
+	// SourceTransformFn can be used only at source vertex by source data transformer.
+	SourceTransformFn(ctx context.Context, in *SourceTransformerRequest, opts ...grpc.CallOption) (*SourceTransformerResponse, error)
 	// IsReady is the heartbeat endpoint for gRPC.
 	IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReadyResponse, error)
 }
@@ -39,9 +39,9 @@ func NewSourceTransformerClient(cc grpc.ClientConnInterface) SourceTransformerCl
 	return &sourceTransformerClient{cc}
 }
 
-func (c *sourceTransformerClient) SourceTransformer(ctx context.Context, in *SourceTransformerRequest, opts ...grpc.CallOption) (*SourceTransformerResponse, error) {
+func (c *sourceTransformerClient) SourceTransformFn(ctx context.Context, in *SourceTransformerRequest, opts ...grpc.CallOption) (*SourceTransformerResponse, error) {
 	out := new(SourceTransformerResponse)
-	err := c.cc.Invoke(ctx, "/sourcetransformer.v1.Transform/Transform", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/sourcetransformer.v1.SourceTransformer/SourceTransformFn", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ func (c *sourceTransformerClient) SourceTransformer(ctx context.Context, in *Sou
 
 func (c *sourceTransformerClient) IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReadyResponse, error) {
 	out := new(ReadyResponse)
-	err := c.cc.Invoke(ctx, "/sourcetransformer.v1.Transform/IsReady", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/sourcetransformer.v1.SourceTransformer/IsReady", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -61,10 +61,10 @@ func (c *sourceTransformerClient) IsReady(ctx context.Context, in *emptypb.Empty
 // All implementations must embed UnimplementedSourceTransformerServer
 // for forward compatibility
 type SourceTransformerServer interface {
-	// SourceTransformer applies a function to each request element.
-	// In addition to map function, SourceTransformer also supports assigning a new event time to datum.
-	// SourceTransformer can be used only at source vertex by source data transformer.
-	SourceTransformer(context.Context, *SourceTransformerRequest) (*SourceTransformerResponse, error)
+	// SourceTransformFn applies a function to each request element.
+	// In addition to map function, SourceTransformFn also supports assigning a new event time to response.
+	// SourceTransformFn can be used only at source vertex by source data transformer.
+	SourceTransformFn(context.Context, *SourceTransformerRequest) (*SourceTransformerResponse, error)
 	// IsReady is the heartbeat endpoint for gRPC.
 	IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error)
 	mustEmbedUnimplementedSourceTransformerServer()
@@ -74,8 +74,8 @@ type SourceTransformerServer interface {
 type UnimplementedSourceTransformerServer struct {
 }
 
-func (UnimplementedSourceTransformerServer) SourceTransformer(context.Context, *SourceTransformerRequest) (*SourceTransformerResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Transform not implemented")
+func (UnimplementedSourceTransformerServer) SourceTransformFn(context.Context, *SourceTransformerRequest) (*SourceTransformerResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SourceTransformFn not implemented")
 }
 func (UnimplementedSourceTransformerServer) IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsReady not implemented")
@@ -93,20 +93,20 @@ func RegisterSourceTransformerServer(s grpc.ServiceRegistrar, srv SourceTransfor
 	s.RegisterService(&SourceTransformer_ServiceDesc, srv)
 }
 
-func _SourceTransformer_SourceTransformer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SourceTransformer_SourceTransformFn_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SourceTransformerRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SourceTransformerServer).SourceTransformer(ctx, in)
+		return srv.(SourceTransformerServer).SourceTransformFn(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/sourcetransformer.v1.Transform/Transform",
+		FullMethod: "/sourcetransformer.v1.SourceTransformer/SourceTransformFn",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SourceTransformerServer).SourceTransformer(ctx, req.(*SourceTransformerRequest))
+		return srv.(SourceTransformerServer).SourceTransformFn(ctx, req.(*SourceTransformerRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -121,7 +121,7 @@ func _SourceTransformer_IsReady_Handler(srv interface{}, ctx context.Context, de
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/sourcetransformer.v1.Transform/IsReady",
+		FullMethod: "/sourcetransformer.v1.SourceTransformer/IsReady",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SourceTransformerServer).IsReady(ctx, req.(*emptypb.Empty))
@@ -129,16 +129,16 @@ func _SourceTransformer_IsReady_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-// SourceTransformer_ServiceDesc is the grpc.ServiceDesc for Transform service.
+// SourceTransformer_ServiceDesc is the grpc.ServiceDesc for SourceTransformer service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var SourceTransformer_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "sourcetransformer.v1.Transform",
+	ServiceName: "sourcetransformer.v1.SourceTransformer",
 	HandlerType: (*SourceTransformerServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Transform",
-			Handler:    _SourceTransformer_SourceTransformer_Handler,
+			MethodName: "SourceTransformFn",
+			Handler:    _SourceTransformer_SourceTransformFn_Handler,
 		},
 		{
 			MethodName: "IsReady",

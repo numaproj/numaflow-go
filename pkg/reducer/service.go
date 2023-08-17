@@ -74,7 +74,7 @@ func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
 	md = NewMetadata(iw)
 
 	// read messages from the stream and write the messages to corresponding channels
-	// if the channel is not created, create the channel and invoke the mapfn
+	// if the channel is not created, create the channel and invoke the reduceFn
 	for {
 		d, recvErr := stream.Recv()
 		// if EOF, close all the channels
