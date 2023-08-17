@@ -8,7 +8,7 @@ const (
 	ReduceAddr            = "/var/run/numaflow/reduce.sock"
 	SourceAddr            = "/var/run/numaflow/source.sock"
 	SinkAddr              = "/var/run/numaflow/sink.sock"
-	SourceTransformerAddr = "/var/run/numaflow/sourcetransformer.sock"
+	SourceTransformerAddr = "/var/run/numaflow/sourcetransform.sock"
 	TcpAddr               = ":55551"
 	// DefaultMaxMessageSize overrides gRPC max message size configuration
 	// https://github.com/grpc/grpc-go/blob/master/server.go#L58-L59

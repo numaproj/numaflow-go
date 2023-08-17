@@ -8,13 +8,13 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	stpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sourcetransformer/v1"
+	stpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sourcetransform/v1"
 )
 
 func TestService_sourceTransformFn(t *testing.T) {
 	type args struct {
 		ctx context.Context
-		d   *stpb.SourceTransformerRequest
+		d   *stpb.SourceTransformRequest
 	}
 
 	testTime := time.Date(2021, 8, 15, 14, 30, 45, 100, time.Local)
@@ -22,7 +22,7 @@ func TestService_sourceTransformFn(t *testing.T) {
 		name    string
 		handler SourceTransformer
 		args    args
-		want    *stpb.SourceTransformerResponse
+		want    *stpb.SourceTransformResponse
 		wantErr bool
 	}{
 		{
@@ -33,15 +33,15 @@ func TestService_sourceTransformFn(t *testing.T) {
 			}),
 			args: args{
 				ctx: context.Background(),
-				d: &stpb.SourceTransformerRequest{
+				d: &stpb.SourceTransformRequest{
 					Keys:      []string{"client"},
 					Value:     []byte(`test`),
 					EventTime: timestamppb.New(time.Time{}),
 					Watermark: timestamppb.New(time.Time{}),
 				},
 			},
-			want: &stpb.SourceTransformerResponse{
-				Results: []*stpb.SourceTransformerResponse_Result{
+			want: &stpb.SourceTransformResponse{
+				Results: []*stpb.SourceTransformResponse_Result{
 					{
 						EventTime: timestamppb.New(testTime),
 						Keys:      []string{"client_test"},
@@ -59,15 +59,15 @@ func TestService_sourceTransformFn(t *testing.T) {
 			}),
 			args: args{
 				ctx: context.Background(),
-				d: &stpb.SourceTransformerRequest{
+				d: &stpb.SourceTransformRequest{
 					Keys:      []string{"client"},
 					Value:     []byte(`test`),
 					EventTime: timestamppb.New(time.Time{}),
 					Watermark: timestamppb.New(time.Time{}),
 				},
 			},
-			want: &stpb.SourceTransformerResponse{
-				Results: []*stpb.SourceTransformerResponse_Result{
+			want: &stpb.SourceTransformResponse{
+				Results: []*stpb.SourceTransformResponse_Result{
 					{
 						EventTime: timestamppb.New(testTime),
 						Value:     []byte(`test`),
@@ -83,15 +83,15 @@ func TestService_sourceTransformFn(t *testing.T) {
 			}),
 			args: args{
 				ctx: context.Background(),
-				d: &stpb.SourceTransformerRequest{
+				d: &stpb.SourceTransformRequest{
 					Keys:      []string{"client"},
 					Value:     []byte(`test`),
 					EventTime: timestamppb.New(time.Time{}),
 					Watermark: timestamppb.New(time.Time{}),
 				},
 			},
-			want: &stpb.SourceTransformerResponse{
-				Results: []*stpb.SourceTransformerResponse_Result{
+			want: &stpb.SourceTransformResponse{
+				Results: []*stpb.SourceTransformResponse_Result{
 					{
 						EventTime: timestamppb.New(time.Time{}),
 						Tags:      []string{DROP},
