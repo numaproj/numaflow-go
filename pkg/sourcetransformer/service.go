@@ -26,7 +26,7 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*v1.ReadyResponse, 
 // MapTFn can be used only at source vertex by source data transformer.
 func (fs *Service) MapTFn(ctx context.Context, d *v1.SourceTransformerRequest) (*v1.SourceTransformerResponse, error) {
 	var hd = NewHandlerDatum(d.GetValue(), d.EventTime.AsTime(), d.Watermark.AsTime())
-	messageTs := fs.Transformer.SourceTransformer(ctx, d.GetKeys(), hd)
+	messageTs := fs.Transformer.Transform(ctx, d.GetKeys(), hd)
 	var results []*v1.SourceTransformerResponse_Result
 	for _, m := range messageTs.Items() {
 		results = append(results, &v1.SourceTransformerResponse_Result{

@@ -41,7 +41,7 @@ func NewSourceTransformerClient(cc grpc.ClientConnInterface) SourceTransformerCl
 
 func (c *sourceTransformerClient) SourceTransformer(ctx context.Context, in *SourceTransformerRequest, opts ...grpc.CallOption) (*SourceTransformerResponse, error) {
 	out := new(SourceTransformerResponse)
-	err := c.cc.Invoke(ctx, "/sourcetransformer.v1.SourceTransformer/SourceTransformer", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/sourcetransformer.v1.Transform/Transform", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ func (c *sourceTransformerClient) SourceTransformer(ctx context.Context, in *Sou
 
 func (c *sourceTransformerClient) IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReadyResponse, error) {
 	out := new(ReadyResponse)
-	err := c.cc.Invoke(ctx, "/sourcetransformer.v1.SourceTransformer/IsReady", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/sourcetransformer.v1.Transform/IsReady", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ type UnimplementedSourceTransformerServer struct {
 }
 
 func (UnimplementedSourceTransformerServer) SourceTransformer(context.Context, *SourceTransformerRequest) (*SourceTransformerResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SourceTransformer not implemented")
+	return nil, status.Errorf(codes.Unimplemented, "method Transform not implemented")
 }
 func (UnimplementedSourceTransformerServer) IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsReady not implemented")
@@ -103,7 +103,7 @@ func _SourceTransformer_SourceTransformer_Handler(srv interface{}, ctx context.C
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/sourcetransformer.v1.SourceTransformer/SourceTransformer",
+		FullMethod: "/sourcetransformer.v1.Transform/Transform",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SourceTransformerServer).SourceTransformer(ctx, req.(*SourceTransformerRequest))
@@ -121,7 +121,7 @@ func _SourceTransformer_IsReady_Handler(srv interface{}, ctx context.Context, de
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/sourcetransformer.v1.SourceTransformer/IsReady",
+		FullMethod: "/sourcetransformer.v1.Transform/IsReady",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SourceTransformerServer).IsReady(ctx, req.(*emptypb.Empty))
@@ -129,15 +129,15 @@ func _SourceTransformer_IsReady_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-// SourceTransformer_ServiceDesc is the grpc.ServiceDesc for SourceTransformer service.
+// SourceTransformer_ServiceDesc is the grpc.ServiceDesc for Transform service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var SourceTransformer_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "sourcetransformer.v1.SourceTransformer",
+	ServiceName: "sourcetransformer.v1.Transform",
 	HandlerType: (*SourceTransformerServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "SourceTransformer",
+			MethodName: "Transform",
 			Handler:    _SourceTransformer_SourceTransformer_Handler,
 		},
 		{

@@ -64,7 +64,7 @@ func (m *MockSourceTransformerClient) SourceTransformer(arg0 context.Context, ar
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "SourceTransformer", varargs...)
+	ret := m.ctrl.Call(m, "Transform", varargs...)
 	ret0, _ := ret[0].(*v1.SourceTransformerResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -74,5 +74,5 @@ func (m *MockSourceTransformerClient) SourceTransformer(arg0 context.Context, ar
 func (mr *MockSourceTransformerClientMockRecorder) SourceTransformer(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SourceTransformer", reflect.TypeOf((*MockSourceTransformerClient)(nil).SourceTransformer), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Transform", reflect.TypeOf((*MockSourceTransformerClient)(nil).SourceTransformer), varargs...)
 }

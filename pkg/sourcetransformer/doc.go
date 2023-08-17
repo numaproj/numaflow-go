@@ -1,32 +1,37 @@
 // Package source implements the server code for Source Transformer in golang.
 //
-// Example SourceTransformer (extracting event time from the datum payload)
-// SourceTransformer includes both Map and EventTime assignment functionalities.
-// Although the input datum already contains EventTime and Watermark, it's up to the SourceTransformer implementor to
+// Example Transform (extracting event time from the datum payload)
+// Transform includes both Map and EventTime assignment functionalities.
+// Although the input datum already contains EventTime and Watermark, it's up to the Transform implementor to
 // decide on whether to use them for generating new EventTime.
-// SourceTransformer can be used only at source vertex by source data transformer.
+// Transform can be used only at source vertex by source data transformer.
 /*
-  package main
+	package main
 
-  import (
-	"context"
-	"time"
+	import (
+		"context"
+		"log"
+		"time"
 
-	"github.com/numaproj/numaflow-go/pkg/sourcetransformer"
-  )
+		"github.com/numaproj/numaflow-go/pkg/sourcetransformer"
+	)
 
-  func mapTHandle(_ context.Context, keys []string, d sourcetransformer.Datum) sourcetransformer.Messages {
-	eventTime := getEventTime(d.Value())
-	return sourcetransformer.MessagesBuilder().Append(sourcetransformer.NewMessage(eventTime, d.Value()).WithKeys(keys)))
-  }
+	// AssignEventTime is a source transformer that assigns event time to the message.
+	type AssignEventTime struct {
+	}
 
-  func getEventTime(val []byte) time.Time {
-	...
-  }
+	func (a *AssignEventTime) Transform(ctx context.Context, keys []string, d sourcetransformer.Datum) sourcetransformer.Messages {
+		// Update message event time to time.Now()
+		eventTime := time.Now()
+		return sourcetransformer.MessagesBuilder().Append(sourcetransformer.NewMessage(d.Value(), eventTime).WithKeys(keys))
+	}
 
-  func main() {
-	sourcetransformer.NewServer(source.SourceTransformFunc(mapTHandle)).Start(context.Background())
-  }
+	func main() {
+		err := sourcetransformer.NewServer(&AssignEventTime{}).Start(context.Background())
+		if err != nil {
+			log.Panic("Failed to start map function server: ", err)
+		}
+	}
 */
 
 package sourcetransformer

@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	functionsdk "github.com/numaproj/numaflow-go/pkg/map"
+	functionsdk "github.com/numaproj/numaflow-go/pkg/mapper"
 	"github.com/numaproj/numaflow-go/pkg/sourcetransformer"
 
 	"github.com/stretchr/testify/assert"

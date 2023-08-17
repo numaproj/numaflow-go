@@ -352,10 +352,10 @@ var file_pkg_apis_proto_sourcetransformer_v1_transformer_proto_depIdxs = []int32
 	4, // 1: sourcetransformer.v1.SourceTransformerRequest.watermark:type_name -> google.protobuf.Timestamp
 	3, // 2: sourcetransformer.v1.SourceTransformerResponse.results:type_name -> sourcetransformer.v1.SourceTransformerResponse.Result
 	4, // 3: sourcetransformer.v1.SourceTransformerResponse.Result.event_time:type_name -> google.protobuf.Timestamp
-	0, // 4: sourcetransformer.v1.SourceTransformer.SourceTransformer:input_type -> sourcetransformer.v1.SourceTransformerRequest
-	5, // 5: sourcetransformer.v1.SourceTransformer.IsReady:input_type -> google.protobuf.Empty
-	1, // 6: sourcetransformer.v1.SourceTransformer.SourceTransformer:output_type -> sourcetransformer.v1.SourceTransformerResponse
-	2, // 7: sourcetransformer.v1.SourceTransformer.IsReady:output_type -> sourcetransformer.v1.ReadyResponse
+	0, // 4: sourcetransformer.v1.Transform.Transform:input_type -> sourcetransformer.v1.SourceTransformerRequest
+	5, // 5: sourcetransformer.v1.Transform.IsReady:input_type -> google.protobuf.Empty
+	1, // 6: sourcetransformer.v1.Transform.Transform:output_type -> sourcetransformer.v1.SourceTransformerResponse
+	2, // 7: sourcetransformer.v1.Transform.IsReady:output_type -> sourcetransformer.v1.ReadyResponse
 	6, // [6:8] is the sub-list for method output_type
 	4, // [4:6] is the sub-list for method input_type
 	4, // [4:4] is the sub-list for extension type_name
