@@ -22,8 +22,8 @@ service Sink {
 message SinkRequest {
   repeated string keys = 1;
   bytes value = 2;
-  EventTime event_time = 3;
-  Watermark watermark = 4;
+  google.protobuf.Timestamp event_time = 3;
+  google.protobuf.Timestamp watermark = 4;
   string id = 5;
 }
 
@@ -47,17 +47,4 @@ message SinkResponse {
     string err_msg = 3;
   }
   repeated Result results = 1;
-}
-
-message EventTime {
-  // event_time is the time associated with each datum.
-  google.protobuf.Timestamp event_time = 1;
-  // future we can add an enum to represent whether the event time is
-  // based on INGEST_TIME or EVENT_TIME or PROCESSING_TIME
-}
-
-message Watermark {
-  // watermark is the monotonically increasing time which denotes completeness for the given time for the given vertex.
-  google.protobuf.Timestamp watermark = 1;
-  // future we can add LATE, ON_TIME etc.
 }
