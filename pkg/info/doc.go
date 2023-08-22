@@ -5,7 +5,7 @@
 //   - what is the numaflow sdk version used by the server
 //   - what is language used by the server
 //
-// The gRPC server (mapUDF, UDSink, etc.) is supposed to have a shared file system with the client (numa container).
+// The gRPC server (UDF, UDSink, etc.) is supposed to have a shared file system with the client (numa container).
 //
 // Write()
 // The gPRC server must use this function to write the correct ServerInfo when it starts.
