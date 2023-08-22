@@ -4,7 +4,7 @@ build:
 
 .PHONY: image
 image: build
-	docker build -t "quay.io/numaio/numaflow-go/map-even-odd:latest" --target even-odd .
+	docker build -t "quay.io/numaio/numaflow-go/map-even-odd:v0.5.0" --target even-odd .
 
 clean:
 	-rm -rf ./dist

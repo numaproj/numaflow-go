@@ -4,7 +4,7 @@ build:
 
 .PHONY: image
 image: build
-	docker build -t "quay.io/numaio/numaflow-go/map-flatmap:latest" --target flatmap .
+	docker build -t "quay.io/numaio/numaflow-go/map-flatmap:v0.5.0" --target flatmap .
 
 clean:
 	-rm -rf ./dist

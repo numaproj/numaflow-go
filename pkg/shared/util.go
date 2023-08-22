@@ -12,7 +12,7 @@ import (
 	"github.com/numaproj/numaflow-go/pkg/info"
 )
 
-func PrepareServer(filePath, sockAddr string) (net.Listener, error) {
+func PrepareServer(sockAddr, filePath string) (net.Listener, error) {
 	serverInfo := &info.ServerInfo{Protocol: info.UDS, Language: info.Go, Version: info.GetSDKVersion()}
 	if err := info.Write(serverInfo, info.WithServerInfoFilePath(filePath)); err != nil {
 		return nil, err

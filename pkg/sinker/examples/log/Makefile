@@ -4,7 +4,7 @@ build:
 
 .PHONY: image
 image: build
-	docker build -t "quay.io/numaio/numaflow-go/sink-log:latest" --target log .
+	docker build -t "quay.io/numaio/numaflow-go/sink-log:v0.5.0" --target log .
 
 clean:
 	-rm -rf ./dist
