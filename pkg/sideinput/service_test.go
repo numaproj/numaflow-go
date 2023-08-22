@@ -18,14 +18,14 @@ func TestService_RetrieveSideInputFn(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		retriever RetrieveSideInput
+		retriever RetrieverSideInput
 		args      args
 		want      *sideinputpb.SideInputResponse
 		wantErr   bool
 	}{
 		{
 			name: "sideinput_retrieve_msg",
-			retriever: RetrieveSideInput(func(ctx context.Context) MessageSI {
+			retriever: RetrieverFunc(func(ctx context.Context) MessageSI {
 				return NewMessageSI([]byte(`test`))
 			}),
 			args: args{
@@ -66,7 +66,7 @@ func TestService_IsReady(t *testing.T) {
 	}
 	tests := []struct {
 		name                     string
-		retrieveSideInputHandler RetrieveSideInputHandler
+		retrieveSideInputHandler RetrieverSideInput
 		args                     args
 		want                     *sideinputpb.ReadyResponse
 		wantErr                  bool

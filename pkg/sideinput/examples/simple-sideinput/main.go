@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
+	"log"
 	"time"
 
 	sideinputsdk "github.com/numaproj/numaflow-go/pkg/sideinput"
-	"github.com/numaproj/numaflow-go/pkg/sideinput/server"
 )
 
 func handle(_ context.Context) sideinputsdk.MessageSI {
@@ -14,5 +14,8 @@ func handle(_ context.Context) sideinputsdk.MessageSI {
 	return sideinputsdk.NewMessageSI([]byte(val))
 }
 func main() {
-	server.NewSideInputServer().RegisterRetriever(sideinputsdk.RetrieveSideInput(handle)).Start(context.Background())
+	err := sideinputsdk.NewSideInputServer(sideinputsdk.RetrieverFunc(handle)).Start(context.Background())
+	if err != nil {
+		log.Panic("Failed to start side input server: ", err)
+	}
 }

@@ -1,4 +1,8 @@
-package server
+package sideinput
+
+import (
+	"github.com/numaproj/numaflow-go/pkg/shared"
+)
 
 // options is the struct to hold the server options.
 type options struct {
@@ -8,6 +12,14 @@ type options struct {
 
 // Option is the interface to apply options.
 type Option func(*options)
+
+// DefaultOptions returns the default options.
+func DefaultOptions() *options {
+	return &options{
+		sockAddr:       shared.SideInputAddr,
+		maxMessageSize: shared.DefaultMaxMessageSize,
+	}
+}
 
 // WithMaxMessageSize sets the server max receive message size and the server max send message size to the given size.
 func WithMaxMessageSize(size int) Option {

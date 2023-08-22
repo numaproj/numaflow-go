@@ -6,9 +6,9 @@ spec:
   sideInputs:
     - name: devportal
       container:
-        image: "quay.io/numaio/numaflow-go/sideinput:v2"
+        image: "quay.io/numaio/numaflow-go/sideinput:v3"
       trigger:
-        schedule: "*/5 * * * *"
+        schedule: "*/3 * * * *"
         # interval: 180s
         # timezone: America/Los_Angeles
   vertices:
@@ -16,7 +16,7 @@ spec:
       source:
         # A self data generating source
         generator:
-          rpu: 5
+          rpu: 200
           duration: 1s
     - name: cat
       udf:

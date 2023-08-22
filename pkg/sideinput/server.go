@@ -1,4 +1,4 @@
-package sourcetransformer
+package sideinput
 
 import (
 	"context"
@@ -8,49 +8,49 @@ import (
 	"syscall"
 
 	"github.com/numaproj/numaflow-go/pkg"
-	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/sourcetransform/v1"
+	sideinputpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sideinput/v1"
 	"github.com/numaproj/numaflow-go/pkg/shared"
 )
 
+// server is a side input gRPC server.
 type server struct {
 	svc  *Service
 	opts *options
 }
 
-// NewServer creates a new SourceTransformer server.
-func NewServer(m SourceTransformer, inputOptions ...Option) numaflow.Server {
+// NewSideInputServer creates a new server object.
+func NewSideInputServer(r RetrieverSideInput, inputOptions ...Option) numaflow.Server {
 	opts := DefaultOptions()
 	for _, inputOption := range inputOptions {
 		inputOption(opts)
 	}
 	s := new(server)
 	s.svc = new(Service)
-	s.svc.Transformer = m
+	s.svc.Retriever = r
 	s.opts = opts
 	return s
 }
 
-// Start starts the SourceTransformer server.
-func (m *server) Start(ctx context.Context) error {
+// Start starts the gRPC server via unix domain socket at configs.SideInputAddr and return error.
+func (s *server) Start(ctx context.Context) error {
 	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	// write server info to the file
 	// start listening on unix domain socket
-	lis, err := shared.PrepareServer(m.opts.serverInfoFilePath, m.opts.sockAddr)
+	lis, err := shared.PrepareServer("", s.opts.sockAddr)
 	if err != nil {
-		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", shared.UDS, shared.SourceTransformerAddr, err)
+		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", shared.UDS, shared.MapAddr, err)
 	}
 	// close the listener
 	defer func() { _ = lis.Close() }()
 
 	// create a grpc server
-	grpcServer := shared.CreateGRPCServer(m.opts.maxMessageSize)
+	grpcServer := shared.CreateGRPCServer(s.opts.maxMessageSize)
 	defer log.Println("Successfully stopped the gRPC server")
 	defer grpcServer.GracefulStop()
 
-	// register the map service
-	v1.RegisterSourceTransformServer(grpcServer, m.svc)
+	// register the side input service
+	sideinputpb.RegisterUserDefinedSideInputServer(grpcServer, s.svc)
 
 	// start the grpc server
 	return shared.StartGRPCServer(ctxWithSignal, grpcServer, lis)

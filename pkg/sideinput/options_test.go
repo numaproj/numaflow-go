@@ -1,11 +1,11 @@
-package server
+package sideinput
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/numaproj/numaflow-go/pkg/sideinput"
+	"github.com/numaproj/numaflow-go/pkg/shared"
 )
 
 // TestWithMaxMessageSize tests the WithMaxMessageSize option.
@@ -14,7 +14,7 @@ func TestWithMaxMessageSize(t *testing.T) {
 	var (
 		size = 1024 * 1024 * 10
 		opts = &options{
-			maxMessageSize: sideinput.DefaultMaxMessageSize,
+			maxMessageSize: shared.DefaultMaxMessageSize,
 		}
 	)
 	WithMaxMessageSize(1024 * 1024 * 10)(opts)
