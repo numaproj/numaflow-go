@@ -44,6 +44,6 @@ func TestSink_Start(t *testing.T) {
 		time.Sleep(3 * time.Second)
 		cancel()
 	}()
-	err = NewSinkServer(sinkHandler, WithSockAddr(socketFile.Name()), WithServerInfoFilePath(serverInfoFile.Name())).Start(ctx)
+	err = NewServer(sinkHandler, WithSockAddr(socketFile.Name()), WithServerInfoFilePath(serverInfoFile.Name())).Start(ctx)
 	assert.NoError(t, err)
 }

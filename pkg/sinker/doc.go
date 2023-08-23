@@ -29,7 +29,7 @@
 	}
 
 	func main() {
-		err := sinksdk.NewSinkServer(&logSink{}).Start(context.Background())
+		err := sinksdk.NewServer(&logSink{}).Start(context.Background())
 		if err != nil {
 			log.Panic("Failed to start sink function server: ", err)
 		}
