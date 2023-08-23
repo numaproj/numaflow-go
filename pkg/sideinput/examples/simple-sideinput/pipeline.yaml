@@ -4,7 +4,7 @@ metadata:
   name: my-pipeline
 spec:
   sideInputs:
-    - name: devportal
+    - name: myticker
       container:
         image: "quay.io/numaio/numaflow-go/sideinput:v3"
         imagePullPolicy: Always
@@ -28,13 +28,13 @@ spec:
             - name: SIDEINPUT_PATH
               value: "/var/numaflow/side-inputs"
             - name: SIDEINPUT_NAME
-              value: "devportal"
+              value: "myticker"
       containerTemplate:
         env:
           - name: NUMAFLOW_DEBUG
             value: "true" # DO NOT forget the double quotes!!!
       sideInputs:
-        - devportal
+        - myticker
     - name: out
       sink:
         # A simple log printing sink

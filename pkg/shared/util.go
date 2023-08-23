@@ -12,7 +12,7 @@ import (
 	"github.com/numaproj/numaflow-go/pkg/info"
 )
 
-func PrepareServer(infoFilePath string, sockAddr string) (net.Listener, error) {
+func PrepareServer(sockAddr string, infoFilePath string) (net.Listener, error) {
 	// If infoFilePath is not empty, write the server info to the file.
 	if infoFilePath != "" {
 		serverInfo := &info.ServerInfo{Protocol: info.UDS, Language: info.Go, Version: info.GetSDKVersion()}

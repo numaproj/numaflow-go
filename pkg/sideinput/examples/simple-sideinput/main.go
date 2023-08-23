@@ -8,10 +8,10 @@ import (
 	sideinputsdk "github.com/numaproj/numaflow-go/pkg/sideinput"
 )
 
-func handle(_ context.Context) sideinputsdk.SideInputMessage {
+func handle(_ context.Context) sideinputsdk.Message {
 	t := time.Now()
 	val := "test_value" + string(t.String())
-	return sideinputsdk.NewSideInputMessage([]byte(val))
+	return sideinputsdk.NewMessage([]byte(val))
 }
 func main() {
 	err := sideinputsdk.NewSideInputServer(sideinputsdk.RetrieveFunc(handle)).Start(context.Background())

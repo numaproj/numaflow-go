@@ -9,7 +9,7 @@ const (
 	SourceAddr            = "/var/run/numaflow/source.sock"
 	SinkAddr              = "/var/run/numaflow/sink.sock"
 	SourceTransformerAddr = "/var/run/numaflow/sourcetransform.sock"
-	SideInputAddr         = "/var/run/numaflow/udsideinput.sock"
+	SideInputAddr         = "/var/run/numaflow/sideinput.sock"
 	TcpAddr               = ":55551"
 	// DefaultMaxMessageSize overrides gRPC max message size configuration
 	// https://github.com/grpc/grpc-go/blob/master/server.go#L58-L59

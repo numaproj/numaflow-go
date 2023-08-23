@@ -25,8 +25,8 @@ func TestService_RetrieveSideInputFn(t *testing.T) {
 	}{
 		{
 			name: "sideinput_retrieve_msg",
-			retriever: RetrieveFunc(func(ctx context.Context) SideInputMessage {
-				return NewSideInputMessage([]byte(`test`))
+			retriever: RetrieveFunc(func(ctx context.Context) Message {
+				return NewMessage([]byte(`test`))
 			}),
 			args: args{
 				ctx: context.Background(),

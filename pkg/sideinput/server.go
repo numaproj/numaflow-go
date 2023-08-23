@@ -37,7 +37,7 @@ func (s *server) Start(ctx context.Context) error {
 	defer stop()
 
 	// start listening on unix domain socket
-	lis, err := shared.PrepareServer("", s.opts.sockAddr)
+	lis, err := shared.PrepareServer(s.opts.sockAddr, "")
 	if err != nil {
 		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", shared.UDS, shared.MapAddr, err)
 	}

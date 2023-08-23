@@ -36,7 +36,7 @@ func (s *sinkServer) Start(ctx context.Context) error {
 
 	// write server info to the file
 	// start listening on unix domain socket
-	lis, err := shared.PrepareServer(s.opts.serverInfoFilePath, s.opts.sockAddr)
+	lis, err := shared.PrepareServer(s.opts.sockAddr, s.opts.serverInfoFilePath)
 	if err != nil {
 		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", shared.UDS, shared.SinkAddr, err)
 	}

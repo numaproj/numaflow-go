@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"log"
 	"os"
@@ -14,21 +13,10 @@ import (
 
 var sideInputPath = os.Getenv("SIDEINPUT_PATH")
 var sideInputName = os.Getenv("SIDEINPUT_NAME")
-var prevValue []byte
 
 func mapFn(_ context.Context, _ []string, _ mapper.Datum) mapper.Messages {
-	// Read the side input file.
-	p := path.Join(sideInputPath, sideInputName)
-	b, err := os.ReadFile(p)
-	if err != nil {
-		log.Println("Failed to read side input file: ", err)
-		return mapper.MessagesBuilder().Append(mapper.MessageToDrop())
-	}
-	if bytes.Equal(b, prevValue) == false {
-		prevValue = b
-		return mapper.MessagesBuilder().Append(mapper.NewMessage(b))
-	}
-	return mapper.MessagesBuilder().Append(mapper.MessageToDrop())
+	// Perform map operation here
+	return mapper.MessagesBuilder().Append(mapper.NewMessage([]byte("test_value")))
 }
 
 func main() {
@@ -61,13 +49,18 @@ func fileWatcher(watcher *fsnotify.Watcher, sideInputName string) {
 	for {
 		select {
 		case event, ok := <-watcher.Events:
-			log.Println("event:", event)
 			if !ok {
 				log.Println("watcher.Events channel closed")
 				return
 			}
 			if event.Op&fsnotify.Create == fsnotify.Create && event.Name == p {
-				log.Println("File has been created:", event.Name)
+				log.Println("Side input file has been created:", event.Name)
+				b, err := os.ReadFile(p)
+				if err != nil {
+					log.Println("Failed to read side input file: ", err)
+				}
+				// Perform some operation here, can update the value in a cache/variable
+				log.Println("File contents: ", string(b))
 			}
 		case err, ok := <-watcher.Errors:
 			if !ok {
