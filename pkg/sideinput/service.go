@@ -11,7 +11,7 @@ import (
 
 // Service implements the proto gen server interface and contains the retrieve operation handler
 type Service struct {
-	sideinputpb.UnimplementedUserDefinedSideInputServer
+	sideinputpb.UnimplementedSideInputServer
 	Retriever SideInputRetriever
 }
 

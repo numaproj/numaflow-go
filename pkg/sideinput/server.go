@@ -50,7 +50,7 @@ func (s *server) Start(ctx context.Context) error {
 	defer grpcServer.GracefulStop()
 
 	// register the side input service
-	sideinputpb.RegisterUserDefinedSideInputServer(grpcServer, s.svc)
+	sideinputpb.RegisterSideInputServer(grpcServer, s.svc)
 
 	// start the grpc server
 	return shared.StartGRPCServer(ctxWithSignal, grpcServer, lis)
