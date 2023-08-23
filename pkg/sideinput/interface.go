@@ -4,15 +4,16 @@ import (
 	"context"
 )
 
-type RetrieverSideInput interface {
+// SideInputRetriever is the interface for side input retrieval implementation.
+type SideInputRetriever interface {
 	// RetrieveSideInput is the function to process each side-input request.
-	RetrieveSideInput(ctx context.Context) MessageSI
+	RetrieveSideInput(ctx context.Context) (SideInputMessage, error)
 }
 
-// RetrieverFunc is a utility type used to convert a RetrieveSideInput function to a RetrieverSideInput.
-type RetrieverFunc func(ctx context.Context) MessageSI
+// RetrieveFunc is a utility type used to convert a RetrieveSideInput function to a SideInputRetriever.
+type RetrieveFunc func(ctx context.Context) SideInputMessage
 
 // RetrieveSideInput implements the function of RetrieveSideInput function.
-func (mf RetrieverFunc) RetrieveSideInput(ctx context.Context) MessageSI {
-	return mf(ctx)
+func (mf RetrieveFunc) RetrieveSideInput(ctx context.Context) (SideInputMessage, error) {
+	return mf(ctx), nil
 }

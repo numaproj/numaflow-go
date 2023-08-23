@@ -16,8 +16,8 @@ func TestServer_Start(t *testing.T) {
 		_ = os.RemoveAll(socketFile.Name())
 	}()
 
-	var retrieveHandler = RetrieverFunc(func(ctx context.Context) MessageSI {
-		return NewMessageSI([]byte("test"))
+	var retrieveHandler = RetrieveFunc(func(ctx context.Context) SideInputMessage {
+		return NewSideInputMessage([]byte("test"))
 	})
 	// note: using actual UDS connection
 	ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)

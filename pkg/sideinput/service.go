@@ -2,6 +2,7 @@ package sideinput
 
 import (
 	"context"
+	"fmt"
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
@@ -11,7 +12,7 @@ import (
 // Service implements the proto gen server interface and contains the retrieve operation handler
 type Service struct {
 	sideinputpb.UnimplementedUserDefinedSideInputServer
-	Retriever RetrieverSideInput
+	Retriever SideInputRetriever
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
@@ -19,9 +20,12 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*sideinputpb.ReadyR
 	return &sideinputpb.ReadyResponse{Ready: true}, nil
 }
 
-// RetrieveSideInput applies the function for each side input retrieval request .
+// RetrieveSideInput applies the function for each side input retrieval request.
 func (fs *Service) RetrieveSideInput(ctx context.Context, _ *emptypb.Empty) (*sideinputpb.SideInputResponse, error) {
-	messageSi := fs.Retriever.RetrieveSideInput(ctx)
+	messageSi, err := fs.Retriever.RetrieveSideInput(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve side input: %w", err)
+	}
 	var element *sideinputpb.SideInputResponse
 	element = &sideinputpb.SideInputResponse{
 		Value: messageSi.value,

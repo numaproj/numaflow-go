@@ -19,7 +19,7 @@ type server struct {
 }
 
 // NewSideInputServer creates a new server object.
-func NewSideInputServer(r RetrieverSideInput, inputOptions ...Option) numaflow.Server {
+func NewSideInputServer(r SideInputRetriever, inputOptions ...Option) numaflow.Server {
 	opts := DefaultOptions()
 	for _, inputOption := range inputOptions {
 		inputOption(opts)

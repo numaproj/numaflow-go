@@ -7,8 +7,9 @@ spec:
     - name: devportal
       container:
         image: "quay.io/numaio/numaflow-go/sideinput:v3"
+        imagePullPolicy: Always
       trigger:
-        schedule: "*/3 * * * *"
+        schedule: "*/2 * * * *"
         # interval: 180s
         # timezone: America/Los_Angeles
   vertices:
@@ -16,12 +17,18 @@ spec:
       source:
         # A self data generating source
         generator:
-          rpu: 200
+          rpu: 1
           duration: 1s
-    - name: cat
+    - name: si-log
       udf:
-        builtin:
-          name: cat # A built-in UDF which simply cats the message
+        container:
+          image: "quay.io/numaio/numaflow-go/udf-sideinput:v3"
+          imagePullPolicy: Always
+          env:
+            - name: SIDEINPUT_PATH
+              value: "/var/numaflow/side-inputs"
+            - name: SIDEINPUT_NAME
+              value: "devportal"
       containerTemplate:
         env:
           - name: NUMAFLOW_DEBUG
@@ -34,6 +41,6 @@ spec:
         log: {}
   edges:
     - from: in
-      to: cat
-    - from: cat
+      to: si-log
+    - from: si-log
       to: out
