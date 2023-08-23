@@ -88,6 +88,7 @@ func (fs *Service) SinkFn(stream sinkpb.Sink_SinkFnServer) error {
 		var hd = &handlerDatum{
 			id:        d.GetId(),
 			value:     d.GetValue(),
+			keys:      d.GetKeys(),
 			eventTime: d.GetEventTime().AsTime(),
 			watermark: d.GetWatermark().AsTime(),
 		}
