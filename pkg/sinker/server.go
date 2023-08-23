@@ -18,8 +18,8 @@ type sinkServer struct {
 	opts *options
 }
 
-// NewSinkServer creates a new sinkServer object.
-func NewSinkServer(h Sinker, inputOptions ...Option) numaflow.Server {
+// NewServer creates a new sinkServer object.
+func NewServer(h Sinker, inputOptions ...Option) numaflow.Server {
 	opts := DefaultOptions()
 	for _, inputOption := range inputOptions {
 		inputOption(opts)
