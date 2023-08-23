@@ -4,7 +4,7 @@ build:
 
 .PHONY: image
 image: build
-	docker build -t "quay.io/numaio/numaflow-go/sideinput:v3" --target sideinput .
+	docker buildx build -t "quay.io/numaio/numaflow-go/sideinput:latest" --platform linux/amd64,linux/arm64 --target sideinput . --push
 
 clean:
 	-rm -rf ./dist
