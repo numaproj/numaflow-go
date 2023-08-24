@@ -10,7 +10,7 @@ import (
 
 func handle(_ context.Context) sideinputsdk.Message {
 	t := time.Now()
-	val := "test_value" + string(t.String())
+	val := "an example: " + string(t.String())
 	return sideinputsdk.NewMessage([]byte(val))
 }
 func main() {

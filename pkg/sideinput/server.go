@@ -37,6 +37,7 @@ func (s *server) Start(ctx context.Context) error {
 	defer stop()
 
 	// start listening on unix domain socket
+	// For Side input we don't write data to the info server, hence will pass path as empty here.
 	lis, err := shared.PrepareServer(s.opts.sockAddr, "")
 	if err != nil {
 		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", shared.UDS, shared.MapAddr, err)
