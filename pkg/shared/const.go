@@ -19,4 +19,5 @@ const (
 	WinStartTime          = "x-numaflow-win-start-time"
 	WinEndTime            = "x-numaflow-win-end-time"
 	Delimiter             = ":"
+	SideInputDir          = "/var/numaflow/side-inputs"
 )

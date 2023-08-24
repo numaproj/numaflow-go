@@ -9,14 +9,14 @@ import (
 	"github.com/fsnotify/fsnotify"
 
 	"github.com/numaproj/numaflow-go/pkg/mapper"
+	"github.com/numaproj/numaflow-go/pkg/shared"
 )
 
-var sideInputPath = "/var/numaflow/side-inputs"
 var sideInputName = "myticker"
 
 func mapFn(_ context.Context, _ []string, _ mapper.Datum) mapper.Messages {
 	// Perform map operation here
-	return mapper.MessagesBuilder().Append(mapper.NewMessage([]byte("test_value")))
+	return mapper.MessagesBuilder().Append(mapper.NewMessage([]byte("some_value")))
 }
 
 func main() {
@@ -28,7 +28,7 @@ func main() {
 	defer watcher.Close()
 
 	// Add a path to the watcher
-	err = watcher.Add(sideInputPath)
+	err = watcher.Add(shared.SideInputDir)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -44,8 +44,8 @@ func main() {
 }
 
 func fileWatcher(watcher *fsnotify.Watcher, sideInputName string) {
-	log.Println("Watching for changes in side input file: ", sideInputPath)
-	p := path.Join(sideInputPath, sideInputName)
+	log.Println("Watching for changes in side input file: ", shared.SideInputDir)
+	p := path.Join(shared.SideInputDir, sideInputName)
 	for {
 		select {
 		case event, ok := <-watcher.Events:

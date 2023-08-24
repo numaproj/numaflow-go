@@ -18,13 +18,3 @@ func BroadcastMessage(value []byte) Message {
 func NoBroadcastMessage() Message {
 	return Message{value: []byte{}, noBroadcast: true}
 }
-
-// Value returns message value
-func (m Message) Value() []byte {
-	return m.value
-}
-
-// NoBroadcast returns noBroadcast flag
-func (m Message) NoBroadcast() bool {
-	return m.noBroadcast
-}
