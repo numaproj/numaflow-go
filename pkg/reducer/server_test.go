@@ -31,10 +31,7 @@ func TestReduceServer_Start(t *testing.T) {
 	})
 	// note: using actual UDS connection
 	ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
-	go func() {
-		time.Sleep(3 * time.Second)
-		cancel()
-	}()
+	defer cancel()
 	err := NewServer(reduceHandler, WithSockAddr(socketFile.Name()), WithServerInfoFilePath(serverInfoFile.Name())).Start(ctx)
 	assert.NoError(t, err)
 }

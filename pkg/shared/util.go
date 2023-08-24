@@ -12,10 +12,15 @@ import (
 	"github.com/numaproj/numaflow-go/pkg/info"
 )
 
-func PrepareServer(sockAddr, filePath string) (net.Listener, error) {
-	serverInfo := &info.ServerInfo{Protocol: info.UDS, Language: info.Go, Version: info.GetSDKVersion()}
-	if err := info.Write(serverInfo, info.WithServerInfoFilePath(filePath)); err != nil {
-		return nil, err
+func PrepareServer(sockAddr string, infoFilePath string) (net.Listener, error) {
+	// If infoFilePath is not empty, write the server info to the file.
+	// For Side input we don't write data to the info server, hence will pass path as empty here.
+	// Could be used later on for similar cases
+	if infoFilePath != "" {
+		serverInfo := &info.ServerInfo{Protocol: info.UDS, Language: info.Go, Version: info.GetSDKVersion()}
+		if err := info.Write(serverInfo, info.WithServerInfoFilePath(infoFilePath)); err != nil {
+			return nil, err
+		}
 	}
 
 	if _, err := os.Stat(sockAddr); err == nil {
