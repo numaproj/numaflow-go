@@ -3,11 +3,12 @@ package main
 import (
 	"context"
 	"log"
-	"math/rand"
 	"time"
 
 	sideinputsdk "github.com/numaproj/numaflow-go/pkg/sideinput"
 )
+
+var counter = 0
 
 // handle is the side input handler function.
 func handle(_ context.Context) sideinputsdk.Message {
@@ -17,7 +18,8 @@ func handle(_ context.Context) sideinputsdk.Message {
 	// randomly drop side input message. Note that the side input message is not retried.
 	// NoBroadcastMessage() is used to drop the message and not to
 	// broadcast it to other side input vertices.
-	if rand.Int()%2 == 0 {
+	counter = (counter + 1) % 10
+	if counter%2 == 0 {
 		return sideinputsdk.NoBroadcastMessage()
 	}
 	// BroadcastMessage() is used to broadcast the message with the given value to other side input vertices.
