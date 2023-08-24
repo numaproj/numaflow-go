@@ -2,7 +2,6 @@ package sideinput
 
 import (
 	"context"
-	"fmt"
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
@@ -22,13 +21,11 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*sideinputpb.ReadyR
 
 // RetrieveSideInput applies the function for each side input retrieval request.
 func (fs *Service) RetrieveSideInput(ctx context.Context, _ *emptypb.Empty) (*sideinputpb.SideInputResponse, error) {
-	messageSi, err := fs.Retriever.RetrieveSideInput(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve side input: %w", err)
-	}
+	messageSi := fs.Retriever.RetrieveSideInput(ctx)
 	var element *sideinputpb.SideInputResponse
 	element = &sideinputpb.SideInputResponse{
-		Value: messageSi.value,
+		Value:       messageSi.value,
+		NoBroadcast: messageSi.noBroadcast,
 	}
 	return element, nil
 }

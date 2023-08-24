@@ -17,7 +17,7 @@ func TestServer_Start(t *testing.T) {
 	}()
 
 	var retrieveHandler = RetrieveFunc(func(ctx context.Context) Message {
-		return NewMessage([]byte("test"))
+		return BroadcastMessage([]byte("test"))
 	})
 	// note: using actual UDS connection
 	ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)

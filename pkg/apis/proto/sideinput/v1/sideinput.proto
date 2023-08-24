@@ -28,6 +28,10 @@ service SideInput {
 message SideInputResponse {
   // value represents the latest value of the side input payload
   bytes value = 1;
+  // noBroadcast indicates whether the side input value should be broadcasted to all
+  // True if value should not be broadcasted
+  // False if value should be broadcasted
+  bool no_broadcast = 2;
 }
 
 /**

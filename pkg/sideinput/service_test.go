@@ -26,7 +26,7 @@ func TestService_RetrieveSideInputFn(t *testing.T) {
 		{
 			name: "sideinput_retrieve_msg",
 			retriever: RetrieveFunc(func(ctx context.Context) Message {
-				return NewMessage([]byte(`test`))
+				return BroadcastMessage([]byte(`test`))
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -34,6 +34,21 @@ func TestService_RetrieveSideInputFn(t *testing.T) {
 			},
 			want: &sideinputpb.SideInputResponse{
 				Value: []byte(`test`),
+			},
+			wantErr: false,
+		},
+		{
+			name: "sideinput_retrieve_drop_msg",
+			retriever: RetrieveFunc(func(ctx context.Context) Message {
+				return NoBroadcastMessage()
+			}),
+			args: args{
+				ctx: context.Background(),
+				in1: &emptypb.Empty{},
+			},
+			want: &sideinputpb.SideInputResponse{
+				Value:       []byte{},
+				NoBroadcast: true,
 			},
 			wantErr: false,
 		},
@@ -53,7 +68,7 @@ func TestService_RetrieveSideInputFn(t *testing.T) {
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("MapTFn() got = %v, want %v", got, tt.want)
+				t.Errorf("RetrieveFunc() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

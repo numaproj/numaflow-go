@@ -24,11 +24,6 @@ spec:
         container:
           image: "quay.io/numaio/numaflow-go/udf-sideinput:v0.5.0"
           imagePullPolicy: Always
-          env:
-            - name: SIDEINPUT_PATH
-              value: "/var/numaflow/side-inputs"
-            - name: SIDEINPUT_NAME
-              value: "myticker"
       containerTemplate:
         env:
           - name: NUMAFLOW_DEBUG

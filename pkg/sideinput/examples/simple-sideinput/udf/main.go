@@ -11,8 +11,8 @@ import (
 	"github.com/numaproj/numaflow-go/pkg/mapper"
 )
 
-var sideInputPath = os.Getenv("SIDEINPUT_PATH")
-var sideInputName = os.Getenv("SIDEINPUT_NAME")
+var sideInputPath = "/var/numaflow/side-inputs"
+var sideInputName = "myticker"
 
 func mapFn(_ context.Context, _ []string, _ mapper.Datum) mapper.Messages {
 	// Perform map operation here
