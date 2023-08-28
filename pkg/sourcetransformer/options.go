@@ -2,7 +2,6 @@ package sourcetransformer
 
 import (
 	"github.com/numaproj/numaflow-go/pkg/info"
-	"github.com/numaproj/numaflow-go/pkg/shared"
 )
 
 type options struct {
@@ -17,8 +16,8 @@ type Option func(*options)
 func DefaultOptions() *options {
 	// TODO: for source we should use a different default sock addr
 	return &options{
-		sockAddr:           shared.SourceTransformerAddr,
-		maxMessageSize:     shared.DefaultMaxMessageSize,
+		sockAddr:           address,
+		maxMessageSize:     defaultMaxMessageSize,
 		serverInfoFilePath: info.ServerInfoFilePath,
 	}
 }

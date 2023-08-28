@@ -3,6 +3,7 @@ module github.com/numaproj/numaflow-go
 go 1.20
 
 require (
+	github.com/fsnotify/fsnotify v1.6.0
 	github.com/golang/mock v1.6.0
 	github.com/stretchr/testify v1.8.1
 	golang.org/x/net v0.9.0

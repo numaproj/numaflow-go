@@ -8,6 +8,12 @@ import (
 	mappb "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1"
 )
 
+const (
+	uds                   = "unix"
+	address               = "/var/run/numaflow/map.sock"
+	defaultMaxMessageSize = 1024 * 1024 * 64
+)
+
 // Service implements the proto gen server interface and contains the map operation
 // handler.
 type Service struct {

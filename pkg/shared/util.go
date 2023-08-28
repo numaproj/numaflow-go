@@ -12,6 +12,10 @@ import (
 	"github.com/numaproj/numaflow-go/pkg/info"
 )
 
+const (
+	uds = "unix"
+)
+
 func PrepareServer(sockAddr string, infoFilePath string) (net.Listener, error) {
 	// If infoFilePath is not empty, write the server info to the file.
 	// For Side input we don't write data to the info server, hence will pass path as empty here.
@@ -29,9 +33,9 @@ func PrepareServer(sockAddr string, infoFilePath string) (net.Listener, error) {
 		}
 	}
 
-	lis, err := net.Listen(UDS, sockAddr)
+	lis, err := net.Listen(uds, sockAddr)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute net.Listen(%q, %q): %v", UDS, sockAddr, err)
+		return nil, fmt.Errorf("failed to execute net.Listen(%q, %q): %v", uds, sockAddr, err)
 	}
 
 	return lis, nil

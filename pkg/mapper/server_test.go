@@ -24,7 +24,7 @@ func TestMapServer_Start(t *testing.T) {
 		msg := d.Value()
 		return MessagesBuilder().Append(NewMessage(msg).WithKeys([]string{keys[0] + "_test"}))
 	})
-	// note: using actual UDS connection
+	// note: using actual uds connection
 	ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
 	defer cancel()
 	err := NewServer(mapHandler, WithSockAddr(socketFile.Name()), WithServerInfoFilePath(serverInfoFile.Name())).Start(ctx)

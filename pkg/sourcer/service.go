@@ -10,6 +10,12 @@ import (
 	sourcepb "github.com/numaproj/numaflow-go/pkg/apis/proto/source/v1"
 )
 
+const (
+	uds                   = "unix"
+	defaultMaxMessageSize = 1024 * 1024 * 64 // 64MB
+	address               = "/var/run/numaflow/source.sock"
+)
+
 // Service implements the proto gen server interface
 type Service struct {
 	sourcepb.UnimplementedSourceServer

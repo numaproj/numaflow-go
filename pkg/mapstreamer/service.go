@@ -8,6 +8,12 @@ import (
 	mapstreampb "github.com/numaproj/numaflow-go/pkg/apis/proto/mapstream/v1"
 )
 
+const (
+	uds                   = "unix"
+	defaultMaxMessageSize = 1024 * 1024 * 64
+	address               = "/var/run/numaflow/mapstream.sock"
+)
+
 // Service implements the proto gen server interface and contains the map
 // streaming function.
 type Service struct {

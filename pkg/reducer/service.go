@@ -16,7 +16,15 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	reducepb "github.com/numaproj/numaflow-go/pkg/apis/proto/reduce/v1"
-	"github.com/numaproj/numaflow-go/pkg/shared"
+)
+
+const (
+	uds                   = "unix"
+	defaultMaxMessageSize = 1024 * 1024 * 64
+	address               = "/var/run/numaflow/reduce.sock"
+	winStartTime          = "x-numaflow-win-start-time"
+	winEndTime            = "x-numaflow-win-end-time"
+	Delimiter             = ":"
 )
 
 // Service implements the proto gen server interface and contains the reduce operation handler.
@@ -52,13 +60,13 @@ func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
 
 	// get window start and end time from grpc metadata
 	var st, et string
-	st, err = getValueFromMetadata(grpcMD, shared.WinStartTime)
+	st, err = getValueFromMetadata(grpcMD, winStartTime)
 	if err != nil {
 		statusErr := status.Errorf(codes.InvalidArgument, err.Error())
 		return statusErr
 	}
 
-	et, err = getValueFromMetadata(grpcMD, shared.WinEndTime)
+	et, err = getValueFromMetadata(grpcMD, winEndTime)
 	if err != nil {
 		statusErr := status.Errorf(codes.InvalidArgument, err.Error())
 		return statusErr
@@ -88,7 +96,7 @@ func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
 			// it's already a gRPC error
 			return recvErr
 		}
-		unifiedKey := strings.Join(d.GetKeys(), shared.Delimiter)
+		unifiedKey := strings.Join(d.GetKeys(), Delimiter)
 		var hd = NewHandlerDatum(d.GetValue(), d.EventTime.AsTime(), d.Watermark.AsTime())
 
 		ch, chok := chanMap[unifiedKey]

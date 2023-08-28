@@ -2,7 +2,6 @@ package sinker
 
 import (
 	"github.com/numaproj/numaflow-go/pkg/info"
-	"github.com/numaproj/numaflow-go/pkg/shared"
 )
 
 type options struct {
@@ -16,8 +15,8 @@ type Option func(*options)
 
 func DefaultOptions() *options {
 	return &options{
-		sockAddr:           shared.SinkAddr,
-		maxMessageSize:     shared.DefaultMaxMessageSize,
+		sockAddr:           address,
+		maxMessageSize:     defaultMaxMessageSize,
 		serverInfoFilePath: info.ServerInfoFilePath,
 	}
 }

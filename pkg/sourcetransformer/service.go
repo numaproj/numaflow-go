@@ -9,6 +9,12 @@ import (
 	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/sourcetransform/v1"
 )
 
+const (
+	uds                   = "unix"
+	defaultMaxMessageSize = 1024 * 1024 * 64
+	address               = "/var/run/numaflow/sourcetransform.sock"
+)
+
 // Service implements the proto gen server interface and contains the transformer operation
 // handler.
 type Service struct {
