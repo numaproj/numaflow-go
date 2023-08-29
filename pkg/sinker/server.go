@@ -31,14 +31,14 @@ func NewServer(h Sinker, inputOptions ...Option) numaflow.Server {
 	return s
 }
 
-// Start starts the gRPC sinkServer via unix domain socket at configs.SinkAddr and return error.
+// Start starts the gRPC sinkServer via unix domain socket at configs.address and return error.
 func (s *sinkServer) Start(ctx context.Context) error {
 
 	// write server info to the file
 	// start listening on unix domain socket
 	lis, err := shared.PrepareServer(s.opts.sockAddr, s.opts.serverInfoFilePath)
 	if err != nil {
-		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", shared.UDS, shared.SinkAddr, err)
+		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", uds, address, err)
 	}
 
 	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)

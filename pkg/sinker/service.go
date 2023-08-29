@@ -11,6 +11,12 @@ import (
 	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
 )
 
+const (
+	uds                   = "unix"
+	defaultMaxMessageSize = 1024 * 1024 * 64 // 64MB
+	address               = "/var/run/numaflow/sink.sock"
+)
+
 // handlerDatum implements the Datum interface and is used in the sink functions.
 type handlerDatum struct {
 	id        string

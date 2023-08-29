@@ -27,10 +27,10 @@ message to other side input vertices or drop the message. The side input message
 For each side input there will be a file with the given path and after any update to the side input value the file will 
 be updated.
 
-The directory is fixed and can be accessed through shared constants `shared.SideInputDir`.
+The directory is fixed and can be accessed through sideinput constants `sideinput.DirPath`.
 The file name is the name of the side input.
 ```golang
-shared.SideInputDir -> "/var/numaflow/side-inputs"
+sideinput.DirPath -> "/var/numaflow/side-inputs"
 sideInputFileName -> "/var/numaflow/side-inputs/sideInputName"
 ```
 

@@ -31,7 +31,7 @@ func NewSideInputServer(r SideInputRetriever, inputOptions ...Option) numaflow.S
 	return s
 }
 
-// Start starts the gRPC server via unix domain socket at configs.SideInputAddr and return error.
+// Start starts the gRPC server via unix domain socket at configs.address and return error.
 func (s *server) Start(ctx context.Context) error {
 	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -40,7 +40,7 @@ func (s *server) Start(ctx context.Context) error {
 	// For Side input we don't write data to the info server, hence will pass path as empty here.
 	lis, err := shared.PrepareServer(s.opts.sockAddr, "")
 	if err != nil {
-		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", shared.UDS, shared.MapAddr, err)
+		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", uds, address, err)
 	}
 	// close the listener
 	defer func() { _ = lis.Close() }()

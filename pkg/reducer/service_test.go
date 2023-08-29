@@ -15,7 +15,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	reducepb "github.com/numaproj/numaflow-go/pkg/apis/proto/reduce/v1"
-	"github.com/numaproj/numaflow-go/pkg/shared"
 )
 
 type ReduceFnServerTest struct {
@@ -255,7 +254,7 @@ func TestService_ReduceFn(t *testing.T) {
 			// here's a trick for testing:
 			// because we are not using gRPC, we directly set a new incoming ctx
 			// instead of the regular outgoing context in the real gRPC connection.
-			ctx := grpcmd.NewIncomingContext(context.Background(), grpcmd.New(map[string]string{shared.WinStartTime: "60000", shared.WinEndTime: "120000"}))
+			ctx := grpcmd.NewIncomingContext(context.Background(), grpcmd.New(map[string]string{winStartTime: "60000", winEndTime: "120000"}))
 
 			inputCh := make(chan *reducepb.ReduceRequest)
 			outputCh := make(chan *reducepb.ReduceResponse)
