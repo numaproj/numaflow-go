@@ -24,7 +24,7 @@ const (
 	address               = "/var/run/numaflow/reduce.sock"
 	winStartTime          = "x-numaflow-win-start-time"
 	winEndTime            = "x-numaflow-win-end-time"
-	Delimiter             = ":"
+	delimiter             = ":"
 )
 
 // Service implements the proto gen server interface and contains the reduce operation handler.
@@ -96,7 +96,7 @@ func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
 			// it's already a gRPC error
 			return recvErr
 		}
-		unifiedKey := strings.Join(d.GetKeys(), Delimiter)
+		unifiedKey := strings.Join(d.GetKeys(), delimiter)
 		var hd = NewHandlerDatum(d.GetValue(), d.EventTime.AsTime(), d.Watermark.AsTime())
 
 		ch, chok := chanMap[unifiedKey]
