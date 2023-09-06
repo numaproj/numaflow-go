@@ -29,7 +29,7 @@ func TestReduceServer_Start(t *testing.T) {
 		}
 		return MessagesBuilder().Append(NewMessage([]byte(strconv.Itoa(sum))).WithKeys([]string{keys[0] + "_test"}))
 	})
-	// note: using actual uds connection
+	// note: using actual UDS connection
 	ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
 	defer cancel()
 	err := NewServer(reduceHandler, WithSockAddr(socketFile.Name()), WithServerInfoFilePath(serverInfoFile.Name())).Start(ctx)

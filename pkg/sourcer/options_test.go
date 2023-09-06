@@ -10,7 +10,7 @@ func TestWithMaxMessageSize(t *testing.T) {
 	var (
 		testSize = 1024 * 1024 * 10
 		opts     = &options{
-			maxMessageSize: defaultMaxMessageSize,
+			maxMessageSize: DefaultMaxMessageSize,
 		}
 	)
 	WithMaxMessageSize(testSize)(opts)
@@ -21,7 +21,7 @@ func TestWithSockAddr(t *testing.T) {
 	var (
 		testSocketAddr = "test-socket-address"
 		opts           = &options{
-			sockAddr: address,
+			sockAddr: Address,
 		}
 	)
 	WithSockAddr(testSocketAddr)(opts)
@@ -32,7 +32,7 @@ func TestWithServerInfoFilePath(t *testing.T) {
 	var (
 		testServerInfoFilePath = "test-server-info-file-path"
 		opts                   = &options{
-			maxMessageSize: defaultMaxMessageSize,
+			maxMessageSize: DefaultMaxMessageSize,
 		}
 	)
 	WithServerInfoFilePath(testServerInfoFilePath)(opts)

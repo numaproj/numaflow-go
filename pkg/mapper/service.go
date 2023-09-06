@@ -9,9 +9,9 @@ import (
 )
 
 const (
-	uds                   = "unix"
-	address               = "/var/run/numaflow/map.sock"
-	defaultMaxMessageSize = 1024 * 1024 * 64
+	UDS                   = "unix"
+	Address               = "/var/run/numaflow/map.sock"
+	DefaultMaxMessageSize = 1024 * 1024 * 64
 )
 
 // Service implements the proto gen server interface and contains the map operation

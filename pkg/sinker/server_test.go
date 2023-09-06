@@ -38,7 +38,7 @@ func TestSink_Start(t *testing.T) {
 		}
 		return result
 	})
-	// note: using actual uds connection
+	// note: using actual UDS connection
 	ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
 	defer cancel()
 	err = NewServer(sinkHandler, WithSockAddr(socketFile.Name()), WithServerInfoFilePath(serverInfoFile.Name())).Start(ctx)

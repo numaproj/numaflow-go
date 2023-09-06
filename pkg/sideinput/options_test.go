@@ -12,7 +12,7 @@ func TestWithMaxMessageSize(t *testing.T) {
 	var (
 		size = 1024 * 1024 * 10
 		opts = &options{
-			maxMessageSize: defaultMaxMessageSize,
+			maxMessageSize: DefaultMaxMessageSize,
 		}
 	)
 	WithMaxMessageSize(1024 * 1024 * 10)(opts)

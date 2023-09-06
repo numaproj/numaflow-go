@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	uds                   = "unix"
-	defaultMaxMessageSize = 1024 * 1024 * 64
-	address               = "/var/run/numaflow/sourcetransform.sock"
+	UDS                   = "unix"
+	DefaultMaxMessageSize = 1024 * 1024 * 64
+	Address               = "/var/run/numaflow/sourcetransform.sock"
 )
 
 // Service implements the proto gen server interface and contains the transformer operation

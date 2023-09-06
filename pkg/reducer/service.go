@@ -19,11 +19,11 @@ import (
 )
 
 const (
-	uds                   = "unix"
-	defaultMaxMessageSize = 1024 * 1024 * 64
-	address               = "/var/run/numaflow/reduce.sock"
-	winStartTime          = "x-numaflow-win-start-time"
-	winEndTime            = "x-numaflow-win-end-time"
+	UDS                   = "unix"
+	DefaultMaxMessageSize = 1024 * 1024 * 64
+	Address               = "/var/run/numaflow/reduce.sock"
+	WinStartTime          = "x-numaflow-win-start-time"
+	WinEndTime            = "x-numaflow-win-end-time"
 	delimiter             = ":"
 )
 
@@ -60,13 +60,13 @@ func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
 
 	// get window start and end time from grpc metadata
 	var st, et string
-	st, err = getValueFromMetadata(grpcMD, winStartTime)
+	st, err = getValueFromMetadata(grpcMD, WinStartTime)
 	if err != nil {
 		statusErr := status.Errorf(codes.InvalidArgument, err.Error())
 		return statusErr
 	}
 
-	et, err = getValueFromMetadata(grpcMD, winEndTime)
+	et, err = getValueFromMetadata(grpcMD, WinEndTime)
 	if err != nil {
 		statusErr := status.Errorf(codes.InvalidArgument, err.Error())
 		return statusErr

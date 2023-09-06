@@ -25,7 +25,7 @@ func TestMapStreamServer_Start(t *testing.T) {
 		messageCh <- NewMessage(msg).WithKeys([]string{keys[0] + "_test"})
 		close(messageCh)
 	})
-	// note: using actual uds connection
+	// note: using actual UDS connection
 	ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
 	defer cancel()
 	err := NewServer(mapStreamHandler, WithSockAddr(socketFile.Name()), WithServerInfoFilePath(serverInfoFile.Name())).Start(ctx)

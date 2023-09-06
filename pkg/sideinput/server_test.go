@@ -19,7 +19,7 @@ func TestServer_Start(t *testing.T) {
 	var retrieveHandler = RetrieveFunc(func(ctx context.Context) Message {
 		return BroadcastMessage([]byte("test"))
 	})
-	// note: using actual uds connection
+	// note: using actual UDS connection
 	ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
 	defer cancel()
 	err := NewSideInputServer(retrieveHandler, WithSockAddr(socketFile.Name())).Start(ctx)

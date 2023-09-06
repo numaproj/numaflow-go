@@ -12,8 +12,8 @@ type Option func(*options)
 // DefaultOptions returns the default options.
 func DefaultOptions() *options {
 	return &options{
-		sockAddr:       address,
-		maxMessageSize: defaultMaxMessageSize,
+		sockAddr:       Address,
+		maxMessageSize: DefaultMaxMessageSize,
 	}
 }
 

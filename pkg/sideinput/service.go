@@ -9,10 +9,10 @@ import (
 )
 
 const (
-	uds                   = "unix"
-	address               = "/var/run/numaflow/sideinput.sock"
+	UDS                   = "unix"
+	Address               = "/var/run/numaflow/sideinput.sock"
 	DirPath               = "/var/numaflow/side-inputs"
-	defaultMaxMessageSize = 1024 * 1024 * 64 // 64MB
+	DefaultMaxMessageSize = 1024 * 1024 * 64 // 64MB
 )
 
 // Service implements the proto gen server interface and contains the retrieve operation handler
