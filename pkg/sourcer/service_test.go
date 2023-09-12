@@ -18,7 +18,7 @@ import (
 
 var TestEventTime = time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
 var TestKey = "test-key"
-var TestPendingNumber uint64 = 123
+var TestPendingNumber int64 = 123
 
 type TestSource struct{}
 
@@ -32,7 +32,7 @@ func (ts TestSource) Ack(_ context.Context, _ AckRequest) {
 	return
 }
 
-func (ts TestSource) Pending(_ context.Context) uint64 {
+func (ts TestSource) Pending(_ context.Context) int64 {
 	return TestPendingNumber
 }
 

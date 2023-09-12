@@ -113,7 +113,8 @@ message ReadyResponse {
 message PendingResponse {
   message Result {
     // Required field holding the number of pending records at the user defined source.
-    uint64 count = 1;
+    // A negative count indicates that the pending information is not available.
+    int64 count = 1;
   }
   // Required field holding the result.
   Result result = 1;

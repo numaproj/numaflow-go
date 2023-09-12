@@ -25,8 +25,8 @@ func NewSimpleSource() *SimpleSource {
 }
 
 // Pending returns the number of pending records.
-func (s *SimpleSource) Pending(_ context.Context) uint64 {
-	// The simple source always returns 0 to indicate no pending records.
+func (s *SimpleSource) Pending(_ context.Context) int64 {
+	// The simple source always returns zero to indicate no pending records.
 	return 0
 }
 
