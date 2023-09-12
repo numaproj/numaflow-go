@@ -23,5 +23,23 @@ jobs:
     - name: Get dependencies
       run: go mod download
 
+    - name: Install protoc
+      run: |
+        set -eux -o pipefail
+        PROTOC_VERSION=3.19.4
+        PROTOC_ZIP=protoc-$PROTOC_VERSION-linux-x86_64.zip
+        curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v$PROTOC_VERSION/$PROTOC_ZIP
+        sudo unzip -o $PROTOC_ZIP -d /usr/local bin/protoc
+        sudo unzip -o $PROTOC_ZIP -d /usr/local 'include/*'
+        sudo chmod +x /usr/local/bin/protoc
+        sudo find /usr/local/include -type f | xargs sudo chmod a+r
+        sudo find /usr/local/include -type d | xargs sudo chmod a+rx
+        rm -f $PROTOC_ZIP
+        ls /usr/local/include/google/protobuf/
+
+    - name: Install mockgen
+      run: |
+        go install github.com/golang/mock/mockgen@v1.6.0
+
     - name: Test
       run: make all
