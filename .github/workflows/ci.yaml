@@ -37,5 +37,9 @@ jobs:
         rm -f $PROTOC_ZIP
         ls /usr/local/include/google/protobuf/
 
+    - name: Install mockgen
+      run: |
+        go install github.com/golang/mock/mockgen
+
     - name: Test
       run: make all
