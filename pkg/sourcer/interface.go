@@ -13,7 +13,7 @@ type Sourcer interface {
 	// Ack acknowledges the data from the source.
 	Ack(ctx context.Context, request AckRequest)
 	// Pending returns the number of pending messages.
-	//When the return value is negative, it indicates the pending information is not available.
+	// When the return value is negative, it indicates the pending information is not available.
 	Pending(ctx context.Context) int64
 }
 
