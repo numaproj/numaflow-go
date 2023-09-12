@@ -52,7 +52,7 @@ func Test_WaitUntilReady(t *testing.T) {
 }
 
 func Test_Read_Write(t *testing.T) {
-	filepath := os.TempDir() + "server-info"
+	filepath := os.TempDir() + "/server-info"
 	defer os.Remove(filepath)
 	info := &ServerInfo{
 		Protocol: TCP,
