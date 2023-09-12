@@ -23,5 +23,8 @@ jobs:
     - name: Get dependencies
       run: go mod download
 
+    - name: Install protobuf
+      run: brew install protobuf
+
     - name: Test
       run: make all
