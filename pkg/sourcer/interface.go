@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// Sourcer is the interface for implementation of source.
+// Sourcer is the interface for implementation of the source.
 type Sourcer interface {
 	// Read reads the data from the source and sends the data to the message channel.
 	// Read should never attempt to close the message channel as the caller owns the channel.
@@ -13,7 +13,8 @@ type Sourcer interface {
 	// Ack acknowledges the data from the source.
 	Ack(ctx context.Context, request AckRequest)
 	// Pending returns the number of pending messages.
-	Pending(ctx context.Context) uint64
+	//When the return value is negative, it indicates the pending information is not available.
+	Pending(ctx context.Context) int64
 }
 
 // ReadRequest is the interface of read request.

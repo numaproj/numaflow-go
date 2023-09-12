@@ -19,7 +19,7 @@ func (ts TestNoopSource) Ack(ctx context.Context, request AckRequest) {
 	return
 }
 
-func (ts TestNoopSource) Pending(ctx context.Context) uint64 {
+func (ts TestNoopSource) Pending(ctx context.Context) int64 {
 	return 0
 }
 

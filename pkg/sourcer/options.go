@@ -28,7 +28,7 @@ func WithMaxMessageSize(size int) Option {
 	}
 }
 
-// WithSockAddr start the server with the given sock addr. This is mainly used for testing purpose.
+// WithSockAddr start the server with the given sock addr. This is mainly used for testing purposes.
 func WithSockAddr(addr string) Option {
 	return func(opts *options) {
 		opts.sockAddr = addr
