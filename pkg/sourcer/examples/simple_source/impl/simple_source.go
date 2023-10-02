@@ -24,15 +24,11 @@ func NewSimpleSource() *SimpleSource {
 	}
 }
 
-// Pending returns the number of pending records.
 func (s *SimpleSource) Pending(_ context.Context) int64 {
-	// The simple source always returns zero to indicate no pending records.
+	// The simple source always returns zero to indicate there is no pending record.
 	return 0
 }
 
-// Read reads messages from the source and sends the messages to the message channel.
-// If the read request is timed out, the function returns without reading new data.
-// Right after reading a message, the function marks the offset as to be acked.
 func (s *SimpleSource) Read(_ context.Context, readRequest sourcesdk.ReadRequest, messageCh chan<- sourcesdk.Message) {
 	// Handle the timeout specification in the read request.
 	ctx, cancel := context.WithTimeout(context.Background(), readRequest.TimeOut())
@@ -70,7 +66,6 @@ func (s *SimpleSource) Read(_ context.Context, readRequest sourcesdk.ReadRequest
 	}
 }
 
-// Ack acknowledges the data from the source.
 func (s *SimpleSource) Ack(_ context.Context, request sourcesdk.AckRequest) {
 	for _, offset := range request.Offsets() {
 		delete(s.toAckSet, deserializeOffset(offset.Value()))
