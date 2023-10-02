@@ -8,12 +8,15 @@ import (
 // Sourcer is the interface for implementation of the source.
 type Sourcer interface {
 	// Read reads the data from the source and sends the data to the message channel.
+	// If the read request is timed out, the function returns without reading new data.
+	// Right after reading a message, the function marks the offset as to be acked.
 	// Read should never attempt to close the message channel as the caller owns the channel.
 	Read(ctx context.Context, readRequest ReadRequest, messageCh chan<- Message)
 	// Ack acknowledges the data from the source.
 	Ack(ctx context.Context, request AckRequest)
 	// Pending returns the number of pending messages.
 	// When the return value is negative, it indicates the pending information is not available.
+	// With pending information being not available, the Numaflow platform doesn't auto-scale the source.
 	Pending(ctx context.Context) int64
 }
 

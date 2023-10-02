@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/numaproj/numaflow-go/pkg/sourcer"
+
 	"github.com/numaproj/numaflow-go/pkg/sourcer/examples/simple_source/impl"
 )
 
