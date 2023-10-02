@@ -14,7 +14,6 @@ type options struct {
 type Option func(*options)
 
 func DefaultOptions() *options {
-	// TODO: for source we should use a different default sock addr
 	return &options{
 		sockAddr:           address,
 		maxMessageSize:     defaultMaxMessageSize,
