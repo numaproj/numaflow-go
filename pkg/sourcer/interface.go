@@ -16,7 +16,7 @@ type Sourcer interface {
 	Ack(ctx context.Context, request AckRequest)
 	// Pending returns the number of pending messages.
 	// When the return value is negative, it indicates the pending information is not available.
-	// Numaflow platform treats a negative value as pending information not available and will not auto-scale the source.
+	// With pending information being not available, the Numaflow platform doesn't auto-scale the source.
 	Pending(ctx context.Context) int64
 }
 
