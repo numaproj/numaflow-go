@@ -1,4 +1,4 @@
-// Package source implements the server code for Source Transformer in golang.
+// Package sourcetransformer implements the server code for Source Transformer in golang.
 //
 // Example Transform (extracting event time from the datum payload)
 // Transform includes both Map and EventTime assignment functionalities.
