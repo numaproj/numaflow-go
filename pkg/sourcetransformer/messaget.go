@@ -7,10 +7,14 @@ import (
 
 var (
 	DROP = fmt.Sprintf("%U__DROP__", '\\') // U+005C__DROP__
+	// Watermark are at millisecond granularity, hence we use epoch(0) - 1 to indicate watermark is not available.
+	// eventTimeForDrop is used to indicate that the message is dropped hence, excluded from watermark calculation
+	eventTimeForDrop = time.Unix(0, -int64(time.Millisecond))
 )
 
 // Message is used to wrap the data return by SourceTransformer functions.
-// Compared with Message, Message contains one more field, the event time, usually extracted from the payload.
+// Compared with Message of other UDFs, source transformer Message contains one more field,
+// the event time, usually extracted from the payload.
 type Message struct {
 	value     []byte
 	eventTime time.Time
@@ -58,7 +62,7 @@ func (m Message) Tags() []string {
 
 // MessageToDrop creates a Message to be dropped
 func MessageToDrop() Message {
-	return Message{eventTime: time.Time{}, value: []byte{}, tags: []string{DROP}}
+	return Message{eventTime: eventTimeForDrop, value: []byte{}, tags: []string{DROP}}
 }
 
 type Messages []Message

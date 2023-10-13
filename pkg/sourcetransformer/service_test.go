@@ -93,7 +93,7 @@ func TestService_sourceTransformFn(t *testing.T) {
 			want: &stpb.SourceTransformResponse{
 				Results: []*stpb.SourceTransformResponse_Result{
 					{
-						EventTime: timestamppb.New(time.Time{}),
+						EventTime: timestamppb.New(eventTimeForDrop),
 						Tags:      []string{DROP},
 						Value:     []byte{},
 					},
