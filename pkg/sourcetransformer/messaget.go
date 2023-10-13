@@ -7,10 +7,9 @@ import (
 
 var (
 	DROP = fmt.Sprintf("%U__DROP__", '\\') // U+005C__DROP__
-	// EventTimeForDrop 1969-12-31 00:00:00 +0000 UTC is set to be slightly earlier than Unix epoch -1 (1969-12-31 23:59:59.999 +0000 UTC)
-	// As -1 is used on Numaflow to indicate watermark is not available,
-	// EventTimeForDrop is used to indicate that the message is dropped hence, excluded from watermark calculation
-	EventTimeForDrop = time.Date(1969, 12, 31, 0, 0, 0, 0, time.UTC)
+	// Watermark are at millisecond granularity, hence we use epoch(0) - 1 to indicate watermark is not available.
+	// eventTimeForDrop is used to indicate that the message is dropped hence, excluded from watermark calculation
+	eventTimeForDrop = time.Unix(0, -int64(time.Millisecond))
 )
 
 // Message is used to wrap the data return by SourceTransformer functions.
@@ -63,7 +62,7 @@ func (m Message) Tags() []string {
 
 // MessageToDrop creates a Message to be dropped
 func MessageToDrop() Message {
-	return Message{eventTime: EventTimeForDrop, value: []byte{}, tags: []string{DROP}}
+	return Message{eventTime: eventTimeForDrop, value: []byte{}, tags: []string{DROP}}
 }
 
 type Messages []Message
