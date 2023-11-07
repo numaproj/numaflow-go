@@ -72,22 +72,58 @@ func TestService_ReduceFn(t *testing.T) {
 			}),
 			input: []*reducepb.ReduceRequest{
 				{
-					Keys:      []string{"client"},
-					Value:     []byte(strconv.Itoa(10)),
-					EventTime: timestamppb.New(time.Time{}),
-					Watermark: timestamppb.New(time.Time{}),
+					Payload: &reducepb.ReduceRequest_Payload{
+						Keys:      []string{"client"},
+						Value:     []byte(strconv.Itoa(10)),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
+					},
+					Operation: &reducepb.ReduceRequest_WindowOperation{
+						Event: reducepb.ReduceRequest_WindowOperation_OPEN,
+						Partitions: []*reducepb.Partition{
+							{
+								Start: timestamppb.New(time.UnixMilli(60000)),
+								End:   timestamppb.New(time.UnixMilli(120000)),
+								Slot:  "slot-0",
+							},
+						},
+					},
 				},
 				{
-					Keys:      []string{"client"},
-					Value:     []byte(strconv.Itoa(20)),
-					EventTime: timestamppb.New(time.Time{}),
-					Watermark: timestamppb.New(time.Time{}),
+					Payload: &reducepb.ReduceRequest_Payload{
+						Keys:      []string{"client"},
+						Value:     []byte(strconv.Itoa(20)),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
+					},
+					Operation: &reducepb.ReduceRequest_WindowOperation{
+						Event: reducepb.ReduceRequest_WindowOperation_APPEND,
+						Partitions: []*reducepb.Partition{
+							{
+								Start: timestamppb.New(time.UnixMilli(60000)),
+								End:   timestamppb.New(time.UnixMilli(120000)),
+								Slot:  "slot-0",
+							},
+						},
+					},
 				},
 				{
-					Keys:      []string{"client"},
-					Value:     []byte(strconv.Itoa(30)),
-					EventTime: timestamppb.New(time.Time{}),
-					Watermark: timestamppb.New(time.Time{}),
+					Payload: &reducepb.ReduceRequest_Payload{
+						Keys:      []string{"client"},
+						Value:     []byte(strconv.Itoa(30)),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
+					},
+					Operation: &reducepb.ReduceRequest_WindowOperation{
+						Event: reducepb.ReduceRequest_WindowOperation_APPEND,
+						Partitions: []*reducepb.Partition{
+							{
+								Start: timestamppb.New(time.UnixMilli(60000)),
+								End:   timestamppb.New(time.UnixMilli(120000)),
+								Slot:  "slot-0",
+							},
+						},
+					},
 				},
 			},
 			expected: &reducepb.ReduceResponse{
@@ -97,6 +133,12 @@ func TestService_ReduceFn(t *testing.T) {
 						Value: []byte(strconv.Itoa(60)),
 					},
 				},
+				Partition: &reducepb.Partition{
+					Start: timestamppb.New(time.UnixMilli(60000)),
+					End:   timestamppb.New(time.UnixMilli(120000)),
+					Slot:  "slot-0",
+				},
+				EventTime: timestamppb.New(time.UnixMilli(119999)),
 			},
 			expectedErr: false,
 		},
@@ -112,40 +154,112 @@ func TestService_ReduceFn(t *testing.T) {
 			}),
 			input: []*reducepb.ReduceRequest{
 				{
-					Keys:      []string{"client1"},
-					Value:     []byte(strconv.Itoa(10)),
-					EventTime: timestamppb.New(time.Time{}),
-					Watermark: timestamppb.New(time.Time{}),
+					Payload: &reducepb.ReduceRequest_Payload{
+						Keys:      []string{"client1"},
+						Value:     []byte(strconv.Itoa(10)),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
+					},
+					Operation: &reducepb.ReduceRequest_WindowOperation{
+						Event: reducepb.ReduceRequest_WindowOperation_OPEN,
+						Partitions: []*reducepb.Partition{
+							{
+								Start: timestamppb.New(time.UnixMilli(60000)),
+								End:   timestamppb.New(time.UnixMilli(120000)),
+								Slot:  "slot-0",
+							},
+						},
+					},
 				},
 				{
-					Keys:      []string{"client2"},
-					Value:     []byte(strconv.Itoa(20)),
-					EventTime: timestamppb.New(time.Time{}),
-					Watermark: timestamppb.New(time.Time{}),
+					Payload: &reducepb.ReduceRequest_Payload{
+						Keys:      []string{"client2"},
+						Value:     []byte(strconv.Itoa(20)),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
+					},
+					Operation: &reducepb.ReduceRequest_WindowOperation{
+						Event: reducepb.ReduceRequest_WindowOperation_OPEN,
+						Partitions: []*reducepb.Partition{
+							{
+								Start: timestamppb.New(time.UnixMilli(60000)),
+								End:   timestamppb.New(time.UnixMilli(120000)),
+								Slot:  "slot-0",
+							},
+						},
+					},
 				},
 				{
-					Keys:      []string{"client3"},
-					Value:     []byte(strconv.Itoa(30)),
-					EventTime: timestamppb.New(time.Time{}),
-					Watermark: timestamppb.New(time.Time{}),
+					Payload: &reducepb.ReduceRequest_Payload{
+						Keys:      []string{"client3"},
+						Value:     []byte(strconv.Itoa(30)),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
+					},
+					Operation: &reducepb.ReduceRequest_WindowOperation{
+						Event: reducepb.ReduceRequest_WindowOperation_APPEND,
+						Partitions: []*reducepb.Partition{
+							{
+								Start: timestamppb.New(time.UnixMilli(60000)),
+								End:   timestamppb.New(time.UnixMilli(120000)),
+								Slot:  "slot-0",
+							},
+						},
+					},
 				},
 				{
-					Keys:      []string{"client1"},
-					Value:     []byte(strconv.Itoa(10)),
-					EventTime: timestamppb.New(time.Time{}),
-					Watermark: timestamppb.New(time.Time{}),
+					Payload: &reducepb.ReduceRequest_Payload{
+						Keys:      []string{"client1"},
+						Value:     []byte(strconv.Itoa(10)),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
+					},
+					Operation: &reducepb.ReduceRequest_WindowOperation{
+						Event: reducepb.ReduceRequest_WindowOperation_APPEND,
+						Partitions: []*reducepb.Partition{
+							{
+								Start: timestamppb.New(time.UnixMilli(60000)),
+								End:   timestamppb.New(time.UnixMilli(120000)),
+								Slot:  "slot-0",
+							},
+						},
+					},
 				},
 				{
-					Keys:      []string{"client2"},
-					Value:     []byte(strconv.Itoa(20)),
-					EventTime: timestamppb.New(time.Time{}),
-					Watermark: timestamppb.New(time.Time{}),
+					Payload: &reducepb.ReduceRequest_Payload{
+						Keys:      []string{"client2"},
+						Value:     []byte(strconv.Itoa(20)),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
+					},
+					Operation: &reducepb.ReduceRequest_WindowOperation{
+						Event: reducepb.ReduceRequest_WindowOperation_APPEND,
+						Partitions: []*reducepb.Partition{
+							{
+								Start: timestamppb.New(time.UnixMilli(60000)),
+								End:   timestamppb.New(time.UnixMilli(120000)),
+								Slot:  "slot-0",
+							},
+						},
+					},
 				},
 				{
-					Keys:      []string{"client3"},
-					Value:     []byte(strconv.Itoa(30)),
-					EventTime: timestamppb.New(time.Time{}),
-					Watermark: timestamppb.New(time.Time{}),
+					Payload: &reducepb.ReduceRequest_Payload{
+						Keys:      []string{"client3"},
+						Value:     []byte(strconv.Itoa(30)),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
+					},
+					Operation: &reducepb.ReduceRequest_WindowOperation{
+						Event: reducepb.ReduceRequest_WindowOperation_APPEND,
+						Partitions: []*reducepb.Partition{
+							{
+								Start: timestamppb.New(time.UnixMilli(60000)),
+								End:   timestamppb.New(time.UnixMilli(120000)),
+								Slot:  "slot-0",
+							},
+						},
+					},
 				},
 			},
 			expected: &reducepb.ReduceResponse{
@@ -163,6 +277,12 @@ func TestService_ReduceFn(t *testing.T) {
 						Value: []byte(strconv.Itoa(60)),
 					},
 				},
+				Partition: &reducepb.Partition{
+					Start: timestamppb.New(time.UnixMilli(60000)),
+					End:   timestamppb.New(time.UnixMilli(120000)),
+					Slot:  "slot-0",
+				},
+				EventTime: timestamppb.New(time.UnixMilli(119999)),
 			},
 			expectedErr: false,
 		},
@@ -178,22 +298,58 @@ func TestService_ReduceFn(t *testing.T) {
 			}),
 			input: []*reducepb.ReduceRequest{
 				{
-					Keys:      []string{"client"},
-					Value:     []byte(strconv.Itoa(10)),
-					EventTime: timestamppb.New(time.Time{}),
-					Watermark: timestamppb.New(time.Time{}),
+					Payload: &reducepb.ReduceRequest_Payload{
+						Keys:      []string{"client"},
+						Value:     []byte(strconv.Itoa(10)),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
+					},
+					Operation: &reducepb.ReduceRequest_WindowOperation{
+						Event: reducepb.ReduceRequest_WindowOperation_OPEN,
+						Partitions: []*reducepb.Partition{
+							{
+								Start: timestamppb.New(time.UnixMilli(60000)),
+								End:   timestamppb.New(time.UnixMilli(120000)),
+								Slot:  "slot-0",
+							},
+						},
+					},
 				},
 				{
-					Keys:      []string{"client"},
-					Value:     []byte(strconv.Itoa(20)),
-					EventTime: timestamppb.New(time.Time{}),
-					Watermark: timestamppb.New(time.Time{}),
+					Payload: &reducepb.ReduceRequest_Payload{
+						Keys:      []string{"client"},
+						Value:     []byte(strconv.Itoa(20)),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
+					},
+					Operation: &reducepb.ReduceRequest_WindowOperation{
+						Event: reducepb.ReduceRequest_WindowOperation_APPEND,
+						Partitions: []*reducepb.Partition{
+							{
+								Start: timestamppb.New(time.UnixMilli(60000)),
+								End:   timestamppb.New(time.UnixMilli(120000)),
+								Slot:  "slot-0",
+							},
+						},
+					},
 				},
 				{
-					Keys:      []string{"client"},
-					Value:     []byte(strconv.Itoa(30)),
-					EventTime: timestamppb.New(time.Time{}),
-					Watermark: timestamppb.New(time.Time{}),
+					Payload: &reducepb.ReduceRequest_Payload{
+						Keys:      []string{"client"},
+						Value:     []byte(strconv.Itoa(30)),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
+					},
+					Operation: &reducepb.ReduceRequest_WindowOperation{
+						Event: reducepb.ReduceRequest_WindowOperation_APPEND,
+						Partitions: []*reducepb.Partition{
+							{
+								Start: timestamppb.New(time.UnixMilli(60000)),
+								End:   timestamppb.New(time.UnixMilli(120000)),
+								Slot:  "slot-0",
+							},
+						},
+					},
 				},
 			},
 			expected: &reducepb.ReduceResponse{
@@ -202,6 +358,12 @@ func TestService_ReduceFn(t *testing.T) {
 						Value: []byte(strconv.Itoa(60)),
 					},
 				},
+				Partition: &reducepb.Partition{
+					Start: timestamppb.New(time.UnixMilli(60000)),
+					End:   timestamppb.New(time.UnixMilli(120000)),
+					Slot:  "slot-0",
+				},
+				EventTime: timestamppb.New(time.UnixMilli(119999)),
 			},
 			expectedErr: false,
 		},
@@ -217,22 +379,58 @@ func TestService_ReduceFn(t *testing.T) {
 			}),
 			input: []*reducepb.ReduceRequest{
 				{
-					Keys:      []string{"client"},
-					Value:     []byte(strconv.Itoa(10)),
-					EventTime: timestamppb.New(time.Time{}),
-					Watermark: timestamppb.New(time.Time{}),
+					Payload: &reducepb.ReduceRequest_Payload{
+						Keys:      []string{"client"},
+						Value:     []byte(strconv.Itoa(10)),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
+					},
+					Operation: &reducepb.ReduceRequest_WindowOperation{
+						Event: reducepb.ReduceRequest_WindowOperation_OPEN,
+						Partitions: []*reducepb.Partition{
+							{
+								Start: timestamppb.New(time.UnixMilli(60000)),
+								End:   timestamppb.New(time.UnixMilli(120000)),
+								Slot:  "slot-0",
+							},
+						},
+					},
 				},
 				{
-					Keys:      []string{"client"},
-					Value:     []byte(strconv.Itoa(20)),
-					EventTime: timestamppb.New(time.Time{}),
-					Watermark: timestamppb.New(time.Time{}),
+					Payload: &reducepb.ReduceRequest_Payload{
+						Keys:      []string{"client"},
+						Value:     []byte(strconv.Itoa(20)),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
+					},
+					Operation: &reducepb.ReduceRequest_WindowOperation{
+						Event: reducepb.ReduceRequest_WindowOperation_APPEND,
+						Partitions: []*reducepb.Partition{
+							{
+								Start: timestamppb.New(time.UnixMilli(60000)),
+								End:   timestamppb.New(time.UnixMilli(120000)),
+								Slot:  "slot-0",
+							},
+						},
+					},
 				},
 				{
-					Keys:      []string{"client"},
-					Value:     []byte(strconv.Itoa(30)),
-					EventTime: timestamppb.New(time.Time{}),
-					Watermark: timestamppb.New(time.Time{}),
+					Payload: &reducepb.ReduceRequest_Payload{
+						Keys:      []string{"client"},
+						Value:     []byte(strconv.Itoa(30)),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
+					},
+					Operation: &reducepb.ReduceRequest_WindowOperation{
+						Event: reducepb.ReduceRequest_WindowOperation_OPEN,
+						Partitions: []*reducepb.Partition{
+							{
+								Start: timestamppb.New(time.UnixMilli(60000)),
+								End:   timestamppb.New(time.UnixMilli(120000)),
+								Slot:  "slot-0",
+							},
+						},
+					},
 				},
 			},
 			expected: &reducepb.ReduceResponse{
@@ -242,6 +440,12 @@ func TestService_ReduceFn(t *testing.T) {
 						Value: []byte{},
 					},
 				},
+				Partition: &reducepb.Partition{
+					Start: timestamppb.New(time.UnixMilli(60000)),
+					End:   timestamppb.New(time.UnixMilli(120000)),
+					Slot:  "slot-0",
+				},
+				EventTime: timestamppb.New(time.UnixMilli(119999)),
 			},
 			expectedErr: false,
 		},
@@ -277,6 +481,8 @@ func TestService_ReduceFn(t *testing.T) {
 				defer wg.Done()
 				for msg := range outputCh {
 					result.Results = append(result.Results, msg.Results...)
+					result.Partition = msg.Partition
+					result.EventTime = msg.EventTime
 				}
 			}()
 

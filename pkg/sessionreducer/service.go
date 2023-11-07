@@ -67,8 +67,7 @@ func (fs *Service) SessionReduceFn(stream sessionreducepb.SessionReduce_SessionR
 		case sessionreducepb.SessionReduceRequest_WindowOperation_OPEN:
 			// create a new task and start the session reduce operation
 			// also append the datum to the task
-			taskManager.CreateTask(ctx, d, fs.createSessionReducer())
-			err := taskManager.AppendToTask(d)
+			err := taskManager.CreateTask(ctx, d, fs.createSessionReducer())
 			if err != nil {
 				statusErr := status.Errorf(codes.Internal, err.Error())
 				return statusErr
@@ -78,7 +77,7 @@ func (fs *Service) SessionReduceFn(stream sessionreducepb.SessionReduce_SessionR
 			taskManager.CloseTask(d)
 		case sessionreducepb.SessionReduceRequest_WindowOperation_APPEND:
 			// append the datum to the task
-			err := taskManager.AppendToTask(d)
+			err := taskManager.AppendToTask(d, fs.createSessionReducer())
 			if err != nil {
 				statusErr := status.Errorf(codes.Internal, err.Error())
 				return statusErr

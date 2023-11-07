@@ -12,8 +12,8 @@ import (
 	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/sessionreduce/v1"
 )
 
-// reduceTask represents a reduce task for a session reduce operation.
-type reduceTask struct {
+// sessionReduceTask represents a session reduce task for a session reduce operation.
+type sessionReduceTask struct {
 	combinedKey    string
 	partition      *v1.Partition
 	reduceStreamer SessionReducer
@@ -23,7 +23,7 @@ type reduceTask struct {
 }
 
 // buildSessionReduceResponse builds the session reduce response from the messages.
-func (rt *reduceTask) buildSessionReduceResponse(messages Messages) *v1.SessionReduceResponse {
+func (rt *sessionReduceTask) buildSessionReduceResponse(messages Messages) *v1.SessionReduceResponse {
 	result := make([]*v1.SessionReduceResponse_Result, 0, len(messages))
 	for _, message := range messages {
 		result = append(result, &v1.SessionReduceResponse_Result{
@@ -44,33 +44,37 @@ func (rt *reduceTask) buildSessionReduceResponse(messages Messages) *v1.SessionR
 }
 
 // uniqueKey returns the unique key for the reduce task to be used in the task manager to identify the task.
-func (rt *reduceTask) uniqueKey() string {
+func (rt *sessionReduceTask) uniqueKey() string {
 	return fmt.Sprintf("%d:%d:%s",
 		rt.partition.GetStart().AsTime().UnixMilli(),
 		rt.partition.GetEnd().AsTime().UnixMilli(),
 		rt.combinedKey)
 }
 
-// reduceTaskManager manages the reduce tasks for a session reduce operation.
-type reduceTaskManager struct {
-	Tasks  map[string]*reduceTask
+// sessionReduceTaskManager manages the reduce tasks for a session reduce operation.
+type sessionReduceTaskManager struct {
+	Tasks  map[string]*sessionReduceTask
 	Output chan *v1.SessionReduceResponse
 	Mutex  sync.RWMutex
 }
 
-func newReduceTaskManager() *reduceTaskManager {
-	return &reduceTaskManager{
-		Tasks:  make(map[string]*reduceTask),
+func newReduceTaskManager() *sessionReduceTaskManager {
+	return &sessionReduceTaskManager{
+		Tasks:  make(map[string]*sessionReduceTask),
 		Output: make(chan *v1.SessionReduceResponse),
 	}
 }
 
 // CreateTask creates a new reduce task and starts the session reduce operation.
-func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.SessionReduceRequest, reduceStreamer SessionReducer) {
+func (rtm *sessionReduceTaskManager) CreateTask(ctx context.Context, request *v1.SessionReduceRequest, reduceStreamer SessionReducer) error {
 	rtm.Mutex.Lock()
 	defer rtm.Mutex.Unlock()
 
-	task := &reduceTask{
+	if len(request.Operation.Partitions) != 1 {
+		return fmt.Errorf("invalid number of partitions")
+	}
+
+	task := &sessionReduceTask{
 		combinedKey:    strings.Join(request.GetPayload().GetKeys(), delimiter),
 		partition:      request.Operation.Partitions[0],
 		reduceStreamer: reduceStreamer,
@@ -85,16 +89,22 @@ func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.Sessio
 	}()
 
 	rtm.Tasks[task.uniqueKey()] = task
+	return nil
 }
 
 // AppendToTask writes the message to the reduce task.
-func (rtm *reduceTaskManager) AppendToTask(request *v1.SessionReduceRequest) error {
+// If the reduce task is not found, it will create a new reduce task and start the reduce operation.
+func (rtm *sessionReduceTaskManager) AppendToTask(request *v1.SessionReduceRequest, sessionReducer SessionReducer) error {
+	if len(request.Operation.Partitions) != 1 {
+		return fmt.Errorf("invalid number of partitions")
+	}
+
 	rtm.Mutex.RLock()
 	task, ok := rtm.Tasks[generateKey(request.Operation.Partitions[0], request.Payload.Keys)]
 	rtm.Mutex.RUnlock()
 
 	if !ok {
-		return fmt.Errorf("task not found")
+		return rtm.CreateTask(context.Background(), request, sessionReducer)
 	}
 
 	task.inputCh <- buildDatum(request)
@@ -102,9 +112,9 @@ func (rtm *reduceTaskManager) AppendToTask(request *v1.SessionReduceRequest) err
 }
 
 // CloseTask closes the reduce task input channel. The reduce task will be closed when all the messages are processed.
-func (rtm *reduceTaskManager) CloseTask(request *v1.SessionReduceRequest) {
+func (rtm *sessionReduceTaskManager) CloseTask(request *v1.SessionReduceRequest) {
 	rtm.Mutex.Lock()
-	tasksToBeClosed := make([]*reduceTask, 0, len(request.Operation.Partitions))
+	tasksToBeClosed := make([]*sessionReduceTask, 0, len(request.Operation.Partitions))
 	for _, partition := range request.Operation.Partitions {
 		key := generateKey(partition, request.Payload.Keys)
 		task, ok := rtm.Tasks[key]
@@ -122,9 +132,9 @@ func (rtm *reduceTaskManager) CloseTask(request *v1.SessionReduceRequest) {
 
 // MergeTasks merges the session reduce tasks. It will invoke close on all the tasks except the main task. The main task will
 // merge the aggregators from the other tasks. The main task will be first task in the list of tasks.
-func (rtm *reduceTaskManager) MergeTasks(ctx context.Context, request *v1.SessionReduceRequest) error {
+func (rtm *sessionReduceTaskManager) MergeTasks(ctx context.Context, request *v1.SessionReduceRequest) error {
 	rtm.Mutex.Lock()
-	tasks := make([]*reduceTask, 0, len(request.Operation.Partitions))
+	tasks := make([]*sessionReduceTask, 0, len(request.Operation.Partitions))
 	for _, partition := range request.Operation.Partitions {
 		key := generateKey(partition, request.Payload.Keys)
 		task, ok := rtm.Tasks[key]
@@ -163,7 +173,7 @@ func (rtm *reduceTaskManager) MergeTasks(ctx context.Context, request *v1.Sessio
 // deletes the old task and creates a new task with the new window.
 // expects request.Operation.Partitions to have exactly two partitions. The first partition is the old partition and the second
 // partition is the new partition.
-func (rtm *reduceTaskManager) ExpandTask(request *v1.SessionReduceRequest) error {
+func (rtm *sessionReduceTaskManager) ExpandTask(request *v1.SessionReduceRequest) error {
 	if len(request.Operation.Partitions) != 2 {
 		return fmt.Errorf("expected exactly two partitions")
 	}
@@ -183,14 +193,14 @@ func (rtm *reduceTaskManager) ExpandTask(request *v1.SessionReduceRequest) error
 }
 
 // OutputChannel returns the output channel for the reduce task manager to read the results.
-func (rtm *reduceTaskManager) OutputChannel() <-chan *v1.SessionReduceResponse {
+func (rtm *sessionReduceTaskManager) OutputChannel() <-chan *v1.SessionReduceResponse {
 	return rtm.Output
 }
 
 // WaitAll waits for all the reduce tasks to complete.
-func (rtm *reduceTaskManager) WaitAll() {
+func (rtm *sessionReduceTaskManager) WaitAll() {
 	rtm.Mutex.RLock()
-	tasks := make([]*reduceTask, 0, len(rtm.Tasks))
+	tasks := make([]*sessionReduceTask, 0, len(rtm.Tasks))
 	for _, task := range rtm.Tasks {
 		tasks = append(tasks, task)
 	}
@@ -199,12 +209,14 @@ func (rtm *reduceTaskManager) WaitAll() {
 	for _, task := range tasks {
 		<-task.Done
 	}
+	// after all the tasks are completed, close the output channel
+	close(rtm.Output)
 }
 
 // CloseAll closes all the reduce tasks.
-func (rtm *reduceTaskManager) CloseAll() {
+func (rtm *sessionReduceTaskManager) CloseAll() {
 	rtm.Mutex.Lock()
-	tasks := make([]*reduceTask, 0, len(rtm.Tasks))
+	tasks := make([]*sessionReduceTask, 0, len(rtm.Tasks))
 	for _, task := range rtm.Tasks {
 		tasks = append(tasks, task)
 	}

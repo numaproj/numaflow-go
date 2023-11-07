@@ -16,10 +16,11 @@ service SessionReduce {
   rpc IsReady(google.protobuf.Empty) returns (ReadyResponse);
 }
 
+// Partition represents a window partition.
 message Partition {
   google.protobuf.Timestamp start = 1;
   google.protobuf.Timestamp end = 2;
-  string key = 3;
+  string slot = 3;
 }
 
 /**
@@ -41,15 +42,6 @@ message SessionReduceRequest {
     repeated Partition partitions = 2;
   }
 
-  // WindowType represents a window type.
-  //REVISIT Do we need this? Can this be passed using metadata?
-  enum WindowType {
-    FIXED = 0;
-    SLIDING = 1;
-    SESSION = 2;
-    GLOBAL = 3;
-  }
-
   // Payload represents a payload element.
   message Payload {
     repeated string keys = 1;
@@ -60,7 +52,6 @@ message SessionReduceRequest {
 
   Payload payload = 1;
   WindowOperation operation = 2;
-  WindowType type = 3;
 }
 
 /**
@@ -74,16 +65,15 @@ message SessionReduceResponse {
     repeated string tags = 3;
   }
 
-
   repeated Result result = 1;
 
   // Partition represents a window partition to which the result belongs.
   Partition partition = 2;
 
+  // the key which was used for demultiplexing the request stream.
   string combinedKey = 3;
-  // Cob to indicate that there won't be any more results for this partition.
-  // This is used to indicate that the partition is closed so that the downstream
-  // can release the resources associated with the partition.
+
+  // EventTime represents the event time of the result.
   google.protobuf.Timestamp event_time = 4;
 }
 
