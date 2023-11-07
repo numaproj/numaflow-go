@@ -1,4 +1,4 @@
-package sessionreducer
+package globalreducer
 
 import (
 	"context"
@@ -9,29 +9,29 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	sessionreducepb "github.com/numaproj/numaflow-go/pkg/apis/proto/sessionreduce/v1"
+	globalreducepb "github.com/numaproj/numaflow-go/pkg/apis/proto/globalreduce/v1"
 )
 
 const (
 	uds                   = "unix"
 	defaultMaxMessageSize = 1024 * 1024 * 64
-	address               = "/var/run/numaflow/sessionreduce.sock"
+	address               = "/var/run/numaflow/globalreduce.sock"
 	delimiter             = ":"
 )
 
-// Service implements the proto gen server interface and contains the sesionreduce operation handler.
+// Service implements the proto gen server interface and contains the globalreduce operation handler.
 type Service struct {
-	sessionreducepb.UnimplementedSessionReduceServer
-	createSessionReducer CreateSessionReducer
+	globalreducepb.UnimplementedGlobalReduceServer
+	globalReducer GlobalReducer
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
-func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*sessionreducepb.ReadyResponse, error) {
-	return &sessionreducepb.ReadyResponse{Ready: true}, nil
+func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*globalreducepb.ReadyResponse, error) {
+	return &globalreducepb.ReadyResponse{Ready: true}, nil
 }
 
-// SessionReduceFn applies a session reduce function to a request stream and streams the results.
-func (fs *Service) SessionReduceFn(stream sessionreducepb.SessionReduce_SessionReduceFnServer) error {
+// GlobalReduceFn applies a global reduce function to a request stream and streams the results.
+func (fs *Service) GlobalReduceFn(stream globalreducepb.GlobalReduce_GlobalReduceFnServer) error {
 
 	ctx := stream.Context()
 	taskManager := newReduceTaskManager()
@@ -64,34 +64,20 @@ func (fs *Service) SessionReduceFn(stream sessionreducepb.SessionReduce_SessionR
 
 		// invoke the appropriate task manager method based on the operation
 		switch d.Operation.Event {
-		case sessionreducepb.SessionReduceRequest_WindowOperation_OPEN:
-			// create a new task and start the session reduce operation
+		case globalreducepb.GlobalReduceRequest_WindowOperation_OPEN:
+			// create a new task and start the global reduce operation
 			// also append the datum to the task
-			err := taskManager.CreateTask(ctx, d, fs.createSessionReducer())
+			err := taskManager.CreateTask(ctx, d, fs.globalReducer)
 			if err != nil {
 				statusErr := status.Errorf(codes.Internal, err.Error())
 				return statusErr
 			}
-		case sessionreducepb.SessionReduceRequest_WindowOperation_CLOSE:
+		case globalreducepb.GlobalReduceRequest_WindowOperation_CLOSE:
 			// close the task
 			taskManager.CloseTask(d)
-		case sessionreducepb.SessionReduceRequest_WindowOperation_APPEND:
+		case globalreducepb.GlobalReduceRequest_WindowOperation_APPEND:
 			// append the datum to the task
-			err := taskManager.AppendToTask(d, fs.createSessionReducer())
-			if err != nil {
-				statusErr := status.Errorf(codes.Internal, err.Error())
-				return statusErr
-			}
-		case sessionreducepb.SessionReduceRequest_WindowOperation_MERGE:
-			// merge the tasks
-			err := taskManager.MergeTasks(ctx, d)
-			if err != nil {
-				statusErr := status.Errorf(codes.Internal, err.Error())
-				return statusErr
-			}
-		case sessionreducepb.SessionReduceRequest_WindowOperation_EXPAND:
-			// expand the task
-			err := taskManager.ExpandTask(d)
+			err := taskManager.AppendToTask(d, fs.globalReducer)
 			if err != nil {
 				statusErr := status.Errorf(codes.Internal, err.Error())
 				return statusErr

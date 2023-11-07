@@ -6,11 +6,11 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
 
-package sessionreduce.v1;
+package globalreduce.v1;
 
-service SessionReduce {
-  // SessionReduceFn applies a reduce function to a request stream.
-  rpc SessionReduceFn(stream SessionReduceRequest) returns (stream SessionReduceResponse);
+service GlobalReduce {
+  // GlobalReduceFn applies a reduce function to a request stream.
+  rpc GlobalReduceFn(stream GlobalReduceRequest) returns (stream GlobalReduceResponse);
 
   // IsReady is the heartbeat endpoint for gRPC.
   rpc IsReady(google.protobuf.Empty) returns (ReadyResponse);
@@ -24,9 +24,9 @@ message Partition {
 }
 
 /**
- * SessionReduceRequest represents a request element.
+ * GlobalReduceRequest represents a request element.
  */
-message SessionReduceRequest {
+message GlobalReduceRequest {
   // WindowOperation represents a window operation.
   // it can be one of OPEN, CLOSE, EXPAND, MERGE, APPEND.
   message WindowOperation {
@@ -55,9 +55,9 @@ message SessionReduceRequest {
 }
 
 /**
- * SessionReduceResponse represents a response element.
+ * GlobalReduceResponse represents a response element.
  */
-message SessionReduceResponse {
+message GlobalReduceResponse {
   // Result represents a result element. It contains the result of the reduce function.
   message Result {
     repeated string keys = 1;

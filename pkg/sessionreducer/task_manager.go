@@ -17,16 +17,15 @@ type sessionReduceTask struct {
 	combinedKey    string
 	partition      *v1.Partition
 	reduceStreamer SessionReducer
-	watermark      time.Time
 	inputCh        chan Datum
 	Done           chan struct{}
 }
 
 // buildSessionReduceResponse builds the session reduce response from the messages.
 func (rt *sessionReduceTask) buildSessionReduceResponse(messages Messages) *v1.SessionReduceResponse {
-	result := make([]*v1.SessionReduceResponse_Result, 0, len(messages))
+	results := make([]*v1.SessionReduceResponse_Result, 0, len(messages))
 	for _, message := range messages {
-		result = append(result, &v1.SessionReduceResponse_Result{
+		results = append(results, &v1.SessionReduceResponse_Result{
 			Keys:  message.Keys(),
 			Value: message.Value(),
 			Tags:  message.Tags(),
@@ -34,7 +33,7 @@ func (rt *sessionReduceTask) buildSessionReduceResponse(messages Messages) *v1.S
 	}
 
 	response := &v1.SessionReduceResponse{
-		Result:      result,
+		Results:     results,
 		Partition:   rt.partition,
 		CombinedKey: rt.combinedKey,
 		EventTime:   timestamppb.New(rt.partition.GetEnd().AsTime().Add(-1 * time.Millisecond)),
@@ -66,7 +65,7 @@ func newReduceTaskManager() *sessionReduceTaskManager {
 }
 
 // CreateTask creates a new reduce task and starts the session reduce operation.
-func (rtm *sessionReduceTaskManager) CreateTask(ctx context.Context, request *v1.SessionReduceRequest, reduceStreamer SessionReducer) error {
+func (rtm *sessionReduceTaskManager) CreateTask(ctx context.Context, request *v1.SessionReduceRequest, sessionReducer SessionReducer) error {
 	rtm.Mutex.Lock()
 	defer rtm.Mutex.Unlock()
 
@@ -77,17 +76,21 @@ func (rtm *sessionReduceTaskManager) CreateTask(ctx context.Context, request *v1
 	task := &sessionReduceTask{
 		combinedKey:    strings.Join(request.GetPayload().GetKeys(), delimiter),
 		partition:      request.Operation.Partitions[0],
-		reduceStreamer: reduceStreamer,
+		reduceStreamer: sessionReducer,
 		inputCh:        make(chan Datum),
 		Done:           make(chan struct{}),
 	}
 
 	go func() {
 		defer close(task.Done)
-		msgs := reduceStreamer.SessionReduce(ctx, request.GetPayload().GetKeys(), task.inputCh)
+		msgs := sessionReducer.SessionReduce(ctx, request.GetPayload().GetKeys(), task.inputCh)
 		rtm.Output <- task.buildSessionReduceResponse(msgs)
 	}()
 
+	// send the datum to the task if the payload is not nil
+	if request.Payload != nil {
+		task.inputCh <- buildDatum(request)
+	}
 	rtm.Tasks[task.uniqueKey()] = task
 	return nil
 }

@@ -19,4 +19,5 @@ type SessionReducer interface {
 	MergeAggregator(ctx context.Context, aggregator []byte)
 }
 
+// CreateSessionReducer is a function which returns a new instance of SessionReducer.
 type CreateSessionReducer func() SessionReducer
