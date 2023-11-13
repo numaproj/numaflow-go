@@ -72,7 +72,6 @@ func newReduceTaskManager() *globalReduceTaskManager {
 // CreateTask creates a new reduce task and starts the global reduce operation.
 func (rtm *globalReduceTaskManager) CreateTask(ctx context.Context, request *v1.GlobalReduceRequest, globalReducer GlobalReducer) error {
 	rtm.Mutex.Lock()
-	defer rtm.Mutex.Unlock()
 
 	if len(request.Operation.Partitions) != 1 {
 		return fmt.Errorf("invalid number of partitions")
@@ -88,23 +87,35 @@ func (rtm *globalReduceTaskManager) CreateTask(ctx context.Context, request *v1.
 		latestWatermark: atomic.NewTime(time.Time{}),
 	}
 
+	key := task.uniqueKey()
+	rtm.Tasks[key] = task
+
+	rtm.Mutex.Unlock()
+
 	go func() {
 		defer close(task.Done)
 		var wg sync.WaitGroup
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
+		readLoop:
 			for {
 				select {
 				case <-ctx.Done():
 					return
 				case message, ok := <-task.outputCh:
 					if !ok {
-						return
+						break readLoop
 					}
 					rtm.Output <- task.buildGlobalReduceResponse(message)
 				}
 			}
+			// send a done signal
+			close(task.Done)
+			// delete the task from the tasks list
+			rtm.Mutex.Lock()
+			delete(rtm.Tasks, key)
+			rtm.Mutex.Unlock()
 		}()
 		// start the global reduce operation
 		globalReducer.GlobalReduce(ctx, request.GetPayload().GetKeys(), task.inputCh, task.outputCh)
@@ -121,7 +132,6 @@ func (rtm *globalReduceTaskManager) CreateTask(ctx context.Context, request *v1.
 		task.latestWatermark.Store(request.Payload.Watermark.AsTime())
 	}
 
-	rtm.Tasks[task.uniqueKey()] = task
 	return nil
 }
 
@@ -158,7 +168,6 @@ func (rtm *globalReduceTaskManager) CloseTask(request *v1.GlobalReduceRequest) {
 		if ok {
 			tasksToBeClosed = append(tasksToBeClosed, task)
 		}
-		delete(rtm.Tasks, key)
 	}
 	rtm.Mutex.Unlock()
 

@@ -28,13 +28,11 @@ message Partition {
  */
 message GlobalReduceRequest {
   // WindowOperation represents a window operation.
-  // it can be one of OPEN, CLOSE, EXPAND, MERGE, APPEND.
+  // it can be one of OPEN, CLOSE, and APPEND.
   message WindowOperation {
     enum Event {
       OPEN = 0;
       CLOSE = 1;
-      EXPAND = 2;
-      MERGE = 3;
       APPEND = 4;
     }
 

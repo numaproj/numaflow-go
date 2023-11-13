@@ -67,8 +67,6 @@ func newReduceTaskManager() *sessionReduceTaskManager {
 // CreateTask creates a new reduce task and starts the session reduce operation.
 func (rtm *sessionReduceTaskManager) CreateTask(ctx context.Context, request *v1.SessionReduceRequest, sessionReducer SessionReducer) error {
 	rtm.Mutex.Lock()
-	defer rtm.Mutex.Unlock()
-
 	if len(request.Operation.Partitions) != 1 {
 		return fmt.Errorf("invalid number of partitions")
 	}
@@ -81,17 +79,28 @@ func (rtm *sessionReduceTaskManager) CreateTask(ctx context.Context, request *v1
 		Done:           make(chan struct{}),
 	}
 
+	key := task.uniqueKey()
+	rtm.Tasks[key] = task
+
+	rtm.Mutex.Unlock()
+
 	go func() {
-		defer close(task.Done)
 		msgs := sessionReducer.SessionReduce(ctx, request.GetPayload().GetKeys(), task.inputCh)
+		// write the output to the output channel, service will forward it to downstream
 		rtm.Output <- task.buildSessionReduceResponse(msgs)
+		// send a done signal
+		close(task.Done)
+		// delete the task from the tasks list
+		rtm.Mutex.Lock()
+		delete(rtm.Tasks, key)
+		rtm.Mutex.Unlock()
 	}()
 
 	// send the datum to the task if the payload is not nil
 	if request.Payload != nil {
 		task.inputCh <- buildDatum(request)
 	}
-	rtm.Tasks[task.uniqueKey()] = task
+
 	return nil
 }
 
@@ -124,7 +133,6 @@ func (rtm *sessionReduceTaskManager) CloseTask(request *v1.SessionReduceRequest)
 		if ok {
 			tasksToBeClosed = append(tasksToBeClosed, task)
 		}
-		delete(rtm.Tasks, key)
 	}
 	rtm.Mutex.Unlock()
 
@@ -158,11 +166,11 @@ func (rtm *sessionReduceTaskManager) MergeTasks(ctx context.Context, request *v1
 
 	for _, task := range tasks[1:] {
 		close(task.inputCh)
-		aggregators = append(aggregators, task.reduceStreamer.Aggregator(ctx))
+		aggregators = append(aggregators, task.reduceStreamer.Accumulator(ctx))
 	}
 
 	for _, aggregator := range aggregators {
-		mainTask.reduceStreamer.MergeAggregator(ctx, aggregator)
+		mainTask.reduceStreamer.MergeAccumulator(ctx, aggregator)
 	}
 
 	if request.Payload != nil {
@@ -200,7 +208,7 @@ func (rtm *sessionReduceTaskManager) OutputChannel() <-chan *v1.SessionReduceRes
 	return rtm.Output
 }
 
-// WaitAll waits for all the reduce tasks to complete.
+// WaitAll waits for all the pending reduce tasks to complete.
 func (rtm *sessionReduceTaskManager) WaitAll() {
 	rtm.Mutex.RLock()
 	tasks := make([]*sessionReduceTask, 0, len(rtm.Tasks))

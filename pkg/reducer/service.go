@@ -68,6 +68,9 @@ func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
 			return recvErr
 		}
 
+		// for fixed and sliding, its just open or append operation
+		// close signal will be sent to all the reducers when grpc
+		// input stream gets EOF.
 		switch d.Operation.Event {
 		case reducepb.ReduceRequest_WindowOperation_OPEN:
 			// create a new reduce task and start the reduce operation
@@ -76,9 +79,6 @@ func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
 				statusErr := status.Errorf(codes.Internal, err.Error())
 				return statusErr
 			}
-		case reducepb.ReduceRequest_WindowOperation_CLOSE:
-			// close the reduce task
-			taskManager.CloseTask(d)
 		case reducepb.ReduceRequest_WindowOperation_APPEND:
 			// append the datum to the reduce task
 			err = taskManager.AppendToTask(d, fs.Reducer)

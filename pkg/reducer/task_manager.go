@@ -66,8 +66,6 @@ func newReduceTaskManager() *reduceTaskManager {
 // CreateTask creates a new reduce task and starts the  reduce operation.
 func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.ReduceRequest, reducer Reducer) error {
 	rtm.Mutex.Lock()
-	defer rtm.Mutex.Unlock()
-
 	if len(request.Operation.Partitions) != 1 {
 		return fmt.Errorf("invalid number of partitions")
 	}
@@ -82,16 +80,21 @@ func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.Reduce
 		Done:        make(chan struct{}),
 	}
 
+	key := task.uniqueKey()
+	rtm.Tasks[key] = task
+
+	rtm.Mutex.Unlock()
+
 	go func() {
-		defer close(task.Done)
 		msgs := reducer.Reduce(ctx, request.GetPayload().GetKeys(), task.inputCh, md)
+		// write the output to the output channel, service will forward it to downstream
 		rtm.Output <- task.buildReduceResponse(msgs)
+		// send a done signal
+		close(task.Done)
 	}()
 
 	// write the first message to the input channel
 	task.inputCh <- buildDatum(request)
-
-	rtm.Tasks[task.uniqueKey()] = task
 	return nil
 }
 
@@ -110,25 +113,6 @@ func (rtm *reduceTaskManager) AppendToTask(request *v1.ReduceRequest, reducer Re
 
 	task.inputCh <- buildDatum(request)
 	return nil
-}
-
-// CloseTask closes the reduce task input channel. The reduce task will be closed when all the messages are processed.
-func (rtm *reduceTaskManager) CloseTask(request *v1.ReduceRequest) {
-	rtm.Mutex.Lock()
-	tasksToBeClosed := make([]*reduceTask, 0, len(request.Operation.Partitions))
-	for _, partition := range request.Operation.Partitions {
-		key := generateKey(partition, request.Payload.Keys)
-		task, ok := rtm.Tasks[key]
-		if ok {
-			tasksToBeClosed = append(tasksToBeClosed, task)
-		}
-		delete(rtm.Tasks, key)
-	}
-	rtm.Mutex.Unlock()
-
-	for _, task := range tasksToBeClosed {
-		close(task.inputCh)
-	}
 }
 
 // OutputChannel returns the output channel for the reduce task manager to read the results.
