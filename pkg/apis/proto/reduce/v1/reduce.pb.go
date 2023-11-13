@@ -600,7 +600,7 @@ func file_pkg_apis_proto_reduce_v1_reduce_proto_rawDescGZIP() []byte {
 var file_pkg_apis_proto_reduce_v1_reduce_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_pkg_apis_proto_reduce_v1_reduce_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_pkg_apis_proto_reduce_v1_reduce_proto_goTypes = []interface{}{
-	(ReduceRequest_WindowOperation_Event)(0), // 0: reduce.v1.ReduceRequest.WindowOperation.Event
+	(ReduceRequest_WindowOperation_Event)(0), // 0: reduce.v1.ReduceRequest.WindowOperation.Operation
 	(*ReduceRequest)(nil),                    // 1: reduce.v1.ReduceRequest
 	(*Partition)(nil),                        // 2: reduce.v1.Partition
 	(*ReduceResponse)(nil),                   // 3: reduce.v1.ReduceResponse
@@ -619,7 +619,7 @@ var file_pkg_apis_proto_reduce_v1_reduce_proto_depIdxs = []int32{
 	7,  // 4: reduce.v1.ReduceResponse.results:type_name -> reduce.v1.ReduceResponse.Result
 	2,  // 5: reduce.v1.ReduceResponse.partition:type_name -> reduce.v1.Partition
 	8,  // 6: reduce.v1.ReduceResponse.event_time:type_name -> google.protobuf.Timestamp
-	0,  // 7: reduce.v1.ReduceRequest.WindowOperation.event:type_name -> reduce.v1.ReduceRequest.WindowOperation.Event
+	0,  // 7: reduce.v1.ReduceRequest.WindowOperation.event:type_name -> reduce.v1.ReduceRequest.WindowOperation.Operation
 	2,  // 8: reduce.v1.ReduceRequest.WindowOperation.partitions:type_name -> reduce.v1.Partition
 	8,  // 9: reduce.v1.ReduceRequest.Payload.event_time:type_name -> google.protobuf.Timestamp
 	8,  // 10: reduce.v1.ReduceRequest.Payload.watermark:type_name -> google.protobuf.Timestamp

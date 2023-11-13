@@ -13,7 +13,7 @@ type EvenOdd struct {
 
 func (e *EvenOdd) Map(ctx context.Context, keys []string, d mapper.Datum) mapper.Messages {
 	msg := d.Value()
-	_ = d.EventTime() // Event time is available
+	_ = d.EventTime() // Operation time is available
 	_ = d.Watermark() // Watermark is available
 	// If msg is not an integer, drop it, otherwise return it with "even" or "odd" key.
 	if num, err := strconv.Atoi(string(msg)); err != nil {

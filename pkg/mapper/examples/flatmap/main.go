@@ -10,7 +10,7 @@ import (
 
 func mapFn(_ context.Context, keys []string, d mapper.Datum) mapper.Messages {
 	msg := d.Value()
-	_ = d.EventTime() // Event time is available
+	_ = d.EventTime() // Operation time is available
 	_ = d.Watermark() // Watermark is available
 	// Split the msg into an array with comma.
 	strs := strings.Split(string(msg), ",")

@@ -15,7 +15,7 @@ type FlatMap struct {
 func (f *FlatMap) MapStream(ctx context.Context, keys []string, d mapstreamer.Datum, messageCh chan<- mapstreamer.Message) {
 	defer close(messageCh)
 	msg := d.Value()
-	_ = d.EventTime() // Event time is available
+	_ = d.EventTime() // Operation time is available
 	_ = d.Watermark() // Watermark is available
 	// Split the msg into an array with comma.
 	strs := strings.Split(string(msg), ",")
