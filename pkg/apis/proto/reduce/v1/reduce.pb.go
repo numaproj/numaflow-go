@@ -203,7 +203,7 @@ type ReduceResponse struct {
 	// Partition represents a window partition to which the result belongs.
 	Partition *Partition `protobuf:"bytes,2,opt,name=partition,proto3" json:"partition,omitempty"`
 	// EventTime represents the event time of the result.
-	EventTime *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=event_time,json=eventTime,proto3" json:"event_time,omitempty"`
+	EventTime *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=event_time,json=eventTime,proto3" json:"event_time,omitempty"`
 }
 
 func (x *ReduceResponse) Reset() {
@@ -559,7 +559,7 @@ var file_pkg_apis_proto_reduce_v1_reduce_proto_rawDesc = []byte{
 	0x61, 0x72, 0x74, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x14,
 	0x2e, 0x72, 0x65, 0x64, 0x75, 0x63, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x61, 0x72, 0x74, 0x69,
 	0x74, 0x69, 0x6f, 0x6e, 0x52, 0x09, 0x70, 0x61, 0x72, 0x74, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x12,
-	0x39, 0x0a, 0x0a, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x04, 0x20,
+	0x39, 0x0a, 0x0a, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x03, 0x20,
 	0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f,
 	0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52,
 	0x09, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x54, 0x69, 0x6d, 0x65, 0x1a, 0x46, 0x0a, 0x06, 0x52, 0x65,
@@ -600,7 +600,7 @@ func file_pkg_apis_proto_reduce_v1_reduce_proto_rawDescGZIP() []byte {
 var file_pkg_apis_proto_reduce_v1_reduce_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_pkg_apis_proto_reduce_v1_reduce_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_pkg_apis_proto_reduce_v1_reduce_proto_goTypes = []interface{}{
-	(ReduceRequest_WindowOperation_Event)(0), // 0: reduce.v1.ReduceRequest.WindowOperation.Operation
+	(ReduceRequest_WindowOperation_Event)(0), // 0: reduce.v1.ReduceRequest.WindowOperation.Event
 	(*ReduceRequest)(nil),                    // 1: reduce.v1.ReduceRequest
 	(*Partition)(nil),                        // 2: reduce.v1.Partition
 	(*ReduceResponse)(nil),                   // 3: reduce.v1.ReduceResponse
@@ -619,7 +619,7 @@ var file_pkg_apis_proto_reduce_v1_reduce_proto_depIdxs = []int32{
 	7,  // 4: reduce.v1.ReduceResponse.results:type_name -> reduce.v1.ReduceResponse.Result
 	2,  // 5: reduce.v1.ReduceResponse.partition:type_name -> reduce.v1.Partition
 	8,  // 6: reduce.v1.ReduceResponse.event_time:type_name -> google.protobuf.Timestamp
-	0,  // 7: reduce.v1.ReduceRequest.WindowOperation.event:type_name -> reduce.v1.ReduceRequest.WindowOperation.Operation
+	0,  // 7: reduce.v1.ReduceRequest.WindowOperation.event:type_name -> reduce.v1.ReduceRequest.WindowOperation.Event
 	2,  // 8: reduce.v1.ReduceRequest.WindowOperation.partitions:type_name -> reduce.v1.Partition
 	8,  // 9: reduce.v1.ReduceRequest.Payload.event_time:type_name -> google.protobuf.Timestamp
 	8,  // 10: reduce.v1.ReduceRequest.Payload.watermark:type_name -> google.protobuf.Timestamp
