@@ -34,7 +34,7 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*globalreducepb.Rea
 func (fs *Service) GlobalReduceFn(stream globalreducepb.GlobalReduce_GlobalReduceFnServer) error {
 
 	ctx := stream.Context()
-	taskManager := newReduceTaskManager()
+	taskManager := newReduceTaskManager(fs.globalReducer)
 	// err group for the go routine which reads from the output channel and sends to the stream
 	var g errgroup.Group
 
@@ -67,7 +67,7 @@ func (fs *Service) GlobalReduceFn(stream globalreducepb.GlobalReduce_GlobalReduc
 		case globalreducepb.GlobalReduceRequest_WindowOperation_OPEN:
 			// create a new task and start the global reduce operation
 			// also append the datum to the task
-			err := taskManager.CreateTask(ctx, d, fs.globalReducer)
+			err := taskManager.CreateTask(ctx, d)
 			if err != nil {
 				statusErr := status.Errorf(codes.Internal, err.Error())
 				return statusErr
@@ -77,7 +77,7 @@ func (fs *Service) GlobalReduceFn(stream globalreducepb.GlobalReduce_GlobalReduc
 			taskManager.CloseTask(d)
 		case globalreducepb.GlobalReduceRequest_WindowOperation_APPEND:
 			// append the datum to the task
-			err := taskManager.AppendToTask(d, fs.globalReducer)
+			err := taskManager.AppendToTask(d)
 			if err != nil {
 				statusErr := status.Errorf(codes.Internal, err.Error())
 				return statusErr

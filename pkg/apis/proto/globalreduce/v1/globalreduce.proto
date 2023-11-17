@@ -21,6 +21,7 @@ message Partition {
   google.protobuf.Timestamp start = 1;
   google.protobuf.Timestamp end = 2;
   string slot = 3;
+  repeated string keys = 4;
 }
 
 /**
@@ -67,9 +68,6 @@ message GlobalReduceResponse {
 
   // Partition represents a window partition to which the result belongs.
   Partition partition = 2;
-
-  // the key which was used for demultiplexing the request stream.
-  string combinedKey = 3;
 
   // EventTime represents the event time of the result.
   google.protobuf.Timestamp event_time = 4;

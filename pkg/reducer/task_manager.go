@@ -14,11 +14,11 @@ import (
 
 // reduceTask represents a reduce task for a  reduce operation.
 type reduceTask struct {
-	combinedKey   string
-	partition     *v1.Partition
-	reduceHandler Reducer
-	inputCh       chan Datum
-	Done          chan struct{}
+	combinedKey string
+	partition   *v1.Partition
+	reducer     Reducer
+	inputCh     chan Datum
+	doneCh      chan struct{}
 }
 
 // buildReduceResponse builds the reduce response from the messages.
@@ -35,7 +35,7 @@ func (rt *reduceTask) buildReduceResponse(messages Messages) *v1.ReduceResponse 
 	response := &v1.ReduceResponse{
 		Results:   results,
 		Partition: rt.partition,
-		EventTime: timestamppb.New(rt.partition.GetEnd().AsTime().Add(-1 * time.Millisecond)),
+		EventTime: timestamppb.New(rt.partition.End.AsTime().Add(-1 * time.Millisecond)),
 	}
 
 	return response
@@ -51,21 +51,21 @@ func (rt *reduceTask) uniqueKey() string {
 
 // reduceTaskManager manages the reduce tasks for a  reduce operation.
 type reduceTaskManager struct {
-	Tasks  map[string]*reduceTask
-	Output chan *v1.ReduceResponse
-	Mutex  sync.RWMutex
+	tasks    map[string]*reduceTask
+	outputCh chan *v1.ReduceResponse
+	rw       sync.RWMutex
 }
 
 func newReduceTaskManager() *reduceTaskManager {
 	return &reduceTaskManager{
-		Tasks:  make(map[string]*reduceTask),
-		Output: make(chan *v1.ReduceResponse),
+		tasks:    make(map[string]*reduceTask),
+		outputCh: make(chan *v1.ReduceResponse),
 	}
 }
 
 // CreateTask creates a new reduce task and starts the  reduce operation.
 func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.ReduceRequest, reducer Reducer) error {
-	rtm.Mutex.Lock()
+	rtm.rw.Lock()
 	if len(request.Operation.Partitions) != 1 {
 		return fmt.Errorf("invalid number of partitions")
 	}
@@ -77,20 +77,20 @@ func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.Reduce
 		combinedKey: strings.Join(request.GetPayload().GetKeys(), delimiter),
 		partition:   request.Operation.Partitions[0],
 		inputCh:     make(chan Datum),
-		Done:        make(chan struct{}),
+		doneCh:      make(chan struct{}),
 	}
 
 	key := task.uniqueKey()
-	rtm.Tasks[key] = task
+	rtm.tasks[key] = task
 
-	rtm.Mutex.Unlock()
+	rtm.rw.Unlock()
 
 	go func() {
 		msgs := reducer.Reduce(ctx, request.GetPayload().GetKeys(), task.inputCh, md)
 		// write the output to the output channel, service will forward it to downstream
-		rtm.Output <- task.buildReduceResponse(msgs)
+		rtm.outputCh <- task.buildReduceResponse(msgs)
 		// send a done signal
-		close(task.Done)
+		close(task.doneCh)
 	}()
 
 	// write the first message to the input channel
@@ -101,10 +101,10 @@ func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.Reduce
 // AppendToTask writes the message to the reduce task.
 // If the task is not found, it creates a new task and starts the reduce operation.
 func (rtm *reduceTaskManager) AppendToTask(request *v1.ReduceRequest, reducer Reducer) error {
-	rtm.Mutex.RLock()
+	rtm.rw.RLock()
 	gKey := generateKey(request.Operation.Partitions[0], request.Payload.Keys)
-	task, ok := rtm.Tasks[gKey]
-	rtm.Mutex.RUnlock()
+	task, ok := rtm.tasks[gKey]
+	rtm.rw.RUnlock()
 
 	// if the task is not found, create a new task
 	if !ok {
@@ -117,33 +117,33 @@ func (rtm *reduceTaskManager) AppendToTask(request *v1.ReduceRequest, reducer Re
 
 // OutputChannel returns the output channel for the reduce task manager to read the results.
 func (rtm *reduceTaskManager) OutputChannel() <-chan *v1.ReduceResponse {
-	return rtm.Output
+	return rtm.outputCh
 }
 
 // WaitAll waits for all the reduce tasks to complete.
 func (rtm *reduceTaskManager) WaitAll() {
-	rtm.Mutex.RLock()
-	tasks := make([]*reduceTask, 0, len(rtm.Tasks))
-	for _, task := range rtm.Tasks {
+	rtm.rw.RLock()
+	tasks := make([]*reduceTask, 0, len(rtm.tasks))
+	for _, task := range rtm.tasks {
 		tasks = append(tasks, task)
 	}
-	rtm.Mutex.RUnlock()
+	rtm.rw.RUnlock()
 
 	for _, task := range tasks {
-		<-task.Done
+		<-task.doneCh
 	}
 	// after all the tasks are completed, close the output channel
-	close(rtm.Output)
+	close(rtm.outputCh)
 }
 
 // CloseAll closes all the reduce tasks.
 func (rtm *reduceTaskManager) CloseAll() {
-	rtm.Mutex.Lock()
-	tasks := make([]*reduceTask, 0, len(rtm.Tasks))
-	for _, task := range rtm.Tasks {
+	rtm.rw.Lock()
+	tasks := make([]*reduceTask, 0, len(rtm.tasks))
+	for _, task := range rtm.tasks {
 		tasks = append(tasks, task)
 	}
-	rtm.Mutex.Unlock()
+	rtm.rw.Unlock()
 
 	for _, task := range tasks {
 		close(task.inputCh)

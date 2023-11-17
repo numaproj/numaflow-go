@@ -34,7 +34,7 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*sessionreducepb.Re
 func (fs *Service) SessionReduceFn(stream sessionreducepb.SessionReduce_SessionReduceFnServer) error {
 
 	ctx := stream.Context()
-	taskManager := newReduceTaskManager()
+	taskManager := newReduceTaskManager(fs.createSessionReducer)
 	// err group for the go routine which reads from the output channel and sends to the stream
 	var g errgroup.Group
 
@@ -67,7 +67,7 @@ func (fs *Service) SessionReduceFn(stream sessionreducepb.SessionReduce_SessionR
 		case sessionreducepb.SessionReduceRequest_WindowOperation_OPEN:
 			// create a new task and start the session reduce operation
 			// also append the datum to the task
-			err := taskManager.CreateTask(ctx, d, fs.createSessionReducer())
+			err := taskManager.CreateTask(ctx, d)
 			if err != nil {
 				statusErr := status.Errorf(codes.Internal, err.Error())
 				return statusErr
@@ -77,7 +77,7 @@ func (fs *Service) SessionReduceFn(stream sessionreducepb.SessionReduce_SessionR
 			taskManager.CloseTask(d)
 		case sessionreducepb.SessionReduceRequest_WindowOperation_APPEND:
 			// append the datum to the task
-			err := taskManager.AppendToTask(d, fs.createSessionReducer())
+			err := taskManager.AppendToTask(d)
 			if err != nil {
 				statusErr := status.Errorf(codes.Internal, err.Error())
 				return statusErr
