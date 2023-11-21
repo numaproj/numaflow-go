@@ -67,13 +67,8 @@ func newReduceTaskManager(sessionReducerFactory CreateSessionReducer) *sessionRe
 	}
 }
 
-// CreateTask creates a new reduce task and starts the session reduce operation.
+// CreateTask creates a new task and starts the session reduce operation.
 func (rtm *sessionReduceTaskManager) CreateTask(ctx context.Context, request *v1.SessionReduceRequest) error {
-	println("create task was invoked with partitions - ", len(request.Operation.Partitions))
-	for _, partition := range request.Operation.Partitions {
-		println("partition -", partition.GetStart().AsTime().UnixMilli(), " ", partition.GetEnd().AsTime().UnixMilli(), " ", strings.Join(partition.GetKeys(), ":"))
-	}
-
 	rtm.rw.Lock()
 
 	// for create operation, there should be exactly one partition
@@ -120,11 +115,7 @@ func (rtm *sessionReduceTaskManager) CreateTask(ctx context.Context, request *v1
 
 // AppendToTask writes the message to the reduce task.
 // If the reduce task is not found, it will create a new reduce task and start the reduce operation.
-func (rtm *sessionReduceTaskManager) AppendToTask(request *v1.SessionReduceRequest) error {
-	println("append task was invoked with partitions - ", len(request.Operation.Partitions))
-	for _, partition := range request.Operation.Partitions {
-		println("partition -", partition.GetStart().AsTime().UnixMilli(), " ", partition.GetEnd().AsTime().UnixMilli(), " ", strings.Join(partition.GetKeys(), ":"))
-	}
+func (rtm *sessionReduceTaskManager) AppendToTask(ctx context.Context, request *v1.SessionReduceRequest) error {
 
 	// for append operation, there should be exactly one partition
 	if len(request.Operation.Partitions) != 1 {
@@ -137,7 +128,7 @@ func (rtm *sessionReduceTaskManager) AppendToTask(request *v1.SessionReduceReque
 
 	// if the task is not found, create a new task and start the reduce operation
 	if !ok {
-		return rtm.CreateTask(context.Background(), request)
+		return rtm.CreateTask(ctx, request)
 	}
 
 	// send the datum to the task if the payload is not nil
@@ -149,11 +140,6 @@ func (rtm *sessionReduceTaskManager) AppendToTask(request *v1.SessionReduceReque
 
 // CloseTask closes the input channel of the reduce tasks.
 func (rtm *sessionReduceTaskManager) CloseTask(request *v1.SessionReduceRequest) {
-	println("close task was invoked with partitions - ", len(request.Operation.Partitions))
-	for _, partition := range request.Operation.Partitions {
-		println("partition -", partition.GetStart().AsTime().UnixMilli(), " ", partition.GetEnd().AsTime().UnixMilli(), " ", strings.Join(partition.GetKeys(), ":"))
-	}
-
 	rtm.rw.RLock()
 	tasksToBeClosed := make([]*sessionReduceTask, 0, len(request.Operation.Partitions))
 	for _, partition := range request.Operation.Partitions {
@@ -173,11 +159,6 @@ func (rtm *sessionReduceTaskManager) CloseTask(request *v1.SessionReduceRequest)
 // MergeTasks merges the session reduce tasks. It will create a new task with the merged window and
 // merges the accumulators from the other tasks.
 func (rtm *sessionReduceTaskManager) MergeTasks(ctx context.Context, request *v1.SessionReduceRequest) error {
-	println("merge task was invoked with partitions - ", len(request.Operation.Partitions))
-	for _, partition := range request.Operation.Partitions {
-		println("partition -", partition.GetStart().AsTime().UnixMilli(), " ", partition.GetEnd().AsTime().UnixMilli(), " ", strings.Join(partition.GetKeys(), ":"))
-	}
-
 	rtm.rw.Lock()
 	mergedPartition := request.Operation.Partitions[0]
 
@@ -189,7 +170,6 @@ func (rtm *sessionReduceTaskManager) MergeTasks(ctx context.Context, request *v1
 		task, ok := rtm.tasks[key]
 		if !ok {
 			rtm.rw.Unlock()
-			println("task not found for key inside merge - ", key)
 			return fmt.Errorf("merge operation error: task not found for %s", key)
 		}
 		task.merged.Store(true)
@@ -244,10 +224,6 @@ func (rtm *sessionReduceTaskManager) MergeTasks(ctx context.Context, request *v1
 // expects request.Operation.Partitions to have exactly two partitions. The first partition is the old partition and the second
 // partition is the new partition.
 func (rtm *sessionReduceTaskManager) ExpandTask(request *v1.SessionReduceRequest) error {
-	println("expand task was invoked with partitions - ", len(request.Operation.Partitions))
-	for _, partition := range request.Operation.Partitions {
-		println("partition -", partition.GetStart().AsTime().UnixMilli(), " ", partition.GetEnd().AsTime().UnixMilli(), " ", strings.Join(partition.GetKeys(), ":"))
-	}
 
 	// for expand operation, there should be exactly two partitions
 	if len(request.Operation.Partitions) != 2 {
@@ -259,12 +235,7 @@ func (rtm *sessionReduceTaskManager) ExpandTask(request *v1.SessionReduceRequest
 	task, ok := rtm.tasks[key]
 	if !ok {
 		rtm.rw.Unlock()
-		println("task not found for key inside expand - ", key)
-		for k := range rtm.tasks {
-			println("task key - ", k)
-		}
-		panic("task not found")
-		//return fmt.Errorf("expand operation error: task not found for key - %s", key)
+		return fmt.Errorf("expand operation error: task not found for key - %s", key)
 	}
 
 	// assign the new partition to the task

@@ -51,20 +51,22 @@ func (rt *reduceTask) uniqueKey() string {
 
 // reduceTaskManager manages the reduce tasks for a  reduce operation.
 type reduceTaskManager struct {
+	reducer  Reducer
 	tasks    map[string]*reduceTask
 	outputCh chan *v1.ReduceResponse
 	rw       sync.RWMutex
 }
 
-func newReduceTaskManager() *reduceTaskManager {
+func newReduceTaskManager(reducer Reducer) *reduceTaskManager {
 	return &reduceTaskManager{
+		reducer:  reducer,
 		tasks:    make(map[string]*reduceTask),
 		outputCh: make(chan *v1.ReduceResponse),
 	}
 }
 
 // CreateTask creates a new reduce task and starts the  reduce operation.
-func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.ReduceRequest, reducer Reducer) error {
+func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.ReduceRequest) error {
 	rtm.rw.Lock()
 	if len(request.Operation.Partitions) != 1 {
 		return fmt.Errorf("invalid number of partitions")
@@ -86,7 +88,7 @@ func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.Reduce
 	rtm.rw.Unlock()
 
 	go func() {
-		msgs := reducer.Reduce(ctx, request.GetPayload().GetKeys(), task.inputCh, md)
+		msgs := rtm.reducer.Reduce(ctx, request.GetPayload().GetKeys(), task.inputCh, md)
 		// write the output to the output channel, service will forward it to downstream
 		rtm.outputCh <- task.buildReduceResponse(msgs)
 		// send a done signal
@@ -100,7 +102,7 @@ func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.Reduce
 
 // AppendToTask writes the message to the reduce task.
 // If the task is not found, it creates a new task and starts the reduce operation.
-func (rtm *reduceTaskManager) AppendToTask(request *v1.ReduceRequest, reducer Reducer) error {
+func (rtm *reduceTaskManager) AppendToTask(ctx context.Context, request *v1.ReduceRequest) error {
 	rtm.rw.RLock()
 	gKey := generateKey(request.Operation.Partitions[0], request.Payload.Keys)
 	task, ok := rtm.tasks[gKey]
@@ -108,7 +110,7 @@ func (rtm *reduceTaskManager) AppendToTask(request *v1.ReduceRequest, reducer Re
 
 	// if the task is not found, create a new task
 	if !ok {
-		return rtm.CreateTask(context.Background(), request, reducer)
+		return rtm.CreateTask(ctx, request)
 	}
 
 	task.inputCh <- buildDatum(request)

@@ -136,7 +136,7 @@ func (rtm *globalReduceTaskManager) CreateTask(ctx context.Context, request *v1.
 
 // AppendToTask writes the message to the reduce task.
 // If the reduce task is not found, it will create a new reduce task and start the reduce operation.
-func (rtm *globalReduceTaskManager) AppendToTask(request *v1.GlobalReduceRequest) error {
+func (rtm *globalReduceTaskManager) AppendToTask(ctx context.Context, request *v1.GlobalReduceRequest) error {
 	if len(request.Operation.Partitions) != 1 {
 		return fmt.Errorf("invalid number of partitions")
 	}
@@ -146,7 +146,7 @@ func (rtm *globalReduceTaskManager) AppendToTask(request *v1.GlobalReduceRequest
 	rtm.rw.RUnlock()
 
 	if !ok {
-		return rtm.CreateTask(context.Background(), request)
+		return rtm.CreateTask(ctx, request)
 	}
 
 	// send the datum to the task if the payload is not nil

@@ -16,9 +16,8 @@ type Counter struct {
 }
 
 func (c *Counter) SessionReduce(ctx context.Context, keys []string, input <-chan sessionreducer.Datum) sessionreducer.Messages {
-	log.Println("SessionReduce called")
+	log.Println("SessionReduce invoked")
 	for range input {
-		println("incrementing the counter")
 		c.count.Inc()
 	}
 	log.Println("SessionReduce done")
@@ -26,17 +25,15 @@ func (c *Counter) SessionReduce(ctx context.Context, keys []string, input <-chan
 }
 
 func (c *Counter) Accumulator(ctx context.Context) []byte {
-	log.Println("Accumulator called")
-	println("returning the accumulator value - ", c.count.Load())
+	log.Println("Accumulator invoked")
 	return []byte(strconv.Itoa(int(c.count.Load())))
 }
 
 func (c *Counter) MergeAccumulator(ctx context.Context, accumulator []byte) {
-	log.Println("MergeAccumulator called")
+	log.Println("MergeAccumulator invoked")
 	val, err := strconv.Atoi(string(accumulator))
-	println("merging the accumulator with value - ", val)
 	if err != nil {
-		log.Println("unable to convert the accumulator value to int: ", err)
+		log.Println("unable to convert the accumulator value to int: ", err.Error())
 		return
 	}
 	c.count.Add(int32(val))

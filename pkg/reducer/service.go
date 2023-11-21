@@ -24,7 +24,7 @@ const (
 // Service implements the proto gen server interface and contains the reduce operation handler.
 type Service struct {
 	reducepb.UnimplementedReduceServer
-	Reducer Reducer
+	reducerHandle Reducer
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
@@ -40,7 +40,7 @@ func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
 		g   errgroup.Group
 	)
 
-	taskManager := newReduceTaskManager()
+	taskManager := newReduceTaskManager(fs.reducerHandle)
 
 	// err group for the go routine which reads from the output channel and sends to the stream
 	g.Go(func() error {
@@ -74,14 +74,14 @@ func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
 		switch d.Operation.Event {
 		case reducepb.ReduceRequest_WindowOperation_OPEN:
 			// create a new reduce task and start the reduce operation
-			err = taskManager.CreateTask(ctx, d, fs.Reducer)
+			err = taskManager.CreateTask(ctx, d)
 			if err != nil {
 				statusErr := status.Errorf(codes.Internal, err.Error())
 				return statusErr
 			}
 		case reducepb.ReduceRequest_WindowOperation_APPEND:
 			// append the datum to the reduce task
-			err = taskManager.AppendToTask(d, fs.Reducer)
+			err = taskManager.AppendToTask(ctx, d)
 			if err != nil {
 				statusErr := status.Errorf(codes.Internal, err.Error())
 				return statusErr

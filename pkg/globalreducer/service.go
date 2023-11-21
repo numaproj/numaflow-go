@@ -77,7 +77,7 @@ func (fs *Service) GlobalReduceFn(stream globalreducepb.GlobalReduce_GlobalReduc
 			taskManager.CloseTask(d)
 		case globalreducepb.GlobalReduceRequest_WindowOperation_APPEND:
 			// append the datum to the task
-			err := taskManager.AppendToTask(d)
+			err := taskManager.AppendToTask(ctx, d)
 			if err != nil {
 				statusErr := status.Errorf(codes.Internal, err.Error())
 				return statusErr
