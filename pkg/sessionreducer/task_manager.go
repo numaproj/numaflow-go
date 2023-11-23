@@ -18,26 +18,37 @@ type sessionReduceTask struct {
 	partition      *v1.Partition
 	sessionReducer SessionReducer
 	inputCh        chan Datum
+	outputCh       chan Message
 	doneCh         chan struct{}
 	merged         *atomic.Bool
 }
 
 // buildSessionReduceResponse builds the session reduce response from the messages.
-func (rt *sessionReduceTask) buildSessionReduceResponse(messages Messages) *v1.SessionReduceResponse {
-	results := make([]*v1.SessionReduceResponse_Result, 0, len(messages))
-	for _, message := range messages {
-		results = append(results, &v1.SessionReduceResponse_Result{
+func (rt *sessionReduceTask) buildSessionReduceResponse(message Message) *v1.SessionReduceResponse {
+
+	response := &v1.SessionReduceResponse{
+		Result: &v1.SessionReduceResponse_Result{
 			Keys:  message.Keys(),
 			Value: message.Value(),
 			Tags:  message.Tags(),
-		})
+			// event time is the end time of the window - 1 millisecond
+			EventTime: timestamppb.New(rt.partition.GetEnd().AsTime().Add(-1 * time.Millisecond)),
+		},
+		Partition: rt.partition,
 	}
 
+	return response
+}
+
+// buildEOFResponse builds the EOF response for the session reduce task.
+func (rt *sessionReduceTask) buildEOFResponse() *v1.SessionReduceResponse {
 	response := &v1.SessionReduceResponse{
-		Results:   results,
+		Result: &v1.SessionReduceResponse_Result{
+			// event time is the end time of the window - 1 millisecond
+			EventTime: timestamppb.New(rt.partition.GetEnd().AsTime().Add(-1 * time.Millisecond)),
+		},
 		Partition: rt.partition,
-		// event time is the end time of the window - 1 millisecond
-		EventTime: timestamppb.New(rt.partition.GetEnd().AsTime().Add(-1 * time.Millisecond)),
+		EOF:       true,
 	}
 
 	return response
@@ -55,7 +66,7 @@ func (rt *sessionReduceTask) uniqueKey() string {
 type sessionReduceTaskManager struct {
 	sessionReducerFactory CreateSessionReducer
 	tasks                 map[string]*sessionReduceTask
-	outputCh              chan *v1.SessionReduceResponse
+	responseCh            chan *v1.SessionReduceResponse
 	rw                    sync.RWMutex
 }
 
@@ -63,7 +74,7 @@ func newReduceTaskManager(sessionReducerFactory CreateSessionReducer) *sessionRe
 	return &sessionReduceTaskManager{
 		sessionReducerFactory: sessionReducerFactory,
 		tasks:                 make(map[string]*sessionReduceTask),
-		outputCh:              make(chan *v1.SessionReduceResponse),
+		responseCh:            make(chan *v1.SessionReduceResponse),
 	}
 }
 
@@ -80,6 +91,7 @@ func (rtm *sessionReduceTaskManager) CreateTask(ctx context.Context, request *v1
 		partition:      request.Operation.Partitions[0],
 		sessionReducer: rtm.sessionReducerFactory(),
 		inputCh:        make(chan Datum),
+		outputCh:       make(chan Message),
 		doneCh:         make(chan struct{}),
 		merged:         atomic.NewBool(false),
 	}
@@ -91,12 +103,25 @@ func (rtm *sessionReduceTaskManager) CreateTask(ctx context.Context, request *v1
 	rtm.rw.Unlock()
 
 	go func() {
-		msgs := task.sessionReducer.SessionReduce(ctx, task.partition.GetKeys(), task.inputCh)
-		// write the output to the output channel, service will forward it to downstream
-		// if the task is merged to another task, we don't need to send the response
-		if !task.merged.Load() {
-			rtm.outputCh <- task.buildSessionReduceResponse(msgs)
-		}
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for message := range task.outputCh {
+				if !task.merged.Load() {
+					// write the output to the output channel, service will forward it to downstream
+					// if the task is merged to another task, we don't need to send the response
+					rtm.responseCh <- task.buildSessionReduceResponse(message)
+				}
+			}
+			// send EOF
+			rtm.responseCh <- task.buildEOFResponse()
+		}()
+
+		task.sessionReducer.SessionReduce(ctx, task.partition.GetKeys(), task.inputCh, task.outputCh)
+		// close the output channel and wait for the response to be forwarded
+		close(task.outputCh)
+		wg.Wait()
 		// send a done signal
 		close(task.doneCh)
 		// delete the task from the tasks list
@@ -256,7 +281,7 @@ func (rtm *sessionReduceTaskManager) ExpandTask(request *v1.SessionReduceRequest
 
 // OutputChannel returns the output channel for the reduce task manager to read the results.
 func (rtm *sessionReduceTaskManager) OutputChannel() <-chan *v1.SessionReduceResponse {
-	return rtm.outputCh
+	return rtm.responseCh
 }
 
 // WaitAll waits for all the pending reduce tasks to complete.
@@ -272,7 +297,7 @@ func (rtm *sessionReduceTaskManager) WaitAll() {
 		<-task.doneCh
 	}
 	// after all the tasks are completed, close the output channel
-	close(rtm.outputCh)
+	close(rtm.responseCh)
 }
 
 // CloseAll closes all the reduce tasks.

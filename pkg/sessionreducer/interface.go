@@ -14,7 +14,7 @@ type Datum interface {
 
 // SessionReducer is the interface which can be used to implement a session reduce operation.
 type SessionReducer interface {
-	SessionReduce(ctx context.Context, keys []string, input <-chan Datum) Messages
+	SessionReduce(ctx context.Context, keys []string, inputCh <-chan Datum, outputCh chan<- Message)
 	Accumulator(ctx context.Context) []byte
 	MergeAccumulator(ctx context.Context, accumulator []byte)
 }

@@ -14,5 +14,5 @@ type Datum interface {
 
 // GlobalReducer is the interface which can be used to implement a session reduce operation.
 type GlobalReducer interface {
-	GlobalReduce(ctx context.Context, keys []string, input <-chan Datum, output <-chan Messages)
+	GlobalReduce(ctx context.Context, keys []string, input <-chan Datum, output <-chan Message)
 }

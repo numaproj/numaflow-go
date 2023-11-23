@@ -18,28 +18,36 @@ type globalReduceTask struct {
 	partition       *v1.Partition
 	globalReducer   GlobalReducer
 	inputCh         chan Datum
-	outputCh        chan Messages
+	outputCh        chan Message
 	latestWatermark *atomic.Time
 	doneCh          chan struct{}
 }
 
 // buildGlobalReduceResponse builds the global reduce response from the messages.
-func (rt *globalReduceTask) buildGlobalReduceResponse(messages Messages) *v1.GlobalReduceResponse {
-	results := make([]*v1.GlobalReduceResponse_Result, 0, len(messages))
-	for _, message := range messages {
-		results = append(results, &v1.GlobalReduceResponse_Result{
-			Keys:  message.Keys(),
-			Value: message.Value(),
-			Tags:  message.Tags(),
-		})
-	}
+func (rt *globalReduceTask) buildGlobalReduceResponse(message Message) *v1.GlobalReduceResponse {
 
 	// the event time is the latest watermark
 	// since for global window, partition start and end time will be -1
 	response := &v1.GlobalReduceResponse{
-		Results:   results,
+		Result: &v1.GlobalReduceResponse_Result{
+			Keys:      message.Keys(),
+			Value:     message.Value(),
+			Tags:      message.Tags(),
+			EventTime: timestamppb.New(rt.latestWatermark.Load()),
+		},
 		Partition: rt.partition,
-		EventTime: timestamppb.New(rt.latestWatermark.Load()),
+	}
+
+	return response
+}
+
+func (rt *globalReduceTask) buildEOFResponse() *v1.GlobalReduceResponse {
+	response := &v1.GlobalReduceResponse{
+		Result: &v1.GlobalReduceResponse_Result{
+			EventTime: timestamppb.New(rt.latestWatermark.Load()),
+		},
+		Partition: rt.partition,
+		EOF:       true,
 	}
 
 	return response
@@ -57,14 +65,14 @@ func (rt *globalReduceTask) uniqueKey() string {
 type globalReduceTaskManager struct {
 	globalReducer GlobalReducer
 	tasks         map[string]*globalReduceTask
-	outputCh      chan *v1.GlobalReduceResponse
+	responseCh    chan *v1.GlobalReduceResponse
 	rw            sync.RWMutex
 }
 
 func newReduceTaskManager(globalReducer GlobalReducer) *globalReduceTaskManager {
 	return &globalReduceTaskManager{
 		tasks:         make(map[string]*globalReduceTask),
-		outputCh:      make(chan *v1.GlobalReduceResponse),
+		responseCh:    make(chan *v1.GlobalReduceResponse),
 		globalReducer: globalReducer,
 	}
 }
@@ -81,7 +89,7 @@ func (rtm *globalReduceTaskManager) CreateTask(ctx context.Context, request *v1.
 		partition:       request.Operation.Partitions[0],
 		globalReducer:   rtm.globalReducer,
 		inputCh:         make(chan Datum),
-		outputCh:        make(chan Messages),
+		outputCh:        make(chan Message),
 		doneCh:          make(chan struct{}),
 		latestWatermark: atomic.NewTime(time.Time{}),
 	}
@@ -97,31 +105,25 @@ func (rtm *globalReduceTaskManager) CreateTask(ctx context.Context, request *v1.
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-		readLoop:
-			for {
-				select {
-				case <-ctx.Done():
-					return
-				case message, ok := <-task.outputCh:
-					if !ok {
-						break readLoop
-					}
-					rtm.outputCh <- task.buildGlobalReduceResponse(message)
-				}
+			for msg := range task.outputCh {
+				rtm.responseCh <- task.buildGlobalReduceResponse(msg)
 			}
-			// send a done signal
-			close(task.doneCh)
-			// delete the task from the tasks list
-			rtm.rw.Lock()
-			delete(rtm.tasks, key)
-			rtm.rw.Unlock()
+			// send the EOF response
+			rtm.responseCh <- task.buildEOFResponse()
 		}()
+
 		// start the global reduce operation
 		task.globalReducer.GlobalReduce(ctx, request.GetPayload().GetKeys(), task.inputCh, task.outputCh)
 		// close the output channel after the global reduce operation is completed
 		close(task.outputCh)
 		// wait for the output channel reader to complete
 		wg.Wait()
+		// send a done signal
+		close(task.doneCh)
+		// delete the task from the tasks list
+		rtm.rw.Lock()
+		delete(rtm.tasks, key)
+		rtm.rw.Unlock()
 	}()
 
 	// send the datum to the task if the payload is not nil
@@ -179,7 +181,7 @@ func (rtm *globalReduceTaskManager) CloseTask(request *v1.GlobalReduceRequest) {
 
 // OutputChannel returns the output channel for the reduce task manager to read the results.
 func (rtm *globalReduceTaskManager) OutputChannel() <-chan *v1.GlobalReduceResponse {
-	return rtm.outputCh
+	return rtm.responseCh
 }
 
 // WaitAll waits for all the reduce tasks to complete.
@@ -195,7 +197,7 @@ func (rtm *globalReduceTaskManager) WaitAll() {
 		<-task.doneCh
 	}
 	// after all the tasks are completed, close the output channel
-	close(rtm.outputCh)
+	close(rtm.responseCh)
 }
 
 // CloseAll closes all the reduce tasks.

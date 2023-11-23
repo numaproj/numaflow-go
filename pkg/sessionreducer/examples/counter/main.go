@@ -15,13 +15,13 @@ type Counter struct {
 	count *atomic.Int32
 }
 
-func (c *Counter) SessionReduce(ctx context.Context, keys []string, input <-chan sessionreducer.Datum) sessionreducer.Messages {
+func (c *Counter) SessionReduce(ctx context.Context, keys []string, input <-chan sessionreducer.Datum, outputCh chan<- sessionreducer.Message) {
 	log.Println("SessionReduce invoked")
 	for range input {
 		c.count.Inc()
 	}
 	log.Println("SessionReduce done")
-	return sessionreducer.MessagesBuilder().Append(sessionreducer.NewMessage([]byte(fmt.Sprintf("%d", c.count.Load()))).WithKeys(keys))
+	outputCh <- sessionreducer.NewMessage([]byte(fmt.Sprintf("%d", c.count.Load()))).WithKeys(keys)
 }
 
 func (c *Counter) Accumulator(ctx context.Context) []byte {

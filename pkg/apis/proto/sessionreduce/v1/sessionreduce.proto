@@ -64,15 +64,15 @@ message SessionReduceResponse {
     repeated string keys = 1;
     bytes value = 2;
     repeated string tags = 3;
+    google.protobuf.Timestamp event_time = 4;
   }
 
-  repeated Result results = 1;
+  Result result = 1;
 
   // Partition represents a window partition to which the result belongs.
   Partition partition = 2;
-  
-  // EventTime represents the event time of the result.
-  google.protobuf.Timestamp event_time = 4;
+
+  bool EOF = 3;
 }
 
 /**

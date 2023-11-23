@@ -13,7 +13,7 @@ import (
 type Sum struct {
 }
 
-func (s *Sum) Reduce(ctx context.Context, keys []string, reduceCh <-chan reducer.Datum, md reducer.Metadata) reducer.Messages {
+func (s *Sum) Reduce(ctx context.Context, keys []string, inputCh <-chan reducer.Datum, outputCh chan<- reducer.Message, md reducer.Metadata) {
 	// sum up values for the same keys
 	intervalWindow := md.IntervalWindow()
 	_ = intervalWindow
@@ -21,7 +21,7 @@ func (s *Sum) Reduce(ctx context.Context, keys []string, reduceCh <-chan reducer
 	var resultVal []byte
 	var sum = 0
 	// sum up the values
-	for d := range reduceCh {
+	for d := range inputCh {
 		val := d.Value()
 		eventTime := d.EventTime()
 		_ = eventTime
@@ -36,7 +36,7 @@ func (s *Sum) Reduce(ctx context.Context, keys []string, reduceCh <-chan reducer
 		sum += v
 	}
 	resultVal = []byte(strconv.Itoa(sum))
-	return reducer.MessagesBuilder().Append(reducer.NewMessage(resultVal).WithKeys(resultKeys))
+	outputCh <- reducer.NewMessage(resultVal).WithKeys(resultKeys)
 }
 
 func main() {

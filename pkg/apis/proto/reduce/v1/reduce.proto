@@ -70,7 +70,7 @@ message ReduceResponse {
   Partition partition = 2;
 
   // EOF represents the end of the stream.
-  bool EOF = 4;
+  bool EOF = 3;
 }
 
 /**

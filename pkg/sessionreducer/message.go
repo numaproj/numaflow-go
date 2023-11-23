@@ -50,21 +50,3 @@ func (m Message) Value() []byte {
 func (m Message) Tags() []string {
 	return m.tags
 }
-
-type Messages []Message
-
-// MessagesBuilder returns an empty instance of Messages
-func MessagesBuilder() Messages {
-	return Messages{}
-}
-
-// Append appends a Message
-func (m Messages) Append(msg Message) Messages {
-	m = append(m, msg)
-	return m
-}
-
-// Items returns the message list
-func (m Messages) Items() []Message {
-	return m
-}
