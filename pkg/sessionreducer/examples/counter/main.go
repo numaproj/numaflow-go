@@ -39,12 +39,12 @@ func (c *Counter) MergeAccumulator(ctx context.Context, accumulator []byte) {
 	c.count.Add(int32(val))
 }
 
-func reduceCounter() sessionreducer.SessionReducer {
+func NewSessionCounter() sessionreducer.SessionReducer {
 	return &Counter{
 		count: atomic.NewInt32(0),
 	}
 }
 
 func main() {
-	sessionreducer.NewServer(reduceCounter).Start(context.Background())
+	sessionreducer.NewServer(NewSessionCounter).Start(context.Background())
 }

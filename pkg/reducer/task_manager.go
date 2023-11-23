@@ -18,24 +18,33 @@ type reduceTask struct {
 	partition   *v1.Partition
 	reducer     Reducer
 	inputCh     chan Datum
+	outputCh    chan Message
 	doneCh      chan struct{}
 }
 
 // buildReduceResponse builds the reduce response from the messages.
-func (rt *reduceTask) buildReduceResponse(messages Messages) *v1.ReduceResponse {
-	results := make([]*v1.ReduceResponse_Result, 0, len(messages))
-	for _, message := range messages {
-		results = append(results, &v1.ReduceResponse_Result{
-			Keys:  message.Keys(),
-			Value: message.Value(),
-			Tags:  message.Tags(),
-		})
-	}
+func (rt *reduceTask) buildReduceResponse(message Message) *v1.ReduceResponse {
 
 	response := &v1.ReduceResponse{
-		Results:   results,
+		Result: &v1.ReduceResponse_Result{
+			Keys:      message.Keys(),
+			Value:     message.Value(),
+			Tags:      message.Tags(),
+			EventTime: timestamppb.New(rt.partition.End.AsTime().Add(-1 * time.Millisecond)),
+		},
 		Partition: rt.partition,
-		EventTime: timestamppb.New(rt.partition.End.AsTime().Add(-1 * time.Millisecond)),
+	}
+
+	return response
+}
+
+func (rt *reduceTask) buildEOFResponse() *v1.ReduceResponse {
+	response := &v1.ReduceResponse{
+		Result: &v1.ReduceResponse_Result{
+			EventTime: timestamppb.New(rt.partition.End.AsTime().Add(-1 * time.Millisecond)),
+		},
+		Partition: rt.partition,
+		EOF:       true,
 	}
 
 	return response
@@ -51,17 +60,17 @@ func (rt *reduceTask) uniqueKey() string {
 
 // reduceTaskManager manages the reduce tasks for a  reduce operation.
 type reduceTaskManager struct {
-	reducer  Reducer
-	tasks    map[string]*reduceTask
-	outputCh chan *v1.ReduceResponse
-	rw       sync.RWMutex
+	reducer    Reducer
+	tasks      map[string]*reduceTask
+	responseCh chan *v1.ReduceResponse
+	rw         sync.RWMutex
 }
 
 func newReduceTaskManager(reducer Reducer) *reduceTaskManager {
 	return &reduceTaskManager{
-		reducer:  reducer,
-		tasks:    make(map[string]*reduceTask),
-		outputCh: make(chan *v1.ReduceResponse),
+		reducer:    reducer,
+		tasks:      make(map[string]*reduceTask),
+		responseCh: make(chan *v1.ReduceResponse),
 	}
 }
 
@@ -79,6 +88,7 @@ func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.Reduce
 		combinedKey: strings.Join(request.GetPayload().GetKeys(), delimiter),
 		partition:   request.Operation.Partitions[0],
 		inputCh:     make(chan Datum),
+		outputCh:    make(chan Message),
 		doneCh:      make(chan struct{}),
 	}
 
@@ -88,9 +98,24 @@ func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.Reduce
 	rtm.rw.Unlock()
 
 	go func() {
-		msgs := rtm.reducer.Reduce(ctx, request.GetPayload().GetKeys(), task.inputCh, md)
-		// write the output to the output channel, service will forward it to downstream
-		rtm.outputCh <- task.buildReduceResponse(msgs)
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for message := range task.outputCh {
+				// write the output to the output channel, service will forward it to downstream
+				rtm.responseCh <- task.buildReduceResponse(message)
+			}
+			// send EOF
+			rtm.responseCh <- task.buildEOFResponse()
+		}()
+
+		// invoke the reduce function
+		rtm.reducer.Reduce(ctx, request.GetPayload().GetKeys(), task.inputCh, task.outputCh, md)
+		// close the output channel after the reduce function is done
+		close(task.outputCh)
+		// wait for the output to be forwarded
+		wg.Wait()
 		// send a done signal
 		close(task.doneCh)
 	}()
@@ -119,7 +144,7 @@ func (rtm *reduceTaskManager) AppendToTask(ctx context.Context, request *v1.Redu
 
 // OutputChannel returns the output channel for the reduce task manager to read the results.
 func (rtm *reduceTaskManager) OutputChannel() <-chan *v1.ReduceResponse {
-	return rtm.outputCh
+	return rtm.responseCh
 }
 
 // WaitAll waits for all the reduce tasks to complete.
@@ -135,7 +160,7 @@ func (rtm *reduceTaskManager) WaitAll() {
 		<-task.doneCh
 	}
 	// after all the tasks are completed, close the output channel
-	close(rtm.outputCh)
+	close(rtm.responseCh)
 }
 
 // CloseAll closes all the reduce tasks.

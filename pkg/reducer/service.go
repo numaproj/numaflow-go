@@ -45,9 +45,9 @@ func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
 	// err group for the go routine which reads from the output channel and sends to the stream
 	g.Go(func() error {
 		for output := range taskManager.OutputChannel() {
-			err := stream.Send(output)
-			if err != nil {
-				return err
+			sendErr := stream.Send(output)
+			if sendErr != nil {
+				return sendErr
 			}
 		}
 		return nil

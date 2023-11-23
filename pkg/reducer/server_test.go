@@ -21,13 +21,13 @@ func TestReduceServer_Start(t *testing.T) {
 		_ = os.RemoveAll(serverInfoFile.Name())
 	}()
 
-	var reduceHandler = ReducerFunc(func(ctx context.Context, keys []string, rch <-chan Datum, md Metadata) Messages {
+	var reduceHandler = ReducerFunc(func(ctx context.Context, keys []string, rch <-chan Datum, och chan<- Message, md Metadata) {
 		sum := 0
 		for val := range rch {
 			msgVal, _ := strconv.Atoi(string(val.Value()))
 			sum += msgVal
 		}
-		return MessagesBuilder().Append(NewMessage([]byte(strconv.Itoa(sum))).WithKeys([]string{keys[0] + "_test"}))
+		och <- NewMessage([]byte(strconv.Itoa(sum)))
 	})
 	// note: using actual uds connection
 	ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
