@@ -21,6 +21,7 @@ type sessionReduceTask struct {
 	outputCh       chan Message
 	doneCh         chan struct{}
 	merged         *atomic.Bool
+	closed         *atomic.Bool
 }
 
 // buildSessionReduceResponse builds the session reduce response from the messages.
@@ -94,6 +95,7 @@ func (rtm *sessionReduceTaskManager) CreateTask(ctx context.Context, request *v1
 		outputCh:       make(chan Message),
 		doneCh:         make(chan struct{}),
 		merged:         atomic.NewBool(false),
+		closed:         atomic.NewBool(false),
 	}
 
 	// add the task to the tasks list
@@ -177,6 +179,7 @@ func (rtm *sessionReduceTaskManager) CloseTask(request *v1.SessionReduceRequest)
 	rtm.rw.RUnlock()
 
 	for _, task := range tasksToBeClosed {
+		task.closed.Store(true)
 		close(task.inputCh)
 	}
 }
@@ -249,7 +252,6 @@ func (rtm *sessionReduceTaskManager) MergeTasks(ctx context.Context, request *v1
 // expects request.Operation.KeyedWindows to have exactly two windows. The first is the old window and the second
 // is the new window.
 func (rtm *sessionReduceTaskManager) ExpandTask(request *v1.SessionReduceRequest) error {
-
 	// for expand operation, there should be exactly two windows
 	if len(request.Operation.KeyedWindows) != 2 {
 		return fmt.Errorf("expand operation error: expected exactly two windows")
@@ -310,6 +312,10 @@ func (rtm *sessionReduceTaskManager) CloseAll() {
 	rtm.rw.Unlock()
 
 	for _, task := range tasks {
+		if task.closed.Load() || task.merged.Load() {
+			continue
+		}
+		task.closed.Store(true)
 		close(task.inputCh)
 	}
 }
