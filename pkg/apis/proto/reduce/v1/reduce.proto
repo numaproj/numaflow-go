@@ -30,7 +30,7 @@ message ReduceRequest {
     }
 
     Event event = 1;
-    repeated Partition partitions = 2;
+    repeated Window windows = 2;
   }
 
   // Payload represents a payload element.
@@ -45,8 +45,9 @@ message ReduceRequest {
   WindowOperation operation = 2;
 }
 
-// Partition represents a window partition.
-message Partition {
+// Window represents a window.
+// Since the client doesn't track keys, window doesn't have a keys field.
+message Window {
   google.protobuf.Timestamp start = 1;
   google.protobuf.Timestamp end = 2;
   string slot = 3;
@@ -66,10 +67,10 @@ message ReduceResponse {
 
   Result result = 1;
 
-  // Partition represents a window partition to which the result belongs.
-  Partition partition = 2;
+  // window represents a window to which the result belongs.
+  Window window = 2;
 
-  // EOF represents the end of the stream.
+  // EOF represents the end of the response for a window.
   bool EOF = 3;
 }
 

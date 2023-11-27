@@ -14,12 +14,12 @@ import (
 
 // reduceTask represents a reduce task for a  reduce operation.
 type reduceTask struct {
-	combinedKey string
-	partition   *v1.Partition
-	reducer     Reducer
-	inputCh     chan Datum
-	outputCh    chan Message
-	doneCh      chan struct{}
+	keys     []string
+	window   *v1.Window
+	reducer  Reducer
+	inputCh  chan Datum
+	outputCh chan Message
+	doneCh   chan struct{}
 }
 
 // buildReduceResponse builds the reduce response from the messages.
@@ -30,9 +30,9 @@ func (rt *reduceTask) buildReduceResponse(message Message) *v1.ReduceResponse {
 			Keys:      message.Keys(),
 			Value:     message.Value(),
 			Tags:      message.Tags(),
-			EventTime: timestamppb.New(rt.partition.End.AsTime().Add(-1 * time.Millisecond)),
+			EventTime: timestamppb.New(rt.window.End.AsTime().Add(-1 * time.Millisecond)),
 		},
-		Partition: rt.partition,
+		Window: rt.window,
 	}
 
 	return response
@@ -41,10 +41,10 @@ func (rt *reduceTask) buildReduceResponse(message Message) *v1.ReduceResponse {
 func (rt *reduceTask) buildEOFResponse() *v1.ReduceResponse {
 	response := &v1.ReduceResponse{
 		Result: &v1.ReduceResponse_Result{
-			EventTime: timestamppb.New(rt.partition.End.AsTime().Add(-1 * time.Millisecond)),
+			EventTime: timestamppb.New(rt.window.End.AsTime().Add(-1 * time.Millisecond)),
 		},
-		Partition: rt.partition,
-		EOF:       true,
+		Window: rt.window,
+		EOF:    true,
 	}
 
 	return response
@@ -53,9 +53,9 @@ func (rt *reduceTask) buildEOFResponse() *v1.ReduceResponse {
 // uniqueKey returns the unique key for the reduce task to be used in the task manager to identify the task.
 func (rt *reduceTask) uniqueKey() string {
 	return fmt.Sprintf("%d:%d:%s",
-		rt.partition.GetStart().AsTime().UnixMilli(),
-		rt.partition.GetEnd().AsTime().UnixMilli(),
-		rt.combinedKey)
+		rt.window.GetStart().AsTime().UnixMilli(),
+		rt.window.GetEnd().AsTime().UnixMilli(),
+		strings.Join(rt.keys, delimiter))
 }
 
 // reduceTaskManager manages the reduce tasks for a  reduce operation.
@@ -76,20 +76,20 @@ func newReduceTaskManager(reducer Reducer) *reduceTaskManager {
 
 // CreateTask creates a new reduce task and starts the  reduce operation.
 func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.ReduceRequest) error {
-	rtm.rw.Lock()
-	if len(request.Operation.Partitions) != 1 {
-		return fmt.Errorf("invalid number of partitions")
+	if len(request.Operation.Windows) != 1 {
+		return fmt.Errorf("create operation error: invalid number of windows")
 	}
 
-	md := NewMetadata(NewIntervalWindow(request.Operation.Partitions[0].GetStart().AsTime(),
-		request.Operation.Partitions[0].GetEnd().AsTime()))
+	rtm.rw.Lock()
+	md := NewMetadata(NewIntervalWindow(request.Operation.Windows[0].GetStart().AsTime(),
+		request.Operation.Windows[0].GetEnd().AsTime()))
 
 	task := &reduceTask{
-		combinedKey: strings.Join(request.GetPayload().GetKeys(), delimiter),
-		partition:   request.Operation.Partitions[0],
-		inputCh:     make(chan Datum),
-		outputCh:    make(chan Message),
-		doneCh:      make(chan struct{}),
+		keys:     request.GetPayload().GetKeys(),
+		window:   request.Operation.Windows[0],
+		inputCh:  make(chan Datum),
+		outputCh: make(chan Message),
+		doneCh:   make(chan struct{}),
 	}
 
 	key := task.uniqueKey()
@@ -128,8 +128,12 @@ func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.Reduce
 // AppendToTask writes the message to the reduce task.
 // If the task is not found, it creates a new task and starts the reduce operation.
 func (rtm *reduceTaskManager) AppendToTask(ctx context.Context, request *v1.ReduceRequest) error {
+	if len(request.Operation.Windows) != 1 {
+		return fmt.Errorf("append operation error: invalid number of windows")
+	}
+
 	rtm.rw.RLock()
-	gKey := generateKey(request.Operation.Partitions[0], request.Payload.Keys)
+	gKey := generateKey(request.Operation.Windows[0], request.Payload.Keys)
 	task, ok := rtm.tasks[gKey]
 	rtm.rw.RUnlock()
 
@@ -177,10 +181,10 @@ func (rtm *reduceTaskManager) CloseAll() {
 	}
 }
 
-func generateKey(partition *v1.Partition, keys []string) string {
+func generateKey(window *v1.Window, keys []string) string {
 	return fmt.Sprintf("%d:%d:%s",
-		partition.GetStart().AsTime().UnixMilli(),
-		partition.GetEnd().AsTime().UnixMilli(),
+		window.GetStart().AsTime().UnixMilli(),
+		window.GetEnd().AsTime().UnixMilli(),
 		strings.Join(keys, delimiter))
 }
 

@@ -16,8 +16,9 @@ service SessionReduce {
   rpc IsReady(google.protobuf.Empty) returns (ReadyResponse);
 }
 
-// Partition represents a window partition.
-message Partition {
+// KeyedWindow represents a window with keys.
+// since the client track the keys, we use keyed window.
+message KeyedWindow {
   google.protobuf.Timestamp start = 1;
   google.protobuf.Timestamp end = 2;
   string slot = 3;
@@ -40,7 +41,7 @@ message SessionReduceRequest {
     }
 
     Event event = 1;
-    repeated Partition partitions = 2;
+    repeated KeyedWindow keyedWindows = 2;
   }
 
   // Payload represents a payload element.
@@ -69,9 +70,10 @@ message SessionReduceResponse {
 
   Result result = 1;
 
-  // Partition represents a window partition to which the result belongs.
-  Partition partition = 2;
+  // keyedWindow represents a window to which the result belongs.
+  KeyedWindow keyedWindow = 2;
 
+  // EOF represents the end of the response for a window.
   bool EOF = 3;
 }
 

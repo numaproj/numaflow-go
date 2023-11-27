@@ -15,7 +15,7 @@ import (
 
 // sessionReduceTask represents a task for a performing session reduce operation.
 type sessionReduceTask struct {
-	partition      *v1.Partition
+	keyedWindow    *v1.KeyedWindow
 	sessionReducer SessionReducer
 	inputCh        chan Datum
 	outputCh       chan Message
@@ -32,9 +32,9 @@ func (rt *sessionReduceTask) buildSessionReduceResponse(message Message) *v1.Ses
 			Value: message.Value(),
 			Tags:  message.Tags(),
 			// event time is the end time of the window - 1 millisecond
-			EventTime: timestamppb.New(rt.partition.GetEnd().AsTime().Add(-1 * time.Millisecond)),
+			EventTime: timestamppb.New(rt.keyedWindow.GetEnd().AsTime().Add(-1 * time.Millisecond)),
 		},
-		Partition: rt.partition,
+		KeyedWindow: rt.keyedWindow,
 	}
 
 	return response
@@ -45,10 +45,10 @@ func (rt *sessionReduceTask) buildEOFResponse() *v1.SessionReduceResponse {
 	response := &v1.SessionReduceResponse{
 		Result: &v1.SessionReduceResponse_Result{
 			// event time is the end time of the window - 1 millisecond
-			EventTime: timestamppb.New(rt.partition.GetEnd().AsTime().Add(-1 * time.Millisecond)),
+			EventTime: timestamppb.New(rt.keyedWindow.GetEnd().AsTime().Add(-1 * time.Millisecond)),
 		},
-		Partition: rt.partition,
-		EOF:       true,
+		KeyedWindow: rt.keyedWindow,
+		EOF:         true,
 	}
 
 	return response
@@ -57,9 +57,9 @@ func (rt *sessionReduceTask) buildEOFResponse() *v1.SessionReduceResponse {
 // uniqueKey returns the unique key for the reduce task to be used in the task manager to identify the task.
 func (rt *sessionReduceTask) uniqueKey() string {
 	return fmt.Sprintf("%d:%d:%s",
-		rt.partition.GetStart().AsTime().UnixMilli(),
-		rt.partition.GetEnd().AsTime().UnixMilli(),
-		strings.Join(rt.partition.GetKeys(), delimiter))
+		rt.keyedWindow.GetStart().AsTime().UnixMilli(),
+		rt.keyedWindow.GetEnd().AsTime().UnixMilli(),
+		strings.Join(rt.keyedWindow.GetKeys(), delimiter))
 }
 
 // sessionReduceTaskManager manages the reduce tasks for a session reduce operation.
@@ -82,13 +82,13 @@ func newReduceTaskManager(sessionReducerFactory CreateSessionReducer) *sessionRe
 func (rtm *sessionReduceTaskManager) CreateTask(ctx context.Context, request *v1.SessionReduceRequest) error {
 	rtm.rw.Lock()
 
-	// for create operation, there should be exactly one partition
-	if len(request.Operation.Partitions) != 1 {
-		return fmt.Errorf("create operation error: invalid number of partitions in the request - %d", len(request.Operation.Partitions))
+	// for create operation, there should be exactly one keyedWindow
+	if len(request.Operation.KeyedWindows) != 1 {
+		return fmt.Errorf("create operation error: invalid number of windows in the request - %d", len(request.Operation.KeyedWindows))
 	}
 
 	task := &sessionReduceTask{
-		partition:      request.Operation.Partitions[0],
+		keyedWindow:    request.Operation.KeyedWindows[0],
 		sessionReducer: rtm.sessionReducerFactory(),
 		inputCh:        make(chan Datum),
 		outputCh:       make(chan Message),
@@ -118,7 +118,7 @@ func (rtm *sessionReduceTaskManager) CreateTask(ctx context.Context, request *v1
 			rtm.responseCh <- task.buildEOFResponse()
 		}()
 
-		task.sessionReducer.SessionReduce(ctx, task.partition.GetKeys(), task.inputCh, task.outputCh)
+		task.sessionReducer.SessionReduce(ctx, task.keyedWindow.GetKeys(), task.inputCh, task.outputCh)
 		// close the output channel and wait for the response to be forwarded
 		close(task.outputCh)
 		wg.Wait()
@@ -142,13 +142,13 @@ func (rtm *sessionReduceTaskManager) CreateTask(ctx context.Context, request *v1
 // If the reduce task is not found, it will create a new reduce task and start the reduce operation.
 func (rtm *sessionReduceTaskManager) AppendToTask(ctx context.Context, request *v1.SessionReduceRequest) error {
 
-	// for append operation, there should be exactly one partition
-	if len(request.Operation.Partitions) != 1 {
-		return fmt.Errorf("append operation error: invalid number of partitions in the request - %d", len(request.Operation.Partitions))
+	// for append operation, there should be exactly one keyedWindow
+	if len(request.Operation.KeyedWindows) != 1 {
+		return fmt.Errorf("append operation error: invalid number of windows in the request - %d", len(request.Operation.KeyedWindows))
 	}
 
 	rtm.rw.RLock()
-	task, ok := rtm.tasks[generateKey(request.Operation.Partitions[0])]
+	task, ok := rtm.tasks[generateKey(request.Operation.KeyedWindows[0])]
 	rtm.rw.RUnlock()
 
 	// if the task is not found, create a new task and start the reduce operation
@@ -166,9 +166,9 @@ func (rtm *sessionReduceTaskManager) AppendToTask(ctx context.Context, request *
 // CloseTask closes the input channel of the reduce tasks.
 func (rtm *sessionReduceTaskManager) CloseTask(request *v1.SessionReduceRequest) {
 	rtm.rw.RLock()
-	tasksToBeClosed := make([]*sessionReduceTask, 0, len(request.Operation.Partitions))
-	for _, partition := range request.Operation.Partitions {
-		key := generateKey(partition)
+	tasksToBeClosed := make([]*sessionReduceTask, 0, len(request.Operation.KeyedWindows))
+	for _, window := range request.Operation.KeyedWindows {
+		key := generateKey(window)
 		task, ok := rtm.tasks[key]
 		if ok {
 			tasksToBeClosed = append(tasksToBeClosed, task)
@@ -185,13 +185,13 @@ func (rtm *sessionReduceTaskManager) CloseTask(request *v1.SessionReduceRequest)
 // merges the accumulators from the other tasks.
 func (rtm *sessionReduceTaskManager) MergeTasks(ctx context.Context, request *v1.SessionReduceRequest) error {
 	rtm.rw.Lock()
-	mergedPartition := request.Operation.Partitions[0]
+	mergedWindow := request.Operation.KeyedWindows[0]
 
-	tasks := make([]*sessionReduceTask, 0, len(request.Operation.Partitions))
+	tasks := make([]*sessionReduceTask, 0, len(request.Operation.KeyedWindows))
 
 	// merge the aggregators from the other tasks
-	for _, partition := range request.Operation.Partitions {
-		key := generateKey(partition)
+	for _, window := range request.Operation.KeyedWindows {
+		key := generateKey(window)
 		task, ok := rtm.tasks[key]
 		if !ok {
 			rtm.rw.Unlock()
@@ -200,13 +200,13 @@ func (rtm *sessionReduceTaskManager) MergeTasks(ctx context.Context, request *v1
 		task.merged.Store(true)
 		tasks = append(tasks, task)
 
-		// mergedPartition will be the smallest window which contains all the windows
-		if partition.GetStart().AsTime().Before(mergedPartition.GetStart().AsTime()) {
-			mergedPartition.Start = partition.Start
+		// mergedWindow will be the largest window which contains all the windows
+		if window.GetStart().AsTime().Before(mergedWindow.GetStart().AsTime()) {
+			mergedWindow.Start = window.Start
 		}
 
-		if partition.GetEnd().AsTime().After(mergedPartition.GetEnd().AsTime()) {
-			mergedPartition.End = partition.End
+		if window.GetEnd().AsTime().After(mergedWindow.GetEnd().AsTime()) {
+			mergedWindow.End = window.End
 		}
 	}
 
@@ -221,21 +221,21 @@ func (rtm *sessionReduceTaskManager) MergeTasks(ctx context.Context, request *v1
 		accumulators = append(accumulators, task.sessionReducer.Accumulator(ctx))
 	}
 
-	// create a new task with the merged partition
+	// create a new task with the merged keyedWindow
 	err := rtm.CreateTask(ctx, &v1.SessionReduceRequest{
 		Payload: nil,
 		Operation: &v1.SessionReduceRequest_WindowOperation{
-			Event:      v1.SessionReduceRequest_WindowOperation_OPEN,
-			Partitions: []*v1.Partition{mergedPartition},
+			Event:        v1.SessionReduceRequest_WindowOperation_OPEN,
+			KeyedWindows: []*v1.KeyedWindow{mergedWindow},
 		},
 	})
 	if err != nil {
 		return err
 	}
 
-	mergedTask, ok := rtm.tasks[generateKey(mergedPartition)]
+	mergedTask, ok := rtm.tasks[generateKey(mergedWindow)]
 	if !ok {
-		return fmt.Errorf("merge operation error: merged task not found for key %s", mergedPartition.String())
+		return fmt.Errorf("merge operation error: merged task not found for key %s", mergedWindow.String())
 	}
 	// merge the accumulators using the merged task
 	for _, aggregator := range accumulators {
@@ -245,26 +245,26 @@ func (rtm *sessionReduceTaskManager) MergeTasks(ctx context.Context, request *v1
 	return nil
 }
 
-// ExpandTask expands the reduce task. It will update the partition of the reduce task
-// expects request.Operation.Partitions to have exactly two partitions. The first partition is the old partition and the second
-// partition is the new partition.
+// ExpandTask expands the reduce task. It will update the keyedWindow of the reduce task
+// expects request.Operation.KeyedWindows to have exactly two windows. The first is the old window and the second
+// is the new window.
 func (rtm *sessionReduceTaskManager) ExpandTask(request *v1.SessionReduceRequest) error {
 
-	// for expand operation, there should be exactly two partitions
-	if len(request.Operation.Partitions) != 2 {
-		return fmt.Errorf("expand operation error: expected exactly two partitions")
+	// for expand operation, there should be exactly two windows
+	if len(request.Operation.KeyedWindows) != 2 {
+		return fmt.Errorf("expand operation error: expected exactly two windows")
 	}
 
 	rtm.rw.Lock()
-	key := generateKey(request.Operation.Partitions[0])
+	key := generateKey(request.Operation.KeyedWindows[0])
 	task, ok := rtm.tasks[key]
 	if !ok {
 		rtm.rw.Unlock()
 		return fmt.Errorf("expand operation error: task not found for key - %s", key)
 	}
 
-	// assign the new partition to the task
-	task.partition = request.Operation.Partitions[1]
+	// assign the new keyedWindow to the task
+	task.keyedWindow = request.Operation.KeyedWindows[1]
 
 	// delete the old entry from the tasks map and add the new entry
 	delete(rtm.tasks, key)
@@ -314,11 +314,11 @@ func (rtm *sessionReduceTaskManager) CloseAll() {
 	}
 }
 
-func generateKey(partition *v1.Partition) string {
+func generateKey(keyedWindows *v1.KeyedWindow) string {
 	return fmt.Sprintf("%d:%d:%s",
-		partition.GetStart().AsTime().UnixMilli(),
-		partition.GetEnd().AsTime().UnixMilli(),
-		strings.Join(partition.GetKeys(), delimiter))
+		keyedWindows.GetStart().AsTime().UnixMilli(),
+		keyedWindows.GetEnd().AsTime().UnixMilli(),
+		strings.Join(keyedWindows.GetKeys(), delimiter))
 }
 
 func buildDatum(payload *v1.SessionReduceRequest_Payload) Datum {

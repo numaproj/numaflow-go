@@ -80,7 +80,7 @@ func TestService_ReduceFn(t *testing.T) {
 					},
 					Operation: &reducepb.ReduceRequest_WindowOperation{
 						Event: reducepb.ReduceRequest_WindowOperation_OPEN,
-						Partitions: []*reducepb.Partition{
+						Windows: []*reducepb.Window{
 							{
 								Start: timestamppb.New(time.UnixMilli(60000)),
 								End:   timestamppb.New(time.UnixMilli(120000)),
@@ -98,7 +98,7 @@ func TestService_ReduceFn(t *testing.T) {
 					},
 					Operation: &reducepb.ReduceRequest_WindowOperation{
 						Event: reducepb.ReduceRequest_WindowOperation_APPEND,
-						Partitions: []*reducepb.Partition{
+						Windows: []*reducepb.Window{
 							{
 								Start: timestamppb.New(time.UnixMilli(60000)),
 								End:   timestamppb.New(time.UnixMilli(120000)),
@@ -116,7 +116,7 @@ func TestService_ReduceFn(t *testing.T) {
 					},
 					Operation: &reducepb.ReduceRequest_WindowOperation{
 						Event: reducepb.ReduceRequest_WindowOperation_APPEND,
-						Partitions: []*reducepb.Partition{
+						Windows: []*reducepb.Window{
 							{
 								Start: timestamppb.New(time.UnixMilli(60000)),
 								End:   timestamppb.New(time.UnixMilli(120000)),
@@ -133,7 +133,7 @@ func TestService_ReduceFn(t *testing.T) {
 						Value:     []byte(strconv.Itoa(60)),
 						EventTime: timestamppb.New(time.UnixMilli(119999)),
 					},
-					Partition: &reducepb.Partition{
+					Window: &reducepb.Window{
 						Start: timestamppb.New(time.UnixMilli(60000)),
 						End:   timestamppb.New(time.UnixMilli(120000)),
 						Slot:  "slot-0",
@@ -163,7 +163,7 @@ func TestService_ReduceFn(t *testing.T) {
 					},
 					Operation: &reducepb.ReduceRequest_WindowOperation{
 						Event: reducepb.ReduceRequest_WindowOperation_OPEN,
-						Partitions: []*reducepb.Partition{
+						Windows: []*reducepb.Window{
 							{
 								Start: timestamppb.New(time.UnixMilli(60000)),
 								End:   timestamppb.New(time.UnixMilli(120000)),
@@ -181,7 +181,7 @@ func TestService_ReduceFn(t *testing.T) {
 					},
 					Operation: &reducepb.ReduceRequest_WindowOperation{
 						Event: reducepb.ReduceRequest_WindowOperation_OPEN,
-						Partitions: []*reducepb.Partition{
+						Windows: []*reducepb.Window{
 							{
 								Start: timestamppb.New(time.UnixMilli(60000)),
 								End:   timestamppb.New(time.UnixMilli(120000)),
@@ -199,7 +199,7 @@ func TestService_ReduceFn(t *testing.T) {
 					},
 					Operation: &reducepb.ReduceRequest_WindowOperation{
 						Event: reducepb.ReduceRequest_WindowOperation_APPEND,
-						Partitions: []*reducepb.Partition{
+						Windows: []*reducepb.Window{
 							{
 								Start: timestamppb.New(time.UnixMilli(60000)),
 								End:   timestamppb.New(time.UnixMilli(120000)),
@@ -217,7 +217,7 @@ func TestService_ReduceFn(t *testing.T) {
 					},
 					Operation: &reducepb.ReduceRequest_WindowOperation{
 						Event: reducepb.ReduceRequest_WindowOperation_APPEND,
-						Partitions: []*reducepb.Partition{
+						Windows: []*reducepb.Window{
 							{
 								Start: timestamppb.New(time.UnixMilli(60000)),
 								End:   timestamppb.New(time.UnixMilli(120000)),
@@ -235,7 +235,7 @@ func TestService_ReduceFn(t *testing.T) {
 					},
 					Operation: &reducepb.ReduceRequest_WindowOperation{
 						Event: reducepb.ReduceRequest_WindowOperation_APPEND,
-						Partitions: []*reducepb.Partition{
+						Windows: []*reducepb.Window{
 							{
 								Start: timestamppb.New(time.UnixMilli(60000)),
 								End:   timestamppb.New(time.UnixMilli(120000)),
@@ -253,7 +253,7 @@ func TestService_ReduceFn(t *testing.T) {
 					},
 					Operation: &reducepb.ReduceRequest_WindowOperation{
 						Event: reducepb.ReduceRequest_WindowOperation_APPEND,
-						Partitions: []*reducepb.Partition{
+						Windows: []*reducepb.Window{
 							{
 								Start: timestamppb.New(time.UnixMilli(60000)),
 								End:   timestamppb.New(time.UnixMilli(120000)),
@@ -270,7 +270,7 @@ func TestService_ReduceFn(t *testing.T) {
 						Value:     []byte(strconv.Itoa(20)),
 						EventTime: timestamppb.New(time.UnixMilli(119999)),
 					},
-					Partition: &reducepb.Partition{
+					Window: &reducepb.Window{
 						Start: timestamppb.New(time.UnixMilli(60000)),
 						End:   timestamppb.New(time.UnixMilli(120000)),
 						Slot:  "slot-0",
@@ -283,7 +283,7 @@ func TestService_ReduceFn(t *testing.T) {
 						Value:     []byte(strconv.Itoa(40)),
 						EventTime: timestamppb.New(time.UnixMilli(119999)),
 					},
-					Partition: &reducepb.Partition{
+					Window: &reducepb.Window{
 						Start: timestamppb.New(time.UnixMilli(60000)),
 						End:   timestamppb.New(time.UnixMilli(120000)),
 						Slot:  "slot-0",
@@ -296,7 +296,7 @@ func TestService_ReduceFn(t *testing.T) {
 						Value:     []byte(strconv.Itoa(60)),
 						EventTime: timestamppb.New(time.UnixMilli(119999)),
 					},
-					Partition: &reducepb.Partition{
+					Window: &reducepb.Window{
 						Start: timestamppb.New(time.UnixMilli(60000)),
 						End:   timestamppb.New(time.UnixMilli(120000)),
 						Slot:  "slot-0",
@@ -326,7 +326,7 @@ func TestService_ReduceFn(t *testing.T) {
 					},
 					Operation: &reducepb.ReduceRequest_WindowOperation{
 						Event: reducepb.ReduceRequest_WindowOperation_OPEN,
-						Partitions: []*reducepb.Partition{
+						Windows: []*reducepb.Window{
 							{
 								Start: timestamppb.New(time.UnixMilli(60000)),
 								End:   timestamppb.New(time.UnixMilli(120000)),
@@ -344,7 +344,7 @@ func TestService_ReduceFn(t *testing.T) {
 					},
 					Operation: &reducepb.ReduceRequest_WindowOperation{
 						Event: reducepb.ReduceRequest_WindowOperation_APPEND,
-						Partitions: []*reducepb.Partition{
+						Windows: []*reducepb.Window{
 							{
 								Start: timestamppb.New(time.UnixMilli(60000)),
 								End:   timestamppb.New(time.UnixMilli(120000)),
@@ -362,7 +362,7 @@ func TestService_ReduceFn(t *testing.T) {
 					},
 					Operation: &reducepb.ReduceRequest_WindowOperation{
 						Event: reducepb.ReduceRequest_WindowOperation_APPEND,
-						Partitions: []*reducepb.Partition{
+						Windows: []*reducepb.Window{
 							{
 								Start: timestamppb.New(time.UnixMilli(60000)),
 								End:   timestamppb.New(time.UnixMilli(120000)),
@@ -378,7 +378,7 @@ func TestService_ReduceFn(t *testing.T) {
 						Value:     []byte(strconv.Itoa(60)),
 						EventTime: timestamppb.New(time.UnixMilli(119999)),
 					},
-					Partition: &reducepb.Partition{
+					Window: &reducepb.Window{
 						Start: timestamppb.New(time.UnixMilli(60000)),
 						End:   timestamppb.New(time.UnixMilli(120000)),
 						Slot:  "slot-0",
@@ -407,7 +407,7 @@ func TestService_ReduceFn(t *testing.T) {
 					},
 					Operation: &reducepb.ReduceRequest_WindowOperation{
 						Event: reducepb.ReduceRequest_WindowOperation_OPEN,
-						Partitions: []*reducepb.Partition{
+						Windows: []*reducepb.Window{
 							{
 								Start: timestamppb.New(time.UnixMilli(60000)),
 								End:   timestamppb.New(time.UnixMilli(120000)),
@@ -425,7 +425,7 @@ func TestService_ReduceFn(t *testing.T) {
 					},
 					Operation: &reducepb.ReduceRequest_WindowOperation{
 						Event: reducepb.ReduceRequest_WindowOperation_APPEND,
-						Partitions: []*reducepb.Partition{
+						Windows: []*reducepb.Window{
 							{
 								Start: timestamppb.New(time.UnixMilli(60000)),
 								End:   timestamppb.New(time.UnixMilli(120000)),
@@ -443,7 +443,7 @@ func TestService_ReduceFn(t *testing.T) {
 					},
 					Operation: &reducepb.ReduceRequest_WindowOperation{
 						Event: reducepb.ReduceRequest_WindowOperation_OPEN,
-						Partitions: []*reducepb.Partition{
+						Windows: []*reducepb.Window{
 							{
 								Start: timestamppb.New(time.UnixMilli(60000)),
 								End:   timestamppb.New(time.UnixMilli(120000)),
@@ -460,7 +460,7 @@ func TestService_ReduceFn(t *testing.T) {
 						Value:     []byte{},
 						EventTime: timestamppb.New(time.UnixMilli(119999)),
 					},
-					Partition: &reducepb.Partition{
+					Window: &reducepb.Window{
 						Start: timestamppb.New(time.UnixMilli(60000)),
 						End:   timestamppb.New(time.UnixMilli(120000)),
 						Slot:  "slot-0",

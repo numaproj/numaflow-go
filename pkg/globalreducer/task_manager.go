@@ -15,7 +15,7 @@ import (
 
 // globalReduceTask represents a global reduce task for a global reduce operation.
 type globalReduceTask struct {
-	partition       *v1.Partition
+	keyedWindow     *v1.KeyedWindow
 	globalReducer   GlobalReducer
 	inputCh         chan Datum
 	outputCh        chan Message
@@ -27,7 +27,7 @@ type globalReduceTask struct {
 func (rt *globalReduceTask) buildGlobalReduceResponse(message Message) *v1.GlobalReduceResponse {
 
 	// the event time is the latest watermark
-	// since for global window, partition start and end time will be -1
+	// since for global window, keyedWindow start and end time will be -1
 	response := &v1.GlobalReduceResponse{
 		Result: &v1.GlobalReduceResponse_Result{
 			Keys:      message.Keys(),
@@ -35,7 +35,7 @@ func (rt *globalReduceTask) buildGlobalReduceResponse(message Message) *v1.Globa
 			Tags:      message.Tags(),
 			EventTime: timestamppb.New(rt.latestWatermark.Load()),
 		},
-		Partition: rt.partition,
+		KeyedWindow: rt.keyedWindow,
 	}
 
 	return response
@@ -46,8 +46,8 @@ func (rt *globalReduceTask) buildEOFResponse() *v1.GlobalReduceResponse {
 		Result: &v1.GlobalReduceResponse_Result{
 			EventTime: timestamppb.New(rt.latestWatermark.Load()),
 		},
-		Partition: rt.partition,
-		EOF:       true,
+		KeyedWindow: rt.keyedWindow,
+		EOF:         true,
 	}
 
 	return response
@@ -56,9 +56,9 @@ func (rt *globalReduceTask) buildEOFResponse() *v1.GlobalReduceResponse {
 // uniqueKey returns the unique key for the reduce task to be used in the task manager to identify the task.
 func (rt *globalReduceTask) uniqueKey() string {
 	return fmt.Sprintf("%d:%d:%s",
-		rt.partition.GetStart().AsTime().UnixMilli(),
-		rt.partition.GetEnd().AsTime().UnixMilli(),
-		strings.Join(rt.partition.GetKeys(), delimiter))
+		rt.keyedWindow.GetStart().AsTime().UnixMilli(),
+		rt.keyedWindow.GetEnd().AsTime().UnixMilli(),
+		strings.Join(rt.keyedWindow.GetKeys(), delimiter))
 }
 
 // globalReduceTaskManager manages the reduce tasks for a global reduce operation.
@@ -81,12 +81,12 @@ func newReduceTaskManager(globalReducer GlobalReducer) *globalReduceTaskManager 
 func (rtm *globalReduceTaskManager) CreateTask(ctx context.Context, request *v1.GlobalReduceRequest) error {
 	rtm.rw.Lock()
 
-	if len(request.Operation.Partitions) != 1 {
-		return fmt.Errorf("invalid number of partitions")
+	if len(request.Operation.KeyedWindows) != 1 {
+		return fmt.Errorf("create operation error: invalid number of windows")
 	}
 
 	task := &globalReduceTask{
-		partition:       request.Operation.Partitions[0],
+		keyedWindow:     request.Operation.KeyedWindows[0],
 		globalReducer:   rtm.globalReducer,
 		inputCh:         make(chan Datum),
 		outputCh:        make(chan Message),
@@ -139,12 +139,12 @@ func (rtm *globalReduceTaskManager) CreateTask(ctx context.Context, request *v1.
 // AppendToTask writes the message to the reduce task.
 // If the reduce task is not found, it will create a new reduce task and start the reduce operation.
 func (rtm *globalReduceTaskManager) AppendToTask(ctx context.Context, request *v1.GlobalReduceRequest) error {
-	if len(request.Operation.Partitions) != 1 {
-		return fmt.Errorf("invalid number of partitions")
+	if len(request.Operation.KeyedWindows) != 1 {
+		return fmt.Errorf("append operation error: invalid number of windows")
 	}
 
 	rtm.rw.RLock()
-	task, ok := rtm.tasks[generateKey(request.Operation.Partitions[0])]
+	task, ok := rtm.tasks[generateKey(request.Operation.KeyedWindows[0])]
 	rtm.rw.RUnlock()
 
 	if !ok {
@@ -163,9 +163,9 @@ func (rtm *globalReduceTaskManager) AppendToTask(ctx context.Context, request *v
 // CloseTask closes the reduce task input channel. The reduce task will be closed when all the messages are processed.
 func (rtm *globalReduceTaskManager) CloseTask(request *v1.GlobalReduceRequest) {
 	rtm.rw.RLock()
-	tasksToBeClosed := make([]*globalReduceTask, 0, len(request.Operation.Partitions))
-	for _, partition := range request.Operation.Partitions {
-		key := generateKey(partition)
+	tasksToBeClosed := make([]*globalReduceTask, 0, len(request.Operation.KeyedWindows))
+	for _, window := range request.Operation.KeyedWindows {
+		key := generateKey(window)
 		task, ok := rtm.tasks[key]
 		if ok {
 			tasksToBeClosed = append(tasksToBeClosed, task)
@@ -214,11 +214,11 @@ func (rtm *globalReduceTaskManager) CloseAll() {
 	}
 }
 
-func generateKey(partition *v1.Partition) string {
+func generateKey(keyedWindow *v1.KeyedWindow) string {
 	return fmt.Sprintf("%d:%d:%s",
-		partition.GetStart().AsTime().UnixMilli(),
-		partition.GetEnd().AsTime().UnixMilli(),
-		strings.Join(partition.GetKeys(), delimiter))
+		keyedWindow.GetStart().AsTime().UnixMilli(),
+		keyedWindow.GetEnd().AsTime().UnixMilli(),
+		strings.Join(keyedWindow.GetKeys(), delimiter))
 }
 
 func buildDatum(request *v1.GlobalReduceRequest) Datum {
