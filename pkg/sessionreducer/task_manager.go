@@ -116,8 +116,10 @@ func (rtm *sessionReduceTaskManager) CreateTask(ctx context.Context, request *v1
 					rtm.responseCh <- task.buildSessionReduceResponse(message)
 				}
 			}
-			// send EOF
-			rtm.responseCh <- task.buildEOFResponse()
+			if !task.merged.Load() {
+				// send EOF
+				rtm.responseCh <- task.buildEOFResponse()
+			}
 		}()
 
 		task.sessionReducer.SessionReduce(ctx, task.keyedWindow.GetKeys(), task.inputCh, task.outputCh)
@@ -236,7 +238,9 @@ func (rtm *sessionReduceTaskManager) MergeTasks(ctx context.Context, request *v1
 		return err
 	}
 
+	rtm.rw.RLock()
 	mergedTask, ok := rtm.tasks[generateKey(mergedWindow)]
+	rtm.rw.RUnlock()
 	if !ok {
 		return fmt.Errorf("merge operation error: merged task not found for key %s", mergedWindow.String())
 	}
