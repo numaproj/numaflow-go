@@ -101,6 +101,31 @@ func TestService_sourceTransformFn(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "sourceTransform_fn_forward_msg_drop_msg_with_event_time",
+			handler: SourceTransformFunc(func(ctx context.Context, keys []string, datum Datum) Messages {
+				return MessagesBuilder().Append(MessageToDropWithEventTime(testTime))
+			}),
+			args: args{
+				ctx: context.Background(),
+				d: &stpb.SourceTransformRequest{
+					Keys:      []string{"client"},
+					Value:     []byte(`test`),
+					EventTime: timestamppb.New(time.Time{}),
+					Watermark: timestamppb.New(time.Time{}),
+				},
+			},
+			want: &stpb.SourceTransformResponse{
+				Results: []*stpb.SourceTransformResponse_Result{
+					{
+						EventTime: timestamppb.New(testTime),
+						Tags:      []string{DROP},
+						Value:     []byte{},
+					},
+				},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
