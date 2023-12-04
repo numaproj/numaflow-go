@@ -56,7 +56,8 @@ func (m Message) Tags() []string {
 }
 
 // MessageToDrop creates a Message to be dropped with eventTime.
-// eventTime is required because, even though a message is dropped, it is still considered as being processed, hence the watermark should be updated accordingly.
+// eventTime is required because, even though a message is dropped, it is still considered as being processed,
+// hence the watermark should be updated accordingly using the provided event time.
 func MessageToDrop(eventTime time.Time) Message {
 	return Message{eventTime: eventTime, value: []byte{}, tags: []string{DROP}}
 }
