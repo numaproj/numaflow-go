@@ -61,16 +61,8 @@ func (m Message) Tags() []string {
 }
 
 // MessageToDrop creates a Message to be dropped
-// Deprecated: message created using this function will not have a valid eventTime, hence excluded from watermark calculation.
-// Even though a message is dropped, it is still considered as being processed, hence the watermark should be updated accordingly.
-// Since v0.5.2, we recommend using MessageToDropWithEventTime instead.
 func MessageToDrop() Message {
 	return Message{eventTime: eventTimeForDrop, value: []byte{}, tags: []string{DROP}}
-}
-
-// MessageToDropWithEventTime creates a Message to be dropped with eventTime
-func MessageToDropWithEventTime(eventTime time.Time) Message {
-	return Message{eventTime: eventTime, value: []byte{}, tags: []string{DROP}}
 }
 
 type Messages []Message

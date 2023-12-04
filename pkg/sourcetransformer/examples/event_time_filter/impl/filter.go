@@ -6,7 +6,7 @@ import (
 	"github.com/numaproj/numaflow-go/pkg/sourcetransformer"
 )
 
-func FilterEventTime(_ []string, d sourcetransformer.Datum) sourcetransformer.Messages {
+func FilterEventTime(keys []string, d sourcetransformer.Datum) sourcetransformer.Messages {
 	janFirst2022 := time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC)
 	janFirst2023 := time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)
 	if d.EventTime().Before(janFirst2022) {
