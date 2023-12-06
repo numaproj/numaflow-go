@@ -8,6 +8,8 @@ github.com/numaproj/numaflow-go v0.4.6-0.20230828035951-6f79b632ecfe h1:nK/BGffg
 github.com/numaproj/numaflow-go v0.4.6-0.20230828035951-6f79b632ecfe/go.mod h1:zcJq1YAA/jnxCQLW7EFK4+HXWCd2QtW4tMOvRjHFa2g=
 github.com/numaproj/numaflow-go v0.5.3-0.20231123054822-fe61737eb7dd h1:NuigpRGq/KpLxXhpw52hNamn80iSjuctQGMHJOqqOQM=
 github.com/numaproj/numaflow-go v0.5.3-0.20231123054822-fe61737eb7dd/go.mod h1:WoMt31+h3up202zTRI8c/qe42B8UbvwLe2mJH0MAlhI=
+github.com/numaproj/numaflow-go v0.5.3-0.20231130160156-dd8004948c8c h1:RFA+jBXC7Ert+vXplpI84PQynLKsstMNah9fCSHoTX8=
+github.com/numaproj/numaflow-go v0.5.3-0.20231130160156-dd8004948c8c/go.mod h1:WoMt31+h3up202zTRI8c/qe42B8UbvwLe2mJH0MAlhI=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/stretchr/testify v1.8.1 h1:w7B6lhMri9wdJUVmEZPGGhZzrYTPvgJArz7wNPgYKsk=
 golang.org/x/net v0.9.0 h1:aWJ/m6xSmxWBx+V0XRHTlrYrPG56jKsLdTFmsSsCzOM=

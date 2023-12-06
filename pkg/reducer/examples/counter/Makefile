@@ -4,7 +4,7 @@ build:
 
 .PHONY: image
 image: build
-	docker build -t "quay.io/yhl25/numaflow-go/reduce-counter:v0.5.4" --target counter .
+	docker build -t "quay.io/numaio/numaflow-go/reduce-counter:v0.5.3" --target counter .
 
 clean:
 	-rm -rf ./dist
