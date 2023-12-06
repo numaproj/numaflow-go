@@ -17,23 +17,6 @@ jobs:
         go-version: ^1.20
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
-    - name: Proto Gen
-      run: make proto
-  build:
-    name: Unit Tests
-    runs-on: ubuntu-latest
-    steps:
-    - name: Set up Go 1.x
-      uses: actions/setup-go@v2
-      with:
-        go-version: ^1.20
-
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v2
-
-    - name: Get dependencies
-      run: go mod download
-
     - name: Install protoc
       run: |
         set -eux -o pipefail
@@ -47,10 +30,22 @@ jobs:
         sudo find /usr/local/include -type d | xargs sudo chmod a+rx
         rm -f $PROTOC_ZIP
         ls /usr/local/include/google/protobuf/
-
+    - name: Proto Gen
+      run: make proto
+  build:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+    - name: Set up Go 1.x
+      uses: actions/setup-go@v2
+      with:
+        go-version: ^1.20
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v2
+    - name: Get dependencies
+      run: go mod download
     - name: Install mockgen
       run: |
         go install github.com/golang/mock/mockgen@v1.6.0
-
     - name: Test
       run: make all
