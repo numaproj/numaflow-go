@@ -18,6 +18,8 @@ type Sourcer interface {
 	// When the return value is negative, it indicates the pending information is not available.
 	// With pending information being not available, the Numaflow platform doesn't auto-scale the source.
 	Pending(ctx context.Context) int64
+	//Partitions returns the partitions associated with the source.
+	Partitions(ctx context.Context) []int32
 }
 
 // ReadRequest is the interface of read request.

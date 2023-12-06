@@ -72,6 +72,10 @@ func (s *SimpleSource) Ack(_ context.Context, request sourcesdk.AckRequest) {
 	}
 }
 
+func (s *SimpleSource) Partitions(_ context.Context) []int32 {
+	return []int32{0}
+}
+
 func serializeOffset(idx int64) []byte {
 	return []byte(strconv.FormatInt(idx, 10))
 }

@@ -43,11 +43,11 @@ func (m Message) EventTime() time.Time {
 
 type Offset struct {
 	value       []byte
-	partitionId string
+	partitionId int32
 }
 
 // NewOffset creates an Offset with value and partition id
-func NewOffset(value []byte, partitionId string) Offset {
+func NewOffset(value []byte, partitionId int32) Offset {
 	return Offset{value: value, partitionId: partitionId}
 }
 
@@ -57,6 +57,6 @@ func (o Offset) Value() []byte {
 }
 
 // PartitionId returns partition id of the offset
-func (o Offset) PartitionId() string {
+func (o Offset) PartitionId() int32 {
 	return o.partitionId
 }
