@@ -14,4 +14,5 @@ Source Transformer, Functions, Sinks or SideInputs in Golang.
 ### Useful Commands
 
 `make test` - Run the tests.
-`make proto`- Regenerate the protobuf files.
+`make proto`- Regenerate the protobuf files from the [proto files](https://github.com/numaproj/numaflow/tree/main/pkg/apis/proto) defined in [numaproj/numaflow](https://github.com/numaproj/numaflow) repository.
+`make proto ORG=xxx PROJECT=xxx BRANCH=xxx` - Regenerate the protobuf files from specified github repository.
