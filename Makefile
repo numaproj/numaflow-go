@@ -2,7 +2,7 @@ SHELL:=/bin/bash
 
 CURRENT_DIR=$(shell pwd)
 
-ORG?=numrproj
+ORG?=numaproj
 PROJECT?=numaflow
 BRANCH?=main
 
