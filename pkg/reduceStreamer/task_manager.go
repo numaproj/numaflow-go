@@ -1,4 +1,4 @@
-package reducer
+package reduceStreamer
 
 import (
 	"context"
@@ -14,12 +14,12 @@ import (
 
 // reduceStreamTask represents a task for a performing reduceStream operation.
 type reduceStreamTask struct {
-	keys     []string
-	window   *v1.Window
-	reducer  Reducer
-	inputCh  chan Datum
-	outputCh chan Message
-	doneCh   chan struct{}
+	keys           []string
+	window         *v1.Window
+	reduceStreamer ReduceStreamer
+	inputCh        chan Datum
+	outputCh       chan Message
+	doneCh         chan struct{}
 }
 
 // buildReduceResponse builds the reduce response from the messages.
@@ -50,7 +50,7 @@ func (rt *reduceStreamTask) buildEOFResponse() *v1.ReduceResponse {
 	return response
 }
 
-// uniqueKey returns the unique key for the reduce task to be used in the task manager to identify the task.
+// uniqueKey returns the unique key for the reduceStream task to be used in the task manager to identify the task.
 func (rt *reduceStreamTask) uniqueKey() string {
 	return fmt.Sprintf("%d:%d:%s",
 		rt.window.GetStart().AsTime().UnixMilli(),
@@ -58,24 +58,24 @@ func (rt *reduceStreamTask) uniqueKey() string {
 		strings.Join(rt.keys, delimiter))
 }
 
-// reduceTaskManager manages the reduce tasks for a  reduce operation.
-type reduceTaskManager struct {
-	reducer    Reducer
-	tasks      map[string]*reduceStreamTask
-	responseCh chan *v1.ReduceResponse
-	rw         sync.RWMutex
+// reduceStreamTaskManager manages the reduceStream tasks.
+type reduceStreamTaskManager struct {
+	reduceStreamer ReduceStreamer
+	tasks          map[string]*reduceStreamTask
+	responseCh     chan *v1.ReduceResponse
+	rw             sync.RWMutex
 }
 
-func newReduceTaskManager(reducer Reducer) *reduceTaskManager {
-	return &reduceTaskManager{
-		reducer:    reducer,
-		tasks:      make(map[string]*reduceStreamTask),
-		responseCh: make(chan *v1.ReduceResponse),
+func newReduceTaskManager(reduceStreamer ReduceStreamer) *reduceStreamTaskManager {
+	return &reduceStreamTaskManager{
+		reduceStreamer: reduceStreamer,
+		tasks:          make(map[string]*reduceStreamTask),
+		responseCh:     make(chan *v1.ReduceResponse),
 	}
 }
 
-// CreateTask creates a new reduce task and starts the  reduce operation.
-func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.ReduceRequest) error {
+// CreateTask creates a new reduceStream task and starts the  reduceStream operation.
+func (rtm *reduceStreamTaskManager) CreateTask(ctx context.Context, request *v1.ReduceRequest) error {
 	if len(request.Operation.Windows) != 1 {
 		return fmt.Errorf("create operation error: invalid number of windows")
 	}
@@ -98,17 +98,24 @@ func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.Reduce
 	rtm.rw.Unlock()
 
 	go func() {
-		// invoke the reduce function
-		messages := rtm.reducer.Reduce(ctx, request.GetPayload().GetKeys(), task.inputCh, md)
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for message := range task.outputCh {
+				// write the output to the output channel, service will forward it to downstream
+				rtm.responseCh <- task.buildReduceResponse(message)
+			}
+			// send EOF
+			rtm.responseCh <- task.buildEOFResponse()
+		}()
 
-		for _, message := range messages {
-			// write the output to the output channel, service will forward it to downstream
-			rtm.responseCh <- task.buildReduceResponse(message)
-		}
-		// send EOF
-		rtm.responseCh <- task.buildEOFResponse()
-		// close the output channel after the reduce function is done
+		// invoke the reduceStream function
+		rtm.reduceStreamer.ReduceStream(ctx, request.GetPayload().GetKeys(), task.inputCh, task.outputCh, md)
+		// close the output channel after the reduceStream function is done
 		close(task.outputCh)
+		// wait for the output to be forwarded
+		wg.Wait()
 		// send a done signal
 		close(task.doneCh)
 	}()
@@ -118,9 +125,9 @@ func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.Reduce
 	return nil
 }
 
-// AppendToTask writes the message to the reduce task.
-// If the task is not found, it creates a new task and starts the reduce operation.
-func (rtm *reduceTaskManager) AppendToTask(ctx context.Context, request *v1.ReduceRequest) error {
+// AppendToTask writes the message to the reduceStream task.
+// If the task is not found, it creates a new task and starts the reduceStream operation.
+func (rtm *reduceStreamTaskManager) AppendToTask(ctx context.Context, request *v1.ReduceRequest) error {
 	if len(request.Operation.Windows) != 1 {
 		return fmt.Errorf("append operation error: invalid number of windows")
 	}
@@ -139,13 +146,13 @@ func (rtm *reduceTaskManager) AppendToTask(ctx context.Context, request *v1.Redu
 	return nil
 }
 
-// OutputChannel returns the output channel for the reduce task manager to read the results.
-func (rtm *reduceTaskManager) OutputChannel() <-chan *v1.ReduceResponse {
+// OutputChannel returns the output channel for the reduceStream task manager to read the results.
+func (rtm *reduceStreamTaskManager) OutputChannel() <-chan *v1.ReduceResponse {
 	return rtm.responseCh
 }
 
-// WaitAll waits for all the reduce tasks to complete.
-func (rtm *reduceTaskManager) WaitAll() {
+// WaitAll waits for all the reduceStream tasks to complete.
+func (rtm *reduceStreamTaskManager) WaitAll() {
 	rtm.rw.RLock()
 	tasks := make([]*reduceStreamTask, 0, len(rtm.tasks))
 	for _, task := range rtm.tasks {
@@ -160,8 +167,8 @@ func (rtm *reduceTaskManager) WaitAll() {
 	close(rtm.responseCh)
 }
 
-// CloseAll closes all the reduce tasks.
-func (rtm *reduceTaskManager) CloseAll() {
+// CloseAll closes all the reduceStream tasks.
+func (rtm *reduceStreamTaskManager) CloseAll() {
 	rtm.rw.Lock()
 	tasks := make([]*reduceStreamTask, 0, len(rtm.tasks))
 	for _, task := range rtm.tasks {

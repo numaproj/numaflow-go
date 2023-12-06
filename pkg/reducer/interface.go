@@ -25,13 +25,13 @@ type IntervalWindow interface {
 
 // Reducer is the interface of reduce function implementation.
 type Reducer interface {
-	Reduce(ctx context.Context, keys []string, inputCh <-chan Datum, outputCh chan<- Message, md Metadata)
+	Reduce(ctx context.Context, keys []string, inputCh <-chan Datum, md Metadata) Messages
 }
 
 // ReducerFunc is a utility type used to convert a Reduce function to a Reducer.
-type ReducerFunc func(ctx context.Context, keys []string, inputCh <-chan Datum, outputCh chan<- Message, md Metadata)
+type ReducerFunc func(ctx context.Context, keys []string, inputCh <-chan Datum, md Metadata) Messages
 
 // Reduce implements the function of reduce function.
-func (rf ReducerFunc) Reduce(ctx context.Context, keys []string, inputCh <-chan Datum, outputCh chan<- Message, md Metadata) {
-	rf(ctx, keys, inputCh, outputCh, md)
+func (rf ReducerFunc) Reduce(ctx context.Context, keys []string, inputCh <-chan Datum, md Metadata) Messages {
+	return rf(ctx, keys, inputCh, md)
 }
