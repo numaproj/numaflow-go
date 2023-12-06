@@ -21,8 +21,12 @@ if [ "`command -v protoc-gen-go-grpc`" = "" ]; then
   go install -mod=vendor ./vendor/google.golang.org/grpc/cmd/protoc-gen-go-grpc
 fi
 
+ORG=${ORG:-numaproj}
+PROJECT=${PROJECT:-numaflow}
+BRANCH=${BRANCH:-main}
+
 mkdir -p ${REPO_ROOT}/dist
-REMOTE_URL="https://raw.githubusercontent.com/numaproj/numaflow/main/pkg/apis/proto"
+REMOTE_URL="https://raw.githubusercontent.com/${ORG}/${PROJECT}/${BRANCH}/pkg/apis/proto"
 
 curl -Ls -o ${REPO_ROOT}/dist/map.proto ${REMOTE_URL}/map/v1/map.proto
 curl -Ls -o ${REPO_ROOT}/dist/reduce.proto ${REMOTE_URL}/reduce/v1/reduce.proto

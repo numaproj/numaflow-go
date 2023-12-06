@@ -7,6 +7,12 @@ on:
     branches: [ main ]
 
 jobs:
+  proto:
+    name: Proto Generation
+    runs-on: ubuntu-latest
+    steps:
+    - name: Proto Gen
+      run: make proto
   build:
     name: Unit Tests
     runs-on: ubuntu-latest
