@@ -6,14 +6,14 @@ import (
 	"log"
 	"strconv"
 
-	"github.com/numaproj/numaflow-go/pkg/reduceStreamer"
+	"github.com/numaproj/numaflow-go/pkg/reducer"
 )
 
-// Sum is a reduceStreamer that sum up the values for the given keys
+// Sum is a reducer that sum up the values for the given keys
 type Sum struct {
 }
 
-func (s *Sum) ReduceStream(ctx context.Context, keys []string, inputCh <-chan reduceStreamer.Datum, outputCh chan<- reduceStreamer.Message, md reduceStreamer.Metadata) {
+func (s *Sum) Reduce(ctx context.Context, keys []string, inputCh <-chan reducer.Datum, md reducer.Metadata) reducer.Messages {
 	// sum up values for the same keys
 	intervalWindow := md.IntervalWindow()
 	_ = intervalWindow
@@ -34,19 +34,13 @@ func (s *Sum) ReduceStream(ctx context.Context, keys []string, inputCh <-chan re
 			continue
 		}
 		sum += v
-
-		if sum >= 100 {
-			resultVal = []byte(strconv.Itoa(sum))
-			outputCh <- reduceStreamer.NewMessage(resultVal).WithKeys(resultKeys)
-			sum = 0
-		}
 	}
 	resultVal = []byte(strconv.Itoa(sum))
-	outputCh <- reduceStreamer.NewMessage(resultVal).WithKeys(resultKeys)
+	return reducer.MessagesBuilder().Append(reducer.NewMessage(resultVal).WithKeys(resultKeys))
 }
 
 func main() {
-	err := reduceStreamer.NewServer(&Sum{}).Start(context.Background())
+	err := reducer.NewServer(&Sum{}).Start(context.Background())
 	if err != nil {
 		log.Panic("unable to start the server due to: ", err)
 	}
