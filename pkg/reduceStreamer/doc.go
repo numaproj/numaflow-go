@@ -2,4 +2,4 @@
 
 // Examples: https://github.com/numaproj/numaflow-go/tree/main/pkg/reducer/examples/
 
-package reduceStreamer
+package reducestreamer

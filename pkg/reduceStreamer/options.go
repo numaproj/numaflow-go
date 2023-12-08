@@ -1,4 +1,4 @@
-package reduceStreamer
+package reducestreamer
 
 import (
 	"github.com/numaproj/numaflow-go/pkg/info"

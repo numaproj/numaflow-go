@@ -1,4 +1,4 @@
-package reduceStreamer
+package reducestreamer
 
 import "time"
 

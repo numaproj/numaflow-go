@@ -4,10 +4,10 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/numaproj/numaflow-go/pkg/reduceStreamer"
+	"github.com/numaproj/numaflow-go/pkg/reducestreamer"
 )
 
-func reduceCounter(_ context.Context, keys []string, inputCh <-chan reduceStreamer.Datum, outputCh chan<- reduceStreamer.Message, md reduceStreamer.Metadata) {
+func reduceCounter(_ context.Context, keys []string, inputCh <-chan reducestreamer.Datum, outputCh chan<- reducestreamer.Message, md reducestreamer.Metadata) {
 	// count the incoming events
 	var resultKeys = keys
 	var resultVal []byte
@@ -16,14 +16,14 @@ func reduceCounter(_ context.Context, keys []string, inputCh <-chan reduceStream
 		counter++
 		if counter >= 10 {
 			resultVal = []byte(strconv.Itoa(counter))
-			outputCh <- reduceStreamer.NewMessage(resultVal).WithKeys(resultKeys)
+			outputCh <- reducestreamer.NewMessage(resultVal).WithKeys(resultKeys)
 			counter = 0
 		}
 	}
 	resultVal = []byte(strconv.Itoa(counter))
-	outputCh <- reduceStreamer.NewMessage(resultVal).WithKeys(resultKeys)
+	outputCh <- reducestreamer.NewMessage(resultVal).WithKeys(resultKeys)
 }
 
 func main() {
-	reduceStreamer.NewServer(reduceStreamer.ReducerFunc(reduceCounter)).Start(context.Background())
+	reducestreamer.NewServer(reducestreamer.ReducerFunc(reduceCounter)).Start(context.Background())
 }
