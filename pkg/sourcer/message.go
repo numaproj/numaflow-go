@@ -1,6 +1,13 @@
 package sourcer
 
-import "time"
+import (
+	"os"
+	"strconv"
+	"time"
+)
+
+// create default partition id from the environment variable "NUMAFLOW_REPLICA"
+var defaultPartitionId, _ = strconv.Atoi(os.Getenv("NUMAFLOW_REPLICA"))
 
 // Message is used to wrap the data return by UDSource
 type Message struct {
@@ -49,6 +56,19 @@ type Offset struct {
 // NewOffset creates an Offset with value and partition id
 func NewOffset(value []byte, partitionId int32) Offset {
 	return Offset{value: value, partitionId: partitionId}
+}
+
+// NewOffsetWithDefaultPartitionId creates an Offset with value and default partition id
+func NewOffsetWithDefaultPartitionId(value []byte) Offset {
+	return Offset{value: value, partitionId: DefaultPartitions()[0]}
+}
+
+// DefaultPartitions returns default partitions for the source
+// it can be used in the Partitions() function of the Sourcer implementation
+// if the source doesn't have partitions, default partition will be pod replica
+// index of the source.
+func DefaultPartitions() []int32 {
+	return []int32{int32(defaultPartitionId)}
 }
 
 // Value returns value of the offset
