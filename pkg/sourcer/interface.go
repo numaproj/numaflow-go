@@ -18,9 +18,11 @@ type Sourcer interface {
 	// When the return value is negative, it indicates the pending information is not available.
 	// With pending information being not available, the Numaflow platform doesn't auto-scale the source.
 	Pending(ctx context.Context) int64
-	//Partitions returns the partitions associated with the source, will be used by the platform to determine
+	// Partitions returns the partitions associated with the source, will be used by the platform to determine
 	// the partitions to which the watermark should be published. If the source doesn't have partitions,
 	// DefaultPartitions() can be used to return the default partitions.
+	// In most cases, the DefaultPartitions() should be enough; the cases where we need to implement custom Partitions()
+	// is in a case like Kafka, where a reader can read from multiple Kafka partitions.
 	Partitions(ctx context.Context) []int32
 }
 
