@@ -56,7 +56,7 @@ func (s *SimpleSource) Read(_ context.Context, readRequest sourcesdk.ReadRequest
 			offsetValue := serializeOffset(s.readIdx)
 			messageCh <- sourcesdk.NewMessage(
 				[]byte(strconv.FormatInt(s.readIdx, 10)),
-				sourcesdk.NewOffset(offsetValue, 0),
+				sourcesdk.NewOffsetWithDefaultPartitionId(offsetValue),
 				time.Now())
 			// Mark the offset as to be acked, and increment the read index.
 			s.toAckSet[s.readIdx] = struct{}{}
@@ -73,7 +73,7 @@ func (s *SimpleSource) Ack(_ context.Context, request sourcesdk.AckRequest) {
 }
 
 func (s *SimpleSource) Partitions(_ context.Context) []int32 {
-	return []int32{0}
+	return sourcesdk.DefaultPartitions()
 }
 
 func serializeOffset(idx int64) []byte {
