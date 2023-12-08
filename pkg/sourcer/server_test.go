@@ -23,6 +23,10 @@ func (ts TestNoopSource) Pending(ctx context.Context) int64 {
 	return 0
 }
 
+func (ts TestNoopSource) Partitions(ctx context.Context) []int32 {
+	return []int32{0}
+}
+
 func TestServer_Start(t *testing.T) {
 	socketFile, _ := os.CreateTemp("/tmp", "numaflow-test.sock")
 	defer func() {

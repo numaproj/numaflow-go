@@ -16,15 +16,16 @@ import (
 	sourcepb "github.com/numaproj/numaflow-go/pkg/apis/proto/source/v1"
 )
 
-var TestEventTime = time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
-var TestKey = "test-key"
-var TestPendingNumber int64 = 123
+var testEventTime = time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
+var testKey = "test-key"
+var testPendingNumber int64 = 123
+var testPartitions = []int32{1, 3, 5}
 
 type TestSource struct{}
 
 func (ts TestSource) Read(_ context.Context, _ ReadRequest, messageCh chan<- Message) {
-	msg := NewMessage([]byte(`test`), Offset{}, TestEventTime)
-	messageCh <- msg.WithKeys([]string{TestKey})
+	msg := NewMessage([]byte(`test`), Offset{}, testEventTime)
+	messageCh <- msg.WithKeys([]string{testKey})
 }
 
 func (ts TestSource) Ack(_ context.Context, _ AckRequest) {
@@ -33,7 +34,11 @@ func (ts TestSource) Ack(_ context.Context, _ AckRequest) {
 }
 
 func (ts TestSource) Pending(_ context.Context) int64 {
-	return TestPendingNumber
+	return testPendingNumber
+}
+
+func (ts TestSource) Partitions(_ context.Context) []int32 {
+	return testPartitions
 }
 
 func TestService_IsReady(t *testing.T) {
@@ -113,8 +118,8 @@ func TestService_ReadFn(t *testing.T) {
 					Result: &sourcepb.ReadResponse_Result{
 						Payload:   []byte(`test`),
 						Offset:    &sourcepb.Offset{},
-						EventTime: timestamppb.New(TestEventTime),
-						Keys:      []string{TestKey},
+						EventTime: timestamppb.New(testEventTime),
+						Keys:      []string{testKey},
 					},
 				},
 			},
@@ -133,8 +138,8 @@ func TestService_ReadFn(t *testing.T) {
 					Result: &sourcepb.ReadResponse_Result{
 						Payload:   []byte(`test`),
 						Offset:    &sourcepb.Offset{},
-						EventTime: timestamppb.New(TestEventTime),
-						Keys:      []string{TestKey},
+						EventTime: timestamppb.New(testEventTime),
+						Keys:      []string{testKey},
 					},
 				},
 			},
@@ -193,7 +198,7 @@ func TestService_AckFn(t *testing.T) {
 		Request: &sourcepb.AckRequest_Request{
 			Offsets: []*sourcepb.Offset{
 				{
-					PartitionId: "0",
+					PartitionId: 0,
 					Offset:      []byte("test"),
 				},
 			},
@@ -211,7 +216,19 @@ func TestService_PendingFn(t *testing.T) {
 	got, err := fs.PendingFn(ctx, &emptypb.Empty{})
 	assert.Equal(t, got, &sourcepb.PendingResponse{
 		Result: &sourcepb.PendingResponse_Result{
-			Count: TestPendingNumber,
+			Count: testPendingNumber,
+		},
+	})
+	assert.NoError(t, err)
+}
+
+func TestService_PartitionsFn(t *testing.T) {
+	fs := &Service{Source: TestSource{}}
+	ctx := context.Background()
+	got, err := fs.PartitionsFn(ctx, &emptypb.Empty{})
+	assert.EqualValues(t, got, &sourcepb.PartitionsResponse{
+		Result: &sourcepb.PartitionsResponse_Result{
+			Partitions: testPartitions,
 		},
 	})
 	assert.NoError(t, err)
