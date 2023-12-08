@@ -62,7 +62,7 @@ func TestService_ReduceFn(t *testing.T) {
 	}{
 		{
 			name: "reduce_fn_forward_msg_same_keys",
-			handler: ReducerFunc(func(ctx context.Context, keys []string, rch <-chan Datum, och chan<- Message, md Metadata) {
+			handler: ReduceStreamerFunc(func(ctx context.Context, keys []string, rch <-chan Datum, och chan<- Message, md Metadata) {
 				sum := 0
 				for val := range rch {
 					msgVal, _ := strconv.Atoi(string(val.Value()))
@@ -145,7 +145,7 @@ func TestService_ReduceFn(t *testing.T) {
 		},
 		{
 			name: "reduce_fn_forward_msg_multiple_keys",
-			handler: ReducerFunc(func(ctx context.Context, keys []string, rch <-chan Datum, och chan<- Message, md Metadata) {
+			handler: ReduceStreamerFunc(func(ctx context.Context, keys []string, rch <-chan Datum, och chan<- Message, md Metadata) {
 				sum := 0
 				for val := range rch {
 					msgVal, _ := strconv.Atoi(string(val.Value()))
@@ -308,7 +308,7 @@ func TestService_ReduceFn(t *testing.T) {
 		},
 		{
 			name: "reduce_fn_forward_msg_forward_to_all",
-			handler: ReducerFunc(func(ctx context.Context, keys []string, rch <-chan Datum, och chan<- Message, md Metadata) {
+			handler: ReduceStreamerFunc(func(ctx context.Context, keys []string, rch <-chan Datum, och chan<- Message, md Metadata) {
 				sum := 0
 				for val := range rch {
 					msgVal, _ := strconv.Atoi(string(val.Value()))
@@ -389,7 +389,7 @@ func TestService_ReduceFn(t *testing.T) {
 		},
 		{
 			name: "reduce_fn_forward_msg_drop_msg",
-			handler: ReducerFunc(func(ctx context.Context, keys []string, rch <-chan Datum, och chan<- Message, md Metadata) {
+			handler: ReduceStreamerFunc(func(ctx context.Context, keys []string, rch <-chan Datum, och chan<- Message, md Metadata) {
 				sum := 0
 				for val := range rch {
 					msgVal, _ := strconv.Atoi(string(val.Value()))
@@ -474,7 +474,7 @@ func TestService_ReduceFn(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fs := &Service{
-				reducerHandle: tt.handler,
+				reduceStreamerHandle: tt.handler,
 			}
 			// here's a trick for testing:
 			// because we are not using gRPC, we directly set a new incoming ctx

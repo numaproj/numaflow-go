@@ -2,7 +2,7 @@ package sessionreducer
 
 import "time"
 
-// handlerDatum implements the Datum interface and is used in the reduce functions.
+// handlerDatum implements the Datum interface and is used in the SessionReduce functions.
 type handlerDatum struct {
 	value     []byte
 	eventTime time.Time

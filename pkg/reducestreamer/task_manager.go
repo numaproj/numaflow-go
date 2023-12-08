@@ -5,9 +5,6 @@ import (
 	"fmt"
 	"strings"
 	"sync"
-	"time"
-
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/reduce/v1"
 )
@@ -27,10 +24,9 @@ func (rt *reduceStreamTask) buildReduceResponse(message Message) *v1.ReduceRespo
 
 	response := &v1.ReduceResponse{
 		Result: &v1.ReduceResponse_Result{
-			Keys:      message.Keys(),
-			Value:     message.Value(),
-			Tags:      message.Tags(),
-			EventTime: timestamppb.New(rt.window.End.AsTime().Add(-1 * time.Millisecond)),
+			Keys:  message.Keys(),
+			Value: message.Value(),
+			Tags:  message.Tags(),
 		},
 		Window: rt.window,
 	}
@@ -40,9 +36,6 @@ func (rt *reduceStreamTask) buildReduceResponse(message Message) *v1.ReduceRespo
 
 func (rt *reduceStreamTask) buildEOFResponse() *v1.ReduceResponse {
 	response := &v1.ReduceResponse{
-		Result: &v1.ReduceResponse_Result{
-			EventTime: timestamppb.New(rt.window.End.AsTime().Add(-1 * time.Millisecond)),
-		},
 		Window: rt.window,
 		EOF:    true,
 	}

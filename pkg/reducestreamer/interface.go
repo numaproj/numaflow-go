@@ -12,7 +12,7 @@ type Datum interface {
 	Watermark() time.Time
 }
 
-// Metadata contains methods to get the metadata for the reduce operation.
+// Metadata contains methods to get the metadata for the reduceStream operation.
 type Metadata interface {
 	IntervalWindow() IntervalWindow
 }
@@ -28,10 +28,10 @@ type ReduceStreamer interface {
 	ReduceStream(ctx context.Context, keys []string, inputCh <-chan Datum, outputCh chan<- Message, md Metadata)
 }
 
-// ReducerFunc is a utility type used to convert a ReduceStream function to a ReduceStreamer.
-type ReducerFunc func(ctx context.Context, keys []string, inputCh <-chan Datum, outputCh chan<- Message, md Metadata)
+// ReduceStreamerFunc is a utility type used to convert a ReduceStream function to a ReduceStreamer.
+type ReduceStreamerFunc func(ctx context.Context, keys []string, inputCh <-chan Datum, outputCh chan<- Message, md Metadata)
 
-// ReduceStream implements the function of reduce function.
-func (rf ReducerFunc) ReduceStream(ctx context.Context, keys []string, inputCh <-chan Datum, outputCh chan<- Message, md Metadata) {
+// ReduceStream implements the function of ReduceStream function.
+func (rf ReduceStreamerFunc) ReduceStream(ctx context.Context, keys []string, inputCh <-chan Datum, outputCh chan<- Message, md Metadata) {
 	rf(ctx, keys, inputCh, outputCh, md)
 }

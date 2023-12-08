@@ -11,26 +11,23 @@ import (
 	"github.com/numaproj/numaflow-go/pkg/sessionreducer"
 )
 
+// Counter is a simple session reducer which counts the number of events in a session.
 type Counter struct {
 	count *atomic.Int32
 }
 
 func (c *Counter) SessionReduce(ctx context.Context, keys []string, input <-chan sessionreducer.Datum, outputCh chan<- sessionreducer.Message) {
-	log.Println("SessionReduce invoked")
 	for range input {
 		c.count.Inc()
 	}
-	log.Println("SessionReduce done")
 	outputCh <- sessionreducer.NewMessage([]byte(fmt.Sprintf("%d", c.count.Load()))).WithKeys(keys)
 }
 
 func (c *Counter) Accumulator(ctx context.Context) []byte {
-	log.Println("Accumulator invoked")
 	return []byte(strconv.Itoa(int(c.count.Load())))
 }
 
 func (c *Counter) MergeAccumulator(ctx context.Context, accumulator []byte) {
-	log.Println("MergeAccumulator invoked")
 	val, err := strconv.Atoi(string(accumulator))
 	if err != nil {
 		log.Println("unable to convert the accumulator value to int: ", err.Error())

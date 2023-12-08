@@ -5,10 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"sync"
-	"time"
 
 	"go.uber.org/atomic"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/sessionreduce/v1"
 )
@@ -32,8 +30,6 @@ func (rt *sessionReduceTask) buildSessionReduceResponse(message Message) *v1.Ses
 			Keys:  message.Keys(),
 			Value: message.Value(),
 			Tags:  message.Tags(),
-			// event time is the end time of the window - 1 millisecond
-			EventTime: timestamppb.New(rt.keyedWindow.GetEnd().AsTime().Add(-1 * time.Millisecond)),
 		},
 		KeyedWindow: rt.keyedWindow,
 	}
@@ -44,10 +40,6 @@ func (rt *sessionReduceTask) buildSessionReduceResponse(message Message) *v1.Ses
 // buildEOFResponse builds the EOF response for the session reduce task.
 func (rt *sessionReduceTask) buildEOFResponse() *v1.SessionReduceResponse {
 	response := &v1.SessionReduceResponse{
-		Result: &v1.SessionReduceResponse_Result{
-			// event time is the end time of the window - 1 millisecond
-			EventTime: timestamppb.New(rt.keyedWindow.GetEnd().AsTime().Add(-1 * time.Millisecond)),
-		},
 		KeyedWindow: rt.keyedWindow,
 		EOF:         true,
 	}
@@ -55,7 +47,7 @@ func (rt *sessionReduceTask) buildEOFResponse() *v1.SessionReduceResponse {
 	return response
 }
 
-// uniqueKey returns the unique key for the reduce task to be used in the task manager to identify the task.
+// uniqueKey returns the unique key for the session reduce task to be used in the task manager to identify the task.
 func (rt *sessionReduceTask) uniqueKey() string {
 	return fmt.Sprintf("%d:%d:%s",
 		rt.keyedWindow.GetStart().AsTime().UnixMilli(),
@@ -63,7 +55,7 @@ func (rt *sessionReduceTask) uniqueKey() string {
 		strings.Join(rt.keyedWindow.GetKeys(), delimiter))
 }
 
-// sessionReduceTaskManager manages the reduce tasks for a session reduce operation.
+// sessionReduceTaskManager manages the tasks for a session reduce operation.
 type sessionReduceTaskManager struct {
 	sessionReducerFactory CreateSessionReducer
 	tasks                 map[string]*sessionReduceTask
@@ -143,7 +135,7 @@ func (rtm *sessionReduceTaskManager) CreateTask(ctx context.Context, request *v1
 }
 
 // AppendToTask writes the message to the reduce task.
-// If the reduce task is not found, it will create a new reduce task and start the reduce operation.
+// If the task is not found, it will create a new task and starts the session reduce operation.
 func (rtm *sessionReduceTaskManager) AppendToTask(ctx context.Context, request *v1.SessionReduceRequest) error {
 
 	// for append operation, there should be exactly one keyedWindow
@@ -155,7 +147,7 @@ func (rtm *sessionReduceTaskManager) AppendToTask(ctx context.Context, request *
 	task, ok := rtm.tasks[generateKey(request.Operation.KeyedWindows[0])]
 	rtm.rw.RUnlock()
 
-	// if the task is not found, create a new task and start the reduce operation
+	// if the task is not found, create a new task and start the session reduce operation
 	if !ok {
 		return rtm.CreateTask(ctx, request)
 	}
@@ -187,7 +179,7 @@ func (rtm *sessionReduceTaskManager) CloseTask(request *v1.SessionReduceRequest)
 }
 
 // MergeTasks merges the session reduce tasks. It will create a new task with the merged window and
-// merges the accumulators from the other tasks.
+// merges the accumulators from the other tasks to the merged task.
 func (rtm *sessionReduceTaskManager) MergeTasks(ctx context.Context, request *v1.SessionReduceRequest) error {
 	rtm.rw.Lock()
 	mergedWindow := request.Operation.KeyedWindows[0]
@@ -252,9 +244,9 @@ func (rtm *sessionReduceTaskManager) MergeTasks(ctx context.Context, request *v1
 	return nil
 }
 
-// ExpandTask expands the reduce task. It will update the keyedWindow of the reduce task
+// ExpandTask expands session reduce task. It will update the keyedWindow of the task
 // expects request.Operation.KeyedWindows to have exactly two windows. The first is the old window and the second
-// is the new window.
+// is the new expanded window.
 func (rtm *sessionReduceTaskManager) ExpandTask(request *v1.SessionReduceRequest) error {
 	// for expand operation, there should be exactly two windows
 	if len(request.Operation.KeyedWindows) != 2 {
@@ -285,7 +277,7 @@ func (rtm *sessionReduceTaskManager) ExpandTask(request *v1.SessionReduceRequest
 	return nil
 }
 
-// OutputChannel returns the output channel for the reduce task manager to read the results.
+// OutputChannel returns the output channel of the task manager to read the results.
 func (rtm *sessionReduceTaskManager) OutputChannel() <-chan *v1.SessionReduceResponse {
 	return rtm.responseCh
 }

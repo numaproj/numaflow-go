@@ -30,7 +30,7 @@ message KeyedWindow {
  */
 message SessionReduceRequest {
   // WindowOperation represents a window operation.
-  // it can be one of OPEN, CLOSE, EXPAND, MERGE, APPEND.
+  // For Aligned window values can be one of OPEN, CLOSE, EXPAND, MERGE and APPEND.
   message WindowOperation {
     enum Event {
       OPEN = 0;
@@ -65,7 +65,6 @@ message SessionReduceResponse {
     repeated string keys = 1;
     bytes value = 2;
     repeated string tags = 3;
-    google.protobuf.Timestamp event_time = 4;
   }
 
   Result result = 1;

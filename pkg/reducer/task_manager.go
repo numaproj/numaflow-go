@@ -5,15 +5,12 @@ import (
 	"fmt"
 	"strings"
 	"sync"
-	"time"
-
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/reduce/v1"
 )
 
-// reduceStreamTask represents a task for a performing reduceStream operation.
-type reduceStreamTask struct {
+// reduceTask represents a task for a performing reduceStream operation.
+type reduceTask struct {
 	keys     []string
 	window   *v1.Window
 	reducer  Reducer
@@ -23,14 +20,13 @@ type reduceStreamTask struct {
 }
 
 // buildReduceResponse builds the reduce response from the messages.
-func (rt *reduceStreamTask) buildReduceResponse(message Message) *v1.ReduceResponse {
+func (rt *reduceTask) buildReduceResponse(message Message) *v1.ReduceResponse {
 
 	response := &v1.ReduceResponse{
 		Result: &v1.ReduceResponse_Result{
-			Keys:      message.Keys(),
-			Value:     message.Value(),
-			Tags:      message.Tags(),
-			EventTime: timestamppb.New(rt.window.End.AsTime().Add(-1 * time.Millisecond)),
+			Keys:  message.Keys(),
+			Value: message.Value(),
+			Tags:  message.Tags(),
 		},
 		Window: rt.window,
 	}
@@ -38,11 +34,8 @@ func (rt *reduceStreamTask) buildReduceResponse(message Message) *v1.ReduceRespo
 	return response
 }
 
-func (rt *reduceStreamTask) buildEOFResponse() *v1.ReduceResponse {
+func (rt *reduceTask) buildEOFResponse() *v1.ReduceResponse {
 	response := &v1.ReduceResponse{
-		Result: &v1.ReduceResponse_Result{
-			EventTime: timestamppb.New(rt.window.End.AsTime().Add(-1 * time.Millisecond)),
-		},
 		Window: rt.window,
 		EOF:    true,
 	}
@@ -51,7 +44,7 @@ func (rt *reduceStreamTask) buildEOFResponse() *v1.ReduceResponse {
 }
 
 // uniqueKey returns the unique key for the reduce task to be used in the task manager to identify the task.
-func (rt *reduceStreamTask) uniqueKey() string {
+func (rt *reduceTask) uniqueKey() string {
 	return fmt.Sprintf("%d:%d:%s",
 		rt.window.GetStart().AsTime().UnixMilli(),
 		rt.window.GetEnd().AsTime().UnixMilli(),
@@ -61,7 +54,7 @@ func (rt *reduceStreamTask) uniqueKey() string {
 // reduceTaskManager manages the reduce tasks for a  reduce operation.
 type reduceTaskManager struct {
 	reducer    Reducer
-	tasks      map[string]*reduceStreamTask
+	tasks      map[string]*reduceTask
 	responseCh chan *v1.ReduceResponse
 	rw         sync.RWMutex
 }
@@ -69,7 +62,7 @@ type reduceTaskManager struct {
 func newReduceTaskManager(reducer Reducer) *reduceTaskManager {
 	return &reduceTaskManager{
 		reducer:    reducer,
-		tasks:      make(map[string]*reduceStreamTask),
+		tasks:      make(map[string]*reduceTask),
 		responseCh: make(chan *v1.ReduceResponse),
 	}
 }
@@ -84,7 +77,7 @@ func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.Reduce
 	md := NewMetadata(NewIntervalWindow(request.Operation.Windows[0].GetStart().AsTime(),
 		request.Operation.Windows[0].GetEnd().AsTime()))
 
-	task := &reduceStreamTask{
+	task := &reduceTask{
 		keys:     request.GetPayload().GetKeys(),
 		window:   request.Operation.Windows[0],
 		inputCh:  make(chan Datum),
@@ -147,7 +140,7 @@ func (rtm *reduceTaskManager) OutputChannel() <-chan *v1.ReduceResponse {
 // WaitAll waits for all the reduce tasks to complete.
 func (rtm *reduceTaskManager) WaitAll() {
 	rtm.rw.RLock()
-	tasks := make([]*reduceStreamTask, 0, len(rtm.tasks))
+	tasks := make([]*reduceTask, 0, len(rtm.tasks))
 	for _, task := range rtm.tasks {
 		tasks = append(tasks, task)
 	}
@@ -163,7 +156,7 @@ func (rtm *reduceTaskManager) WaitAll() {
 // CloseAll closes all the reduce tasks.
 func (rtm *reduceTaskManager) CloseAll() {
 	rtm.rw.Lock()
-	tasks := make([]*reduceStreamTask, 0, len(rtm.tasks))
+	tasks := make([]*reduceTask, 0, len(rtm.tasks))
 	for _, task := range rtm.tasks {
 		tasks = append(tasks, task)
 	}

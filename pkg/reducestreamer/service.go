@@ -21,10 +21,10 @@ const (
 	delimiter             = ":"
 )
 
-// Service implements the proto gen server interface and contains the reduce operation handler.
+// Service implements the proto gen server interface and contains the reduceStream operation handler.
 type Service struct {
 	reducepb.UnimplementedReduceServer
-	reducerHandle ReduceStreamer
+	reduceStreamerHandle ReduceStreamer
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
@@ -32,7 +32,7 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*reducepb.ReadyResp
 	return &reducepb.ReadyResponse{Ready: true}, nil
 }
 
-// ReduceFn applies a reduce function to a request stream and returns a list of results.
+// ReduceFn applies a reduce function to a request stream and streams the results.
 func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
 	var (
 		err error
@@ -40,7 +40,7 @@ func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
 		g   errgroup.Group
 	)
 
-	taskManager := newReduceTaskManager(fs.reducerHandle)
+	taskManager := newReduceTaskManager(fs.reduceStreamerHandle)
 
 	// err group for the go routine which reads from the output channel and sends to the stream
 	g.Go(func() error {
@@ -68,7 +68,7 @@ func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
 			return recvErr
 		}
 
-		// for fixed and sliding, its just open or append operation
+		// for Aligned, its just open or append operation
 		// close signal will be sent to all the reducers when grpc
 		// input stream gets EOF.
 		switch d.Operation.Event {

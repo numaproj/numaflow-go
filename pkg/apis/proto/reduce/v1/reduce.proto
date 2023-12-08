@@ -21,7 +21,7 @@ service Reduce {
  */
 message ReduceRequest {
   // WindowOperation represents a window operation.
-  // for fixed and sliding windows, OPEN, APPEND and CLOSE events are sent.
+  // For Aligned windows, OPEN, APPEND and CLOSE events are sent.
   message WindowOperation {
     enum Event {
       OPEN = 0;
@@ -62,7 +62,6 @@ message ReduceResponse {
     repeated string keys = 1;
     bytes value = 2;
     repeated string tags = 3;
-    google.protobuf.Timestamp event_time = 4;
   }
 
   Result result = 1;

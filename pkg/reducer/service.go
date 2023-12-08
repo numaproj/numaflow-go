@@ -68,7 +68,7 @@ func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
 			return recvErr
 		}
 
-		// for fixed and sliding, its just open or append operation
+		// for Aligned windows, its just open or append operation
 		// close signal will be sent to all the reducers when grpc
 		// input stream gets EOF.
 		switch d.Operation.Event {

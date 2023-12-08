@@ -9,7 +9,7 @@ import (
 	"github.com/numaproj/numaflow-go/pkg/reducestreamer"
 )
 
-// Sum is a reducestreamer that sum up the values for the given keys
+// Sum is a reducestreamer that sum up the values for the given keys and output the sum when the sum is greater than 100.
 type Sum struct {
 }
 

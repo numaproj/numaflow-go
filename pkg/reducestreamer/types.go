@@ -2,7 +2,7 @@ package reducestreamer
 
 import "time"
 
-// handlerDatum implements the Datum interface and is used in the reduce functions.
+// handlerDatum implements the Datum interface and is used in the reduceStream functions.
 type handlerDatum struct {
 	value     []byte
 	eventTime time.Time
@@ -51,7 +51,7 @@ func (i *intervalWindow) EndTime() time.Time {
 	return i.endTime
 }
 
-// metadata implements Metadata interface which will be passed to reduce function.
+// metadata implements Metadata interface which will be passed to reduceStream function.
 type metadata struct {
 	intervalWindow IntervalWindow
 }

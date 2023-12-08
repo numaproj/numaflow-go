@@ -6,7 +6,7 @@ var (
 	DROP = fmt.Sprintf("%U__DROP__", '\\') // U+005C__DROP__
 )
 
-// Message is used to wrap the data return by reduceStream function
+// Message is used to wrap the data return by reduce function
 type Message struct {
 	value []byte
 	keys  []string

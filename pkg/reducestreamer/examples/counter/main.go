@@ -7,6 +7,8 @@ import (
 	"github.com/numaproj/numaflow-go/pkg/reducestreamer"
 )
 
+// reduceCounter is a ReduceStreamer that count the incoming events and output the count every 10 events.
+// The output message is the count of the events.
 func reduceCounter(_ context.Context, keys []string, inputCh <-chan reducestreamer.Datum, outputCh chan<- reducestreamer.Message, md reducestreamer.Metadata) {
 	// count the incoming events
 	var resultKeys = keys
@@ -25,5 +27,5 @@ func reduceCounter(_ context.Context, keys []string, inputCh <-chan reducestream
 }
 
 func main() {
-	reducestreamer.NewServer(reducestreamer.ReducerFunc(reduceCounter)).Start(context.Background())
+	reducestreamer.NewServer(reducestreamer.ReduceStreamerFunc(reduceCounter)).Start(context.Background())
 }
