@@ -170,9 +170,8 @@ func TestService_SessionReduceFn(t *testing.T) {
 			expected: []*sessionreducepb.SessionReduceResponse{
 				{
 					Result: &sessionreducepb.SessionReduceResponse_Result{
-						Keys:      []string{"client_test"},
-						Value:     []byte(strconv.Itoa(60)),
-						EventTime: timestamppb.New(time.UnixMilli(119999)),
+						Keys:  []string{"client_test"},
+						Value: []byte(strconv.Itoa(60)),
 					},
 					KeyedWindow: &sessionreducepb.KeyedWindow{
 						Start: timestamppb.New(time.UnixMilli(60000)),
@@ -300,9 +299,8 @@ func TestService_SessionReduceFn(t *testing.T) {
 			expected: []*sessionreducepb.SessionReduceResponse{
 				{
 					Result: &sessionreducepb.SessionReduceResponse_Result{
-						Keys:      []string{"client1_test"},
-						Value:     []byte(strconv.Itoa(20)),
-						EventTime: timestamppb.New(time.UnixMilli(74999)),
+						Keys:  []string{"client1_test"},
+						Value: []byte(strconv.Itoa(20)),
 					},
 					KeyedWindow: &sessionreducepb.KeyedWindow{
 						Start: timestamppb.New(time.UnixMilli(60000)),
@@ -314,9 +312,8 @@ func TestService_SessionReduceFn(t *testing.T) {
 				},
 				{
 					Result: &sessionreducepb.SessionReduceResponse_Result{
-						Keys:      []string{"client2_test"},
-						Value:     []byte(strconv.Itoa(40)),
-						EventTime: timestamppb.New(time.UnixMilli(78999)),
+						Keys:  []string{"client2_test"},
+						Value: []byte(strconv.Itoa(40)),
 					},
 					KeyedWindow: &sessionreducepb.KeyedWindow{
 						Start: timestamppb.New(time.UnixMilli(60000)),
@@ -470,9 +467,8 @@ func TestService_SessionReduceFn(t *testing.T) {
 			expected: []*sessionreducepb.SessionReduceResponse{
 				{
 					Result: &sessionreducepb.SessionReduceResponse_Result{
-						Keys:      []string{"client1_test"},
-						Value:     []byte(strconv.Itoa(20)),
-						EventTime: timestamppb.New(time.UnixMilli(84999)),
+						Keys:  []string{"client1_test"},
+						Value: []byte(strconv.Itoa(20)),
 					},
 					KeyedWindow: &sessionreducepb.KeyedWindow{
 						Start: timestamppb.New(time.UnixMilli(60000)),
@@ -484,9 +480,8 @@ func TestService_SessionReduceFn(t *testing.T) {
 				},
 				{
 					Result: &sessionreducepb.SessionReduceResponse_Result{
-						Keys:      []string{"client2_test"},
-						Value:     []byte(strconv.Itoa(40)),
-						EventTime: timestamppb.New(time.UnixMilli(87999)),
+						Keys:  []string{"client2_test"},
+						Value: []byte(strconv.Itoa(40)),
 					},
 					KeyedWindow: &sessionreducepb.KeyedWindow{
 						Start: timestamppb.New(time.UnixMilli(60000)),
@@ -728,9 +723,8 @@ func TestService_SessionReduceFn(t *testing.T) {
 			expected: []*sessionreducepb.SessionReduceResponse{
 				{
 					Result: &sessionreducepb.SessionReduceResponse_Result{
-						Keys:      []string{"client1_test"},
-						Value:     []byte(strconv.Itoa(40)),
-						EventTime: timestamppb.New(time.UnixMilli(94999)),
+						Keys:  []string{"client1_test"},
+						Value: []byte(strconv.Itoa(40)),
 					},
 					KeyedWindow: &sessionreducepb.KeyedWindow{
 						Start: timestamppb.New(time.UnixMilli(60000)),
@@ -742,9 +736,8 @@ func TestService_SessionReduceFn(t *testing.T) {
 				},
 				{
 					Result: &sessionreducepb.SessionReduceResponse_Result{
-						Keys:      []string{"client2_test"},
-						Value:     []byte(strconv.Itoa(80)),
-						EventTime: timestamppb.New(time.UnixMilli(97999)),
+						Keys:  []string{"client2_test"},
+						Value: []byte(strconv.Itoa(80)),
 					},
 					KeyedWindow: &sessionreducepb.KeyedWindow{
 						Start: timestamppb.New(time.UnixMilli(60000)),

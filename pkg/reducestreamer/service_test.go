@@ -129,9 +129,8 @@ func TestService_ReduceFn(t *testing.T) {
 			expected: []*reducepb.ReduceResponse{
 				{
 					Result: &reducepb.ReduceResponse_Result{
-						Keys:      []string{"client_test"},
-						Value:     []byte(strconv.Itoa(60)),
-						EventTime: timestamppb.New(time.UnixMilli(119999)),
+						Keys:  []string{"client_test"},
+						Value: []byte(strconv.Itoa(60)),
 					},
 					Window: &reducepb.Window{
 						Start: timestamppb.New(time.UnixMilli(60000)),
@@ -266,9 +265,8 @@ func TestService_ReduceFn(t *testing.T) {
 			expected: []*reducepb.ReduceResponse{
 				{
 					Result: &reducepb.ReduceResponse_Result{
-						Keys:      []string{"client1_test"},
-						Value:     []byte(strconv.Itoa(20)),
-						EventTime: timestamppb.New(time.UnixMilli(119999)),
+						Keys:  []string{"client1_test"},
+						Value: []byte(strconv.Itoa(20)),
 					},
 					Window: &reducepb.Window{
 						Start: timestamppb.New(time.UnixMilli(60000)),
@@ -279,9 +277,8 @@ func TestService_ReduceFn(t *testing.T) {
 				},
 				{
 					Result: &reducepb.ReduceResponse_Result{
-						Keys:      []string{"client2_test"},
-						Value:     []byte(strconv.Itoa(40)),
-						EventTime: timestamppb.New(time.UnixMilli(119999)),
+						Keys:  []string{"client2_test"},
+						Value: []byte(strconv.Itoa(40)),
 					},
 					Window: &reducepb.Window{
 						Start: timestamppb.New(time.UnixMilli(60000)),
@@ -292,9 +289,8 @@ func TestService_ReduceFn(t *testing.T) {
 				},
 				{
 					Result: &reducepb.ReduceResponse_Result{
-						Keys:      []string{"client3_test"},
-						Value:     []byte(strconv.Itoa(60)),
-						EventTime: timestamppb.New(time.UnixMilli(119999)),
+						Keys:  []string{"client3_test"},
+						Value: []byte(strconv.Itoa(60)),
 					},
 					Window: &reducepb.Window{
 						Start: timestamppb.New(time.UnixMilli(60000)),
@@ -375,8 +371,7 @@ func TestService_ReduceFn(t *testing.T) {
 			expected: []*reducepb.ReduceResponse{
 				{
 					Result: &reducepb.ReduceResponse_Result{
-						Value:     []byte(strconv.Itoa(60)),
-						EventTime: timestamppb.New(time.UnixMilli(119999)),
+						Value: []byte(strconv.Itoa(60)),
 					},
 					Window: &reducepb.Window{
 						Start: timestamppb.New(time.UnixMilli(60000)),
@@ -456,9 +451,8 @@ func TestService_ReduceFn(t *testing.T) {
 			expected: []*reducepb.ReduceResponse{
 				{
 					Result: &reducepb.ReduceResponse_Result{
-						Tags:      []string{DROP},
-						Value:     []byte{},
-						EventTime: timestamppb.New(time.UnixMilli(119999)),
+						Tags:  []string{DROP},
+						Value: []byte{},
 					},
 					Window: &reducepb.Window{
 						Start: timestamppb.New(time.UnixMilli(60000)),
