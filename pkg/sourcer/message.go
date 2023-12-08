@@ -58,14 +58,17 @@ func NewOffset(value []byte, partitionId int32) Offset {
 	return Offset{value: value, partitionId: partitionId}
 }
 
-// NewOffsetWithDefaultPartitionId creates an Offset with value and default partition id
+// NewOffsetWithDefaultPartitionId creates an Offset with value and default partition id. This
+// function can be used if you use DefaultPartitions() to implement the Sourcer interface.
+// For most cases, this function can be used as long as the source does not have a concept of partitions.
+// If you need to implement a custom partition, use `NewOffset`.
 func NewOffsetWithDefaultPartitionId(value []byte) Offset {
 	return Offset{value: value, partitionId: DefaultPartitions()[0]}
 }
 
-// DefaultPartitions returns default partitions for the source
-// it can be used in the Partitions() function of the Sourcer implementation
-// if the source doesn't have partitions, default partition will be pod replica
+// DefaultPartitions returns default partitions for the source.
+// It can be used in the Partitions() function of the Sourcer interface only 
+// if the source doesn't have partitions. DefaultPartition will be the pod replica
 // index of the source.
 func DefaultPartitions() []int32 {
 	return []int32{int32(defaultPartitionId)}
