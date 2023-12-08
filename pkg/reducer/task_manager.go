@@ -51,7 +51,7 @@ func (rt *reduceTask) uniqueKey() string {
 		strings.Join(rt.keys, delimiter))
 }
 
-// reduceTaskManager manages the reduce tasks for a  reduce operation.
+// reduceTaskManager manages the reduce tasks for a reduce operation.
 type reduceTaskManager struct {
 	reducer    Reducer
 	tasks      map[string]*reduceTask
@@ -67,13 +67,12 @@ func newReduceTaskManager(reducer Reducer) *reduceTaskManager {
 	}
 }
 
-// CreateTask creates a new reduce task and starts the  reduce operation.
+// CreateTask creates a new reduce task and starts the reduce operation.
 func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.ReduceRequest) error {
 	if len(request.Operation.Windows) != 1 {
 		return fmt.Errorf("create operation error: invalid number of windows")
 	}
 
-	rtm.rw.Lock()
 	md := NewMetadata(NewIntervalWindow(request.Operation.Windows[0].GetStart().AsTime(),
 		request.Operation.Windows[0].GetEnd().AsTime()))
 
@@ -86,8 +85,9 @@ func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.Reduce
 	}
 
 	key := task.uniqueKey()
-	rtm.tasks[key] = task
 
+	rtm.rw.Lock()
+	rtm.tasks[key] = task
 	rtm.rw.Unlock()
 
 	go func() {
@@ -118,8 +118,9 @@ func (rtm *reduceTaskManager) AppendToTask(ctx context.Context, request *v1.Redu
 		return fmt.Errorf("append operation error: invalid number of windows")
 	}
 
-	rtm.rw.RLock()
 	gKey := generateKey(request.Operation.Windows[0], request.Payload.Keys)
+
+	rtm.rw.RLock()
 	task, ok := rtm.tasks[gKey]
 	rtm.rw.RUnlock()
 
@@ -149,6 +150,7 @@ func (rtm *reduceTaskManager) WaitAll() {
 	for _, task := range tasks {
 		<-task.doneCh
 	}
+
 	// after all the tasks are completed, close the output channel
 	close(rtm.responseCh)
 }
