@@ -56,7 +56,6 @@ type reduceStreamTaskManager struct {
 	reduceStreamer ReduceStreamer
 	tasks          map[string]*reduceStreamTask
 	responseCh     chan *v1.ReduceResponse
-	rw             sync.RWMutex
 }
 
 func newReduceTaskManager(reduceStreamer ReduceStreamer) *reduceStreamTaskManager {
@@ -73,7 +72,6 @@ func (rtm *reduceStreamTaskManager) CreateTask(ctx context.Context, request *v1.
 		return fmt.Errorf("create operation error: invalid number of windows")
 	}
 
-	rtm.rw.Lock()
 	md := NewMetadata(NewIntervalWindow(request.Operation.Windows[0].GetStart().AsTime(),
 		request.Operation.Windows[0].GetEnd().AsTime()))
 
@@ -87,8 +85,6 @@ func (rtm *reduceStreamTaskManager) CreateTask(ctx context.Context, request *v1.
 
 	key := task.uniqueKey()
 	rtm.tasks[key] = task
-
-	rtm.rw.Unlock()
 
 	go func() {
 		var wg sync.WaitGroup
@@ -125,10 +121,8 @@ func (rtm *reduceStreamTaskManager) AppendToTask(ctx context.Context, request *v
 		return fmt.Errorf("append operation error: invalid number of windows")
 	}
 
-	rtm.rw.RLock()
 	gKey := generateKey(request.Operation.Windows[0], request.Payload.Keys)
 	task, ok := rtm.tasks[gKey]
-	rtm.rw.RUnlock()
 
 	// if the task is not found, create a new task
 	if !ok {
@@ -146,12 +140,10 @@ func (rtm *reduceStreamTaskManager) OutputChannel() <-chan *v1.ReduceResponse {
 
 // WaitAll waits for all the reduceStream tasks to complete.
 func (rtm *reduceStreamTaskManager) WaitAll() {
-	rtm.rw.RLock()
 	tasks := make([]*reduceStreamTask, 0, len(rtm.tasks))
 	for _, task := range rtm.tasks {
 		tasks = append(tasks, task)
 	}
-	rtm.rw.RUnlock()
 
 	for _, task := range tasks {
 		<-task.doneCh
@@ -162,12 +154,10 @@ func (rtm *reduceStreamTaskManager) WaitAll() {
 
 // CloseAll closes all the reduceStream tasks.
 func (rtm *reduceStreamTaskManager) CloseAll() {
-	rtm.rw.Lock()
 	tasks := make([]*reduceStreamTask, 0, len(rtm.tasks))
 	for _, task := range rtm.tasks {
 		tasks = append(tasks, task)
 	}
-	rtm.rw.Unlock()
 
 	for _, task := range tasks {
 		close(task.inputCh)

@@ -51,9 +51,8 @@ func (fs *Service) SessionReduceFn(stream sessionreducepb.SessionReduce_SessionR
 	for {
 		d, recvErr := stream.Recv()
 
-		// if the stream is closed, close all the tasks and break
+		// if the stream is closed, break and wait for the tasks to return
 		if recvErr == io.EOF {
-			taskManager.CloseAll()
 			break
 		}
 

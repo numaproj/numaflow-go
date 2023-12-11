@@ -19,7 +19,6 @@ type sessionReduceTask struct {
 	outputCh       chan Message
 	doneCh         chan struct{}
 	merged         *atomic.Bool
-	closed         *atomic.Bool
 }
 
 // buildSessionReduceResponse builds the session reduce response from the messages.
@@ -87,7 +86,6 @@ func (rtm *sessionReduceTaskManager) CreateTask(ctx context.Context, request *v1
 		outputCh:       make(chan Message),
 		doneCh:         make(chan struct{}),
 		merged:         atomic.NewBool(false),
-		closed:         atomic.NewBool(false),
 	}
 
 	// add the task to the tasks list
@@ -159,7 +157,7 @@ func (rtm *sessionReduceTaskManager) AppendToTask(ctx context.Context, request *
 	return nil
 }
 
-// CloseTask closes the input channel of the reduce tasks.
+// CloseTask closes the input channel of the session reduce tasks.
 func (rtm *sessionReduceTaskManager) CloseTask(request *v1.SessionReduceRequest) {
 	rtm.rw.RLock()
 	tasksToBeClosed := make([]*sessionReduceTask, 0, len(request.Operation.KeyedWindows))
@@ -173,7 +171,6 @@ func (rtm *sessionReduceTaskManager) CloseTask(request *v1.SessionReduceRequest)
 	rtm.rw.RUnlock()
 
 	for _, task := range tasksToBeClosed {
-		task.closed.Store(true)
 		close(task.inputCh)
 	}
 }
@@ -296,24 +293,6 @@ func (rtm *sessionReduceTaskManager) WaitAll() {
 	}
 	// after all the tasks are completed, close the output channel
 	close(rtm.responseCh)
-}
-
-// CloseAll closes all the reduce tasks.
-func (rtm *sessionReduceTaskManager) CloseAll() {
-	rtm.rw.Lock()
-	tasks := make([]*sessionReduceTask, 0, len(rtm.tasks))
-	for _, task := range rtm.tasks {
-		tasks = append(tasks, task)
-	}
-	rtm.rw.Unlock()
-
-	for _, task := range tasks {
-		if task.closed.Load() || task.merged.Load() {
-			continue
-		}
-		task.closed.Store(true)
-		close(task.inputCh)
-	}
 }
 
 func generateKey(keyedWindows *v1.KeyedWindow) string {

@@ -166,6 +166,19 @@ func TestService_SessionReduceFn(t *testing.T) {
 						},
 					},
 				},
+				{
+					Operation: &sessionreducepb.SessionReduceRequest_WindowOperation{
+						Event: sessionreducepb.SessionReduceRequest_WindowOperation_CLOSE,
+						KeyedWindows: []*sessionreducepb.KeyedWindow{
+							{
+								Start: timestamppb.New(time.UnixMilli(60000)),
+								End:   timestamppb.New(time.UnixMilli(120000)),
+								Slot:  "slot-0",
+								Keys:  []string{"client"},
+							},
+						},
+					},
+				},
 			},
 			expected: []*sessionreducepb.SessionReduceResponse{
 				{
