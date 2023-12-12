@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"sync"
 
 	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/reduce/v1"
 )
@@ -56,7 +55,6 @@ type reduceTaskManager struct {
 	reducer    Reducer
 	tasks      map[string]*reduceTask
 	responseCh chan *v1.ReduceResponse
-	rw         sync.RWMutex
 }
 
 func newReduceTaskManager(reducer Reducer) *reduceTaskManager {
@@ -85,10 +83,7 @@ func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.Reduce
 	}
 
 	key := task.uniqueKey()
-
-	rtm.rw.Lock()
 	rtm.tasks[key] = task
-	rtm.rw.Unlock()
 
 	go func() {
 		// invoke the reduce function
@@ -118,11 +113,7 @@ func (rtm *reduceTaskManager) AppendToTask(ctx context.Context, request *v1.Redu
 		return fmt.Errorf("append operation error: invalid number of windows")
 	}
 
-	gKey := generateKey(request.Operation.Windows[0], request.Payload.Keys)
-
-	rtm.rw.RLock()
-	task, ok := rtm.tasks[gKey]
-	rtm.rw.RUnlock()
+	task, ok := rtm.tasks[generateKey(request.Operation.Windows[0], request.Payload.Keys)]
 
 	// if the task is not found, create a new task
 	if !ok {
@@ -140,12 +131,10 @@ func (rtm *reduceTaskManager) OutputChannel() <-chan *v1.ReduceResponse {
 
 // WaitAll waits for all the reduce tasks to complete.
 func (rtm *reduceTaskManager) WaitAll() {
-	rtm.rw.RLock()
 	tasks := make([]*reduceTask, 0, len(rtm.tasks))
 	for _, task := range rtm.tasks {
 		tasks = append(tasks, task)
 	}
-	rtm.rw.RUnlock()
 
 	for _, task := range tasks {
 		<-task.doneCh
@@ -157,12 +146,10 @@ func (rtm *reduceTaskManager) WaitAll() {
 
 // CloseAll closes all the reduce tasks.
 func (rtm *reduceTaskManager) CloseAll() {
-	rtm.rw.Lock()
 	tasks := make([]*reduceTask, 0, len(rtm.tasks))
 	for _, task := range rtm.tasks {
 		tasks = append(tasks, task)
 	}
-	rtm.rw.Unlock()
 
 	for _, task := range tasks {
 		close(task.inputCh)
