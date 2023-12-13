@@ -18,14 +18,14 @@ type server struct {
 }
 
 // NewServer creates a new reduce server.
-func NewServer(r Reducer, inputOptions ...Option) numaflow.Server {
+func NewServer(r CreateReducer, inputOptions ...Option) numaflow.Server {
 	opts := DefaultOptions()
 	for _, inputOption := range inputOptions {
 		inputOption(opts)
 	}
 	s := new(server)
 	s.svc = new(Service)
-	s.svc.Reducer = r
+	s.svc.CreateReduceHandler = r
 	s.opts = opts
 	return s
 }

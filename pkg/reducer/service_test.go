@@ -249,7 +249,9 @@ func TestService_ReduceFn(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fs := &Service{
-				Reducer: tt.handler,
+				CreateReduceHandler: CreateReducerFunc(func() Reducer {
+					return tt.handler
+				}),
 			}
 			// here's a trick for testing:
 			// because we are not using gRPC, we directly set a new incoming ctx
