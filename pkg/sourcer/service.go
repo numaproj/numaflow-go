@@ -111,3 +111,12 @@ func (fs *Service) AckFn(ctx context.Context, d *sourcepb.AckRequest) (*sourcepb
 		Result: &sourcepb.AckResponse_Result{},
 	}, nil
 }
+
+func (fs *Service) PartitionsFn(ctx context.Context, _ *emptypb.Empty) (*sourcepb.PartitionsResponse, error) {
+	partitions := fs.Source.Partitions(ctx)
+	return &sourcepb.PartitionsResponse{
+		Result: &sourcepb.PartitionsResponse_Result{
+			Partitions: partitions,
+		},
+	}, nil
+}
