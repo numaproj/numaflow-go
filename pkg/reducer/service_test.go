@@ -249,7 +249,7 @@ func TestService_ReduceFn(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fs := &Service{
-				CreateReduceHandler: CreateReducerFunc(func() Reducer {
+				CreateReduceHandler: ReducerCreatorFn(func() Reducer {
 					return tt.handler
 				}),
 			}

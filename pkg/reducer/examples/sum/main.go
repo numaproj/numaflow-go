@@ -9,7 +9,7 @@ import (
 	"github.com/numaproj/numaflow-go/pkg/reducer"
 )
 
-// SumReducer implements the reducer.CreateReducer interface which creates a reducer
+// SumReducer implements the reducer.ReducerCreator interface which creates a reducer
 type SumReducer struct {
 }
 

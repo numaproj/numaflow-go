@@ -23,8 +23,8 @@ type IntervalWindow interface {
 	EndTime() time.Time
 }
 
-// CreateReducer is the interface which is used to create a Reducer.
-type CreateReducer interface {
+// ReducerCreator is the interface which is used to create a Reducer.
+type ReducerCreator interface {
 	// Create creates a Reducer, will be invoked once for every keyed window.
 	Create() Reducer
 }
@@ -34,11 +34,11 @@ type Reducer interface {
 	Reduce(ctx context.Context, keys []string, reduceCh <-chan Datum, md Metadata) Messages
 }
 
-// CreateReducerFunc is a utility type used to convert a create function to a CreateReducer type.
-type CreateReducerFunc func() Reducer
+// ReducerCreatorFn is a utility type used to convert a create function to a ReducerCreator type.
+type ReducerCreatorFn func() Reducer
 
-// Create implements the function of CreateReducer.
-func (rf CreateReducerFunc) Create() Reducer {
+// Create implements the function of ReducerCreator.
+func (rf ReducerCreatorFn) Create() Reducer {
 	return rf()
 }
 

@@ -30,7 +30,7 @@ const (
 // Service implements the proto gen server interface and contains the reduce operation handler.
 type Service struct {
 	reducepb.UnimplementedReduceServer
-	CreateReduceHandler CreateReducer
+	CreateReduceHandler ReducerCreator
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
