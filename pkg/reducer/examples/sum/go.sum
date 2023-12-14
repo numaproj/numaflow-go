@@ -6,6 +6,8 @@ github.com/google/go-cmp v0.5.5/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/
 github.com/google/go-cmp v0.5.9 h1:O2Tfq5qg4qc4AmwVlvv0oLiVAGB7enBSJ2x2DqQFi38=
 github.com/numaproj/numaflow-go v0.5.3-0.20231213064133-0799ee3d3667 h1:U7ojSgvQeK7NIfTqppTJ3C6qTkNbaUyxUrBKxTb0694=
 github.com/numaproj/numaflow-go v0.5.3-0.20231213064133-0799ee3d3667/go.mod h1:5zwvvREIbqaCPCKsNE1MVjVToD0kvkCh2Z90Izlhw5U=
+github.com/numaproj/numaflow-go v0.5.3-0.20231214163007-161ba6e207df h1:SPBNZRGNIyMRr/KY9SnVuyYkyBShyQ0qlbKqhUIlIe0=
+github.com/numaproj/numaflow-go v0.5.3-0.20231214163007-161ba6e207df/go.mod h1:5zwvvREIbqaCPCKsNE1MVjVToD0kvkCh2Z90Izlhw5U=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/stretchr/testify v1.8.1 h1:w7B6lhMri9wdJUVmEZPGGhZzrYTPvgJArz7wNPgYKsk=
 golang.org/x/net v0.9.0 h1:aWJ/m6xSmxWBx+V0XRHTlrYrPG56jKsLdTFmsSsCzOM=
