@@ -20,7 +20,5 @@ func reduceCounter(_ context.Context, keys []string, reduceCh <-chan reducer.Dat
 }
 
 func main() {
-	reducer.NewServer(reducer.ReducerCreatorFn(func() reducer.Reducer {
-		return reducer.ReducerFunc(reduceCounter)
-	})).Start(context.Background())
+	reducer.NewServer(reducer.SimpleReducerCreator(reduceCounter)).Start(context.Background())
 }
