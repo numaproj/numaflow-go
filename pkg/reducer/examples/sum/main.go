@@ -9,11 +9,11 @@ import (
 	"github.com/numaproj/numaflow-go/pkg/reducer"
 )
 
-// SumReducer implements the reducer.ReducerCreator interface which creates a reducer
-type SumReducer struct {
+// SumReducerCreator implements the reducer.ReducerCreator interface which creates a reducer
+type SumReducerCreator struct {
 }
 
-func (s *SumReducer) Create() reducer.Reducer {
+func (s *SumReducerCreator) Create() reducer.Reducer {
 	return &Sum{}
 }
 
@@ -50,7 +50,7 @@ func (s *Sum) Reduce(ctx context.Context, keys []string, reduceCh <-chan reducer
 }
 
 func main() {
-	err := reducer.NewServer(&SumReducer{}).Start(context.Background())
+	err := reducer.NewServer(&SumReducerCreator{}).Start(context.Background())
 	if err != nil {
 		log.Panic("unable to start the server due to: ", err)
 	}
