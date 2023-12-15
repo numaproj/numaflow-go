@@ -33,6 +33,6 @@ func TestReduceServer_Start(t *testing.T) {
 	// note: using actual uds connection
 	ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
 	defer cancel()
-	err := NewServer(SimpleReducerCreator(rfn), WithSockAddr(socketFile.Name()), WithServerInfoFilePath(serverInfoFile.Name())).Start(ctx)
+	err := NewServer(SimpleCreatorWithReduceFn(rfn), WithSockAddr(socketFile.Name()), WithServerInfoFilePath(serverInfoFile.Name())).Start(ctx)
 	assert.NoError(t, err)
 }

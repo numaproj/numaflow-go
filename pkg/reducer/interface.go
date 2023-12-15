@@ -29,7 +29,7 @@ type ReducerCreator interface {
 	Create() Reducer
 }
 
-// simpleReducerCreator is a implementation of ReducerCreator, which creates a Reducer for the given function.
+// simpleReducerCreator is an implementation of ReducerCreator, which creates a Reducer for the given function.
 type simpleReducerCreator struct {
 	f func(context.Context, []string, <-chan Datum, Metadata) Messages
 }
@@ -39,8 +39,8 @@ func (s *simpleReducerCreator) Create() Reducer {
 	return reducerFn(s.f)
 }
 
-// SimpleReducerCreator creates a simple ReducerCreator for the given reduce function.
-func SimpleReducerCreator(f func(context.Context, []string, <-chan Datum, Metadata) Messages) ReducerCreator {
+// SimpleCreatorWithReduceFn creates a simple ReducerCreator for the given reduce function.
+func SimpleCreatorWithReduceFn(f func(context.Context, []string, <-chan Datum, Metadata) Messages) ReducerCreator {
 	return &simpleReducerCreator{f: f}
 }
 
