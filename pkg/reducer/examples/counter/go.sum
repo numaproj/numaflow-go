@@ -4,8 +4,8 @@ github.com/golang/protobuf v1.5.3 h1:KhyjKVUg7Usr/dYsdSqoFveMYd5ko72D+zANwlG1mmg
 github.com/golang/protobuf v1.5.3/go.mod h1:XVQd3VNwM+JqD3oG2Ue2ip4fOMUkwXdXDdiuN0vRsmY=
 github.com/google/go-cmp v0.5.5/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
 github.com/google/go-cmp v0.5.9 h1:O2Tfq5qg4qc4AmwVlvv0oLiVAGB7enBSJ2x2DqQFi38=
-github.com/numaproj/numaflow-go v0.5.3-0.20231215054952-a66b5be89ded h1:kjWu8zYO2g4Ec0eDENV5AhktfK+JFn7XkwfRoBqoEDg=
-github.com/numaproj/numaflow-go v0.5.3-0.20231215054952-a66b5be89ded/go.mod h1:5zwvvREIbqaCPCKsNE1MVjVToD0kvkCh2Z90Izlhw5U=
+github.com/numaproj/numaflow-go v0.5.3-0.20231215063037-12be0a69e374 h1:y3/8VzqE/9tHv36eh/X3P+rrqZa2ieOIJZBTCGIT+NY=
+github.com/numaproj/numaflow-go v0.5.3-0.20231215063037-12be0a69e374/go.mod h1:5zwvvREIbqaCPCKsNE1MVjVToD0kvkCh2Z90Izlhw5U=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/stretchr/testify v1.8.1 h1:w7B6lhMri9wdJUVmEZPGGhZzrYTPvgJArz7wNPgYKsk=
 golang.org/x/net v0.9.0 h1:aWJ/m6xSmxWBx+V0XRHTlrYrPG56jKsLdTFmsSsCzOM=
