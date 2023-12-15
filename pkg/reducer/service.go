@@ -30,8 +30,7 @@ const (
 // Service implements the proto gen server interface and contains the reduce operation handler.
 type Service struct {
 	reducepb.UnimplementedReduceServer
-
-	Reducer Reducer
+	CreateReduceHandler ReducerCreator
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
@@ -109,7 +108,10 @@ func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
 					// we stream the messages to the user by writing messages
 					// to channel and wait until we get the result and stream
 					// the result back to the client (numaflow).
-					messages := fs.Reducer.Reduce(ctx, k, ch, md)
+
+					// create a new reducer, since we got a new key
+					reducer := fs.CreateReduceHandler.Create()
+					messages := reducer.Reduce(ctx, k, ch, md)
 					datumList := buildDatumList(messages)
 
 					// stream.Send() is not thread safe.
