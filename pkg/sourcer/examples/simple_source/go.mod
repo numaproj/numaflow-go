@@ -3,7 +3,7 @@ module github.com/numaproj/numaflow-go/pkg/sourcer/examples/simple_source
 go 1.20
 
 require (
-	github.com/numaproj/numaflow-go v0.5.3-0.20231208052532-80d6321d6ee7
+	github.com/numaproj/numaflow-go v0.5.3-0.20231215063328-015665227c3d
 	github.com/stretchr/testify v1.8.1
 )
 

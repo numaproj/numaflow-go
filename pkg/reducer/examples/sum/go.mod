@@ -2,7 +2,7 @@ module even_odd
 
 go 1.20
 
-require github.com/numaproj/numaflow-go v0.5.3-0.20231214163007-161ba6e207df
+require github.com/numaproj/numaflow-go v0.5.3-0.20231215063328-015665227c3d
 
 require (
 	github.com/golang/protobuf v1.5.3 // indirect

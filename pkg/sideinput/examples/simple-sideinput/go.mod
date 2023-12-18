@@ -2,10 +2,7 @@ module even_odd
 
 go 1.20
 
-require (
-	github.com/fsnotify/fsnotify v1.6.0
-	github.com/numaproj/numaflow-go v0.4.6-0.20230828035951-6f79b632ecfe
-)
+require github.com/numaproj/numaflow-go v0.5.3-0.20231215063328-015665227c3d
 
 require (
 	github.com/golang/protobuf v1.5.3 // indirect

@@ -4,7 +4,7 @@ build:
 
 .PHONY: image
 image: build
-	docker build -t "quay.io/numaio/numaflow-go/map-tickgen:v1" --target tickgen .
+	docker build -t "quay.io/numaio/numaflow-go/map-tickgen:v0.6.0" --target tickgen .
 
 clean:
 	-rm -rf ./dist
