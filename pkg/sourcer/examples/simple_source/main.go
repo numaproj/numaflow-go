@@ -4,9 +4,9 @@ import (
 	"context"
 	"log"
 
-	"github.com/numaproj/numaflow-go/pkg/sourcer"
+	"simple_source/impl"
 
-	"github.com/numaproj/numaflow-go/pkg/sourcer/examples/simple_source/impl"
+	"github.com/numaproj/numaflow-go/pkg/sourcer"
 )
 
 func main() {

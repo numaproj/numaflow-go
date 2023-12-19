@@ -4,7 +4,7 @@ build:
 
 .PHONY: image
 image: build
-	docker build -t "quay.io/numaio/numaflow-go/map-forward-message:v0.5.0" --target forward-message .
+	docker build -t "quay.io/numaio/numaflow-go/map-forward-message:v0.6.0" --target forward-message .
 
 clean:
 	-rm -rf ./dist

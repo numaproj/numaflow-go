@@ -4,7 +4,7 @@ build:
 
 .PHONY: image
 image: build
-	docker build -t "quay.io/numaio/numaflow-go/mapt-assign-event-time:v0.5.0" --target assign-event-time .
+	docker build -t "quay.io/numaio/numaflow-go/mapt-assign-event-time:v0.6.0" --target assign-event-time .
 
 clean:
 	-rm -rf ./dist

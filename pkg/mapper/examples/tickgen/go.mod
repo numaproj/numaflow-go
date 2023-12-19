@@ -1,8 +1,8 @@
-module even_odd
+module tickgen
 
 go 1.20
 
-require github.com/numaproj/numaflow-go v0.4.6-0.20230828035951-6f79b632ecfe
+require github.com/numaproj/numaflow-go v0.6.0
 
 require (
 	github.com/golang/protobuf v1.5.3 // indirect

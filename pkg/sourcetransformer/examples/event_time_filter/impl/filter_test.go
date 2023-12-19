@@ -66,7 +66,7 @@ func Test_FilterEventTime(t *testing.T) {
 			name:  "DatumWithEventTimeBefore2022GetsDropped",
 			input: beforeYear2022Datum{},
 			expectedOutput: sourcetransformer.Messages{
-				sourcetransformer.MessageToDrop(),
+				sourcetransformer.MessageToDrop(time.Date(2021, 8, 1, 0, 14, 0, 0, time.UTC)),
 			},
 		},
 		{
