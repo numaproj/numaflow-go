@@ -27,5 +27,5 @@ func reduceCounter(_ context.Context, keys []string, inputCh <-chan reducestream
 }
 
 func main() {
-	reducestreamer.NewServer(reducestreamer.ReduceStreamerFunc(reduceCounter)).Start(context.Background())
+	reducestreamer.NewServer(reducestreamer.SimpleCreatorWithReduceStreamFn(reduceCounter)).Start(context.Background())
 }

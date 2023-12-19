@@ -2,7 +2,7 @@ module counter
 
 go 1.20
 
-require github.com/numaproj/numaflow-go v0.5.3-0.20231211071430-1231c4c278e0
+require github.com/numaproj/numaflow-go v0.6.1-0.20231219080635-d096c415a42f
 
 require (
 	github.com/golang/protobuf v1.5.3 // indirect

@@ -42,6 +42,13 @@ func NewSessionCounter() sessionreducer.SessionReducer {
 	}
 }
 
+// SessionCounterCreator is the creator for the session reducer.
+type SessionCounterCreator struct{}
+
+func (s *SessionCounterCreator) Create() sessionreducer.SessionReducer {
+	return NewSessionCounter()
+}
+
 func main() {
-	sessionreducer.NewServer(NewSessionCounter).Start(context.Background())
+	sessionreducer.NewServer(&SessionCounterCreator{}).Start(context.Background())
 }

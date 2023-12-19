@@ -4,7 +4,7 @@ build:
 
 .PHONY: image
 image: build
-	docker build -t "quay.io/numaio/numaflow-go/session-counter:v0.5.3" --target counter .
+	docker build -t "quay.io/numaio/numaflow-go/session-counter:v0.6.1" --target counter .
 
 clean:
 	-rm -rf ./dist

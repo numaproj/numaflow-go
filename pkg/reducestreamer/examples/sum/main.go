@@ -45,8 +45,15 @@ func (s *Sum) ReduceStream(ctx context.Context, keys []string, inputCh <-chan re
 	outputCh <- reducestreamer.NewMessage(resultVal).WithKeys(resultKeys)
 }
 
+// SumCreator is the creator for the sum reducestreamer.
+type SumCreator struct{}
+
+func (s *SumCreator) Create() reducestreamer.ReduceStreamer {
+	return &Sum{}
+}
+
 func main() {
-	err := reducestreamer.NewServer(&Sum{}).Start(context.Background())
+	err := reducestreamer.NewServer(&SumCreator{}).Start(context.Background())
 	if err != nil {
 		log.Panic("unable to start the server due to: ", err)
 	}
