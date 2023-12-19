@@ -1,4 +1,4 @@
-module even_odd
+module flatmap
 
 go 1.20
 

@@ -1,4 +1,4 @@
-module even_odd
+module tickgen
 
 go 1.20
 

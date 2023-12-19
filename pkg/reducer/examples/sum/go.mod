@@ -1,4 +1,4 @@
-module even_odd
+module sum
 
 go 1.20
 

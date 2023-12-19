@@ -1,4 +1,4 @@
-module even_odd
+module sideinput
 
 go 1.20
 

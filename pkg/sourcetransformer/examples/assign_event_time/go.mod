@@ -1,4 +1,4 @@
-module even_odd
+module assign_event_time
 
 go 1.20
 

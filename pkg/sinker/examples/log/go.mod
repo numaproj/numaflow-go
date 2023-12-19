@@ -1,4 +1,4 @@
-module even_odd
+module log
 
 go 1.20
 
