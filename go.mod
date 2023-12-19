@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/golang/mock v1.6.0
 	github.com/stretchr/testify v1.8.1
+	go.uber.org/atomic v1.11.0
 	golang.org/x/net v0.9.0
 	golang.org/x/sync v0.1.0
 	google.golang.org/grpc v1.57.0

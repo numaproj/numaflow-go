@@ -1,4 +1,4 @@
-package reducer
+package sessionreducer
 
 import "fmt"
 
@@ -6,7 +6,7 @@ var (
 	DROP = fmt.Sprintf("%U__DROP__", '\\') // U+005C__DROP__
 )
 
-// Message is used to wrap the data return by reduce function
+// Message is used to wrap the data return by SessionReduce functions
 type Message struct {
 	value []byte
 	keys  []string
@@ -49,22 +49,4 @@ func (m Message) Value() []byte {
 // Tags returns message tags
 func (m Message) Tags() []string {
 	return m.tags
-}
-
-type Messages []Message
-
-// MessagesBuilder returns an empty instance of Messages
-func MessagesBuilder() Messages {
-	return Messages{}
-}
-
-// Append appends a Message
-func (m Messages) Append(msg Message) Messages {
-	m = append(m, msg)
-	return m
-}
-
-// Items returns the message list
-func (m Messages) Items() []Message {
-	return m
 }

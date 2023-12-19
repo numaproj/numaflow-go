@@ -1,4 +1,4 @@
-package reducer
+package reducestreamer
 
 import (
 	"context"
@@ -15,16 +15,16 @@ import (
 const (
 	uds                   = "unix"
 	defaultMaxMessageSize = 1024 * 1024 * 64
-	address               = "/var/run/numaflow/reduce.sock"
+	address               = "/var/run/numaflow/reducestream.sock"
 	winStartTime          = "x-numaflow-win-start-time"
 	winEndTime            = "x-numaflow-win-end-time"
 	delimiter             = ":"
 )
 
-// Service implements the proto gen server interface and contains the reduce operation handler.
+// Service implements the proto gen server interface and contains the reduceStream operation handler.
 type Service struct {
 	reducepb.UnimplementedReduceServer
-	reducerCreatorHandle ReducerCreator
+	creatorHandle ReduceStreamerCreator
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
@@ -32,7 +32,7 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*reducepb.ReadyResp
 	return &reducepb.ReadyResponse{Ready: true}, nil
 }
 
-// ReduceFn applies a reduce function to a request stream and returns a list of results.
+// ReduceFn applies a reduce function to a request stream and streams the results.
 func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
 	var (
 		err error
@@ -40,7 +40,7 @@ func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
 		g   errgroup.Group
 	)
 
-	taskManager := newReduceTaskManager(fs.reducerCreatorHandle)
+	taskManager := newReduceTaskManager(fs.creatorHandle)
 
 	// err group for the go routine which reads from the output channel and sends to the stream
 	g.Go(func() error {
@@ -68,7 +68,7 @@ func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
 			return recvErr
 		}
 
-		// for Aligned windows, its just open or append operation
+		// for Aligned, its just open or append operation
 		// close signal will be sent to all the reducers when grpc
 		// input stream gets EOF.
 		switch d.Operation.Event {

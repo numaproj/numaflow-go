@@ -22,14 +22,14 @@ type Sum struct {
 	sum int
 }
 
-func (s *Sum) Reduce(ctx context.Context, keys []string, reduceCh <-chan reducer.Datum, md reducer.Metadata) reducer.Messages {
+func (s *Sum) Reduce(ctx context.Context, keys []string, inputCh <-chan reducer.Datum, md reducer.Metadata) reducer.Messages {
 	// sum up values for the same keys
 	intervalWindow := md.IntervalWindow()
 	_ = intervalWindow
 	var resultKeys = keys
 	var resultVal []byte
 	// sum up the values
-	for d := range reduceCh {
+	for d := range inputCh {
 		val := d.Value()
 
 		// event time and watermark can be fetched from the datum

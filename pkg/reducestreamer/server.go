@@ -1,4 +1,4 @@
-package reducer
+package reducestreamer
 
 import (
 	"context"
@@ -6,31 +6,31 @@ import (
 	"os/signal"
 	"syscall"
 
-	numaflow "github.com/numaproj/numaflow-go/pkg"
+	"github.com/numaproj/numaflow-go/pkg"
 	reducepb "github.com/numaproj/numaflow-go/pkg/apis/proto/reduce/v1"
 	"github.com/numaproj/numaflow-go/pkg/shared"
 )
 
-// server is a reduce gRPC server.
+// server is a reduceStream gRPC server.
 type server struct {
 	svc  *Service
 	opts *options
 }
 
-// NewServer creates a new reduce server.
-func NewServer(r ReducerCreator, inputOptions ...Option) numaflow.Server {
+// NewServer creates a new reduceStream server.
+func NewServer(r ReduceStreamerCreator, inputOptions ...Option) numaflow.Server {
 	opts := DefaultOptions()
 	for _, inputOption := range inputOptions {
 		inputOption(opts)
 	}
 	s := new(server)
 	s.svc = new(Service)
-	s.svc.reducerCreatorHandle = r
+	s.svc.creatorHandle = r
 	s.opts = opts
 	return s
 }
 
-// Start starts the reduce gRPC server.
+// Start starts the reduceStream gRPC server.
 func (r *server) Start(ctx context.Context) error {
 	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -48,7 +48,7 @@ func (r *server) Start(ctx context.Context) error {
 	grpcServer := shared.CreateGRPCServer(r.opts.maxMessageSize)
 	defer grpcServer.GracefulStop()
 
-	// register the reduce service
+	// register the reduceStream service
 	reducepb.RegisterReduceServer(grpcServer, r.svc)
 
 	// start the grpc server
