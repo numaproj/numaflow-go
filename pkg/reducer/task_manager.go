@@ -52,16 +52,16 @@ func (rt *reduceTask) uniqueKey() string {
 
 // reduceTaskManager manages the reduce tasks for a reduce operation.
 type reduceTaskManager struct {
-	reducer    Reducer
-	tasks      map[string]*reduceTask
-	responseCh chan *v1.ReduceResponse
+	reducerCreatorHandle ReducerCreator
+	tasks                map[string]*reduceTask
+	responseCh           chan *v1.ReduceResponse
 }
 
-func newReduceTaskManager(reducer Reducer) *reduceTaskManager {
+func newReduceTaskManager(reducerCreatorHandle ReducerCreator) *reduceTaskManager {
 	return &reduceTaskManager{
-		reducer:    reducer,
-		tasks:      make(map[string]*reduceTask),
-		responseCh: make(chan *v1.ReduceResponse),
+		reducerCreatorHandle: reducerCreatorHandle,
+		tasks:                make(map[string]*reduceTask),
+		responseCh:           make(chan *v1.ReduceResponse),
 	}
 }
 
@@ -87,7 +87,9 @@ func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.Reduce
 
 	go func() {
 		// invoke the reduce function
-		messages := rtm.reducer.Reduce(ctx, request.GetPayload().GetKeys(), task.inputCh, md)
+		// create a new reducer, since we got a new key
+		reducerHandle := rtm.reducerCreatorHandle.Create()
+		messages := reducerHandle.Reduce(ctx, request.GetPayload().GetKeys(), task.inputCh, md)
 
 		for _, message := range messages {
 			// write the output to the output channel, service will forward it to downstream

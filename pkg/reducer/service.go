@@ -24,7 +24,7 @@ const (
 // Service implements the proto gen server interface and contains the reduce operation handler.
 type Service struct {
 	reducepb.UnimplementedReduceServer
-	reducerHandle Reducer
+	reducerCreatorHandle ReducerCreator
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
@@ -40,7 +40,7 @@ func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
 		g   errgroup.Group
 	)
 
-	taskManager := newReduceTaskManager(fs.reducerHandle)
+	taskManager := newReduceTaskManager(fs.reducerCreatorHandle)
 
 	// err group for the go routine which reads from the output channel and sends to the stream
 	g.Go(func() error {

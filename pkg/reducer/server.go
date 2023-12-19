@@ -25,7 +25,7 @@ func NewServer(r ReducerCreator, inputOptions ...Option) numaflow.Server {
 	}
 	s := new(server)
 	s.svc = new(Service)
-	s.svc.reducerHandle = r
+	s.svc.reducerCreatorHandle = r
 	s.opts = opts
 	return s
 }
