@@ -18,14 +18,14 @@ type server struct {
 }
 
 // NewServer creates a new reduceStream server.
-func NewServer(r ReduceStreamer, inputOptions ...Option) numaflow.Server {
+func NewServer(r ReduceStreamerCreator, inputOptions ...Option) numaflow.Server {
 	opts := DefaultOptions()
 	for _, inputOption := range inputOptions {
 		inputOption(opts)
 	}
 	s := new(server)
 	s.svc = new(Service)
-	s.svc.reduceStreamerHandle = r
+	s.svc.creatorHandle = r
 	s.opts = opts
 	return s
 }

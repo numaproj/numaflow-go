@@ -22,7 +22,7 @@ const (
 // Service implements the proto gen server interface and contains the sesionreduce operation handler.
 type Service struct {
 	sessionreducepb.UnimplementedSessionReduceServer
-	createSessionReducer CreateSessionReducer
+	creatorHandle SessionReducerCreator
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
@@ -34,7 +34,7 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*sessionreducepb.Re
 func (fs *Service) SessionReduceFn(stream sessionreducepb.SessionReduce_SessionReduceFnServer) error {
 
 	ctx := stream.Context()
-	taskManager := newReduceTaskManager(fs.createSessionReducer)
+	taskManager := newReduceTaskManager(fs.creatorHandle)
 	// err group for the go routine which reads from the output channel and sends to the stream
 	var g errgroup.Group
 

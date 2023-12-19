@@ -55,21 +55,21 @@ func TestService_ReduceFn(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		handler     ReduceStreamer
+		handler     func(ctx context.Context, keys []string, rch <-chan Datum, och chan<- Message, md Metadata)
 		input       []*reducepb.ReduceRequest
 		expected    []*reducepb.ReduceResponse
 		expectedErr bool
 	}{
 		{
 			name: "reduce_fn_forward_msg_same_keys",
-			handler: ReduceStreamerFunc(func(ctx context.Context, keys []string, rch <-chan Datum, och chan<- Message, md Metadata) {
+			handler: func(ctx context.Context, keys []string, rch <-chan Datum, och chan<- Message, md Metadata) {
 				sum := 0
 				for val := range rch {
 					msgVal, _ := strconv.Atoi(string(val.Value()))
 					sum += msgVal
 				}
 				och <- NewMessage([]byte(strconv.Itoa(sum))).WithKeys([]string{keys[0] + "_test"})
-			}),
+			},
 			input: []*reducepb.ReduceRequest{
 				{
 					Payload: &reducepb.ReduceRequest_Payload{
@@ -144,14 +144,14 @@ func TestService_ReduceFn(t *testing.T) {
 		},
 		{
 			name: "reduce_fn_forward_msg_multiple_keys",
-			handler: ReduceStreamerFunc(func(ctx context.Context, keys []string, rch <-chan Datum, och chan<- Message, md Metadata) {
+			handler: func(ctx context.Context, keys []string, rch <-chan Datum, och chan<- Message, md Metadata) {
 				sum := 0
 				for val := range rch {
 					msgVal, _ := strconv.Atoi(string(val.Value()))
 					sum += msgVal
 				}
 				och <- NewMessage([]byte(strconv.Itoa(sum))).WithKeys([]string{keys[0] + "_test"})
-			}),
+			},
 			input: []*reducepb.ReduceRequest{
 				{
 					Payload: &reducepb.ReduceRequest_Payload{
@@ -304,14 +304,14 @@ func TestService_ReduceFn(t *testing.T) {
 		},
 		{
 			name: "reduce_fn_forward_msg_forward_to_all",
-			handler: ReduceStreamerFunc(func(ctx context.Context, keys []string, rch <-chan Datum, och chan<- Message, md Metadata) {
+			handler: func(ctx context.Context, keys []string, rch <-chan Datum, och chan<- Message, md Metadata) {
 				sum := 0
 				for val := range rch {
 					msgVal, _ := strconv.Atoi(string(val.Value()))
 					sum += msgVal
 				}
 				och <- NewMessage([]byte(strconv.Itoa(sum)))
-			}),
+			},
 			input: []*reducepb.ReduceRequest{
 				{
 					Payload: &reducepb.ReduceRequest_Payload{
@@ -384,14 +384,14 @@ func TestService_ReduceFn(t *testing.T) {
 		},
 		{
 			name: "reduce_fn_forward_msg_drop_msg",
-			handler: ReduceStreamerFunc(func(ctx context.Context, keys []string, rch <-chan Datum, och chan<- Message, md Metadata) {
+			handler: func(ctx context.Context, keys []string, rch <-chan Datum, och chan<- Message, md Metadata) {
 				sum := 0
 				for val := range rch {
 					msgVal, _ := strconv.Atoi(string(val.Value()))
 					sum += msgVal
 				}
 				och <- MessageToDrop()
-			}),
+			},
 			input: []*reducepb.ReduceRequest{
 				{
 					Payload: &reducepb.ReduceRequest_Payload{
@@ -468,7 +468,7 @@ func TestService_ReduceFn(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fs := &Service{
-				reduceStreamerHandle: tt.handler,
+				creatorHandle: SimpleCreatorWithReduceStreamFn(tt.handler),
 			}
 			// here's a trick for testing:
 			// because we are not using gRPC, we directly set a new incoming ctx

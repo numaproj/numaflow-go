@@ -56,17 +56,17 @@ func (rt *sessionReduceTask) uniqueKey() string {
 
 // sessionReduceTaskManager manages the tasks for a session reduce operation.
 type sessionReduceTaskManager struct {
-	sessionReducerFactory CreateSessionReducer
-	tasks                 map[string]*sessionReduceTask
-	responseCh            chan *v1.SessionReduceResponse
-	rw                    sync.RWMutex
+	creatorHandle SessionReducerCreator
+	tasks         map[string]*sessionReduceTask
+	responseCh    chan *v1.SessionReduceResponse
+	rw            sync.RWMutex
 }
 
-func newReduceTaskManager(sessionReducerFactory CreateSessionReducer) *sessionReduceTaskManager {
+func newReduceTaskManager(sessionReducerFactory SessionReducerCreator) *sessionReduceTaskManager {
 	return &sessionReduceTaskManager{
-		sessionReducerFactory: sessionReducerFactory,
-		tasks:                 make(map[string]*sessionReduceTask),
-		responseCh:            make(chan *v1.SessionReduceResponse),
+		creatorHandle: sessionReducerFactory,
+		tasks:         make(map[string]*sessionReduceTask),
+		responseCh:    make(chan *v1.SessionReduceResponse),
 	}
 }
 
@@ -81,7 +81,7 @@ func (rtm *sessionReduceTaskManager) CreateTask(ctx context.Context, request *v1
 
 	task := &sessionReduceTask{
 		keyedWindow:    request.Operation.KeyedWindows[0],
-		sessionReducer: rtm.sessionReducerFactory(),
+		sessionReducer: rtm.creatorHandle.Create(),
 		inputCh:        make(chan Datum),
 		outputCh:       make(chan Message),
 		doneCh:         make(chan struct{}),

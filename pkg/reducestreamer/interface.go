@@ -28,10 +28,31 @@ type ReduceStreamer interface {
 	ReduceStream(ctx context.Context, keys []string, inputCh <-chan Datum, outputCh chan<- Message, md Metadata)
 }
 
-// ReduceStreamerFunc is a utility type used to convert a ReduceStream function to a ReduceStreamer.
-type ReduceStreamerFunc func(ctx context.Context, keys []string, inputCh <-chan Datum, outputCh chan<- Message, md Metadata)
+// ReduceStreamerCreator is the interface which is used to create a ReduceStreamer.
+type ReduceStreamerCreator interface {
+	// Create creates a ReduceStreamer, will be invoked once for every keyed window.
+	Create() ReduceStreamer
+}
 
-// ReduceStream implements the function of ReduceStream function.
-func (rf ReduceStreamerFunc) ReduceStream(ctx context.Context, keys []string, inputCh <-chan Datum, outputCh chan<- Message, md Metadata) {
+// simpleReducerCreator is an implementation of ReduceStreamerCreator, which creates a ReduceStreamer for the given function.
+type simpleReduceStreamerCreator struct {
+	f func(ctx context.Context, keys []string, inputCh <-chan Datum, outputCh chan<- Message, md Metadata)
+}
+
+// Create creates a Reducer for the given function.
+func (s *simpleReduceStreamerCreator) Create() ReduceStreamer {
+	return reduceStreamFn(s.f)
+}
+
+// SimpleCreatorWithReduceStreamFn creates a simple ReduceStreamerCreator for the given reduceStream function.
+func SimpleCreatorWithReduceStreamFn(f func(ctx context.Context, keys []string, inputCh <-chan Datum, outputCh chan<- Message, md Metadata)) ReduceStreamerCreator {
+	return &simpleReduceStreamerCreator{f: f}
+}
+
+// reduceStreamFn is a utility type used to convert a ReduceStream function to a ReduceStreamer.
+type reduceStreamFn func(ctx context.Context, keys []string, inputCh <-chan Datum, outputCh chan<- Message, md Metadata)
+
+// ReduceStream implements the function of ReduceStreamer interface.
+func (rf reduceStreamFn) ReduceStream(ctx context.Context, keys []string, inputCh <-chan Datum, outputCh chan<- Message, md Metadata) {
 	rf(ctx, keys, inputCh, outputCh, md)
 }

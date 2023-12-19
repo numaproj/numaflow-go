@@ -53,16 +53,16 @@ func (rt *reduceStreamTask) uniqueKey() string {
 
 // reduceStreamTaskManager manages the reduceStream tasks.
 type reduceStreamTaskManager struct {
-	reduceStreamer ReduceStreamer
-	tasks          map[string]*reduceStreamTask
-	responseCh     chan *v1.ReduceResponse
+	creatorHandle ReduceStreamerCreator
+	tasks         map[string]*reduceStreamTask
+	responseCh    chan *v1.ReduceResponse
 }
 
-func newReduceTaskManager(reduceStreamer ReduceStreamer) *reduceStreamTaskManager {
+func newReduceTaskManager(reduceStreamerCreator ReduceStreamerCreator) *reduceStreamTaskManager {
 	return &reduceStreamTaskManager{
-		reduceStreamer: reduceStreamer,
-		tasks:          make(map[string]*reduceStreamTask),
-		responseCh:     make(chan *v1.ReduceResponse),
+		creatorHandle: reduceStreamerCreator,
+		tasks:         make(map[string]*reduceStreamTask),
+		responseCh:    make(chan *v1.ReduceResponse),
 	}
 }
 
@@ -99,8 +99,9 @@ func (rtm *reduceStreamTaskManager) CreateTask(ctx context.Context, request *v1.
 			rtm.responseCh <- task.buildEOFResponse()
 		}()
 
+		reduceStreamerHandle := rtm.creatorHandle.Create()
 		// invoke the reduceStream function
-		rtm.reduceStreamer.ReduceStream(ctx, request.GetPayload().GetKeys(), task.inputCh, task.outputCh, md)
+		reduceStreamerHandle.ReduceStream(ctx, request.GetPayload().GetKeys(), task.inputCh, task.outputCh, md)
 		// close the output channel after the reduceStream function is done
 		close(task.outputCh)
 		// wait for the output to be forwarded

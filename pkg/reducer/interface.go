@@ -23,6 +23,11 @@ type IntervalWindow interface {
 	EndTime() time.Time
 }
 
+// Reducer is the interface of reduce function implementation.
+type Reducer interface {
+	Reduce(ctx context.Context, keys []string, inputCh <-chan Datum, md Metadata) Messages
+}
+
 // ReducerCreator is the interface which is used to create a Reducer.
 type ReducerCreator interface {
 	// Create creates a Reducer, will be invoked once for every keyed window.
@@ -42,11 +47,6 @@ func (s *simpleReducerCreator) Create() Reducer {
 // SimpleCreatorWithReduceFn creates a simple ReducerCreator for the given reduce function.
 func SimpleCreatorWithReduceFn(f func(context.Context, []string, <-chan Datum, Metadata) Messages) ReducerCreator {
 	return &simpleReducerCreator{f: f}
-}
-
-// Reducer is the interface of reduce function implementation.
-type Reducer interface {
-	Reduce(ctx context.Context, keys []string, inputCh <-chan Datum, md Metadata) Messages
 }
 
 // reducerFn is a utility type used to convert a Reduce function to a Reducer.

@@ -77,6 +77,13 @@ func (s *SessionSum) MergeAccumulator(ctx context.Context, accumulator []byte) {
 	s.sum.Add(int32(val))
 }
 
+type SessionSumCreator struct {
+}
+
+func (s *SessionSumCreator) Create() SessionReducer {
+	return NewSessionSum()
+}
+
 func NewSessionSum() SessionReducer {
 	return &SessionSum{
 		sum: atomic.NewInt32(0),
@@ -87,14 +94,14 @@ func TestService_SessionReduceFn(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		handler     CreateSessionReducer
+		handler     SessionReducerCreator
 		input       []*sessionreducepb.SessionReduceRequest
 		expected    []*sessionreducepb.SessionReduceResponse
 		expectedErr bool
 	}{
 		{
 			name:    "open_append_close",
-			handler: NewSessionSum,
+			handler: &SessionSumCreator{},
 			input: []*sessionreducepb.SessionReduceRequest{
 				{
 					Payload: &sessionreducepb.SessionReduceRequest_Payload{
@@ -199,7 +206,7 @@ func TestService_SessionReduceFn(t *testing.T) {
 		},
 		{
 			name:    "open_expand_close",
-			handler: NewSessionSum,
+			handler: &SessionSumCreator{},
 			input: []*sessionreducepb.SessionReduceRequest{
 				{
 					Payload: &sessionreducepb.SessionReduceRequest_Payload{
@@ -341,7 +348,7 @@ func TestService_SessionReduceFn(t *testing.T) {
 		},
 		{
 			name:    "open_merge_close",
-			handler: NewSessionSum,
+			handler: &SessionSumCreator{},
 			input: []*sessionreducepb.SessionReduceRequest{
 				{
 					Payload: &sessionreducepb.SessionReduceRequest_Payload{
@@ -509,7 +516,7 @@ func TestService_SessionReduceFn(t *testing.T) {
 		},
 		{
 			name:    "open_expand_append_merge_close",
-			handler: NewSessionSum,
+			handler: &SessionSumCreator{},
 			input: []*sessionreducepb.SessionReduceRequest{
 				{
 					Payload: &sessionreducepb.SessionReduceRequest_Payload{
@@ -767,7 +774,7 @@ func TestService_SessionReduceFn(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fs := &Service{
-				createSessionReducer: tt.handler,
+				creatorHandle: tt.handler,
 			}
 			// here's a trick for testing:
 			// because we are not using gRPC, we directly set a new incoming ctx
