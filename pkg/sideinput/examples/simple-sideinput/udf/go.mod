@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/fsnotify/fsnotify v1.6.0
-	github.com/numaproj/numaflow-go v0.5.3-0.20231215063328-015665227c3d
+	github.com/numaproj/numaflow-go v0.6.0
 )
 
 require (
