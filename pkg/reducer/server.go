@@ -6,7 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/numaproj/numaflow-go/pkg"
+	numaflow "github.com/numaproj/numaflow-go/pkg"
 	reducepb "github.com/numaproj/numaflow-go/pkg/apis/proto/reduce/v1"
 	"github.com/numaproj/numaflow-go/pkg/shared"
 )
@@ -18,7 +18,7 @@ type server struct {
 }
 
 // NewServer creates a new reduce server.
-func NewServer(r Reducer, inputOptions ...Option) numaflow.Server {
+func NewServer(r ReducerCreator, inputOptions ...Option) numaflow.Server {
 	opts := DefaultOptions()
 	for _, inputOption := range inputOptions {
 		inputOption(opts)

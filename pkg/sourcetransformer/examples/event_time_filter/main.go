@@ -4,8 +4,9 @@ import (
 	"context"
 	"log"
 
+	"event_time_filter/impl"
+
 	"github.com/numaproj/numaflow-go/pkg/sourcetransformer"
-	"github.com/numaproj/numaflow-go/pkg/sourcetransformer/examples/event_time_filter/impl"
 )
 
 func transform(_ context.Context, keys []string, d sourcetransformer.Datum) sourcetransformer.Messages {
