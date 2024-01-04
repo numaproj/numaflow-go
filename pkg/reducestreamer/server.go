@@ -19,7 +19,7 @@ type server struct {
 
 // NewServer creates a new reduceStream server.
 func NewServer(r ReduceStreamerCreator, inputOptions ...Option) numaflow.Server {
-	opts := DefaultOptions()
+	opts := defaultOptions()
 	for _, inputOption := range inputOptions {
 		inputOption(opts)
 	}

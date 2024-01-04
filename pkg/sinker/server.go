@@ -20,7 +20,7 @@ type sinkServer struct {
 
 // NewServer creates a new sinkServer object.
 func NewServer(h Sinker, inputOptions ...Option) numaflow.Server {
-	opts := DefaultOptions()
+	opts := defaultOptions()
 	for _, inputOption := range inputOptions {
 		inputOption(opts)
 	}

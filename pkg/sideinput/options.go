@@ -9,8 +9,8 @@ type options struct {
 // Option is the interface to apply options.
 type Option func(*options)
 
-// DefaultOptions returns the default options.
-func DefaultOptions() *options {
+// defaultOptions returns the default options.
+func defaultOptions() *options {
 	return &options{
 		sockAddr:       address,
 		maxMessageSize: defaultMaxMessageSize,

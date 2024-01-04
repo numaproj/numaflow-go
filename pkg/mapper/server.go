@@ -20,7 +20,7 @@ type server struct {
 
 // NewServer creates a new map server.
 func NewServer(m Mapper, inputOptions ...Option) numaflow.Server {
-	opts := DefaultOptions()
+	opts := defaultOptions()
 	for _, inputOption := range inputOptions {
 		inputOption(opts)
 	}

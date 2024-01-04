@@ -13,7 +13,7 @@ type options struct {
 // Option is the interface to apply options.
 type Option func(*options)
 
-func DefaultOptions() *options {
+func defaultOptions() *options {
 	return &options{
 		sockAddr:           address,
 		maxMessageSize:     defaultMaxMessageSize,
