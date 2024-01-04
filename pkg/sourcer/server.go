@@ -21,7 +21,7 @@ type server struct {
 func NewServer(
 	source Sourcer,
 	inputOptions ...Option) numaflow.Server {
-	var opts = DefaultOptions()
+	var opts = defaultOptions()
 
 	for _, inputOption := range inputOptions {
 		inputOption(opts)
