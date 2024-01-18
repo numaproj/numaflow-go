@@ -79,7 +79,7 @@ func TestService_sourceTransformFn(t *testing.T) {
 		{
 			name: "sourceTransform_fn_forward_msg_drop_msg",
 			handler: SourceTransformFunc(func(ctx context.Context, keys []string, datum Datum) Messages {
-				return MessagesBuilder().Append(MessageToDrop())
+				return MessagesBuilder().Append(MessageToDrop(testTime))
 			}),
 			args: args{
 				ctx: context.Background(),
@@ -93,7 +93,7 @@ func TestService_sourceTransformFn(t *testing.T) {
 			want: &stpb.SourceTransformResponse{
 				Results: []*stpb.SourceTransformResponse_Result{
 					{
-						EventTime: timestamppb.New(eventTimeForDrop),
+						EventTime: timestamppb.New(testTime),
 						Tags:      []string{DROP},
 						Value:     []byte{},
 					},

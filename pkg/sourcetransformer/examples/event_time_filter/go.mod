@@ -1,9 +1,9 @@
-module even_odd
+module event_time_filter
 
 go 1.20
 
 require (
-	github.com/numaproj/numaflow-go v0.4.6-0.20230828035951-6f79b632ecfe
+	github.com/numaproj/numaflow-go v0.6.0
 	github.com/stretchr/testify v1.8.1
 )
 

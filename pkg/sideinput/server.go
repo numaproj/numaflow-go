@@ -20,7 +20,7 @@ type server struct {
 
 // NewSideInputServer creates a new server object.
 func NewSideInputServer(r SideInputRetriever, inputOptions ...Option) numaflow.Server {
-	opts := DefaultOptions()
+	opts := defaultOptions()
 	for _, inputOption := range inputOptions {
 		inputOption(opts)
 	}

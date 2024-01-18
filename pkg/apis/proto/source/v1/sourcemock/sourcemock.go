@@ -78,6 +78,26 @@ func (mr *MockSourceClientMockRecorder) IsReady(arg0, arg1 interface{}, arg2 ...
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsReady", reflect.TypeOf((*MockSourceClient)(nil).IsReady), varargs...)
 }
 
+// PartitionsFn mocks base method.
+func (m *MockSourceClient) PartitionsFn(arg0 context.Context, arg1 *emptypb.Empty, arg2 ...grpc.CallOption) (*v1.PartitionsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "PartitionsFn", varargs...)
+	ret0, _ := ret[0].(*v1.PartitionsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PartitionsFn indicates an expected call of PartitionsFn.
+func (mr *MockSourceClientMockRecorder) PartitionsFn(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PartitionsFn", reflect.TypeOf((*MockSourceClient)(nil).PartitionsFn), varargs...)
+}
+
 // PendingFn mocks base method.
 func (m *MockSourceClient) PendingFn(arg0 context.Context, arg1 *emptypb.Empty, arg2 ...grpc.CallOption) (*v1.PendingResponse, error) {
 	m.ctrl.T.Helper()

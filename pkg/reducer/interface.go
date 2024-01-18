@@ -25,13 +25,34 @@ type IntervalWindow interface {
 
 // Reducer is the interface of reduce function implementation.
 type Reducer interface {
-	Reduce(ctx context.Context, keys []string, reduceCh <-chan Datum, md Metadata) Messages
+	Reduce(ctx context.Context, keys []string, inputCh <-chan Datum, md Metadata) Messages
 }
 
-// ReducerFunc is a utility type used to convert a Reduce function to a Reducer.
-type ReducerFunc func(ctx context.Context, keys []string, reduceCh <-chan Datum, md Metadata) Messages
+// ReducerCreator is the interface which is used to create a Reducer.
+type ReducerCreator interface {
+	// Create creates a Reducer, will be invoked once for every keyed window.
+	Create() Reducer
+}
+
+// simpleReducerCreator is an implementation of ReducerCreator, which creates a Reducer for the given function.
+type simpleReducerCreator struct {
+	f func(context.Context, []string, <-chan Datum, Metadata) Messages
+}
+
+// Create creates a Reducer for the given function.
+func (s *simpleReducerCreator) Create() Reducer {
+	return reducerFn(s.f)
+}
+
+// SimpleCreatorWithReduceFn creates a simple ReducerCreator for the given reduce function.
+func SimpleCreatorWithReduceFn(f func(context.Context, []string, <-chan Datum, Metadata) Messages) ReducerCreator {
+	return &simpleReducerCreator{f: f}
+}
+
+// reducerFn is a utility type used to convert a Reduce function to a Reducer.
+type reducerFn func(ctx context.Context, keys []string, reduceCh <-chan Datum, md Metadata) Messages
 
 // Reduce implements the function of reduce function.
-func (rf ReducerFunc) Reduce(ctx context.Context, keys []string, reduceCh <-chan Datum, md Metadata) Messages {
+func (rf reducerFn) Reduce(ctx context.Context, keys []string, reduceCh <-chan Datum, md Metadata) Messages {
 	return rf(ctx, keys, reduceCh, md)
 }
