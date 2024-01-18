@@ -37,5 +37,6 @@ curl -Ls -o ${REPO_ROOT}/dist/sideinput.proto ${REMOTE_URL_PRE}/sideinput/v1/sid
 curl -Ls -o ${REPO_ROOT}/dist/sink.proto ${REMOTE_URL_PRE}/sink/v1/sink.proto
 curl -Ls -o ${REPO_ROOT}/dist/source.proto ${REMOTE_URL_PRE}/source/v1/source.proto
 curl -Ls -o ${REPO_ROOT}/dist/transform.proto ${REMOTE_URL_PRE}/sourcetransform/v1/transform.proto
+curl -Ls -o ${REPO_ROOT}/dist/sessionreduce.proto ${REMOTE_URL_PRE}/sessionreduce/v1/sessionreduce.proto
 
 protoc --go_out=module=github.com/numaproj/numaflow-go:. --go-grpc_out=module=github.com/numaproj/numaflow-go:. -I ${REPO_ROOT}/dist $(find ${REPO_ROOT}/dist -name '*.proto')

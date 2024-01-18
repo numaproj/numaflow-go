@@ -35,10 +35,11 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Source_ReadFn_FullMethodName    = "/source.v1.Source/ReadFn"
-	Source_AckFn_FullMethodName     = "/source.v1.Source/AckFn"
-	Source_PendingFn_FullMethodName = "/source.v1.Source/PendingFn"
-	Source_IsReady_FullMethodName   = "/source.v1.Source/IsReady"
+	Source_ReadFn_FullMethodName       = "/source.v1.Source/ReadFn"
+	Source_AckFn_FullMethodName        = "/source.v1.Source/AckFn"
+	Source_PendingFn_FullMethodName    = "/source.v1.Source/PendingFn"
+	Source_PartitionsFn_FullMethodName = "/source.v1.Source/PartitionsFn"
+	Source_IsReady_FullMethodName      = "/source.v1.Source/IsReady"
 )
 
 // SourceClient is the client API for Source service.
@@ -57,6 +58,8 @@ type SourceClient interface {
 	AckFn(ctx context.Context, in *AckRequest, opts ...grpc.CallOption) (*AckResponse, error)
 	// PendingFn returns the number of pending records at the user defined source.
 	PendingFn(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PendingResponse, error)
+	// PartitionsFn returns the list of partitions for the user defined source.
+	PartitionsFn(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PartitionsResponse, error)
 	// IsReady is the heartbeat endpoint for user defined source gRPC.
 	IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReadyResponse, error)
 }
@@ -119,6 +122,15 @@ func (c *sourceClient) PendingFn(ctx context.Context, in *emptypb.Empty, opts ..
 	return out, nil
 }
 
+func (c *sourceClient) PartitionsFn(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PartitionsResponse, error) {
+	out := new(PartitionsResponse)
+	err := c.cc.Invoke(ctx, Source_PartitionsFn_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *sourceClient) IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReadyResponse, error) {
 	out := new(ReadyResponse)
 	err := c.cc.Invoke(ctx, Source_IsReady_FullMethodName, in, out, opts...)
@@ -144,6 +156,8 @@ type SourceServer interface {
 	AckFn(context.Context, *AckRequest) (*AckResponse, error)
 	// PendingFn returns the number of pending records at the user defined source.
 	PendingFn(context.Context, *emptypb.Empty) (*PendingResponse, error)
+	// PartitionsFn returns the list of partitions for the user defined source.
+	PartitionsFn(context.Context, *emptypb.Empty) (*PartitionsResponse, error)
 	// IsReady is the heartbeat endpoint for user defined source gRPC.
 	IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error)
 	mustEmbedUnimplementedSourceServer()
@@ -161,6 +175,9 @@ func (UnimplementedSourceServer) AckFn(context.Context, *AckRequest) (*AckRespon
 }
 func (UnimplementedSourceServer) PendingFn(context.Context, *emptypb.Empty) (*PendingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PendingFn not implemented")
+}
+func (UnimplementedSourceServer) PartitionsFn(context.Context, *emptypb.Empty) (*PartitionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PartitionsFn not implemented")
 }
 func (UnimplementedSourceServer) IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsReady not implemented")
@@ -235,6 +252,24 @@ func _Source_PendingFn_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Source_PartitionsFn_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SourceServer).PartitionsFn(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Source_PartitionsFn_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SourceServer).PartitionsFn(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Source_IsReady_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -267,6 +302,10 @@ var Source_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PendingFn",
 			Handler:    _Source_PendingFn_Handler,
+		},
+		{
+			MethodName: "PartitionsFn",
+			Handler:    _Source_PartitionsFn_Handler,
 		},
 		{
 			MethodName: "IsReady",
