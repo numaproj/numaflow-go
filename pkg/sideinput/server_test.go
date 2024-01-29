@@ -16,12 +16,17 @@ func TestServer_Start(t *testing.T) {
 		_ = os.RemoveAll(socketFile.Name())
 	}()
 
+	serverInfoFile, _ := os.CreateTemp("/tmp", "numaflow-test-info")
+	defer func() {
+		_ = os.RemoveAll(serverInfoFile.Name())
+	}()
+
 	var retrieveHandler = RetrieveFunc(func(ctx context.Context) Message {
 		return BroadcastMessage([]byte("test"))
 	})
 	// note: using actual uds connection
 	ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
 	defer cancel()
-	err := NewSideInputServer(retrieveHandler, WithSockAddr(socketFile.Name())).Start(ctx)
+	err := NewSideInputServer(retrieveHandler, WithSockAddr(socketFile.Name()), WithServerInfoFilePath(serverInfoFile.Name())).Start(ctx)
 	assert.NoError(t, err)
 }
