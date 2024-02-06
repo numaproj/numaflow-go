@@ -1,9 +1,5 @@
 package info
 
-const (
-	ServerInfoFilePath = "/var/run/numaflow/server-info"
-)
-
 type Protocol string
 
 const (
