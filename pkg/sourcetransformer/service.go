@@ -13,6 +13,7 @@ const (
 	uds                   = "unix"
 	defaultMaxMessageSize = 1024 * 1024 * 64
 	address               = "/var/run/numaflow/sourcetransform.sock"
+	serverInfoFilePath    = "/var/run/numaflow/sourcetransformer-server-info"
 )
 
 // Service implements the proto gen server interface and contains the transformer operation

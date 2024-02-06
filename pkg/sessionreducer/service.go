@@ -17,6 +17,7 @@ const (
 	defaultMaxMessageSize = 1024 * 1024 * 64
 	address               = "/var/run/numaflow/sessionreduce.sock"
 	delimiter             = ":"
+	serverInfoFilePath    = "/var/run/numaflow/sessionreducer-server-info"
 )
 
 // Service implements the proto gen server interface and contains the sesionreduce operation handler.

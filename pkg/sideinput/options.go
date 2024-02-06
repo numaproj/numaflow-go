@@ -1,7 +1,5 @@
 package sideinput
 
-import "github.com/numaproj/numaflow-go/pkg/info"
-
 // options is the struct to hold the server options.
 type options struct {
 	sockAddr           string
@@ -17,7 +15,7 @@ func defaultOptions() *options {
 	return &options{
 		sockAddr:           address,
 		maxMessageSize:     defaultMaxMessageSize,
-		serverInfoFilePath: info.SideinputServerInfoFilePath,
+		serverInfoFilePath: serverInfoFilePath,
 	}
 }
 

@@ -1,9 +1,5 @@
 package reducer
 
-import (
-	"github.com/numaproj/numaflow-go/pkg/info"
-)
-
 type options struct {
 	sockAddr           string
 	maxMessageSize     int
@@ -17,7 +13,7 @@ func defaultOptions() *options {
 	return &options{
 		sockAddr:           address,
 		maxMessageSize:     defaultMaxMessageSize,
-		serverInfoFilePath: info.ReducerServerInfoFilePath,
+		serverInfoFilePath: serverInfoFilePath,
 	}
 }
 

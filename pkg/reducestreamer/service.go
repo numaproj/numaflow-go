@@ -19,6 +19,7 @@ const (
 	winStartTime          = "x-numaflow-win-start-time"
 	winEndTime            = "x-numaflow-win-end-time"
 	delimiter             = ":"
+	serverInfoFilePath    = "/var/run/numaflow/reducestreamer-server-info"
 )
 
 // Service implements the proto gen server interface and contains the reduceStream operation handler.

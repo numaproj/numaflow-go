@@ -14,6 +14,7 @@ const (
 	uds                   = "unix"
 	defaultMaxMessageSize = 1024 * 1024 * 64 // 64MB
 	address               = "/var/run/numaflow/source.sock"
+	serverInfoFilePath    = "/var/run/numaflow/sourcer-server-info"
 )
 
 // Service implements the proto gen server interface
