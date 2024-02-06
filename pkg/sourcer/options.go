@@ -17,7 +17,7 @@ func defaultOptions() *options {
 	return &options{
 		sockAddr:           address,
 		maxMessageSize:     defaultMaxMessageSize,
-		serverInfoFilePath: info.ServerInfoFilePath,
+		serverInfoFilePath: info.SourcerServerInfoFilePath,
 	}
 }
 

@@ -1,7 +1,15 @@
 package info
 
 const (
-	ServerInfoFilePath = "/var/run/numaflow/server-info"
+	MapperServerInfoFilePath            = "/var/run/numaflow/mapper-server-info"
+	MapstreamerServerInfoFilePath       = "/var/run/numaflow/mapstreamer-sever-info"
+	ReducerServerInfoFilePath           = "/var/run/numaflow/reducer-server-info"
+	ReducestreamerServerInfoFilePath    = "/var/run/numaflow/reducestreamer-server-info"
+	SessionreducerServerInfoFilePath    = "/var/run/numaflow/sessionreducer-server-ifno"
+	SideinputServerInfoFilePath         = "/var/run/numaflow/sideinput-server-info"
+	SinkerServerInfoFilePath            = "/var/run/numaflow/sinker-server-info"
+	SourcerServerInfoFilePath           = "/var/run/numaflow/sourcer-server-info"
+	SourcetransformerServerInfoFilePath = "/var/run/numaflow/sourcetransformer-server-info"
 )
 
 type Protocol string
