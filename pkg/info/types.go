@@ -1,6 +1,7 @@
 package info
 
 const (
+	ServerInfoFilePath                  = "/var/run/numaflow/server-info"
 	MapperServerInfoFilePath            = "/var/run/numaflow/mapper-server-info"
 	MapstreamerServerInfoFilePath       = "/var/run/numaflow/mapstreamer-sever-info"
 	ReducerServerInfoFilePath           = "/var/run/numaflow/reducer-server-info"
