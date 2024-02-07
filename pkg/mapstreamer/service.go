@@ -12,7 +12,7 @@ const (
 	uds                   = "unix"
 	defaultMaxMessageSize = 1024 * 1024 * 64
 	address               = "/var/run/numaflow/mapstream.sock"
-	serverInfoFilePath    = "/var/run/numaflow/mapstreamer-sever-info"
+	serverInfoFilePath    = "/var/run/numaflow/mapstreamer-server-info"
 )
 
 // Service implements the proto gen server interface and contains the map

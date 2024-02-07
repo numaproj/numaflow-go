@@ -1,7 +1,5 @@
 package sideinput
 
-import "github.com/numaproj/numaflow-go/pkg/info"
-
 // options is the struct to hold the server options.
 type options struct {
 	sockAddr           string
