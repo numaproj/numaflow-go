@@ -5,9 +5,7 @@ type options struct {
 }
 
 func defaultOptions() *options {
-	return &options{
-		svrInfoFilePath: ServerInfoFilePath,
-	}
+	return &options{}
 }
 
 type Option func(*options)
