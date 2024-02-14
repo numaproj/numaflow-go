@@ -1121,7 +1121,7 @@ func TestService_SessionReduceFn(t *testing.T) {
 				},
 				{
 					Payload: &sessionreducepb.SessionReduceRequest_Payload{
-						Keys:      []string{"client1"},
+						Keys:      []string{"client2"},
 						Value:     []byte(strconv.Itoa(10)),
 						EventTime: timestamppb.New(time.Time{}),
 						Watermark: timestamppb.New(time.Time{}),
