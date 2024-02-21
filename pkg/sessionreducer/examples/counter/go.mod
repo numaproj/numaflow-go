@@ -3,7 +3,7 @@ module counter
 go 1.20
 
 require (
-	github.com/numaproj/numaflow-go v0.6.1-0.20231219080635-d096c415a42f
+	github.com/numaproj/numaflow-go v0.6.1-0.20240212202512-715955f1e069
 	go.uber.org/atomic v1.11.0
 )
 
