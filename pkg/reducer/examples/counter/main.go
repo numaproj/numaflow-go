@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log"
 	"strconv"
 
 	"github.com/numaproj/numaflow-go/pkg/reducer"
@@ -20,5 +21,8 @@ func reduceCounter(_ context.Context, keys []string, inputCh <-chan reducer.Datu
 }
 
 func main() {
-	reducer.NewServer(reducer.SimpleCreatorWithReduceFn(reduceCounter)).Start(context.Background())
+	err := reducer.NewServer(reducer.SimpleCreatorWithReduceFn(reduceCounter)).Start(context.Background())
+	if err != nil {
+		log.Panic("Failed to start server: ", err)
+	}
 }
