@@ -1,0 +1,36 @@
+on:
+  pull_request:
+    types:
+      - closed
+    paths-ignore:
+      - 'pkg/*/examples/*'
+      - '*.md'
+
+jobs:
+  if_merged:
+    if: github.event.pull_request.merged == true
+    name: Update Go SDK Version
+    runs-on: ubuntu-latest
+    env:
+      COMMIT_SHA: ${{ github.sha }} # refers to the SHA of the merge commit, not the individual commits in PR
+
+    steps:
+      - name: Setup Go
+        uses: actions/setup-go@v4.0.0
+        with:
+          go-version: '1.20'
+      - name: Checkout code
+        uses: actions/checkout@v3 # includes the changes from merged PR
+      - name: Update dependencies
+        run: ./traverse-examples.sh "go get github.com/numaproj/numaflow-go@${{ env.COMMIT_SHA }}" "go mod tidy"
+
+      - name: Create PR
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: update-sdk-${{ env.COMMIT_SHA }}
+          title: "chore: update sdk version"
+          body: "Modify go.mod and go.sum in the example folders, so that they use an up to date version of the GO SDK"
+          commit-message: "Update dependency files to point to latest version of numaflow-go"
+          base: main
+          signoff: true
+
