@@ -33,4 +33,3 @@ jobs:
           commit-message: "Update dependency files to point to latest version of numaflow-go"
           base: main
           signoff: true
-
