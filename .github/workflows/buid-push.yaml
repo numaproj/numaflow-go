@@ -14,7 +14,8 @@ jobs:
     strategy:
       matrix:
         repository: [
-          "map-even-odd", "map-flatmap", "map-forward-message", "map-retry", "map-tickgen"
+          "map-even-odd", "map-flatmap", "map-forward-message", "map-retry", "map-tickgen",
+          "map-flatmap-stream"
         ]
 
     steps:
@@ -32,7 +33,7 @@ jobs:
           username: ${{ env.QUAY_USERNAME }}
           password: ${{ env.QUAY_PASSWORD }}
       - name: Build and tag images
-        run: ./traverse-examples "make image"
+        run: ./.github/scripts/traverse-examples.sh "make image"
       - name: Push images
         env:
           IMAGE_PREFIX: "quay.io/numaio/numaflow-go"

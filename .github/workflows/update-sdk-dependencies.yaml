@@ -3,8 +3,8 @@ on:
     types:
       - closed
     paths-ignore:
-      - 'pkg/*/examples/*'
-      - '*.md'
+      - "pkg/*/examples/*"
+      - "*.md"
 
 jobs:
   if_merged:
@@ -22,7 +22,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3 # includes the changes from merged PR
       - name: Update dependencies
-        run: ./traverse-examples.sh "go get github.com/numaproj/numaflow-go@${{ env.COMMIT_SHA }}" "go mod tidy"
+        run: ./.github/scripts/traverse-examples.sh "go get github.com/numaproj/numaflow-go@${{ env.COMMIT_SHA }}" "go mod tidy"
 
       - name: Create PR
         uses: peter-evans/create-pull-request@v6
