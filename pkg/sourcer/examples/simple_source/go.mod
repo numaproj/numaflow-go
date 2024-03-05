@@ -2,6 +2,8 @@ module simple_source
 
 go 1.20
 
+replace github.com/numaproj/numaflow-go => ../../../../../numaflow-go
+
 require (
 	github.com/numaproj/numaflow-go v0.6.1-0.20240221033908-7c1198bc89f1
 	github.com/stretchr/testify v1.8.1

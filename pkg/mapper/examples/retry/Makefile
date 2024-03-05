@@ -4,7 +4,7 @@ build:
 
 .PHONY: image
 image: build
-	docker build -t "quay.io/numaio/numaflow-go/map-retry:v0.6.1" --target retry .
+	docker build -t "quay.io/numaio/numaflow-go/map-retry:stable" --target retry .
 
 clean:
 	-rm -rf ./dist

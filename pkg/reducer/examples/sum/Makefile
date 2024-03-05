@@ -4,7 +4,7 @@ build:
 
 .PHONY: image
 image: build
-	docker build -t "quay.io/numaio/numaflow-go/reduce-sum:v0.6.1" --target sum .
+	docker build -t "quay.io/numaio/numaflow-go/reduce-sum:stable" --target sum .
 
 clean:
 	-rm -rf ./dist

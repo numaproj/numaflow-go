@@ -2,6 +2,8 @@ module even_odd
 
 go 1.20
 
+replace github.com/numaproj/numaflow-go => ../../../../../../numaflow-go
+
 require (
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/numaproj/numaflow-go v0.6.1-0.20240221033908-7c1198bc89f1
