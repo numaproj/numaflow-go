@@ -36,7 +36,7 @@ usingBuild=0
 usingSHA=0
 commit_sha=""
 
-handle_options() {
+function handle_options () {
   while [ $# -gt 0 ]; do
     case "$1" in
       -h | --help)
