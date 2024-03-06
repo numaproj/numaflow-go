@@ -36,7 +36,7 @@ jobs:
           username: ${{ env.QUAY_USERNAME }}
           password: ${{ env.QUAY_PASSWORD }}
       - name: Build and tag images
-        run: ./.github/scripts/traverse-examples.sh "make image"
+        run: ./update_examples --build
       - name: Push images
         env:
           IMAGE_PREFIX: "quay.io/numaio/numaflow-go"
