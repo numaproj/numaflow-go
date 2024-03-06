@@ -80,7 +80,7 @@ if [ -n "$commit_sha" ]; then
 fi
 
 if (( usingBuild )); then
-  traverse_examples "make clean"
+  traverse_examples "make image"
 elif (( usingSHA )); then
   traverse_examples "go get github.com/numaproj/numaflow-go@$commit_sha" "go mod tidy"
 elif (( usingHelp )); then
