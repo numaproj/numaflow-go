@@ -1,7 +1,5 @@
 #!/bin/bash
 
-commit_sha=""
-
 function show_help () {
     echo "Usage: $0 [-h|--help] (-b|--build | -c|--commit-sha <commit_sha>)"
     echo "  -h, --help         Display help message and exit"
@@ -33,9 +31,10 @@ if [ $# -eq 0 ]; then
   exit 1
 fi
 
+usingHelp=0
 usingBuild=0
 usingSHA=0
-usingHelp=0
+commit_sha=""
 
 handle_options() {
   while [ $# -gt 0 ]; do
