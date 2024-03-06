@@ -18,7 +18,7 @@ function traverse_examples () {
       for command in "$@"
       do
         if ! $command; then
-          echo "Error when running $command in $dir"
+          echo "Error when running $command in $dir" >&2
           exit 1
         fi
       done
@@ -27,17 +27,27 @@ function traverse_examples () {
   done
 }
 
+if [ $# -eq 0 ]; then
+  echo "Error: provide at least one argument" >&2
+  show_help
+  exit 1
+fi
+
+usingBuild=0
+usingSHA=0
+usingHelp=0
+
 handle_options() {
   while [ $# -gt 0 ]; do
     case "$1" in
       -h | --help)
-        show_help
-        exit 0
+        usingHelp=1
         ;;
       -b | --build)
-        traverse_examples "make clean"
+        usingBuild=1
         ;;
       -c | --commit-sha)
+        usingSHA=1
         if [ -z "$2" ]; then
           echo "Commit SHA not specified." >&2
           show_help
@@ -45,7 +55,6 @@ handle_options() {
         fi
 
         commit_sha=$2
-        traverse_examples "go get github.com/numaproj/numaflow-go@$commit_sha" "go mod tidy"
         shift
         ;;
       *)
@@ -58,9 +67,22 @@ handle_options() {
   done
 }
 
-echo "$#"
 handle_options "$@"
+
+if (( usingBuild + usingSHA + usingHelp > 1 )); then
+  echo "Only one of '-h', '-b', '-c' is allowed at a time" >&2
+  show_help
+  exit 1
+fi
 
 if [ -n "$commit_sha" ]; then
  echo "Commit SHA specified: $commit_sha"
+fi
+
+if (( usingBuild )); then
+  traverse_examples "make clean"
+elif (( usingSHA )); then
+  traverse_examples "go get github.com/numaproj/numaflow-go@$commit_sha" "go mod tidy"
+elif (( usingHelp )); then
+  show_help
 fi
