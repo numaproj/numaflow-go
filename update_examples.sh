@@ -4,7 +4,7 @@ function show_help () {
     echo "Usage: $0 [-h|--help] (-b|--build | -c|--commit-sha <commit_sha>)"
     echo "  -h, --help         Display help message and exit"
     echo "  -b, --build        Build the docker images of all the examples"
-    echo "  -c, --commit-sha   Update the numaflow-go version to the specified SHA"
+    echo "  -c, --commit-sha   Update all the examples to depend on the numaflow-go version with the specified SHA"
 }
 
 function traverse_examples () {
