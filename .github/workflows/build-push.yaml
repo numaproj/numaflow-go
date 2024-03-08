@@ -1,7 +1,8 @@
 on:
-  pull_request:
-    types:
-      - closed
+  push
+#  pull_request:
+#    types:
+#      - closed
 
 jobs:
   if_merged:
