@@ -26,7 +26,9 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: test
-        run: echo ${{ secrets.NUMAIO_USERNAME }}
+        run: |
+          echo ${{ secrets.NUMAIO_USERNAME }}
+          echo "test"
       - name: Login to Quay.io registry
         uses: docker/login-action@v3
 #        env:
