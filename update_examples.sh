@@ -16,7 +16,7 @@ function traverse_examples () {
       for command in "$@"
       do
         if ! $command; then
-          echo "Error when running $command in $dir" >&2
+          echo "Error: failed $command in $dir" >&2
           exit 1
         fi
       done
