@@ -26,10 +26,14 @@ jobs:
         uses: docker/setup-buildx-action@v3
       - name: Login to Quay.io registry
         uses: docker/login-action@v3
+        env:
+          # REGISTRY_SERVER: "quay.io"
+          NUMAIO_USERNAME: ${{ secrets.NUMAIO_USERNAME }}
+          NUMAIO_PASSWORD: ${{ secrets.NUMAIO_PASSWORD }}
         with:
-          registry: https://quay.io/organization/numaio
-          username: ${{ secrets.NUMAIO_USERNAME }}
-          password: ${{ secrets.NUMAIO_PASSWORD }}
+          # registry: ${{ env.REGISTRY_SERVER }}
+          username: ${{ env.NUMAIO_USERNAME }}
+          password: ${{ env.NUMAIO_PASSWORD }}
       - name: Build and tag images
         run: ./update_examples --build
       - name: Push images
