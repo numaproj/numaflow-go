@@ -1,12 +1,13 @@
+name: Docker Publish
+
 on:
-  pull_request
-#  pull_request:
-#    types:
-#      - closed
+  pull_request:
+    types:
+      - closed
 
 jobs:
   if_merged:
-    if: github.event.pull_request.merged == false
+    if: github.event.pull_request.merged == true
     name: Build and Push Images
     runs-on: ubuntu-latest
 
@@ -14,10 +15,10 @@ jobs:
       matrix:
         repository: [
           "map-even-odd"
-#          "map-flatmap", "map-forward-message", "map-retry", "map-tickgen",
-#          "map-flatmap-stream", "reduce-counter", "reduce-sum", "reduce-stream-counter",
-#          "reduce-stream-sum", "session-counter", "sideinput-example", "udf-sideinput-example",
-#          "sink-log", "source-simple-source", "mapt-assign-event-time", "mapt-event-time-filter"
+          "map-flatmap", "map-forward-message", "map-retry", "map-tickgen",
+          "map-flatmap-stream", "reduce-counter", "reduce-sum", "reduce-stream-counter",
+          "reduce-stream-sum", "session-counter", "sideinput-example", "udf-sideinput-example",
+          "sink-log", "source-simple-source", "mapt-assign-event-time", "mapt-event-time-filter"
         ]
 
     steps:
@@ -29,8 +30,8 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: quay.io
-          username: ${{ secrets.QUAY_USERNAME }}
-          password: ${{ secrets.QUAY_ROBOT_TOKEN }}
+          username: ${{ secrets.NUMAIO_USERNAME }}
+          password: ${{ secrets.NUMAIO_PASSWORD }}
       - name: Build and tag images
         run: ./update_examples --build
       - name: Push images
