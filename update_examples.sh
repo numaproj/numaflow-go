@@ -1,10 +1,11 @@
 #!/bin/bash
 
 function show_help () {
-    echo "Usage: $0 [-h|--help] (-bp|--build-push | -bpe|--build-push-example | -u|--update <SDK-version>)"
+    echo "Usage: $0 [-h|--help | -t|--tag] (-bp|--build-push | -bpe|--build-push-example | -u|--update <SDK-version>)"
     echo "  -h, --help                   Display help message and exit"
-    echo "  -bp, --build-push            Build the Dockerfiles of all the examples and push them to the quay.io registry (with tag: stable)"
-    echo "  -bpe, --build-push-example   Build the Dockerfile of the given example directory path, and push it to the quay.io registry (with tag: stable)"
+    echo "  -bp, --build-push            Build the Dockerfiles of all the examples and push them to the quay.io registry"
+    echo "  -bpe, --build-push-example   Build the Dockerfile of the given example directory path, and push it to the quay.io registry"
+    echo "  -t, --tag                    To be optionally used with -bpe or -bp. Specify the tag to build with. Default tag: stable"
     echo "  -u, --update                 Update all of the examples to depend on the numaflow-go version with the specified SHA or version"
 }
 
@@ -36,8 +37,10 @@ usingHelp=0
 usingBuildPush=0
 usingBuildPushExample=0
 usingVersion=0
+usingTag=0
 version=""
 directoryPath=""
+tag="stable"
 
 function handle_options () {
   while [ $# -gt 0 ]; do
@@ -49,24 +52,35 @@ function handle_options () {
         usingBuildPush=1
         ;;
       -bpe | --build-push-example)
-        usingBuildPushExample=1
         if [ -z "$2" ]; then
           echo "Directory path not specified." >&2
           show_help
           exit 1
         fi
 
+        usingBuildPushExample=1
         directoryPath=$2
         shift
         ;;
+      -t | --tag)
+        if [ -z "$2" ]; then
+          echo "Tag not specified." >&2
+          show_help
+          exit 1
+        fi
+
+        usingTag=1
+        tag=$2
+        shift
+        ;;
       -u | --update)
-        usingVersion=1
         if [ -z "$2" ]; then
           echo "Commit SHA or version not specified." >&2
           show_help
           exit 1
         fi
 
+        usingVersion=1
         version=$2
         shift
         ;;
@@ -96,11 +110,15 @@ if [ -n "$directoryPath" ]; then
  echo "Dockerfile path to use: $directoryPath"
 fi
 
+if [ -n "$tag" ]; then
+ echo "Using tag: $tag"
+fi
+
 if (( usingBuildPush )); then
-  traverse_examples "make image-push"
+  traverse_examples "make image-push TAG=$tag"
 elif (( usingBuildPushExample )); then
    cd "./$directoryPath" || exit
-   if ! make image-push; then
+   if ! make image-push TAG="$tag"; then
      echo "Error: failed to run make image in $directoryPath" >&2
      exit 1
    fi
