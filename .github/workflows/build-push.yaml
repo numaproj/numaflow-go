@@ -33,7 +33,7 @@ jobs:
           username: ${{ secrets.NUMAIO_USERNAME }}
           password: ${{ secrets.NUMAIO_PASSWORD }}
       - name: Build and tag images
-        run: ./update_examples --build
+        run: ./update_examples.sh --build
       - name: Push images
         env:
           IMAGE_PREFIX: "quay.io/numaio/numaflow-go"
