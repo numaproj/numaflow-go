@@ -18,7 +18,7 @@ jobs:
           "map-even-odd",
           "map-flatmap", "map-forward-message", "map-retry", "map-tickgen",
           "map-flatmap-stream", "reduce-counter", "reduce-sum", "reduce-stream-counter",
-          "reduce-stream-sum", "session-counter",
+          "reduce-stream-sum", "session-counter", "sideinput-example", "udf-sideinput-example",
           "sink-log", "source-simple-source", "mapt-assign-event-time", "mapt-event-time-filter"
         ]
 
