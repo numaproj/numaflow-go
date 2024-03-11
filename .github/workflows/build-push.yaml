@@ -10,19 +10,6 @@ jobs:
   build_push_examples:
     name: Build and Push Images
     runs-on: ubuntu-latest
-
-    strategy:
-      max-parallel: 6
-      matrix:
-        repository: [
-          "sideinput-example", "udf-sideinput-example"
-#          "map-even-odd",
-#          "map-flatmap", "map-forward-message", "map-retry", "map-tickgen",
-#          "map-flatmap-stream", "reduce-counter", "reduce-sum", "reduce-stream-counter",
-#          "reduce-stream-sum", "session-counter", "sideinput-example", "udf-sideinput-example",
-#          "sink-log", "source-simple-source", "mapt-assign-event-time", "mapt-event-time-filter"
-        ]
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v3
