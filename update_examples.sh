@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function show_help () {
-    echo "Usage: $0 [-h|--help | -t|--tag] (-bp|--build-push | -bpe|--build-push-example | -u|--update <SDK-version>)"
+    echo "Usage: $0 [-h|--help | -t|--tag <tag>] (-bp|--build-push | -bpe|--build-push-example | -u|--update <SDK-version>)"
     echo "  -h, --help                   Display help message and exit"
     echo "  -bp, --build-push            Build the Dockerfiles of all the examples and push them to the quay.io registry"
     echo "  -bpe, --build-push-example   Build the Dockerfile of the given example directory path, and push it to the quay.io registry"
@@ -102,6 +102,18 @@ if (( usingBuildPush + usingBuildPushExample + usingVersion + usingHelp > 1 )); 
   exit 1
 fi
 
+if (( usingTag + usingVersion > 1 )); then
+  echo "Cannot use -t with -u" >&2
+  show_help
+  exit 1
+fi
+
+if (( usingTag )) && (( usingBuildPush + usingBuildPushExample == 0 )); then
+  echo "Cannot run -t alone, please use it with -bpe or -bp" >&2
+  show_help
+  exit 1
+fi
+
 if [ -n "$version" ]; then
  echo "Will update to: $version"
 fi
@@ -110,7 +122,7 @@ if [ -n "$directoryPath" ]; then
  echo "Dockerfile path to use: $directoryPath"
 fi
 
-if [ -n "$tag" ]; then
+if [ -n "$tag" ] && (( usingTag )); then
  echo "Using tag: $tag"
 fi
 
