@@ -97,7 +97,7 @@ function handle_options () {
 handle_options "$@"
 
 if (( usingBuildPush + usingBuildPushExample + usingVersion + usingHelp > 1 )); then
-  echo "Only one of '-h', '-bp', '-bpe, or, '-u' is allowed at a time" >&2
+  echo "Only one of '-h', '-bp', '-bpe', or, '-u' is allowed at a time" >&2
   show_help
   exit 1
 fi
