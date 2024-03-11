@@ -40,4 +40,3 @@ jobs:
           TAG: "stable"
         run: |
           docker push ${{ env.IMAGE_PREFIX }}/${{ matrix.repository }}:${{ env.TAG }}
-
