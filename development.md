@@ -22,7 +22,7 @@ updated each time a new change is made.
 displayed in the `go.mod` file reflects the commit SHA of the merged changes. This can be done by getting the
 commit SHA of the merged changes and using it with the update script: 
 ```shell
-./update_examples -c <SDK-version>
+./update_examples -u <SDK-version>
 ```
 After running the script, create another PR for these changes.
 
