@@ -1,10 +1,10 @@
 #!/bin/bash
 
 function show_help () {
-    echo "Usage: $0 [-h|--help] (-b|--build | -c|--commit-sha <commit_sha>)"
-    echo "  -h, --help         Display help message and exit"
-    echo "  -b, --build        Build the docker images of all the examples"
-    echo "  -c, --commit-sha   Update all of the examples to depend on the numaflow-go version with the specified SHA or version"
+    echo "Usage: $0 [-h|--help] (-bp|--build-push | -u|--update <SDK-version>)"
+    echo "  -h, --help          Display help message and exit"
+    echo "  -bp, --build-push   Build the docker images of all the examples and push them to the quay.io registry (with tag: stable)"
+    echo "  -u, --update        Update all of the examples to depend on the numaflow-go version with the specified SHA or version"
 }
 
 function traverse_examples () {
@@ -32,9 +32,9 @@ if [ $# -eq 0 ]; then
 fi
 
 usingHelp=0
-usingBuild=0
-usingSHA=0
-commit_sha=""
+usingBuildPush=0
+usingVersion=0
+version=""
 
 function handle_options () {
   while [ $# -gt 0 ]; do
@@ -42,18 +42,18 @@ function handle_options () {
       -h | --help)
         usingHelp=1
         ;;
-      -b | --build)
-        usingBuild=1
+      -bp | --build-push)
+        usingBuildPush=1
         ;;
-      -c | --commit-sha)
-        usingSHA=1
+      -u | --update)
+        usingVersion=1
         if [ -z "$2" ]; then
           echo "Commit SHA or version not specified." >&2
           show_help
           exit 1
         fi
 
-        commit_sha=$2
+        version=$2
         shift
         ;;
       *)
@@ -68,20 +68,20 @@ function handle_options () {
 
 handle_options "$@"
 
-if (( usingBuild + usingSHA + usingHelp > 1 )); then
-  echo "Only one of '-h', '-b', '-c' is allowed at a time" >&2
+if (( usingBuildPush + usingVersion + usingHelp > 1 )); then
+  echo "Only one of '-h', '-bp', '-u' is allowed at a time" >&2
   show_help
   exit 1
 fi
 
-if [ -n "$commit_sha" ]; then
- echo "Will update to: $commit_sha"
+if [ -n "$version" ]; then
+ echo "Will update to: $version"
 fi
 
-if (( usingBuild )); then
+if (( usingBuildPush )); then
   traverse_examples "make image"
-elif (( usingSHA )); then
-  traverse_examples "go get github.com/numaproj/numaflow-go@$commit_sha" "go mod tidy"
+elif (( usingVersion )); then
+  traverse_examples "go get github.com/numaproj/numaflow-go@$version" "go mod tidy"
 elif (( usingHelp )); then
   show_help
 fi

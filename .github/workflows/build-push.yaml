@@ -15,11 +15,12 @@ jobs:
       max-parallel: 6
       matrix:
         repository: [
-          "map-even-odd",
-          "map-flatmap", "map-forward-message", "map-retry", "map-tickgen",
-          "map-flatmap-stream", "reduce-counter", "reduce-sum", "reduce-stream-counter",
-          "reduce-stream-sum", "session-counter", "sideinput-example", "udf-sideinput-example",
-          "sink-log", "source-simple-source", "mapt-assign-event-time", "mapt-event-time-filter"
+          "sideinput-example", "udf-sideinput-example"
+#          "map-even-odd",
+#          "map-flatmap", "map-forward-message", "map-retry", "map-tickgen",
+#          "map-flatmap-stream", "reduce-counter", "reduce-sum", "reduce-stream-counter",
+#          "reduce-stream-sum", "session-counter", "sideinput-example", "udf-sideinput-example",
+#          "sink-log", "source-simple-source", "mapt-assign-event-time", "mapt-event-time-filter"
         ]
 
     steps:
@@ -35,11 +36,5 @@ jobs:
           registry: quay.io
           username: ${{ secrets.NUMAIO_USERNAME }}
           password: ${{ secrets.NUMAIO_PASSWORD }}
-      - name: Build and tag images
-        run: ./update_examples.sh --build
-      - name: Push images
-        env:
-          IMAGE_PREFIX: "quay.io/numaio/numaflow-go"
-          TAG: "stable"
-        run: |
-          docker push ${{ env.IMAGE_PREFIX }}/${{ matrix.repository }}:${{ env.TAG }}
+      - name: Build, tag, and push images
+        run: ./update_examples.sh --build-push
