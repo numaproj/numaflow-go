@@ -9,6 +9,10 @@ The SDK uses local references in the `go.mod` file, i.e. the `github.com/numapro
 `numaflow-go` directory. Thus, you can automatically test your SDK changes without the need to push to your forked repository or modify the `go.mod` file.
 Simply make your changes, build and push the desired example image (with an appropriate tag, such as `test`), and you are ready to use it in any pipeline.
 
+Each example directory has a Makefile which can be used to build, tag, and push images. In most cases, the `image` target should be used.
+However, `buildx`, which is used to support multiple architectures, does not make a built image available locally. In the case that a developer 
+wants this functionality, they can use the `test-image` target.
+
 ### Deploying
 
 1. Create a PR for your changes. Once merged, it will trigger a workflow to build and push the images for all the examples, 

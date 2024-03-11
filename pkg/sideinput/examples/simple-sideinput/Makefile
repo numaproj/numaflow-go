@@ -9,10 +9,9 @@ build:
 image: build
 	docker buildx build -t "quay.io/numaio/numaflow-go/sideinput-example:${TAG}" --platform linux/amd64,linux/arm64 --target sideinput . --push
 
-# If testing locally, there isn't a need for multi-arch images
 .PHONY: test_image
 test_image: build
-	docker build -t "quay.io/numaio/numaflow-go/sideinput-example:${TAG}" --target udf-sideinput .
+	docker build -t "quay.io/numaio/numaflow-go/sideinput-example:${TAG}" --target sideinput .
 	@if [ "$(PUSH)" = "true" ]; then docker push "quay.io/numaio/numaflow-go/sideinput-example:${TAG}"; fi
 
 clean:
