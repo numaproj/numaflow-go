@@ -100,7 +100,10 @@ if (( usingBuildPush )); then
   traverse_examples "make image"
 elif (( usingBuildPushExample )); then
    cd "./$directoryPath" || exit
-   make image
+   if ! make image; then
+     echo "Error: failed to run make image in $directoryPath" >&2
+     exit 1
+   fi
 elif (( usingVersion )); then
   traverse_examples "go get github.com/numaproj/numaflow-go@$version" "go mod tidy"
 elif (( usingHelp )); then
