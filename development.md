@@ -12,7 +12,7 @@ Simply make your changes, build and push the desired example image, and you are 
 ### Deploying
 
 1. Create a PR for your changes. Once merged, it will trigger a workflow to build and push the images for all the examples, 
-with the tag `stable`. This consistent tag name is used so that the tags in the E2E test pipelines do not need to be 
+with the tag `stable`. This consistent tag name is used so that the tags in the [E2E test pipelines](https://github.com/numaproj/numaflow/tree/main/test) do not need to be 
 updated each time a new change is made. 
 2. After the changes have been merged it is encouraged to update the dependency management files so that the version 
 displayed in the `go.mod` file reflects the commit SHA of the merged changes. This can be done simply by getting the
