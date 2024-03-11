@@ -4,7 +4,7 @@ function show_help () {
     echo "Usage: $0 [-h|--help] (-b|--build | -c|--commit-sha <commit_sha>)"
     echo "  -h, --help         Display help message and exit"
     echo "  -b, --build        Build the docker images of all the examples"
-    echo "  -c, --commit-sha   Update all of the examples to depend on the numaflow-go version with the specified SHA"
+    echo "  -c, --commit-sha   Update all of the examples to depend on the numaflow-go version with the specified SHA or version"
 }
 
 function traverse_examples () {
@@ -48,7 +48,7 @@ function handle_options () {
       -c | --commit-sha)
         usingSHA=1
         if [ -z "$2" ]; then
-          echo "Commit SHA not specified." >&2
+          echo "Commit SHA or version not specified." >&2
           show_help
           exit 1
         fi
@@ -75,7 +75,7 @@ if (( usingBuild + usingSHA + usingHelp > 1 )); then
 fi
 
 if [ -n "$commit_sha" ]; then
- echo "Commit SHA specified: $commit_sha"
+ echo "Will update to: $commit_sha"
 fi
 
 if (( usingBuild )); then
