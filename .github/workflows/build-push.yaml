@@ -8,6 +8,7 @@ on:
 
 jobs:
   docker_publish:
+    name: Build, Tag, and Push Images
     runs-on: ubuntu-latest
 
     strategy:

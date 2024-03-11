@@ -5,11 +5,11 @@ PUSH ?= false
 build:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -o ./dist/retry main.go
 
-.PHONY: image
+.PHONY: image-push
 image: build
 	docker buildx build -t "quay.io/numaio/numaflow-go/map-retry:${TAG}" --platform linux/amd64,linux/arm64 --target retry . --push
 
-.PHONY: test_image
+.PHONY: image
 test_image: build
 	docker build -t "quay.io/numaio/numaflow-go/map-retry:${TAG}" --target map-retry .
 	@if [ "$(PUSH)" = "true" ]; then docker push "quay.io/numaio/numaflow-go/map-retry:${TAG}"; fi

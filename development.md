@@ -20,9 +20,10 @@ with the tag `stable`. This consistent tag name is used so that the tags in the 
 updated each time a new change is made. 
 2. After the changes have been merged it is encouraged to update the dependency management files so that the version 
 displayed in the `go.mod` file reflects the commit SHA of the merged changes. This can be done by getting the
-commit SHA of the merged changes and using it with the update script: 
+commit SHA of the merged changes and using it with the update script. Alternatively, you can provide the specific version that you would like to update to, or even
+pass in `latest` to fetch the latest version from the remote repository:
 ```shell
-./update_examples -u <SDK-version>
+./update_examples -u <SDK-version | commit-sha | latest>
 ```
 After running the script, create another PR for these changes.
 
