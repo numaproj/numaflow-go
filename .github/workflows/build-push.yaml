@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
+      max-parallel: 5
       matrix:
         repository: [
           "map-even-odd",
