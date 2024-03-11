@@ -9,17 +9,22 @@ The SDK uses local references in the `go.mod` file, i.e. the `github.com/numapro
 `numaflow-go` directory. Thus, you can automatically test your SDK changes without the need to push to your forked repository or modify the `go.mod` file.
 Simply make your changes, build and push the desired example image (with an appropriate tag, such as `test`), and you are ready to use it in any pipeline.
 
-Each example directory has a Makefile which can be used to build, tag, and push images. In most cases, the `image` target should be used.
+Each example directory has a Makefile which can be used to build, tag, and push images. In most cases, the `image-push` target should be used.
 However, `buildx`, which is used to support multiple architectures, does not make a built image available locally. In the case that a developer 
-wants this functionality, they can use the `test-image` target.
+wants this functionality, they can use the `image` target.
 
-After making changes to the SDK, if you want to build all the example images at once, rather than individually using the Makefiles, at the root directory you can run:
+After making changes to the SDK, if you want to build all the example images at once, in the root directory you can run:
 ```shell
 ./update_examples.sh -bp -t <tag>
 ```
 The default tag is `stable`, but it is recommended you specify your own for testing purposes, as the Github Actions CI uses the `stable` tag. Note: do not forget to clean up testing tags
 in the registry, i.e. delete them, once you are done testing.
 
+You can alternatively build a specific example image by running the following in the root directory and providing the path to the Dockerfile (relative to root):
+```shell
+./update_examples.sh -bpe <path> -t <tag>
+```
+This is essentially equivalent to running `make image-push` in the example directory itself.
 
 ### Deploying
 
