@@ -17,7 +17,8 @@ After making changes to the SDK, if you want to build all the example images at 
 ```shell
 ./update_examples.sh -bp -t <tag>
 ```
-The default tag is `stable`, but it is recommended you specify your own for testing purposes, as the Github Actions CI uses the `stable` tag.
+The default tag is `stable`, but it is recommended you specify your own for testing purposes, as the Github Actions CI uses the `stable` tag. Note: do not forget to clean up testing tags
+in the registry, i.e. delete them, once you are done testing.
 
 
 ### Deploying
