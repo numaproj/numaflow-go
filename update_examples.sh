@@ -97,10 +97,10 @@ if [ -n "$directoryPath" ]; then
 fi
 
 if (( usingBuildPush )); then
-  traverse_examples "make image"
+  traverse_examples "make image-push"
 elif (( usingBuildPushExample )); then
    cd "./$directoryPath" || exit
-   if ! make image; then
+   if ! make image-push; then
      echo "Error: failed to run make image in $directoryPath" >&2
      exit 1
    fi
