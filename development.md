@@ -13,6 +13,13 @@ Each example directory has a Makefile which can be used to build, tag, and push 
 However, `buildx`, which is used to support multiple architectures, does not make a built image available locally. In the case that a developer 
 wants this functionality, they can use the `test-image` target.
 
+After making changes to the SDK, if you want to build all the example images at once, rather than individually using the Makefiles, at the root directory you can run:
+```shell
+./update_examples.sh -bp -t <tag>
+```
+The default tag is `stable`, but it is recommended you specify your own for testing purposes, as the Github Actions CI uses the `stable` tag.
+
+
 ### Deploying
 
 1. Create a PR for your changes. Once merged, it will trigger a workflow to build and push the images for all the examples, 
@@ -23,7 +30,7 @@ displayed in the `go.mod` file reflects the commit SHA of the merged changes. Th
 commit SHA of the merged changes and using it with the update script. Alternatively, you can provide the specific version that you would like to update to, or even
 pass in `latest` to fetch the latest version from the remote repository:
 ```shell
-./update_examples -u <SDK-version | commit-sha | latest>
+./update_examples.sh -u <SDK-version | commit-sha | latest>
 ```
 After running the script, create another PR for these changes.
 
