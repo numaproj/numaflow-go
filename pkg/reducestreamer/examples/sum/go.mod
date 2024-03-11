@@ -2,7 +2,9 @@ module sum
 
 go 1.20
 
-require github.com/numaproj/numaflow-go v0.6.1-0.20240212202512-715955f1e069
+replace github.com/numaproj/numaflow-go => ../../../..
+
+require github.com/numaproj/numaflow-go v0.6.1-0.20240221033908-7c1198bc89f1
 
 require (
 	github.com/golang/protobuf v1.5.3 // indirect
