@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function show_help () {
-    echo "Usage: $0 [-h|--help | -t|--tag <tag>] (-bp|--build-push | -bpe|--build-push-example | -u|--update <SDK-version>)"
+    echo "Usage: $0 [-h|--help | -t|--tag <tag>] (-bp|--build-push | -bpe|--build-push-example <path> | -u|--update <SDK-version | commit-sha | latest >)"
     echo "  -h, --help                   Display help message and exit"
     echo "  -bp, --build-push            Build the Dockerfiles of all the examples and push them to the quay.io registry"
     echo "  -bpe, --build-push-example   Build the Dockerfile of the given example directory path, and push it to the quay.io registry"
