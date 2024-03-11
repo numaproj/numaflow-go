@@ -5,7 +5,7 @@ build:
 .PHONY: image
 #To build an image that supports multiple platforms(linux/amd64,linux/arm64) and push to quay.io, use the following command
 image: build
-	docker buildx build -t "quay.io/numaio/numaflow-go/udf-sideinput-example:stable" --platform linux/amd64,linux/arm64 --output = tar --target udf-sideinput .
+	docker buildx build -t "quay.io/numaio/numaflow-go/udf-sideinput-example:stable" --platform linux/amd64,linux/arm64 --output type=local --target udf-sideinput .
 
 
 
