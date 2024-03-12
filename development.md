@@ -31,21 +31,20 @@ This is essentially equivalent to running `make image-push TAG=<tag>` in the exa
 1. Create a PR for your changes. Once merged, it will trigger a workflow to build and push the images for all the examples, 
 with the tag `stable`. This consistent tag name is used so that the tags in the [E2E test pipelines](https://github.com/numaproj/numaflow/tree/main/test) do not need to be 
 updated each time a new change is made. 
-2. After the changes have been merged it is encouraged to update the dependency management files so that the version 
+2. If the change that you have introduced is a breaking change, then after merge you should update the dependency management files so that the version 
 displayed in the `go.mod` file reflects the commit SHA of the merged changes. This can be done by getting the
 commit SHA of the merged changes and using it with the update script. Alternatively, you can provide the specific version that you would like to update to, or even
 pass in `latest` to fetch the latest version from the remote repository:
 ```shell
 ./update_examples.sh -u <SDK-version | commit-sha | latest>
 ```
-After running the script, create another PR for these changes.
+After running the script, create another PR for these changes. Ideally, the update script should only be need to run when a new version is released, i.e. provide a version or `latest` to it,
+or when a breaking change is merged before the next release, i.e. provide a commit SHA to it. If your merged change is a small chore, then it is unnecessary to run the update script as we want to
+avoid flooding the commit history with dependency updates.
 
 Updating the version may not seem necessary since we are using local references. However, the client prints
 out information related to the server, which includes the SDK version, which is retrieved from the `go.mod` file.
-After a change is merged, even though the images will be using the most up to date SDK
-version, if the dependency management files are not updated, the logs will print the previous commit SHA as the SDK version.
+After a change is merged/new release, even though the images will be using the most up to date SDK
+version, if the dependency management files are not updated, the logs will print the previous version as the current SDK version.
 Thus, in order for the correctness of the server information, consistency, and to avoid future confusion, it is recommended 
-to update the `numaflow-go` dependency version across all the example directories, after a change has been made to the SDK.
-
-
-
+to update the `numaflow-go` dependency version across all the example directories, after a large/breaking change or new release.
