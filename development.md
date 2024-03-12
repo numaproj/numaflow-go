@@ -39,7 +39,8 @@ pass in `latest` to fetch the latest version from the remote repository:
 ./update_examples.sh -u <SDK-version | commit-sha | latest>
 ```
 After running the script, create another PR for these changes. Ideally, the update script should only be need to run when a new version is released, i.e. provide a version or `latest` to it,
-or when a breaking change is merged before the next release, i.e. provide a commit SHA to it.
+or when a breaking change is merged before the next release, i.e. provide a commit SHA to it. If your merged change is a small chore, then it is unnecessary to run the update script as we want to
+avoid flooding the commit history with dependency updates.
 
 Updating the version may not seem necessary since we are using local references. However, the client prints
 out information related to the server, which includes the SDK version, which is retrieved from the `go.mod` file.
