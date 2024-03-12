@@ -48,6 +48,3 @@ After a change is merged, even though the images will be using the most up to da
 version, if the dependency management files are not updated, the logs will print the previous commit SHA as the SDK version.
 Thus, in order for the correctness of the server information, consistency, and to avoid future confusion, it is recommended 
 to update the `numaflow-go` dependency version across all the example directories, after a  large/breaking change or new release.
-
-
-
