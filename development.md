@@ -31,7 +31,7 @@ This is essentially equivalent to running `make image-push TAG=<tag>` in the exa
 1. Create a PR for your changes. Once merged, it will trigger a workflow to build and push the images for all the examples, 
 with the tag `stable`. This consistent tag name is used so that the tags in the [E2E test pipelines](https://github.com/numaproj/numaflow/tree/main/test) do not need to be 
 updated each time a new change is made. 
-2. If the change that you have introduced is a breaking change, i.e. adds new features/logic, then after merge it is encouraged to update the dependency management files so that the version 
+2. If the change that you have introduced is a breaking change, then after merge you should update the dependency management files so that the version 
 displayed in the `go.mod` file reflects the commit SHA of the merged changes. This can be done by getting the
 commit SHA of the merged changes and using it with the update script. Alternatively, you can provide the specific version that you would like to update to, or even
 pass in `latest` to fetch the latest version from the remote repository:
