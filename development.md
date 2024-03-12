@@ -44,7 +44,7 @@ avoid flooding the commit history with dependency updates.
 
 Updating the version may not seem necessary since we are using local references. However, the client prints
 out information related to the server, which includes the SDK version, which is retrieved from the `go.mod` file.
-After new release/a change is merged, even though the images will be using the most up to date SDK
+After a change is merged/new release, even though the images will be using the most up to date SDK
 version, if the dependency management files are not updated, the logs will print the previous version as the current SDK version.
 Thus, in order for the correctness of the server information, consistency, and to avoid future confusion, it is recommended 
 to update the `numaflow-go` dependency version across all the example directories, after a large/breaking change or new release.
