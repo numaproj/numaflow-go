@@ -102,14 +102,8 @@ if (( usingBuildPush + usingBuildPushExample + usingVersion + usingHelp > 1 )); 
   exit 1
 fi
 
-if (( usingTag + usingVersion + usingHelp > 1 )); then
+if (( usingTag + usingVersion + usingHelp > 1 || (usingTag && usingBuildPush + usingBuildPushExample == 0) )); then
   echo "Can only use -t with -bp or -bpe" >&2
-  show_help
-  exit 1
-fi
-
-if (( usingTag )) && (( usingBuildPush + usingBuildPushExample == 0 )); then
-  echo "Cannot run -t alone, please use it with -bpe or -bp" >&2
   show_help
   exit 1
 fi
@@ -122,7 +116,7 @@ if [ -n "$directoryPath" ]; then
  echo "Dockerfile path to use: $directoryPath"
 fi
 
-if [ -n "$tag" ] && (( ! usingVersion )); then
+if [ -n "$tag" ] && (( ! usingVersion )) && (( ! usingHelp )); then
  echo "Using tag: $tag"
 fi
 
