@@ -102,7 +102,7 @@ if (( usingBuildPush + usingBuildPushExample + usingVersion + usingHelp > 1 )); 
   exit 1
 fi
 
-if (( usingTag + usingVersion + usingHelp > 1 || (usingTag && usingBuildPush + usingBuildPushExample == 0) )); then
+if (( (usingTag + usingVersion + usingHelp > 1) || (usingTag && usingBuildPush + usingBuildPushExample == 0) )); then
   echo "Can only use -t with -bp or -bpe" >&2
   show_help
   exit 1
