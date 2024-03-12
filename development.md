@@ -24,7 +24,7 @@ You can alternatively build a specific example image by running the following in
 ```shell
 ./update_examples.sh -bpe <path> -t <tag>
 ```
-This is essentially equivalent to running `make image-push` in the example directory itself.
+This is essentially equivalent to running `make image-push TAG=<tag>` in the example directory itself.
 
 ### Deploying
 
