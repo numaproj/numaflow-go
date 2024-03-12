@@ -125,7 +125,7 @@ if (( usingBuildPush )); then
 elif (( usingBuildPushExample )); then
    cd "./$directoryPath" || exit
    if ! make image-push TAG="$tag"; then
-     echo "Error: failed to run make image in $directoryPath" >&2
+     echo "Error: failed to run make image-push in $directoryPath" >&2
      exit 1
    fi
 elif (( usingVersion )); then
