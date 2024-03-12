@@ -15,14 +15,14 @@ wants this functionality, they can use the `image` target.
 
 After making changes to the SDK, if you want to build all the example images at once, in the root directory you can run:
 ```shell
-./update_examples.sh -bp -t <tag>
+./hack/update_examples.sh -bp -t <tag>
 ```
 The default tag is `stable`, but it is recommended you specify your own for testing purposes, as the Github Actions CI uses the `stable` tag. Note: do not forget to clean up testing tags
 in the registry, i.e. delete them, once you are done testing.
 
 You can alternatively build a specific example image by running the following in the root directory and providing the path to the Dockerfile (relative to root):
 ```shell
-./update_examples.sh -bpe <path> -t <tag>
+./hack/update_examples.sh -bpe <path> -t <tag>
 ```
 This is essentially equivalent to running `make image-push TAG=<tag>` in the example directory itself.
 
@@ -36,7 +36,7 @@ displayed in the `go.mod` file reflects the commit SHA of the merged changes. Th
 commit SHA of the merged changes and using it with the update script. Alternatively, you can provide the specific version that you would like to update to, or even
 pass in `latest` to fetch the latest version from the remote repository:
 ```shell
-./update_examples.sh -u <SDK-version | commit-sha | latest>
+./hack/update_examples.sh -u <SDK-version | commit-sha | latest>
 ```
 After running the script, create another PR for these changes. Ideally, the update script should only be need to run when a new version is released, i.e. provide a version or `latest` to it,
 or when a breaking change is merged before the next release, i.e. provide a commit SHA to it. If your merged change is a small chore, then it is unnecessary to run the update script as we want to
