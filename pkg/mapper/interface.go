@@ -10,6 +10,7 @@ type Datum interface {
 	Value() []byte
 	EventTime() time.Time
 	Watermark() time.Time
+	Headers() map[string]string
 }
 
 // Mapper is the interface of map function implementation.

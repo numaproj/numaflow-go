@@ -12,6 +12,7 @@ type Datum interface {
 	EventTime() time.Time
 	Watermark() time.Time
 	ID() string
+	Headers() map[string]string
 }
 
 // Sinker is the interface of sink function implementation.

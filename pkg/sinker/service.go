@@ -25,6 +25,7 @@ type handlerDatum struct {
 	value     []byte
 	eventTime time.Time
 	watermark time.Time
+	headers   map[string]string
 }
 
 func (h *handlerDatum) Keys() []string {
@@ -45,6 +46,10 @@ func (h *handlerDatum) EventTime() time.Time {
 
 func (h *handlerDatum) Watermark() time.Time {
 	return h.watermark
+}
+
+func (h *handlerDatum) Headers() map[string]string {
+	return h.headers
 }
 
 // Service implements the proto gen server interface and contains the sinkfn operation handler.
@@ -98,6 +103,7 @@ func (fs *Service) SinkFn(stream sinkpb.Sink_SinkFnServer) error {
 			keys:      d.GetKeys(),
 			eventTime: d.GetEventTime().AsTime(),
 			watermark: d.GetWatermark().AsTime(),
+			headers:   d.GetHeaders(),
 		}
 		datumStreamCh <- hd
 	}

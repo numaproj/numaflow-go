@@ -10,6 +10,7 @@ type Datum interface {
 	Value() []byte
 	EventTime() time.Time
 	Watermark() time.Time
+	Headers() map[string]string
 }
 
 // Metadata contains methods to get the metadata for the reduceStream operation.

@@ -10,6 +10,7 @@ type Datum interface {
 	Value() []byte
 	EventTime() time.Time
 	Watermark() time.Time
+	Headers() map[string]string
 }
 
 // SessionReducer is the interface which can be used to implement a session reduce operation.
