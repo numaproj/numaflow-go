@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
+
 	sourcesdk "github.com/numaproj/numaflow-go/pkg/sourcer"
 )
 
@@ -52,12 +54,15 @@ func (s *SimpleSource) Read(_ context.Context, readRequest sourcesdk.ReadRequest
 			return
 		default:
 			s.lock.Lock()
+			headers := map[string]string{
+				"x-txn-id": uuid.NewString(),
+			}
 			// Otherwise, we read the data from the source and send the data to the message channel.
 			offsetValue := serializeOffset(s.readIdx)
 			messageCh <- sourcesdk.NewMessage(
 				[]byte(strconv.FormatInt(s.readIdx, 10)),
 				sourcesdk.NewOffsetWithDefaultPartitionId(offsetValue),
-				time.Now())
+				time.Now()).WithHeaders(headers)
 			// Mark the offset as to be acked, and increment the read index.
 			s.toAckSet[s.readIdx] = struct{}{}
 			s.readIdx++

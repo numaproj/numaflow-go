@@ -57,6 +57,7 @@ func TestService_SinkFn(t *testing.T) {
 					Value:     []byte(strconv.Itoa(10)),
 					EventTime: timestamppb.New(time.Time{}),
 					Watermark: timestamppb.New(time.Time{}),
+					Headers:   map[string]string{"x-txn-id": "test-txn-1"},
 				},
 				{
 					Id:        "two-processed",
@@ -64,6 +65,7 @@ func TestService_SinkFn(t *testing.T) {
 					Value:     []byte(strconv.Itoa(20)),
 					EventTime: timestamppb.New(time.Time{}),
 					Watermark: timestamppb.New(time.Time{}),
+					Headers:   map[string]string{"x-txn-id": "test-txn-2"},
 				},
 				{
 					Id:        "three-processed",
@@ -71,6 +73,7 @@ func TestService_SinkFn(t *testing.T) {
 					Value:     []byte(strconv.Itoa(30)),
 					EventTime: timestamppb.New(time.Time{}),
 					Watermark: timestamppb.New(time.Time{}),
+					Headers:   map[string]string{"x-txn-id": "test-txn-3"},
 				},
 			},
 			sh: SinkerFunc(func(ctx context.Context, rch <-chan Datum) Responses {
@@ -109,6 +112,7 @@ func TestService_SinkFn(t *testing.T) {
 					Value:     []byte(strconv.Itoa(10)),
 					EventTime: timestamppb.New(time.Time{}),
 					Watermark: timestamppb.New(time.Time{}),
+					Headers:   map[string]string{"x-txn-id": "test-txn-1"},
 				},
 				{
 					Id:        "two-processed",
@@ -123,6 +127,7 @@ func TestService_SinkFn(t *testing.T) {
 					Value:     []byte(strconv.Itoa(30)),
 					EventTime: timestamppb.New(time.Time{}),
 					Watermark: timestamppb.New(time.Time{}),
+					Headers:   map[string]string{"x-txn-id": "test-txn-2"},
 				},
 			},
 			sh: SinkerFunc(func(ctx context.Context, rch <-chan Datum) Responses {
