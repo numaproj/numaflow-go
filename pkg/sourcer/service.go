@@ -76,6 +76,7 @@ func (fs *Service) ReadFn(d *sourcepb.ReadRequest, stream sourcepb.Source_ReadFn
 				Offset:    offset,
 				EventTime: timestamppb.New(msg.EventTime()),
 				Keys:      msg.Keys(),
+				Headers:   msg.Headers(),
 			},
 		}
 		// The error here is returned by the stream, which is already a gRPC error

@@ -109,6 +109,7 @@ func TestService_SessionReduceFn(t *testing.T) {
 						Value:     []byte(strconv.Itoa(10)),
 						EventTime: timestamppb.New(time.Time{}),
 						Watermark: timestamppb.New(time.Time{}),
+						Headers:   map[string]string{"x-txn-id": "test-txn-1"},
 					},
 					Operation: &sessionreducepb.SessionReduceRequest_WindowOperation{
 						Event: sessionreducepb.SessionReduceRequest_WindowOperation_OPEN,

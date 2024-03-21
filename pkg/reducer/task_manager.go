@@ -166,5 +166,10 @@ func generateKey(window *v1.Window, keys []string) string {
 }
 
 func buildDatum(request *v1.ReduceRequest) Datum {
-	return NewHandlerDatum(request.Payload.GetValue(), request.Payload.EventTime.AsTime(), request.Payload.Watermark.AsTime())
+	return NewHandlerDatum(
+		request.GetPayload().GetValue(),
+		request.GetPayload().GetEventTime().AsTime(),
+		request.GetPayload().GetWatermark().AsTime(),
+		request.GetPayload().GetHeaders(),
+	)
 }

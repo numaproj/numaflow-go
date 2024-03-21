@@ -320,5 +320,10 @@ func generateKey(keyedWindow *v1.KeyedWindow) string {
 }
 
 func buildDatum(payload *v1.SessionReduceRequest_Payload) Datum {
-	return NewHandlerDatum(payload.GetValue(), payload.EventTime.AsTime(), payload.Watermark.AsTime())
+	return NewHandlerDatum(
+		payload.GetValue(),
+		payload.GetEventTime().AsTime(),
+		payload.GetWatermark().AsTime(),
+		payload.GetHeaders(),
+	)
 }

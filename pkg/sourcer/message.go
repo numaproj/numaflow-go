@@ -15,6 +15,7 @@ type Message struct {
 	offset    Offset
 	eventTime time.Time
 	keys      []string
+	headers   map[string]string
 }
 
 // NewMessage creates a Message with value
@@ -28,9 +29,20 @@ func (m Message) WithKeys(keys []string) Message {
 	return m
 }
 
+// WithHeaders is used to assign the headers to the message
+func (m Message) WithHeaders(headers map[string]string) Message {
+	m.headers = headers
+	return m
+}
+
 // Keys returns message keys
 func (m Message) Keys() []string {
 	return m.keys
+}
+
+// Headers returns message headers
+func (m Message) Headers() map[string]string {
+	return m.headers
 }
 
 // Value returns message value
@@ -67,7 +79,7 @@ func NewOffsetWithDefaultPartitionId(value []byte) Offset {
 }
 
 // DefaultPartitions returns default partitions for the source.
-// It can be used in the Partitions() function of the Sourcer interface only 
+// It can be used in the Partitions() function of the Sourcer interface only
 // if the source doesn't have partitions. DefaultPartition will be the pod replica
 // index of the source.
 func DefaultPartitions() []int32 {

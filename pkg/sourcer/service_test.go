@@ -24,7 +24,7 @@ var testPartitions = []int32{1, 3, 5}
 type TestSource struct{}
 
 func (ts TestSource) Read(_ context.Context, _ ReadRequest, messageCh chan<- Message) {
-	msg := NewMessage([]byte(`test`), Offset{}, testEventTime)
+	msg := NewMessage([]byte(`test`), Offset{}, testEventTime).WithHeaders(map[string]string{"x-txn-id": "test-txn-id"})
 	messageCh <- msg.WithKeys([]string{testKey})
 }
 
@@ -120,6 +120,7 @@ func TestService_ReadFn(t *testing.T) {
 						Offset:    &sourcepb.Offset{},
 						EventTime: timestamppb.New(testEventTime),
 						Keys:      []string{testKey},
+						Headers:   map[string]string{"x-txn-id": "test-txn-id"},
 					},
 				},
 			},
@@ -140,6 +141,7 @@ func TestService_ReadFn(t *testing.T) {
 						Offset:    &sourcepb.Offset{},
 						EventTime: timestamppb.New(testEventTime),
 						Keys:      []string{testKey},
+						Headers:   map[string]string{"x-txn-id": "test-txn-id"},
 					},
 				},
 			},
