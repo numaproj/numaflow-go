@@ -10,6 +10,7 @@ type Datum interface {
 	Value() []byte
 	EventTime() time.Time
 	Watermark() time.Time
+	Headers() map[string]string
 }
 
 // SourceTransformer is the interface of SourceTransformer function implementation.

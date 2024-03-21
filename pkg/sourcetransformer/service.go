@@ -32,7 +32,7 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*v1.ReadyResponse, 
 // In addition to map function, SourceTransformFn also supports assigning a new event time to response.
 // SourceTransformFn can be used only at source vertex by source data transformer.
 func (fs *Service) SourceTransformFn(ctx context.Context, d *v1.SourceTransformRequest) (*v1.SourceTransformResponse, error) {
-	var hd = NewHandlerDatum(d.GetValue(), d.EventTime.AsTime(), d.Watermark.AsTime())
+	var hd = NewHandlerDatum(d.GetValue(), d.EventTime.AsTime(), d.Watermark.AsTime(), d.Headers)
 	messageTs := fs.Transformer.Transform(ctx, d.GetKeys(), hd)
 	var results []*v1.SourceTransformResponse_Result
 	for _, m := range messageTs.Items() {
