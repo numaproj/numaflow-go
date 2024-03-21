@@ -16,4 +16,9 @@ proto:
 generate:
 	go generate ./...
 
+.PHONY: image-push-all
+image-push-all:
+	for dir in $(shell find ./pkg -name 'Makefile' -exec dirname {} \;); do \
+		$(MAKE) -C $$dir image-push TAG=$(TAG); \
+	done
 
