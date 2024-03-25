@@ -7,6 +7,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/numaproj/numaflow-go/internal"
 	sourcepb "github.com/numaproj/numaflow-go/pkg/apis/proto/source/v1"
 )
 
@@ -14,7 +15,7 @@ const (
 	uds                   = "unix"
 	defaultMaxMessageSize = 1024 * 1024 * 64 // 64MB
 	address               = "/var/run/numaflow/source.sock"
-	serverInfoFilePath    = "/var/run/numaflow/sourcer-server-info"
+	serverInfoFilePath    = internal.MapServerInfo
 )
 
 // Service implements the proto gen server interface
