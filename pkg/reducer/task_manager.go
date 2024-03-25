@@ -95,8 +95,6 @@ func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.Reduce
 			// write the output to the output channel, service will forward it to downstream
 			rtm.responseCh <- task.buildReduceResponse(message)
 		}
-		// send EOF
-		rtm.responseCh <- task.buildEOFResponse()
 		// close the output channel after the reduce function is done
 		close(task.outputCh)
 		// send a done signal
@@ -133,27 +131,21 @@ func (rtm *reduceTaskManager) OutputChannel() <-chan *v1.ReduceResponse {
 
 // WaitAll waits for all the reduce tasks to complete.
 func (rtm *reduceTaskManager) WaitAll() {
-	tasks := make([]*reduceTask, 0, len(rtm.tasks))
+	var eofResponse *v1.ReduceResponse
 	for _, task := range rtm.tasks {
-		tasks = append(tasks, task)
-	}
-
-	for _, task := range tasks {
 		<-task.doneCh
+		if eofResponse == nil {
+			eofResponse = task.buildEOFResponse()
+		}
 	}
-
+	rtm.responseCh <- eofResponse
 	// after all the tasks are completed, close the output channel
 	close(rtm.responseCh)
 }
 
 // CloseAll closes all the reduce tasks.
 func (rtm *reduceTaskManager) CloseAll() {
-	tasks := make([]*reduceTask, 0, len(rtm.tasks))
 	for _, task := range rtm.tasks {
-		tasks = append(tasks, task)
-	}
-
-	for _, task := range tasks {
 		close(task.inputCh)
 	}
 }
