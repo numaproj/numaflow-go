@@ -45,3 +45,8 @@ files to reflect this new version:
 After running the above, create a PR for the changes that the script made. Once merged, it will trigger the Docker Publish workflow.
 As a result, the correct SDK version will always be printed in the server information logs, 
 and the example images will always be using the latest changes (due to the local references).
+
+### Adding a New Example
+
+If you add a new example, in order for it to be used by the Docker Publish workflow, add the path to 
+the example to the `dockerfile_paths` matrix in `build-push.yaml`.
