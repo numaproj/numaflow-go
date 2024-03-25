@@ -8,6 +8,9 @@ on:
 
 jobs:
   docker_publish:
+    # run it only on numaproj/numaflow-go repository
+    # forked repositories normally don't have the proper permission setup.
+    if: ${{ github.repository }} == "numaproj/numaflow-go"
     name: Build, Tag, and Push Image
     runs-on: ubuntu-latest
 
@@ -17,9 +20,9 @@ jobs:
           "pkg/mapper/examples/even_odd", "pkg/mapper/examples/flatmap", "pkg/mapper/examples/forward_message",
           "pkg/mapper/examples/retry", "pkg/mapper/examples/tickgen", "pkg/mapstreamer/examples/flatmap_stream",
           "pkg/reducer/examples/counter", "pkg/reducer/examples/sum", "pkg/reducestreamer/examples/counter",
-          "pkg/reducestreamer/examples/sum", "pkg/sessionreducer/examples/counter", "pkg/sideinput/examples/simple-sideinput/udf",
-          "pkg/sideinput/examples/simple-sideinput", "pkg/sinker/examples/log", "pkg/sourcer/examples/simple_source",
-          "pkg/sourcetransformer/examples/assign_event_time", "pkg/sourcetransformer/examples/event_time_filter"
+          "pkg/reducestreamer/examples/sum", "pkg/sessionreducer/examples/counter", "pkg/sessionreducer/examples/sum",
+          "pkg/sideinput/examples/simple-sideinput/udf", "pkg/sideinput/examples/simple-sideinput", "pkg/sinker/examples/log",
+          "pkg/sourcer/examples/simple_source", "pkg/sourcetransformer/examples/assign_event_time", "pkg/sourcetransformer/examples/event_time_filter"
         ]
 
     steps:
