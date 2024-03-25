@@ -1,4 +1,4 @@
-# Development
+# Developer Guide
 
 This document explains the development process for the Numaflow Go SDK.
 
