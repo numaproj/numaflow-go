@@ -1,50 +1,47 @@
-# Development
+# Developer Guide
 
 This document explains the development process for the Numaflow Go SDK.
-
 
 ### Testing
 
 The SDK uses local references in the `go.mod` file, i.e. the `github.com/numaproj/numaflow-go` dependency is pointing to your local
 `numaflow-go` directory. Thus, you can automatically test your SDK changes without the need to push to your forked repository or modify the `go.mod` file.
-Simply make your changes, build and push the desired example image (with an appropriate tag, such as `test`), and you are ready to use it in any pipeline.
+Simply make your changes, build the desired example image, and you are ready to use it in any pipeline.
 
-Each example directory has a Makefile which can be used to build, tag, and push images. In most cases, the `image-push` target should be used.
-However, `buildx`, which is used to support multiple architectures, does not make a built image available locally. In the case that a developer 
-wants this functionality, they can use the `image` target.
+Each example directory has a Makefile which can be used to build, tag, and push images.
+If you want to build and tag the image and then immediately push it to quay.io, use the `image-push` target.
+If you want to build and tag a local image without pushing, use the `image` target.
 
-After making changes to the SDK, if you want to build all the example images at once, in the root directory you can run:
+If you want to build and push all the example images at once, you can run:
 ```shell
 ./hack/update_examples.sh -bp -t <tag>
 ```
-The default tag is `stable`, but it is recommended you specify your own for testing purposes, as the Github Actions CI uses the `stable` tag. Note: do not forget to clean up testing tags
-in the registry, i.e. delete them, once you are done testing.
+The default tag is `stable`, but it is recommended you specify your own for testing purposes, as the Github Actions CI uses the `stable` tag.
+This consistent tag name is used so that the tags in the [E2E test pipelines](https://github.com/numaproj/numaflow/tree/main/test) do not need to be updated each time an SDK change is made.
 
-You can alternatively build a specific example image by running the following in the root directory and providing the path to the Dockerfile (relative to root):
+You can alternatively build and push a specific example image by running the following:
 ```shell
-./hack/update_examples.sh -bpe <path> -t <tag>
+./hack/update_examples.sh -bpe <path-to-dockerfile> -t <tag>
 ```
 This is essentially equivalent to running `make image-push TAG=<tag>` in the example directory itself.
 
+Note: before running the script, ensure that through the CLI, you are logged into quay.io.
+
 ### Deploying
 
-1. Create a PR for your changes. Once merged, it will trigger a workflow to build and push the images for all the examples, 
-with the tag `stable`. This consistent tag name is used so that the tags in the [E2E test pipelines](https://github.com/numaproj/numaflow/tree/main/test) do not need to be 
-updated each time a new change is made. 
-2. If the change that you have introduced is a breaking change, then after merge you should update the dependency management files so that the version 
-displayed in the `go.mod` file reflects the commit SHA of the merged changes. This can be done by getting the
-commit SHA of the merged changes and using it with the update script. Alternatively, you can provide the specific version that you would like to update to, or even
-pass in `latest` to fetch the latest version from the remote repository:
-```shell
-./hack/update_examples.sh -u <SDK-version | commit-sha | latest>
-```
-After running the script, create another PR for these changes. Ideally, the update script should only be need to run when a new version is released, i.e. provide a version or `latest` to it,
-or when a breaking change is merged before the next release, i.e. provide a commit SHA to it. If your merged change is a small chore, then it is unnecessary to run the update script as we want to
-avoid flooding the commit history with dependency updates.
+After confirming that your changes pass local testing:
+1. Clean up testing artifacts
+2. Create a PR. Once your PR has been merged, a Github Actions workflow (Docker Publish) will be triggered, to build, tag (with `stable`), and push
+   all example images. This ensures that all example images are using the most up-to-date version of the SDK, i.e. the one including your
+   changes.
 
-Updating the version may not seem necessary since we are using local references. However, the client prints
-out information related to the server, which includes the SDK version, which is retrieved from the `go.mod` file.
-After a change is merged/new release, even though the images will be using the most up to date SDK
-version, if the dependency management files are not updated, the logs will print the previous version as the current SDK version.
-Thus, in order for the correctness of the server information, consistency, and to avoid future confusion, it is recommended 
-to update the `numaflow-go` dependency version across all the example directories, after a large/breaking change or new release.
+### After release
+
+Once a new version has been released, and its corresponding version tag exists on the remote repo, you want to update the `go.mod` 
+files to reflect this new version:
+```shell
+./hack/update_examples.sh -u <version>
+  ```
+After running the above, create a PR for the changes that the script made. Once merged, it will trigger the Docker Publish workflow.
+As a result, the correct SDK version will always be printed in the server information logs, 
+and the example images will always be using the latest changes (due to the local references).
