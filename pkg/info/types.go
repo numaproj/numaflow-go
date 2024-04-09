@@ -15,10 +15,13 @@ const (
 	Java   Language = "java"
 )
 
+const MinimumClientVersion = ">= 1.2.0-0"
+
 // ServerInfo is the information about the server
 type ServerInfo struct {
-	Protocol Protocol          `json:"protocol"`
-	Language Language          `json:"language"`
-	Version  string            `json:"version"`
-	Metadata map[string]string `json:"metadata"`
+	Protocol             Protocol          `json:"protocol"`
+	Language             Language          `json:"language"`
+	MinimumClientVersion string            `json:"minimumClientVersion"`
+	Version              string            `json:"version"`
+	Metadata             map[string]string `json:"metadata"`
 }
