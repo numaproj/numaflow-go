@@ -15,7 +15,7 @@ const (
 	Java   Language = "java"
 )
 
-// MinimumNumaflowVersion specifies the minimum Numaflow version required by the current SDK version
+// MinimumNumaflowVersion specifies the minimum Numaflow version required by the latest SDK version
 const MinimumNumaflowVersion = "1.2.0-0"
 
 // ServerInfo is the information about the server
