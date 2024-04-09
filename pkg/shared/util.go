@@ -19,7 +19,7 @@ const (
 func PrepareServer(sockAddr string, infoFilePath string) (net.Listener, error) {
 	// If infoFilePath is not empty, write the server info to the file.
 	if infoFilePath != "" {
-		serverInfo := &info.ServerInfo{Protocol: info.UDS, Language: info.Go, MinimumClientVersion: info.MinimumClientVersion, Version: info.GetSDKVersion()}
+		serverInfo := &info.ServerInfo{Protocol: info.UDS, Language: info.Go, MinimumNumaflowVersion: info.MinimumNumaflowVersion, Version: info.GetSDKVersion()}
 		if err := info.Write(serverInfo, info.WithServerInfoFilePath(infoFilePath)); err != nil {
 			return nil, err
 		}
