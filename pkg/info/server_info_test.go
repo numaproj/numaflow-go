@@ -55,10 +55,11 @@ func Test_Read_Write(t *testing.T) {
 	filepath := os.TempDir() + "/server-info"
 	defer os.Remove(filepath)
 	info := &ServerInfo{
-		Protocol: TCP,
-		Language: Java,
-		Version:  "11",
-		Metadata: map[string]string{"key1": "value1", "key2": "value2"},
+		Protocol:             TCP,
+		Language:             Java,
+		MinimumClientVersion: MinimumClientVersion,
+		Version:              "11",
+		Metadata:             map[string]string{"key1": "value1", "key2": "value2"},
 	}
 	err := Write(info, WithServerInfoFilePath(filepath))
 	assert.NoError(t, err)
