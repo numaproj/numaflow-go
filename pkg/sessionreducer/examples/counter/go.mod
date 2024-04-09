@@ -5,7 +5,7 @@ go 1.20
 replace github.com/numaproj/numaflow-go => ../../../..
 
 require (
-	github.com/numaproj/numaflow-go v0.6.0
+	github.com/numaproj/numaflow-go v0.7.0-rc1
 	go.uber.org/atomic v1.11.0
 )
 
