@@ -35,18 +35,7 @@ After confirming that your changes pass local testing:
    all example images. This ensures that all example images are using the most up-to-date version of the SDK, i.e. the one including your
    changes.
 
-### After release
-
-Once a new version has been released, and its corresponding version tag exists on the remote repo, you want to update the `go.mod` 
-files to reflect this new version:
-```shell
-./hack/update_examples.sh -u <version>
-  ```
-After running the above, create a PR for the changes that the script made. Once merged, it will trigger the Docker Publish workflow.
-As a result, the correct SDK version will always be printed in the server information logs, 
-and the example images will always be using the latest changes (due to the local references).
-
 ### Adding a New Example
 
 If you add a new example, in order for it to be used by the Docker Publish workflow, add its path
-to the `dockerfile_paths` matrix in `build-push.yaml`.
+to the `dockerfile_paths` matrix in `.github/workflows/build-push.yaml`.
