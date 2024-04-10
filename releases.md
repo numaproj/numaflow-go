@@ -20,5 +20,5 @@ After running the above, create a PR for the changes that the script made. Once 
 As a result, the correct SDK version will always be printed in the server information logs,
 and the example images will always be using the latest changes (due to the local references).
 
-If the newly released version has backwards incompatible changes, i.e. it does not support older versions of the Numaflow platform,
-you must update the `MinimumNumaflowVersion` constant in the `pkg/info/types.go` file to the new minimum Numaflow version that is supported. 
+If the released version has backwards incompatible changes, i.e. it does not support older versions of the Numaflow platform,
+you must update the `MinimumNumaflowVersion` constant in the `pkg/info/types.go` file to the minimum Numaflow version that is supported by your new SDK version. 
