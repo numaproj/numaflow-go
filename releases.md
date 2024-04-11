@@ -20,7 +20,7 @@ on your situation. Finally, click `Publish release`, and your version tag will b
 Once a new version has been released, and its corresponding version tag exists on the remote repo, you want to update the `go.mod`
 files to reflect this new version:
 ```shell
-./hack/update_examples.sh -u <version>
+./hack/update_examples.sh -u <version-tag>
   ```
 After running the above, create a PR for the changes that the script made. Once merged, it will trigger the Docker Publish workflow.
 As a result, the correct SDK version will always be printed in the server information logs,
