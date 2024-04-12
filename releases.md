@@ -25,7 +25,7 @@ changes that you would like to highlight as part of the release, add those to th
 files to reflect this new version:
     ```shell
     ./hack/update_examples.sh -u <version-tag>
-      ```
+    ```
 2. Create a PR for the changes that the script made. Once merged, it will trigger the `Docker Publish` workflow.
 As a result, the correct SDK version will always be printed in the server information logs,
 and the example images will always be using the latest changes (due to the local references)
