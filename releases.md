@@ -26,7 +26,7 @@ files to reflect this new version:
     ```shell
     ./hack/update_examples.sh -u <version-tag>
       ```
-2. After running the above, create a PR for the changes that the script made. Once merged, it will trigger the `Docker Publish` workflow.
+2. Create a PR for the changes that the script made. Once merged, it will trigger the `Docker Publish` workflow.
 As a result, the correct SDK version will always be printed in the server information logs,
 and the example images will always be using the latest changes (due to the local references)
 3. Since the Go SDK is a dependency of Numaflow, once a new version has been released, the `go.mod` [file](https://github.com/numaproj/numaflow/blob/main/go.mod)
