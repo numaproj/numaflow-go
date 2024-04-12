@@ -30,7 +30,7 @@ files to reflect this new version:
 As a result, the correct SDK version will always be printed in the server information logs,
 and the example images will always be using the latest changes (due to the local references)
 3. Since the Go SDK is a dependency of Numaflow, once a new version has been released, the `go.mod` [file](https://github.com/numaproj/numaflow/blob/main/go.mod)
-in the root directory of the Numaflow repo should be updated
+in the Numaflow repo should be updated
    - If you set the SDK release as latest, in your Numaflow repo run:
         ```shell
          go get github.com/numaproj/numaflow-go@latest
