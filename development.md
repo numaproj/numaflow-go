@@ -33,7 +33,9 @@ After confirming that your changes pass local testing:
 1. Clean up testing artifacts
 2. Create a PR. Once your PR has been merged, a Github Actions workflow (`Docker Publish`) will be triggered, to build, tag (with `stable`), and push
 all example images. This ensures that all example images are using the most up-to-date version of the SDK, i.e. the one including your changes
-3. If your SDK changes included modifications to any files in `pkg/info` or `pkg/apis/proto`, then get the commit SHA
+3. If your SDK changes included modifications to any files in `pkg/info` or `pkg/apis/proto`, it is necessary 
+to update the `go.mod` file in the Numaflow repo. This is because `numaflow-go` is a dependency of the Numaflow platform, i.e. the files
+in these directories are imported and used by Numaflow. Thus, get the commit SHA
 of the merged PR from the previous step, and in the Numaflow repo run:
     ```shell
     go get github.com/numaproj/numaflow-go@<commit-sha>
@@ -42,8 +44,7 @@ of the merged PR from the previous step, and in the Numaflow repo run:
    ```shell
    go mod tidy
    ```
-   Create a PR for these changes. This is necessary as `numaflow-go` is a dependency of the Numaflow platform and the files
-   in these directories are imported and used by Numaflow.
+   Create a PR for these changes.
 
 ### Adding a New Example
 

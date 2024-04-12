@@ -40,7 +40,6 @@ in the root directory of the Numaflow repo should be updated
         go mod tidy
         ```
         Create a PR for these changes.
-
    - If you set the SDK release as pre-release, in your Numaflow repo run:
      ```shell
       go get github.com/numaproj/numaflow-go@<commit-sha>
