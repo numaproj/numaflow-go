@@ -44,7 +44,7 @@ of the merged PR from the previous step, and in the Numaflow repo run:
    ```shell
    go mod tidy
    ```
-   Create a PR for these changes.
+   Create a PR for these changes
 
 ### Adding a New Example
 
