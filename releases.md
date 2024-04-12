@@ -12,7 +12,7 @@ Ensure that this change is merged and included in the release.
 
 This can be done via the Github UI. 
 1. In the `Releases` section of the Go SDK repo, click `Draft a new release`
-2. Create an appropriate tag for the version number following the [semantic versioning](https://semver.org/) specification and select it. The tag should be prefixed with a `'v'`. 
+2. Create an appropriate tag for the version number following the [semantic versioning](https://semver.org/) specification and select it. The tag should be prefixed with a `'v'`
 3. Make the title the same as the tag 
 4. Click `Generate release notes` so that all the changes made since the last release are documented. If there are any major features or breaking
 changes that you would like to highlight as part of the release, add those to the description as well 
