@@ -15,7 +15,8 @@ func defaultOptions() *options {
 	defaultPath := serverInfoFilePath
 	defaultAddress := address
 
-	if os.Getenv(EnvUDContaclinerType) == UDContainerFallbackSink {
+	// If the container type is fallback sink, then use the fallback sink address and path.
+	if os.Getenv(EnvUDContainerType) == UDContainerFallbackSink {
 		defaultPath = fbServerInfoFilePath
 		defaultAddress = fbAddress
 	}

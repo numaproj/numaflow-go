@@ -18,7 +18,7 @@ const (
 	fbAddress               = "/var/run/numaflow/fb-sink.sock"
 	serverInfoFilePath      = "/var/run/numaflow/sinker-server-info"
 	fbServerInfoFilePath    = "/var/run/numaflow/fb-sinker-server-info"
-	EnvUDContaclinerType    = "NUMAFLOW_UD_CONTAINER_TYPE"
+	EnvUDContainerType      = "NUMAFLOW_UD_CONTAINER_TYPE"
 	UDContainerFallbackSink = "fb-udsink"
 )
 
