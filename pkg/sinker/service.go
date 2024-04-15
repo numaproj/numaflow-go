@@ -18,8 +18,8 @@ const (
 	fbAddress               = "/var/run/numaflow/fb-sink.sock"
 	serverInfoFilePath      = "/var/run/numaflow/sinker-server-info"
 	fbServerInfoFilePath    = "/var/run/numaflow/fb-sinker-server-info"
-	EnvUDContainerType      = "EnvUDContainerType"
-	UDContainerFallbackSink = "fb-sink"
+	EnvUDContaclinerType    = "NUMAFLOW_UD_CONTAINER_TYPE"
+	UDContainerFallbackSink = "fb-udsink"
 )
 
 // handlerDatum implements the Datum interface and is used in the sink functions.

@@ -10,7 +10,7 @@ image-push: build
 	docker buildx build -t "quay.io/numaio/numaflow-go/sink-log:${TAG}" --platform linux/amd64,linux/arm64 --target log . --push
 
 .PHONY: image
-imageimage: build
+image: build
 	docker build -t "quay.io/numaio/numaflow-go/sink-log:${TAG}" --target log .
 	@if [ "$(PUSH)" = "true" ]; then docker push "quay.io/numaio/numaflow-go/sink-log:${TAG}"; fi
 
