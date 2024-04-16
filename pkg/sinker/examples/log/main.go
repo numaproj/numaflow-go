@@ -20,6 +20,8 @@ func (l *logSink) Sink(ctx context.Context, datumStreamCh <-chan sinksdk.Datum) 
 		fmt.Println("User Defined Sink:", string(d.Value()))
 		id := d.ID()
 		result = result.Append(sinksdk.ResponseOK(id))
+		// if we are not able to write to sink and if we have a fallback sink configured
+		// we can use sinksdk.ResponseFallback(id)) to write the message to fallback sink
 	}
 	return result
 }

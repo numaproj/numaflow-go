@@ -12,10 +12,14 @@ import (
 )
 
 const (
-	uds                   = "unix"
-	defaultMaxMessageSize = 1024 * 1024 * 64 // 64MB
-	address               = "/var/run/numaflow/sink.sock"
-	serverInfoFilePath    = "/var/run/numaflow/sinker-server-info"
+	uds                     = "unix"
+	defaultMaxMessageSize   = 1024 * 1024 * 64 // 64MB
+	address                 = "/var/run/numaflow/sink.sock"
+	fbAddress               = "/var/run/numaflow/fb-sink.sock"
+	serverInfoFilePath      = "/var/run/numaflow/sinker-server-info"
+	fbServerInfoFilePath    = "/var/run/numaflow/fb-sinker-server-info"
+	EnvUDContainerType      = "NUMAFLOW_UD_CONTAINER_TYPE"
+	UDContainerFallbackSink = "fb-udsink"
 )
 
 // handlerDatum implements the Datum interface and is used in the sink functions.
@@ -78,11 +82,23 @@ func (fs *Service) SinkFn(stream sinkpb.Sink_SinkFnServer) error {
 		defer wg.Done()
 		messages := fs.Sinker.Sink(ctx, datumStreamCh)
 		for _, msg := range messages {
-			resultList = append(resultList, &sinkpb.SinkResponse_Result{
-				Id:      msg.ID,
-				Success: msg.Success,
-				ErrMsg:  msg.Err,
-			})
+			if msg.Fallback {
+				resultList = append(resultList, &sinkpb.SinkResponse_Result{
+					Id:     msg.ID,
+					Status: sinkpb.Status_FALLBACK,
+				})
+			} else if msg.Success {
+				resultList = append(resultList, &sinkpb.SinkResponse_Result{
+					Id:     msg.ID,
+					Status: sinkpb.Status_SUCCESS,
+				})
+			} else {
+				resultList = append(resultList, &sinkpb.SinkResponse_Result{
+					Id:     msg.ID,
+					Status: sinkpb.Status_FAILURE,
+					ErrMsg: msg.Err,
+				})
+			}
 		}
 	}()
 

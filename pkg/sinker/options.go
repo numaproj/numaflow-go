@@ -1,5 +1,7 @@
 package sinker
 
+import "os"
+
 type options struct {
 	sockAddr           string
 	maxMessageSize     int
@@ -10,10 +12,19 @@ type options struct {
 type Option func(*options)
 
 func defaultOptions() *options {
+	defaultPath := serverInfoFilePath
+	defaultAddress := address
+
+	// If the container type is fallback sink, then use the fallback sink address and path.
+	if os.Getenv(EnvUDContainerType) == UDContainerFallbackSink {
+		defaultPath = fbServerInfoFilePath
+		defaultAddress = fbAddress
+	}
+
 	return &options{
-		sockAddr:           address,
+		sockAddr:           defaultAddress,
 		maxMessageSize:     defaultMaxMessageSize,
-		serverInfoFilePath: serverInfoFilePath,
+		serverInfoFilePath: defaultPath,
 	}
 }
 
