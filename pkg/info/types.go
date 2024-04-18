@@ -16,7 +16,7 @@ const (
 )
 
 // MinimumNumaflowVersion specifies the minimum Numaflow version required by the current SDK version
-const MinimumNumaflowVersion = "1.2.0-0"
+const MinimumNumaflowVersion = "1.2.0-rc4"
 
 // ServerInfo is the information about the server
 type ServerInfo struct {
