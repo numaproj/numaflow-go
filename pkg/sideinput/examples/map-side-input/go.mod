@@ -1,6 +1,6 @@
-module fallback
+module map-side-input
 
-go 1.20
+go 1.21.2
 
 replace github.com/numaproj/numaflow-go => ../../../..
 

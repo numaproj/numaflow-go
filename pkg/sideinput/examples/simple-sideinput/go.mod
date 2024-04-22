@@ -1,4 +1,4 @@
-module sideinput
+module simple-sideinput
 
 go 1.20
 

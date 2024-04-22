@@ -1,10 +1,11 @@
-module fallback
+module udf
 
-go 1.20
+go 1.21.2
 
-replace github.com/numaproj/numaflow-go => ../../../..
-
-require github.com/numaproj/numaflow-go v0.7.0-rc2
+require (
+	github.com/fsnotify/fsnotify v1.6.0
+	github.com/numaproj/numaflow-go v0.7.0-rc2
+)
 
 require (
 	github.com/golang/protobuf v1.5.3 // indirect

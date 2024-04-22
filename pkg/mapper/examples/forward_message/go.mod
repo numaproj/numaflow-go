@@ -1,4 +1,4 @@
-module even_odd
+module forward_message
 
 go 1.20
 

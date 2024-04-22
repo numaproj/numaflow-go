@@ -1,6 +1,6 @@
-module fallback
+module sideinput-function
 
-go 1.20
+go 1.21
 
 replace github.com/numaproj/numaflow-go => ../../../..
 

@@ -23,7 +23,9 @@ jobs:
           "pkg/reducestreamer/examples/sum", "pkg/sessionreducer/examples/counter", "pkg/sessionreducer/examples/sum",
           "pkg/sideinput/examples/simple-sideinput/udf", "pkg/sideinput/examples/simple-sideinput", "pkg/sinker/examples/log",
           "pkg/sourcer/examples/simple_source", "pkg/sourcetransformer/examples/assign_event_time", "pkg/sourcetransformer/examples/event_time_filter",
-          "pkg/sinker/examples/fallback"
+          "pkg/sinker/examples/fallback", "pkg/sideinput/examples/map-side-input", "pkg/sideinput/examples/reduce-side-input",
+          "pkg/sideinput/examples/sideInput-function", "pkg/sideinput/examples/simple-source-with-sideinput",
+          "pkg/sideinput/examples/sink-side-input", "pkg/sinker/examples/redis-e2e-test-sink"
         ]
 
     steps:

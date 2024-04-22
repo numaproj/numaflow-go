@@ -1,4 +1,4 @@
-module counter
+module sum
 
 go 1.20
 

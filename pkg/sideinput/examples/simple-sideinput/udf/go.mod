@@ -1,4 +1,4 @@
-module even_odd
+module udf
 
 go 1.20
 
