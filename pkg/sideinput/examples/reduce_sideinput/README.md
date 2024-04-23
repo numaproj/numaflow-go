@@ -35,7 +35,7 @@ Vertex spec for the UDF vertex:
     - name: si-e2e
       udf:
         container:
-          image: "quay.io/numaio/numaproj-contrib/reduce-sideinput-udf:stable"
+          image: "quay.io/numaio/numaflow-go/reduce-sideinput-udf:stable"
           imagePullPolicy: Always
         groupBy:
           window:

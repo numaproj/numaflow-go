@@ -7,7 +7,7 @@ RUN apk update && apk upgrade && \
     apk --no-cache add tzdata
 
 COPY dist/reduce-sideinput-udf /bin/reduce-sideinput-udf
-RUN chmod +x /bin/reduce_sideinput-udf
+RUN chmod +x /bin/reduce-sideinput-udf
 
 ####################################################################################################
 # udf-sideinput
