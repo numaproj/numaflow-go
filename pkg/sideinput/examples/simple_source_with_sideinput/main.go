@@ -8,7 +8,7 @@ import (
 
 	"github.com/numaproj/numaflow-go/pkg/sideinput"
 	"github.com/numaproj/numaflow-go/pkg/sourcer"
-	"simple-source-with-sideinput/impl"
+	"simple_source_with_sideinput/impl"
 )
 
 var sideInputName = "myticker"
