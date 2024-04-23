@@ -49,7 +49,7 @@ spec:
   sideInputs:
     - name: myticker
       container:
-        image: "quay.io/numaio/numaflow-go/sideinput:v0.5.0"
+        image: "quay.io/numaio/numaflow-go/sideinput-example:v0.5.0"
         imagePullPolicy: Always
       trigger:
         schedule: "*/2 * * * *"
@@ -61,7 +61,7 @@ Vertex spec for the UDF vertex:
     - name: si-log
       udf:
         container:
-          image: "quay.io/numaio/numaflow-go/udf-sideinput:v0.5.0"
+          image: "quay.io/numaio/numaflow-go/sideinput-example-udf:v0.5.0"
           imagePullPolicy: Always
       containerTemplate:
         env:
