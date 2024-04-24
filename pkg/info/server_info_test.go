@@ -55,7 +55,7 @@ func Test_Read_Write(t *testing.T) {
 	filepath := os.TempDir() + "/server-info"
 	defer os.Remove(filepath)
 	info := &ServerInfo{
-		Protocol:               TCP,
+		MultiProcServer:        true,
 		Language:               Java,
 		MinimumNumaflowVersion: MinimumNumaflowVersion,
 		Version:                "11",

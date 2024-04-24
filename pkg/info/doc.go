@@ -1,7 +1,7 @@
 // Package info is used for the gRPC server to provide the information such as protocol, sdk version, language, etc, to the client.
 //
 // The server information can be used by the client to determine:
-//   - what is the right protocol to use (UDS or TCP)
+//   - what is the server type to use (SingleProcServer or MultiProcServer)
 //   - what is the numaflow sdk version used by the server
 //   - what is language used by the server
 //
