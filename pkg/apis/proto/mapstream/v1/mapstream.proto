@@ -12,6 +12,9 @@ service MapStream {
   // MapStreamFn applies a function to each request element and returns a stream.
   rpc MapStreamFn(MapStreamRequest) returns (stream MapStreamResponse);
 
+  // MapStreamBatchFn receives a stream of messages at once and returns stream of results.
+  rpc MapStreamBatchFn(stream MapStreamRequest) returns (stream MapStreamResponse);
+  
   // IsReady is the heartbeat endpoint for gRPC.
   rpc IsReady(google.protobuf.Empty) returns (ReadyResponse);
 }

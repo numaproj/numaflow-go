@@ -25,6 +25,8 @@ const _ = grpc.SupportPackageIsVersion7
 type MapStreamClient interface {
 	// MapStreamFn applies a function to each request element and returns a stream.
 	MapStreamFn(ctx context.Context, in *MapStreamRequest, opts ...grpc.CallOption) (MapStream_MapStreamFnClient, error)
+	// MapStreamBatchFn receives a stream of messages at once and returns stream of results.
+	MapStreamBatchFn(ctx context.Context, opts ...grpc.CallOption) (MapStream_MapStreamBatchFnClient, error)
 	// IsReady is the heartbeat endpoint for gRPC.
 	IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReadyResponse, error)
 }
@@ -69,6 +71,37 @@ func (x *mapStreamMapStreamFnClient) Recv() (*MapStreamResponse, error) {
 	return m, nil
 }
 
+func (c *mapStreamClient) MapStreamBatchFn(ctx context.Context, opts ...grpc.CallOption) (MapStream_MapStreamBatchFnClient, error) {
+	stream, err := c.cc.NewStream(ctx, &MapStream_ServiceDesc.Streams[1], "/mapstream.v1.MapStream/MapStreamBatchFn", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &mapStreamMapStreamBatchFnClient{stream}
+	return x, nil
+}
+
+type MapStream_MapStreamBatchFnClient interface {
+	Send(*MapStreamRequest) error
+	Recv() (*MapStreamResponse, error)
+	grpc.ClientStream
+}
+
+type mapStreamMapStreamBatchFnClient struct {
+	grpc.ClientStream
+}
+
+func (x *mapStreamMapStreamBatchFnClient) Send(m *MapStreamRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *mapStreamMapStreamBatchFnClient) Recv() (*MapStreamResponse, error) {
+	m := new(MapStreamResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func (c *mapStreamClient) IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReadyResponse, error) {
 	out := new(ReadyResponse)
 	err := c.cc.Invoke(ctx, "/mapstream.v1.MapStream/IsReady", in, out, opts...)
@@ -84,6 +117,8 @@ func (c *mapStreamClient) IsReady(ctx context.Context, in *emptypb.Empty, opts .
 type MapStreamServer interface {
 	// MapStreamFn applies a function to each request element and returns a stream.
 	MapStreamFn(*MapStreamRequest, MapStream_MapStreamFnServer) error
+	// MapStreamBatchFn receives a stream of messages at once and returns stream of results.
+	MapStreamBatchFn(MapStream_MapStreamBatchFnServer) error
 	// IsReady is the heartbeat endpoint for gRPC.
 	IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error)
 	mustEmbedUnimplementedMapStreamServer()
@@ -95,6 +130,9 @@ type UnimplementedMapStreamServer struct {
 
 func (UnimplementedMapStreamServer) MapStreamFn(*MapStreamRequest, MapStream_MapStreamFnServer) error {
 	return status.Errorf(codes.Unimplemented, "method MapStreamFn not implemented")
+}
+func (UnimplementedMapStreamServer) MapStreamBatchFn(MapStream_MapStreamBatchFnServer) error {
+	return status.Errorf(codes.Unimplemented, "method MapStreamBatchFn not implemented")
 }
 func (UnimplementedMapStreamServer) IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsReady not implemented")
@@ -133,6 +171,32 @@ func (x *mapStreamMapStreamFnServer) Send(m *MapStreamResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _MapStream_MapStreamBatchFn_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(MapStreamServer).MapStreamBatchFn(&mapStreamMapStreamBatchFnServer{stream})
+}
+
+type MapStream_MapStreamBatchFnServer interface {
+	Send(*MapStreamResponse) error
+	Recv() (*MapStreamRequest, error)
+	grpc.ServerStream
+}
+
+type mapStreamMapStreamBatchFnServer struct {
+	grpc.ServerStream
+}
+
+func (x *mapStreamMapStreamBatchFnServer) Send(m *MapStreamResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *mapStreamMapStreamBatchFnServer) Recv() (*MapStreamRequest, error) {
+	m := new(MapStreamRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func _MapStream_IsReady_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -168,6 +232,12 @@ var MapStream_ServiceDesc = grpc.ServiceDesc{
 			StreamName:    "MapStreamFn",
 			Handler:       _MapStream_MapStreamFn_Handler,
 			ServerStreams: true,
+		},
+		{
+			StreamName:    "MapStreamBatchFn",
+			Handler:       _MapStream_MapStreamBatchFn_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
 		},
 	},
 	Metadata: "pkg/apis/proto/mapstream/v1/mapstream.proto",

@@ -58,6 +58,26 @@ func (mr *MockMapStreamClientMockRecorder) IsReady(arg0, arg1 interface{}, arg2 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsReady", reflect.TypeOf((*MockMapStreamClient)(nil).IsReady), varargs...)
 }
 
+// MapStreamBatchFn mocks base method.
+func (m *MockMapStreamClient) MapStreamBatchFn(arg0 context.Context, arg1 ...grpc.CallOption) (v1.MapStream_MapStreamBatchFnClient, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0}
+	for _, a := range arg1 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "MapStreamBatchFn", varargs...)
+	ret0, _ := ret[0].(v1.MapStream_MapStreamBatchFnClient)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MapStreamBatchFn indicates an expected call of MapStreamBatchFn.
+func (mr *MockMapStreamClientMockRecorder) MapStreamBatchFn(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0}, arg1...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MapStreamBatchFn", reflect.TypeOf((*MockMapStreamClient)(nil).MapStreamBatchFn), varargs...)
+}
+
 // MapStreamFn mocks base method.
 func (m *MockMapStreamClient) MapStreamFn(arg0 context.Context, arg1 *v1.MapStreamRequest, arg2 ...grpc.CallOption) (v1.MapStream_MapStreamFnClient, error) {
 	m.ctrl.T.Helper()
