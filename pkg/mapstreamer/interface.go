@@ -22,6 +22,7 @@ type MapStreamer interface {
 	// MapStream is the function to process each coming message and streams
 	// the result back using a channel.
 	MapStream(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message)
+	MapStreamBatch(ctx context.Context, datumCh <-chan Datum, messageCh chan<- Message)
 }
 
 // MapStreamerFunc is a utility type used to convert a function to a MapStreamer.
