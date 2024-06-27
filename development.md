@@ -12,18 +12,13 @@ Each example directory has a Makefile which can be used to build, tag, and push 
 If you want to build and tag the image and then immediately push it to quay.io, use the `image-push` target.
 If you want to build and tag a local image without pushing, use the `image` target.
 
-If you want to build and push all the example images at once, you can run:
-```shell
-./hack/update_examples.sh -bp -t <tag>
-```
-The default tag is `stable`, but it is recommended you specify your own for testing purposes, as the Github Actions CI uses the `stable` tag.
-This consistent tag name is used so that the tags in the [E2E test pipelines](https://github.com/numaproj/numaflow/tree/main/test) do not need to be updated each time an SDK change is made.
-
-You can alternatively build and push a specific example image by running the following:
+You can build and push a specific example image by running the following:
 ```shell
 ./hack/update_examples.sh -bpe <path-to-dockerfile> -t <tag>
 ```
 This is essentially equivalent to running `make image-push TAG=<tag>` in the example directory itself.
+The default tag is `stable`, but it is recommended you specify your own for testing purposes, as the Github Actions CI uses the `stable` tag.
+This consistent tag name is used so that the tags in the [E2E test pipelines](https://github.com/numaproj/numaflow/tree/main/test) do not need to be updated each time an SDK change is made.
 
 Note: before running the script, ensure that through the CLI, you are logged into quay.io.
 
