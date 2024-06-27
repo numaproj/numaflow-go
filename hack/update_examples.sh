@@ -1,11 +1,10 @@
 #!/bin/bash
 
 function show_help () {
-    echo "Usage: $0 [-h|--help | -t|--tag <tag>] (-bp|--build-push | -bpe|--build-push-example <path> | -u|--update <SDK-version | commit-sha | latest >)"
+    echo "Usage: $0 [-h|--help | -t|--tag <tag>] (-bpe|--build-push-example <path> | -u|--update <SDK-version | commit-sha | latest >)"
     echo "  -h, --help                   Display help message and exit"
-    echo "  -bp, --build-push            Build the Dockerfiles of all the examples and push them to the quay.io registry"
     echo "  -bpe, --build-push-example   Build the Dockerfile of the given example directory path, and push it to the quay.io registry"
-    echo "  -t, --tag                    To be optionally used with -bpe or -bp. Specify the tag to build with. Default tag: stable"
+    echo "  -t, --tag                    To be optionally used with -bpe. Specify the tag to build with. Default tag: stable"
     echo "  -u, --update                 Update all of the examples to depend on the numaflow-go version with the specified SHA or version"
 }
 
@@ -34,7 +33,6 @@ if [ $# -eq 0 ]; then
 fi
 
 usingHelp=0
-usingBuildPush=0
 usingBuildPushExample=0
 usingVersion=0
 usingTag=0
@@ -47,9 +45,6 @@ function handle_options () {
     case "$1" in
       -h | --help)
         usingHelp=1
-        ;;
-      -bp | --build-push)
-        usingBuildPush=1
         ;;
       -bpe | --build-push-example)
         if [ -z "$2" ]; then
@@ -96,14 +91,14 @@ function handle_options () {
 
 handle_options "$@"
 
-if (( usingBuildPush + usingBuildPushExample + usingVersion + usingHelp > 1 )); then
-  echo "Only one of '-h', '-bp', '-bpe', or, '-u' is allowed at a time" >&2
+if (( usingBuildPushExample + usingVersion + usingHelp > 1 )); then
+  echo "Only one of '-h', '-bpe', or, '-u' is allowed at a time" >&2
   show_help
   exit 1
 fi
 
-if (( (usingTag + usingVersion + usingHelp > 1) || (usingTag && usingBuildPush + usingBuildPushExample == 0) )); then
-  echo "Can only use -t with -bp or -bpe" >&2
+if (( (usingTag + usingVersion + usingHelp > 1) || (usingTag && usingBuildPushExample == 0) )); then
+  echo "Can only use -t with -bpe" >&2
   show_help
   exit 1
 fi
@@ -120,9 +115,7 @@ if [ -n "$tag" ] && (( ! usingVersion )) && (( ! usingHelp )); then
  echo "Using tag: $tag"
 fi
 
-if (( usingBuildPush )); then
-  traverse_examples "make image-push TAG=$tag"
-elif (( usingBuildPushExample )); then
+if (( usingBuildPushExample )); then
    cd "./$directoryPath" || exit
    if ! make image-push TAG="$tag"; then
      echo "Error: failed to run make image-push in $directoryPath" >&2
