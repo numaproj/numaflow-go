@@ -15,11 +15,13 @@ type Datum interface {
 	Watermark() time.Time
 	// Headers returns the headers of the message.
 	Headers() map[string]string
-
+	// Id returns the unique ID set for the given message
 	Id() string
 }
 
-// Mapper is the interface of map function implementation.
+// Mapper is the interface of map function implementation. This is the traditional interface
+// where a single message is passed as input and the responses corresponding to that request
+// are returned.
 type Mapper interface {
 	// Map is the function to process each coming message.
 	Map(ctx context.Context, keys []string, datum Datum) Messages
@@ -33,16 +35,17 @@ func (mf MapperFunc) Map(ctx context.Context, keys []string, datum Datum) Messag
 	return mf(ctx, keys, datum)
 }
 
-// BatchMapper
+// BatchMapper is the interface for a Batch Map mode where the user is given a list
+// of messages, and they return the consolidated response for all of them together.
 type BatchMapper interface {
-	// BatchMap
+	// BatchMap is the function which processes a list of input messages
 	BatchMap(ctx context.Context, datums []Datum) BatchResponses
 }
 
-// BatchMapperFunc
+// BatchMapperFunc is a utility type used to convert a batch map function to a BatchMapper.
 type BatchMapperFunc func(ctx context.Context, datums []Datum) BatchResponses
 
-// BatchMap implements the function of BatchMap function.
+// BatchMap implements the functionality of BatchMap function.
 func (mf BatchMapperFunc) BatchMap(ctx context.Context, datums []Datum) BatchResponses {
 	return mf(ctx, datums)
 }

@@ -27,7 +27,12 @@ type MapClient interface {
 	MapFn(ctx context.Context, in *MapRequest, opts ...grpc.CallOption) (*MapResponse, error)
 	// IsReady is the heartbeat endpoint for gRPC.
 	IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReadyResponse, error)
-	// BatchMapFn applies a
+	// BatchMapFn is a bi-directional streaming rpc which applies a
+	// batchMap function on each element of the stream and then returns streams
+	// back MapResponse elements.
+	// TODO(map-batch): in the target state when we move the current
+	// unary implementation to bi-di as well, we can rename this and
+	// use a single rpc for both.
 	BatchMapFn(ctx context.Context, opts ...grpc.CallOption) (Map_BatchMapFnClient, error)
 }
 
@@ -68,7 +73,7 @@ func (c *mapClient) BatchMapFn(ctx context.Context, opts ...grpc.CallOption) (Ma
 
 type Map_BatchMapFnClient interface {
 	Send(*MapRequest) error
-	Recv() (*BatchMapResponse, error)
+	Recv() (*MapResponse, error)
 	grpc.ClientStream
 }
 
@@ -80,8 +85,8 @@ func (x *mapBatchMapFnClient) Send(m *MapRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *mapBatchMapFnClient) Recv() (*BatchMapResponse, error) {
-	m := new(BatchMapResponse)
+func (x *mapBatchMapFnClient) Recv() (*MapResponse, error) {
+	m := new(MapResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -96,7 +101,12 @@ type MapServer interface {
 	MapFn(context.Context, *MapRequest) (*MapResponse, error)
 	// IsReady is the heartbeat endpoint for gRPC.
 	IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error)
-	// BatchMapFn applies a
+	// BatchMapFn is a bi-directional streaming rpc which applies a
+	// batchMap function on each element of the stream and then returns streams
+	// back MapResponse elements.
+	// TODO(map-batch): in the target state when we move the current
+	// unary implementation to bi-di as well, we can rename this and
+	// use a single rpc for both.
 	BatchMapFn(Map_BatchMapFnServer) error
 	mustEmbedUnimplementedMapServer()
 }
@@ -168,7 +178,7 @@ func _Map_BatchMapFn_Handler(srv interface{}, stream grpc.ServerStream) error {
 }
 
 type Map_BatchMapFnServer interface {
-	Send(*BatchMapResponse) error
+	Send(*MapResponse) error
 	Recv() (*MapRequest, error)
 	grpc.ServerStream
 }
@@ -177,7 +187,7 @@ type mapBatchMapFnServer struct {
 	grpc.ServerStream
 }
 
-func (x *mapBatchMapFnServer) Send(m *BatchMapResponse) error {
+func (x *mapBatchMapFnServer) Send(m *MapResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 

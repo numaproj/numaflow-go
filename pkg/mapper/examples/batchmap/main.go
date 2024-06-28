@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"log"
-	"strings"
 
 	"github.com/numaproj/numaflow-go/pkg/mapper"
 )
@@ -15,11 +14,9 @@ func mapFn(_ context.Context, datums []mapper.Datum) mapper.BatchResponses {
 		msg := d.Value()
 		_ = d.EventTime() // Event time is available
 		_ = d.Watermark() // Watermark is available
-		// Split the msg into an array with comma.
-		strs := strings.Split(string(msg), ",")
 		results := mapper.NewBatchResponse(d.Id())
-		for _, s := range strs {
-			results = results.Append(mapper.NewMessage([]byte(s)))
+		for i := 0; i < 2; i++ {
+			results = results.Append(mapper.NewMessage(msg))
 		}
 		batchResponses = batchResponses.Append(results)
 	}

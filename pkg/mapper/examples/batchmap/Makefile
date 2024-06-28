@@ -1,4 +1,4 @@
-TAG ?= mapbatchv3
+TAG ?= mapbatchv5
 PUSH ?= true
 
 .PHONY: build

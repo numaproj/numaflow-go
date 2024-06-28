@@ -8,16 +8,16 @@ spec:
   limits:
     readBatchSize: 500
   vertices:
-    #    - name: in d
-    #      source:
-    #        http: { }
+#    - name: in
+#      source:
+#        http: { }
     - name: in
       scale:
         min: 1
       source:
         # A self data generating source
         generator:
-          rpu: 10
+          rpu: 1000
           duration: 1s
     - name: batchmap
       scale:
@@ -31,7 +31,7 @@ spec:
       udf:
         container:
           #          image: "quay.io/numaio/numaflow-go/map-flatmap:stable"
-          image: "quay.io/kohlisid/numaflow-go/map-flatmap:mapbatchv3"
+          image: "quay.io/kohlisid/numaflow-go/map-flatmap:mapbatchv5"
           imagePullPolicy: Always
       containerTemplate:
         resources:
@@ -49,7 +49,6 @@ spec:
     - name: out
       scale:
         min: 1
-        max: 1
       sink:
         # A simple log printing sink
         log: {}

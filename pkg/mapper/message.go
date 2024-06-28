@@ -6,6 +6,10 @@ var (
 	DROP = fmt.Sprintf("%U__DROP__", '\\') // U+005C__DROP__
 )
 
+// ===========================================================================================
+// Common structures used in map functions
+// ===========================================================================================
+
 // Message is used to wrap the data return by Map functions
 type Message struct {
 	value []byte
@@ -51,6 +55,10 @@ func (m Message) Tags() []string {
 	return m.tags
 }
 
+// ===========================================================================================
+// Utility structures for unary map use case
+// ===========================================================================================
+
 type Messages []Message
 
 // MessagesBuilder returns an empty instance of Messages
@@ -69,28 +77,41 @@ func (m Messages) Items() []Message {
 	return m
 }
 
+// ===========================================================================================
+// Utility structures for batch map mode
+// ===========================================================================================
+
+// batchResponse is used to wrap the data return by batch map function along
+// with the ID of the corresponding request
 type batchResponse struct {
 	id       string
 	messages []Message
 }
 
-// Id returns
+// Id returns request ID for the given list of responses
 func (m batchResponse) Id() string {
 	return m.id
 }
 
+// Append appends a Message to the messages list of a batchResponse
+// object and then returns the updated object.
 func (m batchResponse) Append(msg Message) batchResponse {
 	m.messages = append(m.messages, msg)
 	return m
 }
 
-// Items returns the message list
+// Items returns the message list for a batchResponse
 func (m batchResponse) Items() []Message {
 	return m.messages
 }
 
+// BatchResponses is a list of batchResponse which signify the consolidated
+// results for a batch of input messages.
 type BatchResponses []batchResponse
 
+// NewBatchResponse is a utility function used to create a new batchResponse object
+// Specifying an id is a mandatory requirement, as it is required to reference the
+// responses back to a request.
 func NewBatchResponse(id string) batchResponse {
 	return batchResponse{
 		id:       id,
