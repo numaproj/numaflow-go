@@ -1,0 +1,64 @@
+apiVersion: numaflow.numaproj.io/v1alpha1
+kind: Pipeline
+metadata:
+  name: simple-pipeline
+spec:
+  watermark:
+    disabled: true # Optional, defaults to false.
+  limits:
+    readBatchSize: 500
+  vertices:
+    #    - name: in d
+    #      source:
+    #        http: { }
+    - name: in
+      scale:
+        min: 1
+      source:
+        # A self data generating source
+        generator:
+          rpu: 10
+          duration: 1s
+    - name: batchmap
+      scale:
+        min: 1
+        max: 1
+      metadata:
+        annotations:
+          numaflow.numaproj.io/batch-map: "true"
+      limits:
+        readBatchSize: 500
+      udf:
+        container:
+          #          image: "quay.io/numaio/numaflow-go/map-flatmap:stable"
+          image: "quay.io/kohlisid/numaflow-go/map-flatmap:mapbatchv3"
+          imagePullPolicy: Always
+      containerTemplate:
+        resources:
+          limits:
+            memory: 1Gi
+          requests:
+            memory: 1Gi
+        env:
+          - name: NUMAFLOW_DEBUG
+            value: "true" # DO NOT forget the double quotes!!!
+    #    - name: cat
+    #      udf:
+    #        builtin:
+    #          name: cat # A built-in UDF which simply cats the message
+    - name: out
+      scale:
+        min: 1
+        max: 1
+      sink:
+        # A simple log printing sink
+        log: {}
+  edges:
+    #    - from: in
+    #      to: cat
+    #    - from: cat
+    #      to: out
+    - from: in
+      to: batchmap
+    - from: batchmap
+      to: out

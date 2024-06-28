@@ -15,6 +15,8 @@ type Datum interface {
 	Watermark() time.Time
 	// Headers returns the headers of the message.
 	Headers() map[string]string
+
+	Id() string
 }
 
 // Mapper is the interface of map function implementation.
@@ -29,4 +31,18 @@ type MapperFunc func(ctx context.Context, keys []string, datum Datum) Messages
 // Map implements the function of map function.
 func (mf MapperFunc) Map(ctx context.Context, keys []string, datum Datum) Messages {
 	return mf(ctx, keys, datum)
+}
+
+// BatchMapper
+type BatchMapper interface {
+	// BatchMap
+	BatchMap(ctx context.Context, datums []Datum) BatchResponses
+}
+
+// BatchMapperFunc
+type BatchMapperFunc func(ctx context.Context, datums []Datum) BatchResponses
+
+// BatchMap implements the function of BatchMap function.
+func (mf BatchMapperFunc) BatchMap(ctx context.Context, datums []Datum) BatchResponses {
+	return mf(ctx, datums)
 }

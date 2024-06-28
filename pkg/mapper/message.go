@@ -68,3 +68,46 @@ func (m Messages) Append(msg Message) Messages {
 func (m Messages) Items() []Message {
 	return m
 }
+
+type batchResponse struct {
+	id       string
+	messages []Message
+}
+
+// Id returns
+func (m batchResponse) Id() string {
+	return m.id
+}
+
+func (m batchResponse) Append(msg Message) batchResponse {
+	m.messages = append(m.messages, msg)
+	return m
+}
+
+// Items returns the message list
+func (m batchResponse) Items() []Message {
+	return m.messages
+}
+
+type BatchResponses []batchResponse
+
+func NewBatchResponse(id string) batchResponse {
+	return batchResponse{
+		id:       id,
+		messages: MessagesBuilder(),
+	}
+}
+func BatchResponsesBuilder() BatchResponses {
+	return BatchResponses{}
+}
+
+// Append appends a Message
+func (m BatchResponses) Append(msg batchResponse) BatchResponses {
+	m = append(m, msg)
+	return m
+}
+
+// Items returns the message list
+func (m BatchResponses) Items() []batchResponse {
+	return m
+}

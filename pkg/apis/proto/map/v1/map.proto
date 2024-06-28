@@ -13,6 +13,9 @@ service Map {
 
   // IsReady is the heartbeat endpoint for gRPC.
   rpc IsReady(google.protobuf.Empty) returns (ReadyResponse);
+
+  // BatchMapFn applies a
+  rpc BatchMapFn(stream MapRequest) returns (stream BatchMapResponse);
 }
 
 /**
@@ -24,6 +27,7 @@ message MapRequest {
   google.protobuf.Timestamp event_time = 3;
   google.protobuf.Timestamp watermark = 4;
   map<string, string> headers = 5;
+  string id = 6;
 }
 
 /**
@@ -36,6 +40,19 @@ message MapResponse {
     repeated string tags = 3;
   }
   repeated Result results = 1;
+}
+
+/**
+ * MapResponse represents a response element.
+ */
+message BatchMapResponse {
+  message Result {
+    repeated string keys = 1;
+    bytes value = 2;
+    repeated string tags = 3;
+  }
+  repeated Result results = 1;
+  string id = 2;
 }
 
 /**

@@ -31,6 +31,19 @@ func NewServer(m Mapper, inputOptions ...Option) numaflow.Server {
 	return s
 }
 
+// NewBatchMapServer creates a new batch map server.
+func NewBatchMapServer(m BatchMapper, inputOptions ...Option) numaflow.Server {
+	opts := defaultOptions()
+	for _, inputOption := range inputOptions {
+		inputOption(opts)
+	}
+	s := new(server)
+	s.svc = new(Service)
+	s.svc.BatchMapper = m
+	s.opts = opts
+	return s
+}
+
 // Start starts the map server.
 func (m *server) Start(ctx context.Context) error {
 	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)

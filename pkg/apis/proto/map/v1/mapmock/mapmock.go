@@ -37,6 +37,26 @@ func (m *MockMapClient) EXPECT() *MockMapClientMockRecorder {
 	return m.recorder
 }
 
+// BatchMapFn mocks base method.
+func (m *MockMapClient) BatchMapFn(arg0 context.Context, arg1 ...grpc.CallOption) (v1.Map_BatchMapFnClient, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0}
+	for _, a := range arg1 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "BatchMapFn", varargs...)
+	ret0, _ := ret[0].(v1.Map_BatchMapFnClient)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchMapFn indicates an expected call of BatchMapFn.
+func (mr *MockMapClientMockRecorder) BatchMapFn(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0}, arg1...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchMapFn", reflect.TypeOf((*MockMapClient)(nil).BatchMapFn), varargs...)
+}
+
 // IsReady mocks base method.
 func (m *MockMapClient) IsReady(arg0 context.Context, arg1 *emptypb.Empty, arg2 ...grpc.CallOption) (*v1.ReadyResponse, error) {
 	m.ctrl.T.Helper()
