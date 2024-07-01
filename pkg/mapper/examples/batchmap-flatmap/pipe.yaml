@@ -17,7 +17,7 @@ spec:
       source:
         # A self data generating source
         generator:
-          rpu: 1000
+          rpu: 2000
           duration: 1s
     - name: batchmap
       scale:
@@ -31,7 +31,7 @@ spec:
       udf:
         container:
           #          image: "quay.io/numaio/numaflow-go/map-flatmap:stable"
-          image: "quay.io/kohlisid/numaflow-go/map-flatmap:mapbatchemptyv1"
+          image: "quay.io/kohlisid/numaflow-go/map-flatmap:mapbatchflatmapv1"
           imagePullPolicy: Always
       containerTemplate:
         resources:
