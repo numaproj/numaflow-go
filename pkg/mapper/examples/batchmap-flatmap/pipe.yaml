@@ -1,63 +1,34 @@
 apiVersion: numaflow.numaproj.io/v1alpha1
 kind: Pipeline
 metadata:
-  name: simple-pipeline
+  name: flatmap
 spec:
-#  watermark:
-#    disabled: true # Optional, defaults to false.
-  limits:
-    readBatchSize: 500
   vertices:
-#    - name: in
-#      source:
-#        http: { }
     - name: in
-      scale:
-        min: 1
       source:
-        # A self data generating source
-        generator:
-          rpu: 2000
-          duration: 1s
-    - name: batchmap
-      scale:
-        min: 1
-        max: 1
+        http: {}
+    - name: go-split
       metadata:
         annotations:
           numaflow.numaproj.io/batch-map: "true"
-      limits:
-        readBatchSize: 500
+      scale:
+        min: 1
       udf:
         container:
-          #          image: "quay.io/numaio/numaflow-go/map-flatmap:stable"
-          image: "quay.io/kohlisid/numaflow-go/map-flatmap:mapbatchflatmapv1"
+          # Split input message into an array with comma, see https://github.com/numaproj/numaflow-go/tree/main/pkg/mapper/examples/flatmap
+          image: quay.io/numaio/numaflow-go/batch-map-flatmap:stable
           imagePullPolicy: Always
-      containerTemplate:
-        resources:
-          limits:
-            memory: 1Gi
-          requests:
-            memory: 1Gi
-        env:
-          - name: NUMAFLOW_DEBUG
-            value: "true" # DO NOT forget the double quotes!!!
-    #    - name: cat
-    #      udf:
-    #        builtin:
-    #          name: cat # A built-in UDF which simply cats the message
-    - name: out
+    - name: go-udsink
       scale:
         min: 1
       sink:
-        # A simple log printing sink
-        log: {}
+        udsink:
+          container:
+            # https://github.com/numaproj/numaflow-go/tree/main/pkg/sinker/examples/log
+            image: quay.io/numaio/numaflow-go/sink-log:stable
+            imagePullPolicy: Always
   edges:
-    #    - from: in
-    #      to: cat
-    #    - from: cat
-    #      to: out
     - from: in
-      to: batchmap
-    - from: batchmap
-      to: out
+      to: go-split
+    - from: go-split
+      to: go-udsink
