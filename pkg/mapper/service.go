@@ -2,6 +2,7 @@ package mapper
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 
@@ -33,7 +34,7 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*mappb.ReadyRespons
 
 // MapFn applies a user defined function to each request element and returns a list of results.
 func (fs *Service) MapFn(ctx context.Context, d *mappb.MapRequest) (*mappb.MapResponse, error) {
-	var hd = NewHandlerDatum(d.GetValue(), d.GetEventTime().AsTime(), d.GetWatermark().AsTime(), d.GetHeaders(), emptyId)
+	var hd = NewHandlerDatum(d.GetValue(), d.GetEventTime().AsTime(), d.GetWatermark().AsTime(), d.GetHeaders(), emptyId, d.GetKeys())
 	messages := fs.Mapper.Map(ctx, d.GetKeys(), hd)
 	var elements []*mappb.MapResponse_Result
 	for _, m := range messages.Items() {
@@ -49,8 +50,8 @@ func (fs *Service) MapFn(ctx context.Context, d *mappb.MapRequest) (*mappb.MapRe
 	return datumList, nil
 }
 
-// BatchMapFn applies a user defined function to a stream of request element and streams back the responses for them.
-func (fs *Service) BatchMapFn(stream mappb.Map_BatchMapFnServer) error {
+// MapStreamFn applies a user defined function to a stream of request element and streams back the responses for them.
+func (fs *Service) MapStreamFn(stream mappb.Map_MapStreamFnServer) error {
 	ctx := stream.Context()
 
 	// As the BatchMap interface expects a list of request elements
@@ -63,15 +64,25 @@ func (fs *Service) BatchMapFn(stream mappb.Map_BatchMapFnServer) error {
 			break
 		}
 		if err != nil {
-			log.Println("BatchMapFn: Got an error while recv() on stream", err)
+			log.Println("MapStreamFn: Got an error while recv() on stream", err)
 			return err
 		}
-		var hd = NewHandlerDatum(d.GetValue(), d.GetEventTime().AsTime(), d.GetWatermark().AsTime(), d.GetHeaders(), d.GetId())
+		var hd = NewHandlerDatum(d.GetValue(), d.GetEventTime().AsTime(), d.GetWatermark().AsTime(), d.GetHeaders(), d.GetId(), d.GetKeys())
 		datums = append(datums, hd)
 	}
 
 	// Apply the user BatchMap implementation function
 	responses := fs.BatchMapper.BatchMap(ctx, datums)
+
+	// If the number of responses received does not align with the request batch size,
+	// we will not be able to process the data correctly.
+	// This should be marked as an error and shown to the user.
+	// TODO(map-batch): We could potentially panic here as well
+	if len(responses.Items()) != len(datums) {
+		errMsg := "batchMapFn: mismatch between length of batch requests and responses"
+		log.Println(errMsg)
+		return fmt.Errorf(errMsg)
+	}
 
 	// iterate over the responses received and covert to the required proto format
 	for _, batchResp := range responses.Items() {
@@ -91,7 +102,7 @@ func (fs *Service) BatchMapFn(stream mappb.Map_BatchMapFnServer) error {
 		// this would contain all the responses for that request.
 		err := stream.Send(singleRequestResp)
 		if err != nil {
-			log.Println("BatchMapFn: Got an error while Send() on stream", err)
+			log.Println("MapStreamFn: Got an error while Send() on stream", err)
 			return err
 		}
 	}

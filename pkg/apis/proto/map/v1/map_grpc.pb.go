@@ -27,13 +27,13 @@ type MapClient interface {
 	MapFn(ctx context.Context, in *MapRequest, opts ...grpc.CallOption) (*MapResponse, error)
 	// IsReady is the heartbeat endpoint for gRPC.
 	IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReadyResponse, error)
-	// BatchMapFn is a bi-directional streaming rpc which applies a
-	// batchMap function on each element of the stream and then returns streams
+	// MapStreamFn is a bi-directional streaming rpc which applies a
+	// Map function on each element of the stream and then returns streams
 	// back MapResponse elements.
 	// TODO(map-batch): in the target state when we move the current
 	// unary implementation to bi-di as well, we can rename this and
 	// use a single rpc for both.
-	BatchMapFn(ctx context.Context, opts ...grpc.CallOption) (Map_BatchMapFnClient, error)
+	MapStreamFn(ctx context.Context, opts ...grpc.CallOption) (Map_MapStreamFnClient, error)
 }
 
 type mapClient struct {
@@ -62,30 +62,30 @@ func (c *mapClient) IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc
 	return out, nil
 }
 
-func (c *mapClient) BatchMapFn(ctx context.Context, opts ...grpc.CallOption) (Map_BatchMapFnClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Map_ServiceDesc.Streams[0], "/map.v1.Map/BatchMapFn", opts...)
+func (c *mapClient) MapStreamFn(ctx context.Context, opts ...grpc.CallOption) (Map_MapStreamFnClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Map_ServiceDesc.Streams[0], "/map.v1.Map/MapStreamFn", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &mapBatchMapFnClient{stream}
+	x := &mapMapStreamFnClient{stream}
 	return x, nil
 }
 
-type Map_BatchMapFnClient interface {
+type Map_MapStreamFnClient interface {
 	Send(*MapRequest) error
 	Recv() (*MapResponse, error)
 	grpc.ClientStream
 }
 
-type mapBatchMapFnClient struct {
+type mapMapStreamFnClient struct {
 	grpc.ClientStream
 }
 
-func (x *mapBatchMapFnClient) Send(m *MapRequest) error {
+func (x *mapMapStreamFnClient) Send(m *MapRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *mapBatchMapFnClient) Recv() (*MapResponse, error) {
+func (x *mapMapStreamFnClient) Recv() (*MapResponse, error) {
 	m := new(MapResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -101,13 +101,13 @@ type MapServer interface {
 	MapFn(context.Context, *MapRequest) (*MapResponse, error)
 	// IsReady is the heartbeat endpoint for gRPC.
 	IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error)
-	// BatchMapFn is a bi-directional streaming rpc which applies a
-	// batchMap function on each element of the stream and then returns streams
+	// MapStreamFn is a bi-directional streaming rpc which applies a
+	// Map function on each element of the stream and then returns streams
 	// back MapResponse elements.
 	// TODO(map-batch): in the target state when we move the current
 	// unary implementation to bi-di as well, we can rename this and
 	// use a single rpc for both.
-	BatchMapFn(Map_BatchMapFnServer) error
+	MapStreamFn(Map_MapStreamFnServer) error
 	mustEmbedUnimplementedMapServer()
 }
 
@@ -121,8 +121,8 @@ func (UnimplementedMapServer) MapFn(context.Context, *MapRequest) (*MapResponse,
 func (UnimplementedMapServer) IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsReady not implemented")
 }
-func (UnimplementedMapServer) BatchMapFn(Map_BatchMapFnServer) error {
-	return status.Errorf(codes.Unimplemented, "method BatchMapFn not implemented")
+func (UnimplementedMapServer) MapStreamFn(Map_MapStreamFnServer) error {
+	return status.Errorf(codes.Unimplemented, "method MapStreamFn not implemented")
 }
 func (UnimplementedMapServer) mustEmbedUnimplementedMapServer() {}
 
@@ -173,25 +173,25 @@ func _Map_IsReady_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Map_BatchMapFn_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(MapServer).BatchMapFn(&mapBatchMapFnServer{stream})
+func _Map_MapStreamFn_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(MapServer).MapStreamFn(&mapMapStreamFnServer{stream})
 }
 
-type Map_BatchMapFnServer interface {
+type Map_MapStreamFnServer interface {
 	Send(*MapResponse) error
 	Recv() (*MapRequest, error)
 	grpc.ServerStream
 }
 
-type mapBatchMapFnServer struct {
+type mapMapStreamFnServer struct {
 	grpc.ServerStream
 }
 
-func (x *mapBatchMapFnServer) Send(m *MapResponse) error {
+func (x *mapMapStreamFnServer) Send(m *MapResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *mapBatchMapFnServer) Recv() (*MapRequest, error) {
+func (x *mapMapStreamFnServer) Recv() (*MapRequest, error) {
 	m := new(MapRequest)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -217,8 +217,8 @@ var Map_ServiceDesc = grpc.ServiceDesc{
 	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "BatchMapFn",
-			Handler:       _Map_BatchMapFn_Handler,
+			StreamName:    "MapStreamFn",
+			Handler:       _Map_MapStreamFn_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},

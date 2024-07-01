@@ -3,8 +3,8 @@ kind: Pipeline
 metadata:
   name: simple-pipeline
 spec:
-  watermark:
-    disabled: true # Optional, defaults to false.
+#  watermark:
+#    disabled: true # Optional, defaults to false.
   limits:
     readBatchSize: 500
   vertices:
@@ -31,7 +31,7 @@ spec:
       udf:
         container:
           #          image: "quay.io/numaio/numaflow-go/map-flatmap:stable"
-          image: "quay.io/kohlisid/numaflow-go/map-flatmap:mapbatchv5"
+          image: "quay.io/kohlisid/numaflow-go/map-flatmap:mapbatchemptyv1"
           imagePullPolicy: Always
       containerTemplate:
         resources:

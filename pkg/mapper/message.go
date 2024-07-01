@@ -6,9 +6,7 @@ var (
 	DROP = fmt.Sprintf("%U__DROP__", '\\') // U+005C__DROP__
 )
 
-// ===========================================================================================
 // Common structures used in map functions
-// ===========================================================================================
 
 // Message is used to wrap the data return by Map functions
 type Message struct {
@@ -55,9 +53,7 @@ func (m Message) Tags() []string {
 	return m.tags
 }
 
-// ===========================================================================================
 // Utility structures for unary map use case
-// ===========================================================================================
 
 type Messages []Message
 
@@ -77,9 +73,7 @@ func (m Messages) Items() []Message {
 	return m
 }
 
-// ===========================================================================================
 // Utility structures for batch map mode
-// ===========================================================================================
 
 // batchResponse is used to wrap the data return by batch map function along
 // with the ID of the corresponding request

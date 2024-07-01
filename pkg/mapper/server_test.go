@@ -30,3 +30,31 @@ func TestMapServer_Start(t *testing.T) {
 	err := NewServer(mapHandler, WithSockAddr(socketFile.Name()), WithServerInfoFilePath(serverInfoFile.Name())).Start(ctx)
 	assert.NoError(t, err)
 }
+
+func TestBatchMapServer_Start(t *testing.T) {
+	socketFile, _ := os.CreateTemp("/tmp", "numaflow-test.sock")
+	defer func() {
+		_ = os.RemoveAll(socketFile.Name())
+	}()
+
+	serverInfoFile, _ := os.CreateTemp("/tmp", "numaflow-test-info")
+	defer func() {
+		_ = os.RemoveAll(serverInfoFile.Name())
+	}()
+
+	var mapHandler = BatchMapperFunc(func(ctx context.Context, datums []Datum) BatchResponses {
+		batchResponses := BatchResponsesBuilder()
+		for _, d := range datums {
+			results := NewBatchResponse(d.Id())
+			results.Append(NewMessage(d.Value()).WithKeys([]string{d.Keys()[0] + "_test"}))
+			batchResponses.Append(results)
+		}
+
+		return batchResponses
+	})
+	// note: using actual uds connection
+	ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
+	defer cancel()
+	err := NewBatchServer(mapHandler, WithSockAddr(socketFile.Name()), WithServerInfoFilePath(serverInfoFile.Name())).Start(ctx)
+	assert.NoError(t, err)
+}

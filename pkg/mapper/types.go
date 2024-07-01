@@ -9,15 +9,17 @@ type handlerDatum struct {
 	watermark time.Time
 	headers   map[string]string
 	id        string
+	keys      []string
 }
 
-func NewHandlerDatum(value []byte, eventTime time.Time, watermark time.Time, headers map[string]string, id string) Datum {
+func NewHandlerDatum(value []byte, eventTime time.Time, watermark time.Time, headers map[string]string, id string, keys []string) Datum {
 	return &handlerDatum{
 		value:     value,
 		eventTime: eventTime,
 		watermark: watermark,
 		headers:   headers,
 		id:        id,
+		keys:      keys,
 	}
 }
 
@@ -39,4 +41,8 @@ func (h *handlerDatum) Headers() map[string]string {
 
 func (h *handlerDatum) Id() string {
 	return h.id
+}
+
+func (h *handlerDatum) Keys() []string {
+	return h.keys
 }

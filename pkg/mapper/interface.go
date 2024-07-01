@@ -17,6 +17,8 @@ type Datum interface {
 	Headers() map[string]string
 	// Id returns the unique ID set for the given message
 	Id() string
+	// Keys returns the keys associated with a given datum
+	Keys() []string
 }
 
 // Mapper is the interface of map function implementation. This is the traditional interface

@@ -34,10 +34,10 @@ func NewServer(m Mapper, inputOptions ...Option) numaflow.Server {
 	return s
 }
 
-// NewBatchMapServer creates a new batch map server.
+// NewBatchServer creates a new batch map server.
 // TODO(map-batch): as this would be a streaming server should we see if there are some options (like maxMessageSize)
 // which are different than unary server which are optimal for this use case.
-func NewBatchMapServer(m BatchMapper, inputOptions ...Option) numaflow.Server {
+func NewBatchServer(m BatchMapper, inputOptions ...Option) numaflow.Server {
 	opts := defaultOptions()
 	for _, inputOption := range inputOptions {
 		inputOption(opts)
