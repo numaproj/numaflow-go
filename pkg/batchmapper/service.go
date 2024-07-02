@@ -2,7 +2,6 @@ package batchmapper
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"log"
 
@@ -58,11 +57,9 @@ func (fs *Service) BatchMapFn(stream batchmappb.BatchMap_BatchMapFnServer) error
 	// If the number of responses received does not align with the request batch size,
 	// we will not be able to process the data correctly.
 	// This should be marked as an error and shown to the user.
-	// TODO(map-batch): We could potentially panic here as well
 	if len(responses.Items()) != len(datums) {
 		errMsg := "batchMapFn: mismatch between length of batch requests and responses"
-		log.Println(errMsg)
-		return fmt.Errorf(errMsg)
+		log.Panic(errMsg)
 	}
 
 	// iterate over the responses received and covert to the required proto format
