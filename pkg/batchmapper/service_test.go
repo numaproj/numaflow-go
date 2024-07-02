@@ -257,6 +257,13 @@ func TestService_MapFnStream(t *testing.T) {
 
 			wg.Add(1)
 			go func() {
+				defer func() {
+					f := recover()
+					if f != nil {
+						err = fmt.Errorf("got a panic")
+						wg.Done()
+					}
+				}()
 				defer wg.Done()
 				err = fs.BatchMapFn(udfBatchMapFnStream)
 				close(outputCh)
