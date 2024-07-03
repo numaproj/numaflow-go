@@ -1,5 +1,6 @@
 TAG ?= stable
 PUSH ?= false
+REPO = quay.io/numaio/numaflow-go/source-simple-source:${TAG}
 
 .PHONY: build
 build:
@@ -7,12 +8,12 @@ build:
 
 .PHONY: image-push
 image-push: build
-	docker buildx build -t "quay.io/numaio/numaflow-go/source-simple-source:${TAG}" --platform linux/amd64,linux/arm64 --target simple-source . --push
+	docker buildx build -t ${REPO} --platform linux/amd64,linux/arm64 --target simple-source . --push
 
 .PHONY: image
 image: build
-	docker build -t "quay.io/numaio/numaflow-go/source-simple-source:${TAG}" --target simple-source .
-	@if [ "$(PUSH)" = "true" ]; then docker push "quay.io/numaio/numaflow-go/source-simple-source:${TAG}"; fi
+	docker build -t ${REPO} --target simple-source .
+	@if [ "$(PUSH)" = "true" ]; then docker push ${REPO}; fi
 
 clean:
 	-rm -rf ./dist
