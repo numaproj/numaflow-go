@@ -1,5 +1,6 @@
 TAG ?= stable
 PUSH ?= false
+IMAGE_REGISTRY = quay.io/numaio/numaflow-go/map-retry:${TAG}
 
 .PHONY: build
 build:
@@ -7,12 +8,12 @@ build:
 
 .PHONY: image-push
 image-push: build
-	docker buildx build -t "quay.io/numaio/numaflow-go/map-retry:${TAG}" --platform linux/amd64,linux/arm64 --target retry . --push
+	docker buildx build -t ${IMAGE_REGISTRY} --platform linux/amd64,linux/arm64 --target retry . --push
 
 .PHONY: image
 image: build
-	docker build -t "quay.io/numaio/numaflow-go/map-retry:${TAG}" --target map-retry .
-	@if [ "$(PUSH)" = "true" ]; then docker push "quay.io/numaio/numaflow-go/map-retry:${TAG}"; fi
+	docker build -t ${IMAGE_REGISTRY} --target map-retry .
+	@if [ "$(PUSH)" = "true" ]; then docker push ${IMAGE_REGISTRY}; fi
 
 clean:
 	-rm -rf ./dist
