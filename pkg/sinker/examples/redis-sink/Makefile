@@ -1,6 +1,6 @@
 TAG ?= stable
 PUSH ?= false
-REPO = "quay.io/numaio/numaflow-go/redis-sink:${TAG}"
+IMAGE_REGISTRY = "quay.io/numaio/numaflow-go/redis-sink:${TAG}"
 
 .PHONY: build
 build:
@@ -8,12 +8,12 @@ build:
 
 .PHONY: image-push
 image-push: build
-	docker buildx build -t ${REPO} --platform linux/amd64,linux/arm64 --target redis . --push
+	docker buildx build -t ${IMAGE_REGISTRY} --platform linux/amd64,linux/arm64 --target redis . --push
 
 .PHONY: image
 image: build
-	docker build -t ${REPO} --target redis .
-	@if [ "$(PUSH)" = "true" ]; then docker push ${REPO}; fi
+	docker build -t ${IMAGE_REGISTRY} --target redis .
+	@if [ "$(PUSH)" = "true" ]; then docker push ${IMAGE_REGISTRY}; fi
 
 clean:
 	-rm -rf ./dist
