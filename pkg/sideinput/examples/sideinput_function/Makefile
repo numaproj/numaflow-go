@@ -1,5 +1,6 @@
 TAG ?= stable
 PUSH ?= false
+IMAGE_REGISTRY = quay.io/numaio/numaflow-go/sideinput-function:${TAG}
 
 .PHONY: build
 build:
@@ -7,12 +8,12 @@ build:
 
 .PHONY: image-push
 image-push: build
-	docker buildx build -t "quay.io/numaio/numaflow-go/sideinput-function:${TAG}" --platform linux/amd64,linux/arm64 --target sideinput . --push
+	docker buildx build -t ${IMAGE_REGISTRY} --platform linux/amd64,linux/arm64 --target sideinput . --push
 
 .PHONY: image
 image: build
-	docker build -t "quay.io/numaio/numaflow-go/sideinput-function:${TAG}" --target sideinput .
-	@if [ "$(PUSH)" = "true" ]; then docker push "quay.io/numaio/numaflow-go/sideinput-function:${TAG}"; fi
+	docker build -t ${IMAGE_REGISTRY} --target sideinput .
+	@if [ "$(PUSH)" = "true" ]; then docker push ${IMAGE_REGISTRY}; fi
 
 clean:
 	-rm -rf ./dist
