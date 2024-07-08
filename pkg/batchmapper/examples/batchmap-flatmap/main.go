@@ -8,9 +8,9 @@ import (
 	"github.com/numaproj/numaflow-go/pkg/batchmapper"
 )
 
-func batchMapFn(_ context.Context, datums []batchmapper.Datum) batchmapper.BatchResponses {
+func batchMapFn(_ context.Context, datums <-chan batchmapper.Datum) batchmapper.BatchResponses {
 	batchResponses := batchmapper.BatchResponsesBuilder()
-	for _, d := range datums {
+	for d := range datums {
 		msg := d.Value()
 		_ = d.EventTime() // Event time is available
 		_ = d.Watermark() // Watermark is available

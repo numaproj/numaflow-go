@@ -25,13 +25,13 @@ type Datum interface {
 // of messages, and they return the consolidated response for all of them together.
 type BatchMapper interface {
 	// BatchMap is the function which processes a list of input messages
-	BatchMap(ctx context.Context, datums []Datum) BatchResponses
+	BatchMap(ctx context.Context, datumStreamCh <-chan Datum) BatchResponses
 }
 
 // BatchMapperFunc is a utility type used to convert a batch map function to a BatchMapper.
-type BatchMapperFunc func(ctx context.Context, datums []Datum) BatchResponses
+type BatchMapperFunc func(ctx context.Context, datumStreamCh <-chan Datum) BatchResponses
 
 // BatchMap implements the functionality of BatchMap function.
-func (mf BatchMapperFunc) BatchMap(ctx context.Context, datums []Datum) BatchResponses {
-	return mf(ctx, datums)
+func (mf BatchMapperFunc) BatchMap(ctx context.Context, datumStreamCh <-chan Datum) BatchResponses {
+	return mf(ctx, datumStreamCh)
 }

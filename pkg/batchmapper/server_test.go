@@ -20,9 +20,9 @@ func TestBatchMapServer_Start(t *testing.T) {
 		_ = os.RemoveAll(serverInfoFile.Name())
 	}()
 
-	var batchMapHandler = BatchMapperFunc(func(ctx context.Context, datums []Datum) BatchResponses {
+	var batchMapHandler = BatchMapperFunc(func(ctx context.Context, datums <-chan Datum) BatchResponses {
 		batchResponses := BatchResponsesBuilder()
-		for _, d := range datums {
+		for d := range datums {
 			results := NewBatchResponse(d.Id())
 			results.Append(NewMessage(d.Value()).WithKeys([]string{d.Keys()[0] + "_test"}))
 			batchResponses.Append(results)

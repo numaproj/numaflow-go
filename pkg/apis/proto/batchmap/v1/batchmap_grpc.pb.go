@@ -26,8 +26,8 @@ type BatchMapClient interface {
 	// IsReady is the heartbeat endpoint for gRPC.
 	IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReadyResponse, error)
 	// BatchMapFn is a bi-directional streaming rpc which applies a
-	// Map function on each BatchMapRequest element of the stream and then returns streams
-	// back MapResponse elements.
+	// map function on each BatchMapRequest element of the stream and then streams
+	// back BatchMapResponse elements.
 	BatchMapFn(ctx context.Context, opts ...grpc.CallOption) (BatchMap_BatchMapFnClient, error)
 }
 
@@ -86,8 +86,8 @@ type BatchMapServer interface {
 	// IsReady is the heartbeat endpoint for gRPC.
 	IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error)
 	// BatchMapFn is a bi-directional streaming rpc which applies a
-	// Map function on each BatchMapRequest element of the stream and then returns streams
-	// back MapResponse elements.
+	// map function on each BatchMapRequest element of the stream and then streams
+	// back BatchMapResponse elements.
 	BatchMapFn(BatchMap_BatchMapFnServer) error
 	mustEmbedUnimplementedBatchMapServer()
 }

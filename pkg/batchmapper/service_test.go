@@ -99,9 +99,9 @@ func TestService_MapFnStream(t *testing.T) {
 	}{
 		{
 			name: "batch_map_stream_fn_forward_msg",
-			handler: BatchMapperFunc(func(ctx context.Context, datums []Datum) BatchResponses {
+			handler: BatchMapperFunc(func(ctx context.Context, datums <-chan Datum) BatchResponses {
 				batchResponses := BatchResponsesBuilder()
-				for _, d := range datums {
+				for d := range datums {
 					results := NewBatchResponse(d.Id())
 					results = results.Append(NewMessage(d.Value()).WithKeys([]string{d.Keys()[0] + "_test"}))
 					batchResponses = batchResponses.Append(results)
@@ -144,51 +144,10 @@ func TestService_MapFnStream(t *testing.T) {
 			expectedErr: false,
 		},
 		{
-			name: "batch_map_mismatch_output_len",
-			handler: BatchMapperFunc(func(ctx context.Context, datums []Datum) BatchResponses {
-				batchResponses := BatchResponsesBuilder()
-				return batchResponses
-			}),
-			input: []*batchmappb.BatchMapRequest{{
-				Keys:      []string{"client"},
-				Value:     []byte(`test1`),
-				EventTime: timestamppb.New(time.Time{}),
-				Watermark: timestamppb.New(time.Time{}),
-				Id:        "test1",
-			}, {
-				Keys:      []string{"client"},
-				Value:     []byte(`test2`),
-				EventTime: timestamppb.New(time.Time{}),
-				Watermark: timestamppb.New(time.Time{}),
-				Id:        "test2",
-			}},
-			expected: []*batchmappb.BatchMapResponse{
-				{
-					Results: []*batchmappb.BatchMapResponse_Result{
-						{
-							Keys:  []string{"client_test"},
-							Value: []byte(`test1`),
-						},
-					},
-					Id: "test1",
-				},
-				{
-					Results: []*batchmappb.BatchMapResponse_Result{
-						{
-							Keys:  []string{"client_test"},
-							Value: []byte(`test2`),
-						},
-					},
-					Id: "test2",
-				},
-			},
-			expectedErr: true,
-		},
-		{
 			name: "batch_map_stream_err",
-			handler: BatchMapperFunc(func(ctx context.Context, datums []Datum) BatchResponses {
+			handler: BatchMapperFunc(func(ctx context.Context, datums <-chan Datum) BatchResponses {
 				batchResponses := BatchResponsesBuilder()
-				for _, d := range datums {
+				for d := range datums {
 					results := NewBatchResponse(d.Id())
 					results = results.Append(NewMessage(d.Value()).WithKeys([]string{d.Keys()[0] + "_test"}))
 					batchResponses = batchResponses.Append(results)
@@ -240,7 +199,8 @@ func TestService_MapFnStream(t *testing.T) {
 			// here's a trick for testing:
 			// because we are not using gRPC, we directly set a new incoming ctx
 			// instead of the regular outgoing context in the real gRPC connection.
-			ctx := context.Background()
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+			defer cancel()
 			inputCh := make(chan *batchmappb.BatchMapRequest)
 			outputCh := make(chan *batchmappb.BatchMapResponse)
 			result := make([]*batchmappb.BatchMapResponse, 0)

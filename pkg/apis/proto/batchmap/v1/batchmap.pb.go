@@ -23,7 +23,7 @@ const (
 )
 
 // *
-// MapRequest represents a request element.
+// BatchMapRequest represents a request element.
 type BatchMapRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -113,7 +113,7 @@ func (x *BatchMapRequest) GetId() string {
 }
 
 // *
-// MapResponse represents a response element.
+// BatchMapResponse represents a response element.
 type BatchMapResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
