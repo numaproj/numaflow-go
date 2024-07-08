@@ -10,9 +10,9 @@ COPY dist/batchmap-flatmap /bin/batchmap-flatmap
 RUN chmod +x /bin/batchmap-flatmap
 
 ####################################################################################################
-# flatmap
+# batchmap-flatmap
 ####################################################################################################
-FROM scratch as flatmap
+FROM scratch as batch-flatmap
 ARG ARCH
 COPY --from=base /usr/share/zoneinfo /usr/share/zoneinfo
 COPY --from=base /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
