@@ -88,7 +88,7 @@ func (u *BatchMapFnServerErrTest) Context() context.Context {
 	return u.ctx
 }
 
-func TestService_MapFnStream(t *testing.T) {
+func TestService_BatchMapFn(t *testing.T) {
 	tests := []struct {
 		name        string
 		handler     BatchMapper
@@ -217,13 +217,6 @@ func TestService_MapFnStream(t *testing.T) {
 
 			wg.Add(1)
 			go func() {
-				defer func() {
-					f := recover()
-					if f != nil {
-						err = fmt.Errorf("got a panic")
-						wg.Done()
-					}
-				}()
 				defer wg.Done()
 				err = fs.BatchMapFn(udfBatchMapFnStream)
 				close(outputCh)
@@ -244,12 +237,12 @@ func TestService_MapFnStream(t *testing.T) {
 			wg.Wait()
 
 			if err != nil {
-				assert.True(t, tt.expectedErr, "MapStreamFn() error = %v, expectedErr %v", err, tt.expectedErr)
+				assert.True(t, tt.expectedErr, "BatchMapFn() error = %v, expectedErr %v", err, tt.expectedErr)
 				return
 			}
 
 			if !reflect.DeepEqual(result, tt.expected) {
-				t.Errorf("MapStreamFn() got = %v, want %v", result, tt.expected)
+				t.Errorf("BatchMapFn() got = %v, want %v", result, tt.expected)
 			}
 
 		})
