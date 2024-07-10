@@ -14,12 +14,13 @@ func batchMapFn(_ context.Context, datums <-chan batchmapper.Datum) batchmapper.
 		msg := d.Value()
 		_ = d.EventTime() // Event time is available
 		_ = d.Watermark() // Watermark is available
-		results := batchmapper.NewBatchResponse(d.Id())
+		batchResponse := batchmapper.NewBatchResponse(d.Id())
 		strs := strings.Split(string(msg), ",")
 		for _, s := range strs {
-			results = results.Append(batchmapper.NewMessage([]byte(s)))
+			batchResponse = batchResponse.Append(batchmapper.NewMessage([]byte(s)))
 		}
-		batchResponses = batchResponses.Append(results)
+
+		batchResponses = batchResponses.Append(batchResponse)
 	}
 	return batchResponses
 }
@@ -27,6 +28,6 @@ func batchMapFn(_ context.Context, datums <-chan batchmapper.Datum) batchmapper.
 func main() {
 	err := batchmapper.NewServer(batchmapper.BatchMapperFunc(batchMapFn)).Start(context.Background())
 	if err != nil {
-		log.Panic("Failed to start map function server: ", err)
+		log.Panic("Failed to start batch map function server: ", err)
 	}
 }

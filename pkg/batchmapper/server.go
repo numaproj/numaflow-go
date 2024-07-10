@@ -50,7 +50,7 @@ func (m *server) Start(ctx context.Context) error {
 	defer log.Println("Successfully stopped the gRPC server")
 	defer grpcServer.GracefulStop()
 
-	// register the map service
+	// register the batch map service
 	batchmappb.RegisterBatchMapServer(grpcServer, m.svc)
 
 	// start the grpc server

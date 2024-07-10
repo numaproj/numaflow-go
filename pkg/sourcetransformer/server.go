@@ -49,7 +49,7 @@ func (m *server) Start(ctx context.Context) error {
 	defer log.Println("Successfully stopped the gRPC server")
 	defer grpcServer.GracefulStop()
 
-	// register the map service
+	// register the source transformer service
 	v1.RegisterSourceTransformServer(grpcServer, m.svc)
 
 	// start the grpc server

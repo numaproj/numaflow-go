@@ -95,7 +95,6 @@ func TestService_BatchMapFn(t *testing.T) {
 		input       []*batchmappb.BatchMapRequest
 		expected    []*batchmappb.BatchMapResponse
 		expectedErr bool
-		streamErr   bool
 	}{
 		{
 			name: "batch_map_stream_fn_forward_msg",
@@ -188,7 +187,6 @@ func TestService_BatchMapFn(t *testing.T) {
 				},
 			},
 			expectedErr: true,
-			streamErr:   true,
 		},
 	}
 	for _, tt := range tests {
@@ -206,7 +204,7 @@ func TestService_BatchMapFn(t *testing.T) {
 			result := make([]*batchmappb.BatchMapResponse, 0)
 
 			var udfBatchMapFnStream batchmappb.BatchMap_BatchMapFnServer
-			if tt.streamErr {
+			if tt.expectedErr {
 				udfBatchMapFnStream = NewBatchMapFnServerErrTest(ctx, inputCh, outputCh)
 			} else {
 				udfBatchMapFnStream = NewBatchBatchMapStreamFnServerTest(ctx, inputCh, outputCh)
@@ -236,8 +234,9 @@ func TestService_BatchMapFn(t *testing.T) {
 			close(inputCh)
 			wg.Wait()
 
-			if err != nil {
-				assert.True(t, tt.expectedErr, "BatchMapFn() error = %v, expectedErr %v", err, tt.expectedErr)
+			if tt.expectedErr {
+				// assert err is not nil
+				assert.NotNil(t, err)
 				return
 			}
 

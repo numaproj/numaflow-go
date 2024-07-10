@@ -6,7 +6,7 @@ var (
 	DROP = fmt.Sprintf("%U__DROP__", '\\') // U+005C__DROP__
 )
 
-// Message is used to wrap the data return by Map functions
+// Message is used to wrap the data return by Batch Map functions
 type Message struct {
 	value []byte
 	keys  []string
@@ -94,13 +94,13 @@ func BatchResponsesBuilder() BatchResponses {
 	return BatchResponses{}
 }
 
-// Append appends a Message
+// Append appends a batchResponse
 func (m BatchResponses) Append(msg batchResponse) BatchResponses {
 	m = append(m, msg)
 	return m
 }
 
-// Items returns the message list
+// Items returns the batchResponse list
 func (m BatchResponses) Items() []batchResponse {
 	return m
 }
