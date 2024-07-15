@@ -19,7 +19,7 @@ const (
 	uds                   = "unix"
 	address               = "/var/run/numaflow/batchmap.sock"
 	defaultMaxMessageSize = 1024 * 1024 * 64
-	serverInfoFilePath    = "/var/run/numaflow/batchmapper-server-info"
+	serverInfoFilePath    = "/var/run/numaflow/mapper-server-info"
 )
 
 // Service implements the proto gen server interface and contains the map operation

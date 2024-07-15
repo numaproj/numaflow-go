@@ -15,6 +15,16 @@ const (
 	Java   Language = "java"
 )
 
+type MapMode string
+
+const (
+	UnaryMap  MapMode = "unary-map"
+	StreamMap MapMode = "stream-map"
+	BatchMap  MapMode = "batch-map"
+)
+
+const MapModeMetadata = "MAP_MODE"
+
 // MinimumNumaflowVersion specifies the minimum Numaflow version required by the current SDK version
 const MinimumNumaflowVersion = "1.2.0-rc4"
 

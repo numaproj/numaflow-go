@@ -109,3 +109,10 @@ func Read(opts ...Option) (*ServerInfo, error) {
 	}
 	return info, nil
 }
+
+func GetDefaultServerInfo() *ServerInfo {
+	serverInfo := &ServerInfo{Protocol: UDS, Language: Go, MinimumNumaflowVersion: MinimumNumaflowVersion,
+		Version: GetSDKVersion()}
+	return serverInfo
+
+}
