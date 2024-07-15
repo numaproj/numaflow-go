@@ -9,6 +9,7 @@ import (
 
 	"github.com/numaproj/numaflow-go/pkg"
 	mappb "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1"
+	"github.com/numaproj/numaflow-go/pkg/info"
 	"github.com/numaproj/numaflow-go/pkg/shared"
 )
 
@@ -36,9 +37,16 @@ func (m *server) Start(ctx context.Context) error {
 	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	// write server info to the file
+	// write server info to the file, we need to add metadata to ensure selection of the
+	// correct map mode, in this case unary map
+	serverInfo := info.GetDefaultServerInfo()
+	serverInfo.Metadata = map[string]string{info.MapModeMetadata: string(info.UnaryMap)}
+	if err := info.Write(serverInfo, info.WithServerInfoFilePath(m.opts.serverInfoFilePath)); err != nil {
+		return err
+	}
+
 	// start listening on unix domain socket
-	lis, err := shared.PrepareServer(m.opts.sockAddr, m.opts.serverInfoFilePath)
+	lis, err := shared.PrepareServer(m.opts.sockAddr, "")
 	if err != nil {
 		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", uds, address, err)
 	}
