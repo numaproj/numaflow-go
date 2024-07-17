@@ -8,6 +8,7 @@ import (
 
 	"github.com/numaproj/numaflow-go/pkg"
 	sessionreducepb "github.com/numaproj/numaflow-go/pkg/apis/proto/sessionreduce/v1"
+	"github.com/numaproj/numaflow-go/pkg/info"
 	"github.com/numaproj/numaflow-go/pkg/shared"
 )
 
@@ -37,7 +38,7 @@ func (r *server) Start(ctx context.Context) error {
 
 	// write server info to the file
 	// start listening on unix domain socket
-	lis, err := shared.PrepareServer(r.opts.sockAddr, r.opts.serverInfoFilePath)
+	lis, err := shared.PrepareServer(r.opts.sockAddr, r.opts.serverInfoFilePath, info.GetDefaultServerInfo())
 	if err != nil {
 		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", uds, address, err)
 	}

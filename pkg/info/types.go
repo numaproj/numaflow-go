@@ -23,8 +23,8 @@ const (
 	BatchMap  MapMode = "batch-map"
 )
 
-// MapModeMetadata field is used to indicate which map mode is enabled
-const MapModeMetadata = "MAP_MODE"
+// MapModeKey is the key used in the server info metadata map to indicate which map mode is enabled.
+const MapModeKey = "MAP_MODE"
 
 // MinimumNumaflowVersion specifies the minimum Numaflow version required by the current SDK version
 const MinimumNumaflowVersion = "1.2.0-rc4"

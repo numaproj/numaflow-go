@@ -37,16 +37,13 @@ func (m *server) Start(ctx context.Context) error {
 	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	// write server info to the file, we need to add metadata to ensure selection of the
+	// create a server info to the file, we need to add metadata to ensure selection of the
 	// correct map mode, in this case batch map
 	serverInfo := info.GetDefaultServerInfo()
-	serverInfo.Metadata = map[string]string{info.MapModeMetadata: string(info.BatchMap)}
-	if err := info.Write(serverInfo, info.WithServerInfoFilePath(m.opts.serverInfoFilePath)); err != nil {
-		return err
-	}
+	serverInfo.Metadata = map[string]string{info.MapModeKey: string(info.BatchMap)}
 
 	// start listening on unix domain socket
-	lis, err := shared.PrepareServer(m.opts.sockAddr, "")
+	lis, err := shared.PrepareServer(m.opts.sockAddr, m.opts.serverInfoFilePath, serverInfo)
 	if err != nil {
 		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", uds, address, err)
 	}
