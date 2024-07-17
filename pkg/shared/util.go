@@ -18,7 +18,7 @@ const (
 
 func PrepareServer(sockAddr string, infoFilePath string, serverInfo *info.ServerInfo) (net.Listener, error) {
 	// If serverInfo is not provided, then create a default server info instance.
-	if serverInfo != nil {
+	if serverInfo == nil {
 		serverInfo = info.GetDefaultServerInfo()
 	}
 	// If infoFilePath is not empty, write the server info to the file.
