@@ -8,9 +8,6 @@ spec:
       source:
         http: {}
     - name: go-split
-      metadata:
-        annotations:
-          numaflow.numaproj.io/batch-map: "true"
       scale:
         min: 1
       udf:

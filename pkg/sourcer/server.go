@@ -9,6 +9,7 @@ import (
 
 	numaflow "github.com/numaproj/numaflow-go/pkg"
 	sourcepb "github.com/numaproj/numaflow-go/pkg/apis/proto/source/v1"
+	"github.com/numaproj/numaflow-go/pkg/info"
 	"github.com/numaproj/numaflow-go/pkg/shared"
 )
 
@@ -38,7 +39,7 @@ func (s *server) Start(ctx context.Context) error {
 
 	// write server info to the file
 	// start listening on unix domain socket
-	lis, err := shared.PrepareServer(s.opts.sockAddr, s.opts.serverInfoFilePath)
+	lis, err := shared.PrepareServer(s.opts.sockAddr, s.opts.serverInfoFilePath, info.GetDefaultServerInfo())
 	if err != nil {
 		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", uds, address, err)
 	}

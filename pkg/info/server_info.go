@@ -13,7 +13,7 @@ import (
 
 var END = fmt.Sprintf("%U__END__", '\\') // U+005C__END__
 
-func GetSDKVersion() string {
+func getSDKVersion() string {
 	version := ""
 	info, ok := debug.ReadBuildInfo()
 	if !ok {
@@ -108,4 +108,12 @@ func Read(opts ...Option) (*ServerInfo, error) {
 		return nil, fmt.Errorf("failed to unmarshal server info: %w", err)
 	}
 	return info, nil
+}
+
+// GetDefaultServerInfo returns a ServerInfo object with the default fields populated for Go-SDK
+func GetDefaultServerInfo() *ServerInfo {
+	serverInfo := &ServerInfo{Protocol: UDS, Language: Go, MinimumNumaflowVersion: MinimumNumaflowVersion,
+		Version: getSDKVersion()}
+	return serverInfo
+
 }

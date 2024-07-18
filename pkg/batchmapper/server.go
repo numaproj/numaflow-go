@@ -9,6 +9,7 @@ import (
 
 	"github.com/numaproj/numaflow-go/pkg"
 	batchmappb "github.com/numaproj/numaflow-go/pkg/apis/proto/batchmap/v1"
+	"github.com/numaproj/numaflow-go/pkg/info"
 	"github.com/numaproj/numaflow-go/pkg/shared"
 )
 
@@ -36,9 +37,13 @@ func (m *server) Start(ctx context.Context) error {
 	ctxWithSignal, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	// write server info to the file
+	// create a server info to the file, we need to add metadata to ensure selection of the
+	// correct map mode, in this case batch map
+	serverInfo := info.GetDefaultServerInfo()
+	serverInfo.Metadata = map[string]string{info.MapModeKey: string(info.BatchMap)}
+
 	// start listening on unix domain socket
-	lis, err := shared.PrepareServer(m.opts.sockAddr, m.opts.serverInfoFilePath)
+	lis, err := shared.PrepareServer(m.opts.sockAddr, m.opts.serverInfoFilePath, serverInfo)
 	if err != nil {
 		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", uds, address, err)
 	}

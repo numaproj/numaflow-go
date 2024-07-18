@@ -15,6 +15,17 @@ const (
 	Java   Language = "java"
 )
 
+type MapMode string
+
+const (
+	UnaryMap  MapMode = "unary-map"
+	StreamMap MapMode = "stream-map"
+	BatchMap  MapMode = "batch-map"
+)
+
+// MapModeKey is the key used in the server info metadata map to indicate which map mode is enabled.
+const MapModeKey = "MAP_MODE"
+
 // MinimumNumaflowVersion specifies the minimum Numaflow version required by the current SDK version
 const MinimumNumaflowVersion = "1.2.0-rc4"
 
