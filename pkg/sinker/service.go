@@ -59,8 +59,8 @@ func (h *handlerDatum) Headers() map[string]string {
 // Service implements the proto gen server interface and contains the sinkfn operation handler.
 type Service struct {
 	sinkpb.UnimplementedSinkServer
-
-	Sinker Sinker
+	shutdownCh chan<- struct{}
+	Sinker     Sinker
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
@@ -80,6 +80,12 @@ func (fs *Service) SinkFn(stream sinkpb.Sink_SinkFnServer) error {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+		// handle panic
+		defer func() {
+			if r := recover(); r != nil {
+				fs.shutdownCh <- struct{}{}
+			}
+		}()
 		messages := fs.Sinker.Sink(ctx, datumStreamCh)
 		for _, msg := range messages {
 			if msg.Fallback {

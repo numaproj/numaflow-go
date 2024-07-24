@@ -1,11 +1,10 @@
 package shared
 
 import (
-	"context"
 	"fmt"
-	"log"
 	"net"
 	"os"
+	"time"
 
 	"google.golang.org/grpc"
 
@@ -49,22 +48,21 @@ func CreateGRPCServer(maxMessageSize int) *grpc.Server {
 	)
 }
 
-func StartGRPCServer(ctx context.Context, grpcServer *grpc.Server, lis net.Listener) error {
-	errCh := make(chan error, 1)
-	defer close(errCh)
-	go func(ch chan<- error) {
-		log.Println("starting the gRPC server with unix domain socket...", lis.Addr())
-		err := grpcServer.Serve(lis)
-		if err != nil {
-			ch <- fmt.Errorf("failed to start the gRPC server: %v", err)
-		}
-	}(errCh)
+func StopGRPCServer(grpcServer *grpc.Server) {
+	// Stop stops the gRPC server gracefully.
+	// wait for the server to stop gracefully for 30 seconds
+	// if it is not stopped, stop it forcefully
+	stopped := make(chan struct{})
+	go func() {
+		grpcServer.GracefulStop()
+		close(stopped)
+	}()
 
+	t := time.NewTimer(30 * time.Second)
 	select {
-	case err := <-errCh:
-		return err
-	case <-ctx.Done():
-		log.Println("Got a signal: terminating gRPC server...")
+	case <-t.C:
+		grpcServer.Stop()
+	case <-stopped:
+		t.Stop()
 	}
-	return nil
 }

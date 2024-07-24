@@ -19,7 +19,7 @@ const (
 // streaming function.
 type Service struct {
 	mapstreampb.UnimplementedMapStreamServer
-
+	shutdownCh   chan<- struct{}
 	MapperStream MapStreamer
 }
 
@@ -36,9 +36,16 @@ func (fs *Service) MapStreamFn(d *mapstreampb.MapStreamRequest, stream mapstream
 
 	done := make(chan bool)
 	go func() {
+		// handle panic
+		defer func() {
+			if r := recover(); r != nil {
+				fs.shutdownCh <- struct{}{}
+			}
+		}()
 		fs.MapperStream.MapStream(ctx, d.GetKeys(), hd, messageCh)
 		done <- true
 	}()
+
 	finished := false
 	for {
 		select {

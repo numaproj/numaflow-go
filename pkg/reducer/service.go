@@ -26,6 +26,7 @@ const (
 type Service struct {
 	reducepb.UnimplementedReduceServer
 	reducerCreatorHandle ReducerCreator
+	shutdownCh           chan<- struct{}
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
@@ -41,7 +42,7 @@ func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
 		g   errgroup.Group
 	)
 
-	taskManager := newReduceTaskManager(fs.reducerCreatorHandle)
+	taskManager := newReduceTaskManager(fs.reducerCreatorHandle, fs.shutdownCh)
 
 	// err group for the go routine which reads from the output channel and sends to the stream
 	g.Go(func() error {

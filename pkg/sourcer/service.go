@@ -20,7 +20,8 @@ const (
 // Service implements the proto gen server interface
 type Service struct {
 	sourcepb.UnimplementedSourceServer
-	Source Sourcer
+	Source     Sourcer
+	shutdownCh chan<- struct{}
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
@@ -30,6 +31,13 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*sourcepb.ReadyResp
 
 // PendingFn returns the number of pending messages.
 func (fs *Service) PendingFn(ctx context.Context, _ *emptypb.Empty) (*sourcepb.PendingResponse, error) {
+	// handle panic
+	defer func() {
+		if r := recover(); r != nil {
+			fs.shutdownCh <- struct{}{}
+		}
+	}()
+
 	return &sourcepb.PendingResponse{Result: &sourcepb.PendingResponse_Result{
 		Count: fs.Source.Pending(ctx),
 	}}, nil
@@ -61,6 +69,12 @@ func (fs *Service) ReadFn(d *sourcepb.ReadRequest, stream sourcepb.Source_ReadFn
 	// Start the read in a goroutine
 	go func() {
 		defer close(messageCh)
+		// handle panic
+		defer func() {
+			if r := recover(); r != nil {
+				fs.shutdownCh <- struct{}{}
+			}
+		}()
 		fs.Source.Read(ctx, &request, messageCh)
 	}()
 
@@ -100,6 +114,13 @@ func (a *ackRequest) Offsets() []Offset {
 
 // AckFn applies a function to each datum element.
 func (fs *Service) AckFn(ctx context.Context, d *sourcepb.AckRequest) (*sourcepb.AckResponse, error) {
+	// handle panic
+	defer func() {
+		if r := recover(); r != nil {
+			fs.shutdownCh <- struct{}{}
+		}
+	}()
+
 	offsets := make([]Offset, len(d.Request.GetOffsets()))
 	for i, offset := range d.Request.GetOffsets() {
 		offsets[i] = NewOffset(offset.GetOffset(), offset.GetPartitionId())
@@ -115,6 +136,13 @@ func (fs *Service) AckFn(ctx context.Context, d *sourcepb.AckRequest) (*sourcepb
 }
 
 func (fs *Service) PartitionsFn(ctx context.Context, _ *emptypb.Empty) (*sourcepb.PartitionsResponse, error) {
+	// handle panic
+	defer func() {
+		if r := recover(); r != nil {
+			fs.shutdownCh <- struct{}{}
+		}
+	}()
+
 	partitions := fs.Source.Partitions(ctx)
 	return &sourcepb.PartitionsResponse{
 		Result: &sourcepb.PartitionsResponse_Result{

@@ -24,6 +24,7 @@ const (
 type Service struct {
 	sessionreducepb.UnimplementedSessionReduceServer
 	creatorHandle SessionReducerCreator
+	shutdownCh    chan<- struct{}
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
@@ -35,7 +36,7 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*sessionreducepb.Re
 func (fs *Service) SessionReduceFn(stream sessionreducepb.SessionReduce_SessionReduceFnServer) error {
 
 	ctx := stream.Context()
-	taskManager := newReduceTaskManager(fs.creatorHandle)
+	taskManager := newReduceTaskManager(fs.creatorHandle, fs.shutdownCh)
 	// err group for the go routine which reads from the output channel and sends to the stream
 	var g errgroup.Group
 
