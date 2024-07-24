@@ -27,6 +27,7 @@ const (
 type Service struct {
 	batchmappb.UnimplementedBatchMapServer
 	BatchMapper BatchMapper
+	shutdownCh  chan<- struct{}
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
@@ -51,6 +52,12 @@ func (fs *Service) BatchMapFn(stream batchmappb.BatchMap_BatchMapFnServer) error
 
 	// go routine to invoke the user handler function, and process the responses.
 	g.Go(func() error {
+		// handle panic
+		defer func() {
+			if r := recover(); r != nil {
+				fs.shutdownCh <- struct{}{}
+			}
+		}()
 		// Apply the user BatchMap implementation function
 		responses := fs.BatchMapper.BatchMap(ctx, datumStreamCh)
 
