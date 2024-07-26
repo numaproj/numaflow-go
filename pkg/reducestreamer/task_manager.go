@@ -56,13 +56,15 @@ type reduceStreamTaskManager struct {
 	creatorHandle ReduceStreamerCreator
 	tasks         map[string]*reduceStreamTask
 	responseCh    chan *v1.ReduceResponse
+	shutdownCh    chan<- struct{}
 }
 
-func newReduceTaskManager(reduceStreamerCreator ReduceStreamerCreator) *reduceStreamTaskManager {
+func newReduceTaskManager(reduceStreamerCreator ReduceStreamerCreator, shutdownCh chan<- struct{}) *reduceStreamTaskManager {
 	return &reduceStreamTaskManager{
 		creatorHandle: reduceStreamerCreator,
 		tasks:         make(map[string]*reduceStreamTask),
 		responseCh:    make(chan *v1.ReduceResponse),
+		shutdownCh:    shutdownCh,
 	}
 }
 
@@ -94,6 +96,13 @@ func (rtm *reduceStreamTaskManager) CreateTask(ctx context.Context, request *v1.
 			for message := range task.outputCh {
 				// write the output to the output channel, service will forward it to downstream
 				rtm.responseCh <- task.buildReduceResponse(message)
+			}
+		}()
+
+		// handle panic
+		defer func() {
+			if r := recover(); r != nil {
+				rtm.shutdownCh <- struct{}{}
 			}
 		}()
 

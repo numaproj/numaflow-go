@@ -19,7 +19,8 @@ const (
 // Service implements the proto gen server interface and contains the retrieve operation handler
 type Service struct {
 	sideinputpb.UnimplementedSideInputServer
-	Retriever SideInputRetriever
+	Retriever  SideInputRetriever
+	shutdownCh chan<- struct{}
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
@@ -29,6 +30,12 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*sideinputpb.ReadyR
 
 // RetrieveSideInput applies the function for each side input retrieval request.
 func (fs *Service) RetrieveSideInput(ctx context.Context, _ *emptypb.Empty) (*sideinputpb.SideInputResponse, error) {
+	// handle panic
+	defer func() {
+		if r := recover(); r != nil {
+			fs.shutdownCh <- struct{}{}
+		}
+	}()
 	messageSi := fs.Retriever.RetrieveSideInput(ctx)
 	var element *sideinputpb.SideInputResponse
 	element = &sideinputpb.SideInputResponse{

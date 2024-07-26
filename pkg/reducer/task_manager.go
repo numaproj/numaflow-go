@@ -10,12 +10,11 @@ import (
 
 // reduceTask represents a task for a performing reduceStream operation.
 type reduceTask struct {
-	keys     []string
-	window   *v1.Window
-	reducer  Reducer
-	inputCh  chan Datum
-	outputCh chan Message
-	doneCh   chan struct{}
+	keys    []string
+	window  *v1.Window
+	reducer Reducer
+	inputCh chan Datum
+	doneCh  chan struct{}
 }
 
 // buildReduceResponse builds the reduce response from the messages.
@@ -55,13 +54,15 @@ type reduceTaskManager struct {
 	reducerCreatorHandle ReducerCreator
 	tasks                map[string]*reduceTask
 	responseCh           chan *v1.ReduceResponse
+	shutdownCh           chan<- struct{}
 }
 
-func newReduceTaskManager(reducerCreatorHandle ReducerCreator) *reduceTaskManager {
+func newReduceTaskManager(reducerCreatorHandle ReducerCreator, shutdownCh chan<- struct{}) *reduceTaskManager {
 	return &reduceTaskManager{
 		reducerCreatorHandle: reducerCreatorHandle,
 		tasks:                make(map[string]*reduceTask),
 		responseCh:           make(chan *v1.ReduceResponse),
+		shutdownCh:           shutdownCh,
 	}
 }
 
@@ -75,17 +76,22 @@ func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.Reduce
 		request.Operation.Windows[0].GetEnd().AsTime()))
 
 	task := &reduceTask{
-		keys:     request.GetPayload().GetKeys(),
-		window:   request.Operation.Windows[0],
-		inputCh:  make(chan Datum),
-		outputCh: make(chan Message),
-		doneCh:   make(chan struct{}),
+		keys:    request.GetPayload().GetKeys(),
+		window:  request.Operation.Windows[0],
+		inputCh: make(chan Datum),
+		doneCh:  make(chan struct{}),
 	}
 
 	key := task.uniqueKey()
 	rtm.tasks[key] = task
 
 	go func() {
+		// handle panic
+		defer func() {
+			if r := recover(); r != nil {
+				rtm.shutdownCh <- struct{}{}
+			}
+		}()
 		// invoke the reduce function
 		// create a new reducer, since we got a new key
 		reducerHandle := rtm.reducerCreatorHandle.Create()
@@ -95,9 +101,6 @@ func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.Reduce
 			// write the output to the output channel, service will forward it to downstream
 			rtm.responseCh <- task.buildReduceResponse(message)
 		}
-		// close the output channel after the reduce function is done
-		close(task.outputCh)
-		// send a done signal
 		close(task.doneCh)
 	}()
 

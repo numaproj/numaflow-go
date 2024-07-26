@@ -78,13 +78,15 @@ type sessionReduceTaskManager struct {
 	tasks         map[string]*sessionReduceTask
 	responseCh    chan *v1.SessionReduceResponse
 	rw            sync.RWMutex
+	shutdownCh    chan<- struct{}
 }
 
-func newReduceTaskManager(sessionReducerFactory SessionReducerCreator) *sessionReduceTaskManager {
+func newReduceTaskManager(sessionReducerFactory SessionReducerCreator, shutdownCh chan<- struct{}) *sessionReduceTaskManager {
 	return &sessionReduceTaskManager{
 		creatorHandle: sessionReducerFactory,
 		tasks:         make(map[string]*sessionReduceTask),
 		responseCh:    make(chan *v1.SessionReduceResponse),
+		shutdownCh:    shutdownCh,
 	}
 }
 
@@ -126,6 +128,13 @@ func (rtm *sessionReduceTaskManager) CreateTask(ctx context.Context, request *v1
 			if !task.merged.Load() {
 				// send EOF
 				rtm.responseCh <- task.buildEOFResponse()
+			}
+		}()
+
+		// handle panic
+		defer func() {
+			if r := recover(); r != nil {
+				rtm.shutdownCh <- struct{}{}
 			}
 		}()
 
@@ -195,6 +204,13 @@ func (rtm *sessionReduceTaskManager) CloseTask(request *v1.SessionReduceRequest)
 // MergeTasks merges the session reduce tasks. It will create a new task with the merged window and
 // merges the accumulators from the other tasks to the merged task.
 func (rtm *sessionReduceTaskManager) MergeTasks(ctx context.Context, request *v1.SessionReduceRequest) error {
+	// handle panic
+	defer func() {
+		if r := recover(); r != nil {
+			rtm.shutdownCh <- struct{}{}
+		}
+	}()
+
 	rtm.rw.Lock()
 	mergedWindow := request.Operation.KeyedWindows[0]
 
