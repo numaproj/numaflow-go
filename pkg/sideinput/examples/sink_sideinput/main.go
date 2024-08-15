@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"path"
@@ -32,18 +31,21 @@ func handle(ctx context.Context, datumStreamCh <-chan sinksdk.Datum) sinksdk.Res
 		_ = d.Watermark()
 
 		// We use redis hashes to store messages.
-		// The name of a hash is pipelineName:sinkName.
 		// Each field of a hash is the content of a message and value of the field is the no. of occurrences of the message.
-		hkey := fmt.Sprintf("%s:%s", os.Getenv("NUMAFLOW_PIPELINE_NAME"), os.Getenv("NUMAFLOW_VERTEX_NAME"))
+		var hashKey string
+		if hashKey = os.Getenv("SINK_HASH_KEY"); hashKey == "" {
+			log.Panicf("SINK_HASH_KEY environment variable is not set.")
+		}
+
 		sideInputMutex.Lock()
 		content := sideInputContent
 
 		sideInputMutex.Unlock()
-		err := client.HIncrBy(ctx, hkey, content, 1).Err()
+		err := client.HIncrBy(ctx, hashKey, content, 1).Err()
 		if err != nil {
 			log.Println("Set Error - ", err)
 		} else {
-			log.Printf("Incremented by 1 the no. of occurrences of %s under hash key %s\n", content, hkey)
+			log.Printf("Incremented by 1 the no. of occurrences of %s under hash key %s\n", content, hashKey)
 		}
 
 		id := d.ID()
