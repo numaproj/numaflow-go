@@ -5,7 +5,7 @@ go 1.18
 replace github.com/numaproj/numaflow-go => ../../../..
 
 require (
-	github.com/go-redis/redis/v8 v8.11.4
+	github.com/go-redis/redis/v8 v8.11.5
 	github.com/numaproj/numaflow-go v0.7.0-rc2
 )
 

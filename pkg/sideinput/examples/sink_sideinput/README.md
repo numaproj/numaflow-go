@@ -12,6 +12,6 @@ Reads and stores the content of the side input file when created.
 For each received message, the sink:
 1. Uses the content of the side input as the Redis hash field (key)
 2. Increments the value associated with that key (number of occurrences of that key)
-3. The hash name in Redis is determined by the environment variables `NUMAFLOW_PIPELINE_NAME` and `NUMAFLOW_VERTEX_NAME`
+3. The hash name in Redis is determined by the environment variables `SINK_HASH_KEY`
 
 
