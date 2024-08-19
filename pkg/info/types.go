@@ -27,7 +27,7 @@ const (
 const MapModeKey = "MAP_MODE"
 
 // MinimumNumaflowVersion specifies the minimum Numaflow version required by the current SDK version
-const MinimumNumaflowVersion = "1.2.0-rc4"
+const MinimumNumaflowVersion = "1.3.0-rc1"
 
 // ServerInfo is the information about the server
 type ServerInfo struct {
