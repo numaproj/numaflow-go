@@ -1,10 +1,13 @@
 TAG ?= stable
 PUSH ?= false
 IMAGE_REGISTRY = quay.io/numaio/numaflow-go/map-retry:${TAG}
+ARCHITECTURES = amd64 arm64
 
 .PHONY: build
 build:
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -o ./dist/retry main.go
+	for arch in $(ARCHITECTURES); do \
+		GOOS=linux GOARCH=$${arch} go build -v -o ./dist/retry-$${arch} main.go; \
+	done
 
 .PHONY: image-push
 image-push: build

@@ -1,10 +1,13 @@
 TAG ?= stable
 PUSH ?= false
 IMAGE_REGISTRY = quay.io/numaio/numaflow-go/redis-sink-with-sideinput:${TAG}
+ARCHITECTURES = amd64 arm64
 
 .PHONY: build
 build:
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -o ./dist/redis-sink-with-sideinput main.go
+	for arch in $(ARCHITECTURES); do \
+		GOOS=linux GOARCH=$${arch} go build -v -o ./dist/redis-sink-with-sideinput-$${arch} main.go; \
+	done
 
 .PHONY: image-push
 image-push: build
