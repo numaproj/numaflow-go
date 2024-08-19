@@ -1,6 +1,6 @@
 module batchmap-flatmap
 
-go 1.22
+go 1.20
 
 replace github.com/numaproj/numaflow-go => ../../../..
 
