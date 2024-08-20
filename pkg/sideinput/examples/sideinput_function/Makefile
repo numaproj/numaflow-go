@@ -6,7 +6,7 @@ ARCHITECTURES = amd64 arm64
 .PHONY: build
 build:
 	for arch in $(ARCHITECTURES); do \
-		GOOS=linux GOARCH=$${arch} go build -v -o ./dist/sideinput-function-$${arch} main.go; \
+		CGO_ENABLED=0 GOOS=linux GOARCH=$${arch} go build -v -o ./dist/sideinput-function-$${arch} main.go; \
 	done
 
 .PHONY: image-push
