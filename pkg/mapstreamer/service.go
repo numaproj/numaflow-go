@@ -2,6 +2,8 @@ package mapstreamer
 
 import (
 	"context"
+	"log"
+	"runtime/debug"
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
@@ -39,6 +41,7 @@ func (fs *Service) MapStreamFn(d *mapstreampb.MapStreamRequest, stream mapstream
 		// handle panic
 		defer func() {
 			if r := recover(); r != nil {
+				log.Printf("panic inside mapStream handler: %v %v", r, string(debug.Stack()))
 				fs.shutdownCh <- struct{}{}
 			}
 		}()

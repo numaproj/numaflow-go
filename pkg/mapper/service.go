@@ -2,6 +2,8 @@ package mapper
 
 import (
 	"context"
+	"log"
+	"runtime/debug"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -38,6 +40,7 @@ func (fs *Service) MapFn(ctx context.Context, d *mappb.MapRequest) (_ *mappb.Map
 	// Use defer and recover to handle panic
 	defer func() {
 		if r := recover(); r != nil {
+			log.Printf("panic inside map handler: %v %v", r, string(debug.Stack()))
 			fs.shutdownCh <- struct{}{} // Send shutdown signal
 			err = status.Errorf(codes.Internal, "panic occurred in Mapper.Map: %v", r)
 		}

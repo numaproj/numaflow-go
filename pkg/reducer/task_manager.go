@@ -3,6 +3,8 @@ package reducer
 import (
 	"context"
 	"fmt"
+	"log"
+	"runtime/debug"
 	"strings"
 
 	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/reduce/v1"
@@ -89,6 +91,7 @@ func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.Reduce
 		// handle panic
 		defer func() {
 			if r := recover(); r != nil {
+				log.Printf("panic inside reduce handler: %v %v", r, string(debug.Stack()))
 				rtm.shutdownCh <- struct{}{}
 			}
 		}()

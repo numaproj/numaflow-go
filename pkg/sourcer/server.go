@@ -3,6 +3,7 @@ package sourcer
 import (
 	"context"
 	"fmt"
+	"log"
 	"os/signal"
 	"sync"
 	"syscall"
@@ -76,6 +77,7 @@ func (s *server) Start(ctx context.Context) error {
 		defer wg.Done()
 		select {
 		case <-s.shutdownCh:
+			log.Printf("shutdown signal received")
 		case <-ctxWithSignal.Done():
 		}
 		shared.StopGRPCServer(s.grpcServer)

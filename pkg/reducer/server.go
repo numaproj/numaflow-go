@@ -3,6 +3,7 @@ package reducer
 import (
 	"context"
 	"fmt"
+	"log"
 	"os/signal"
 	"sync"
 	"syscall"
@@ -60,7 +61,6 @@ func (r *server) Start(ctx context.Context) error {
 
 	// create a grpc server
 	r.grpcServer = shared.CreateGRPCServer(r.opts.maxMessageSize)
-	defer r.grpcServer.GracefulStop()
 
 	// register the reduce service
 	reducepb.RegisterReduceServer(r.grpcServer, r.svc)
@@ -72,6 +72,7 @@ func (r *server) Start(ctx context.Context) error {
 		defer wg.Done()
 		select {
 		case <-r.shutdownCh:
+			log.Printf("received shutdown signal")
 		case <-ctxWithSignal.Done():
 		}
 		shared.StopGRPCServer(r.grpcServer)

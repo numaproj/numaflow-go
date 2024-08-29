@@ -3,6 +3,8 @@ package sinker
 import (
 	"context"
 	"io"
+	"log"
+	"runtime/debug"
 	"sync"
 	"time"
 
@@ -83,6 +85,7 @@ func (fs *Service) SinkFn(stream sinkpb.Sink_SinkFnServer) error {
 		// handle panic
 		defer func() {
 			if r := recover(); r != nil {
+				log.Printf("panic inside sink handler: %v %v", r, string(debug.Stack()))
 				fs.shutdownCh <- struct{}{}
 			}
 		}()
