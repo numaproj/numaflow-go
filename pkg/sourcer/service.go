@@ -2,6 +2,8 @@ package sourcer
 
 import (
 	"context"
+	"log"
+	"runtime/debug"
 	"time"
 
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -34,6 +36,7 @@ func (fs *Service) PendingFn(ctx context.Context, _ *emptypb.Empty) (*sourcepb.P
 	// handle panic
 	defer func() {
 		if r := recover(); r != nil {
+			log.Printf("panic inside sourcer handler: %v %v", r, string(debug.Stack()))
 			fs.shutdownCh <- struct{}{}
 		}
 	}()
@@ -72,6 +75,7 @@ func (fs *Service) ReadFn(d *sourcepb.ReadRequest, stream sourcepb.Source_ReadFn
 		// handle panic
 		defer func() {
 			if r := recover(); r != nil {
+				log.Printf("panic inside source handler: %v %v", r, string(debug.Stack()))
 				fs.shutdownCh <- struct{}{}
 			}
 		}()
@@ -117,6 +121,7 @@ func (fs *Service) AckFn(ctx context.Context, d *sourcepb.AckRequest) (*sourcepb
 	// handle panic
 	defer func() {
 		if r := recover(); r != nil {
+			log.Printf("panic inside source handler: %v %v", r, string(debug.Stack()))
 			fs.shutdownCh <- struct{}{}
 		}
 	}()
@@ -139,6 +144,7 @@ func (fs *Service) PartitionsFn(ctx context.Context, _ *emptypb.Empty) (*sourcep
 	// handle panic
 	defer func() {
 		if r := recover(); r != nil {
+			log.Printf("panic inside source handler: %v %v", r, string(debug.Stack()))
 			fs.shutdownCh <- struct{}{}
 		}
 	}()

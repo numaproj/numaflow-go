@@ -3,6 +3,7 @@ package batchmapper
 import (
 	"context"
 	"fmt"
+	"log"
 	"os/signal"
 	"sync"
 	"syscall"
@@ -76,6 +77,7 @@ func (m *server) Start(ctx context.Context) error {
 		defer wg.Done()
 		select {
 		case <-m.shutdownCh:
+			log.Printf("received shutdown signal")
 		case <-ctxWithSignal.Done():
 		}
 		shared.StopGRPCServer(m.grpcServer)

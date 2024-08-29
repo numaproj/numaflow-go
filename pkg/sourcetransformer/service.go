@@ -2,6 +2,8 @@ package sourcetransformer
 
 import (
 	"context"
+	"log"
+	"runtime/debug"
 
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -36,6 +38,7 @@ func (fs *Service) SourceTransformFn(ctx context.Context, d *v1.SourceTransformR
 	// handle panic
 	defer func() {
 		if r := recover(); r != nil {
+			log.Printf("panic inside sourcetransform handler: %v %v", r, string(debug.Stack()))
 			fs.shutdownCh <- struct{}{}
 		}
 	}()

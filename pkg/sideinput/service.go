@@ -2,6 +2,8 @@ package sideinput
 
 import (
 	"context"
+	"log"
+	"runtime/debug"
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
@@ -33,6 +35,7 @@ func (fs *Service) RetrieveSideInput(ctx context.Context, _ *emptypb.Empty) (*si
 	// handle panic
 	defer func() {
 		if r := recover(); r != nil {
+			log.Printf("panic inside sideinput handler: %v %v", r, string(debug.Stack()))
 			fs.shutdownCh <- struct{}{}
 		}
 	}()

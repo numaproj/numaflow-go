@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"runtime/debug"
 
 	"go.uber.org/atomic"
 	"golang.org/x/sync/errgroup"
@@ -55,6 +56,7 @@ func (fs *Service) BatchMapFn(stream batchmappb.BatchMap_BatchMapFnServer) error
 		// handle panic
 		defer func() {
 			if r := recover(); r != nil {
+				log.Printf("panic inside reduce handler: %v %v", r, string(debug.Stack()))
 				fs.shutdownCh <- struct{}{}
 			}
 		}()
