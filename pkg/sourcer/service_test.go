@@ -3,6 +3,7 @@ package sourcer
 import (
 	"context"
 	"fmt"
+	"io"
 	"reflect"
 	"sync"
 	"testing"
@@ -54,22 +55,35 @@ func TestService_IsReady(t *testing.T) {
 
 type ReadFnServerTest struct {
 	ctx      context.Context
-	outputCh chan sourcepb.ReadResponse
+	outputCh chan *sourcepb.ReadResponse
+	requests []*sourcepb.ReadRequest
 	grpc.ServerStream
+	index int
+}
+
+func (t *ReadFnServerTest) Recv() (*sourcepb.ReadRequest, error) {
+	if t.index >= len(t.requests) {
+		return nil, io.EOF
+	}
+	req := t.requests[t.index]
+	t.index++
+	return req, nil
 }
 
 func NewReadFnServerTest(
 	ctx context.Context,
-	outputCh chan sourcepb.ReadResponse,
+	outputCh chan *sourcepb.ReadResponse,
+	requests []*sourcepb.ReadRequest,
 ) *ReadFnServerTest {
 	return &ReadFnServerTest{
 		ctx:      ctx,
 		outputCh: outputCh,
+		requests: requests,
 	}
 }
 
 func (t *ReadFnServerTest) Send(d *sourcepb.ReadResponse) error {
-	t.outputCh <- *d
+	t.outputCh <- d
 	return nil
 }
 
@@ -80,6 +94,10 @@ func (t *ReadFnServerTest) Context() context.Context {
 type ReadFnServerErrTest struct {
 	ctx context.Context
 	grpc.ServerStream
+}
+
+func (te *ReadFnServerErrTest) Recv() (*sourcepb.ReadRequest, error) {
+	return nil, fmt.Errorf("recv error")
 }
 
 func NewReadFnServerErrTest(
@@ -98,21 +116,52 @@ func (te *ReadFnServerErrTest) Context() context.Context {
 	return te.ctx
 }
 
+type AckFnServerTest struct {
+	ctx     context.Context
+	offsets []*sourcepb.Offset
+	grpc.ServerStream
+	index int
+}
+
+func (a *AckFnServerTest) Recv() (*sourcepb.AckRequest, error) {
+	if a.index >= len(a.offsets) {
+		return nil, io.EOF
+	}
+	offset := a.offsets[a.index]
+	a.index++
+	return &sourcepb.AckRequest{
+		Request: &sourcepb.AckRequest_Request{
+			Offsets: []*sourcepb.Offset{offset},
+		},
+	}, nil
+}
+
+func NewAckFnServerTest(
+	ctx context.Context,
+	offsets []*sourcepb.Offset,
+) *AckFnServerTest {
+	return &AckFnServerTest{
+		ctx:     ctx,
+		offsets: offsets,
+	}
+}
+
+func (a *AckFnServerTest) SendAndClose(response *sourcepb.AckResponse) error {
+	return nil
+}
+
+func (a *AckFnServerTest) Context() context.Context {
+	return a.ctx
+}
+
 func TestService_ReadFn(t *testing.T) {
 	tests := []struct {
 		name        string
-		input       *sourcepb.ReadRequest
 		expected    []*sourcepb.ReadResponse
 		expectedErr bool
 	}{
 		{
 			name: "read_fn_read_msg",
-			input: &sourcepb.ReadRequest{
-				Request: &sourcepb.ReadRequest_Request{
-					NumRecords:  1,
-					TimeoutInMs: 1000,
-				},
-			},
 			expected: []*sourcepb.ReadResponse{
 				{
 					Result: &sourcepb.ReadResponse_Result{
@@ -128,12 +177,6 @@ func TestService_ReadFn(t *testing.T) {
 		},
 		{
 			name: "read_fn_err",
-			input: &sourcepb.ReadRequest{
-				Request: &sourcepb.ReadRequest_Request{
-					NumRecords:  1,
-					TimeoutInMs: 1000,
-				},
-			},
 			expected: []*sourcepb.ReadResponse{
 				{
 					Result: &sourcepb.ReadResponse_Result{
@@ -155,14 +198,20 @@ func TestService_ReadFn(t *testing.T) {
 			// because we are not using gRPC, we directly set a new incoming ctx
 			// instead of the regular outgoing context in the real gRPC connection.
 			ctx := context.Background()
-			outputCh := make(chan sourcepb.ReadResponse)
+			outputCh := make(chan *sourcepb.ReadResponse)
 			result := make([]*sourcepb.ReadResponse, 0)
 
 			var readFnStream sourcepb.Source_ReadFnServer
 			if tt.expectedErr {
 				readFnStream = NewReadFnServerErrTest(ctx)
 			} else {
-				readFnStream = NewReadFnServerTest(ctx, outputCh)
+				requests := &sourcepb.ReadRequest{
+					Request: &sourcepb.ReadRequest_Request{
+						NumRecords:  1,
+						TimeoutInMs: 1000,
+					},
+				}
+				readFnStream = NewReadFnServerTest(ctx, outputCh, []*sourcepb.ReadRequest{requests})
 			}
 
 			var wg sync.WaitGroup
@@ -171,11 +220,11 @@ func TestService_ReadFn(t *testing.T) {
 			go func() {
 				defer wg.Done()
 				for msg := range outputCh {
-					result = append(result, &msg)
+					result = append(result, msg)
 				}
 			}()
 
-			err := fs.ReadFn(tt.input, readFnStream)
+			err := fs.ReadFn(readFnStream)
 			close(outputCh)
 			wg.Wait()
 
@@ -196,19 +245,15 @@ func TestService_ReadFn(t *testing.T) {
 func TestService_AckFn(t *testing.T) {
 	fs := &Service{Source: TestSource{}}
 	ctx := context.Background()
-	got, err := fs.AckFn(ctx, &sourcepb.AckRequest{
-		Request: &sourcepb.AckRequest_Request{
-			Offsets: []*sourcepb.Offset{
-				{
-					PartitionId: 0,
-					Offset:      []byte("test"),
-				},
-			},
+	offsets := []*sourcepb.Offset{
+		{
+			PartitionId: 0,
+			Offset:      []byte("test"),
 		},
-	})
-	assert.Equal(t, got, &sourcepb.AckResponse{
-		Result: &sourcepb.AckResponse_Result{},
-	})
+	}
+	ackFnStream := NewAckFnServerTest(ctx, offsets)
+
+	err := fs.AckFn(ackFnStream)
 	assert.NoError(t, err)
 }
 

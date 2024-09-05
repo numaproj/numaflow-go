@@ -2,8 +2,11 @@ package sourcer
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"log"
 	"runtime/debug"
+	"sync"
 	"time"
 
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -24,6 +27,124 @@ type Service struct {
 	sourcepb.UnimplementedSourceServer
 	Source     Sourcer
 	shutdownCh chan<- struct{}
+}
+
+// ReadFn reads the data from the source.
+func (fs *Service) ReadFn(stream sourcepb.Source_ReadFnServer) error {
+	ctx := stream.Context()
+	messageCh := make(chan Message)
+	errCh := make(chan error, 1)
+
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		defer close(messageCh)
+		// handle panic
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("panic inside source handler: %v %v", r, string(debug.Stack()))
+				fs.shutdownCh <- struct{}{}
+				errCh <- fmt.Errorf("panic: %v", r)
+			}
+		}()
+
+		for {
+			// Receive read requests from the stream
+			req, err := stream.Recv()
+			if err == io.EOF {
+				return
+			}
+			if err != nil {
+				log.Printf("error receiving from stream: %v", err)
+				errCh <- err
+				return
+			}
+
+			request := readRequest{
+				count:   req.Request.GetNumRecords(),
+				timeout: time.Duration(req.Request.GetTimeoutInMs()) * time.Millisecond,
+			}
+
+			fs.Source.Read(ctx, &request, messageCh)
+		}
+	}()
+	// Read messages from the channel and send them to the stream, until the channel is closed
+	for msg := range messageCh {
+		offset := &sourcepb.Offset{
+			Offset:      msg.Offset().Value(),
+			PartitionId: msg.Offset().PartitionId(),
+		}
+		element := &sourcepb.ReadResponse{
+			Result: &sourcepb.ReadResponse_Result{
+				Payload:   msg.Value(),
+				Offset:    offset,
+				EventTime: timestamppb.New(msg.EventTime()),
+				Keys:      msg.Keys(),
+				Headers:   msg.Headers(),
+			},
+		}
+		// The error here is returned by the stream, which is already a gRPC error
+		if err := stream.Send(element); err != nil {
+			// The channel may or may not be closed, as we are not sure, we leave it to GC.
+			return err
+		}
+	}
+
+	// Wait for the goroutine to finish
+	wg.Wait()
+	// Check if there was any error in the goroutine
+	select {
+	case err := <-errCh:
+		return err
+	default:
+		return nil
+	}
+}
+
+// ackRequest implements the AckRequest interface and is used in the ack handler.
+type ackRequest struct {
+	offset Offset
+}
+
+// Offset returns the offset of the record to ack.
+func (a *ackRequest) Offset() Offset {
+	return a.offset
+}
+
+// AckFn acknowledges the data from the source.
+func (fs *Service) AckFn(stream sourcepb.Source_AckFnServer) error {
+	ctx := stream.Context()
+
+	// handle panic
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("panic inside source handler: %v %v", r, string(debug.Stack()))
+			fs.shutdownCh <- struct{}{}
+		}
+	}()
+
+	for {
+		// Receive ack requests from the stream
+		req, err := stream.Recv()
+		if err == io.EOF {
+			return stream.SendAndClose(&sourcepb.AckResponse{
+				Result: &sourcepb.AckResponse_Result{},
+			})
+		}
+		if err != nil {
+			log.Printf("error receiving from stream: %v", err)
+			return err
+		}
+
+		for _, offset := range req.Request.GetOffsets() {
+			request := ackRequest{
+				offset: NewOffset(offset.GetOffset(), offset.GetPartitionId()),
+			}
+			fs.Source.Ack(ctx, &request)
+		}
+	}
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
@@ -58,86 +179,6 @@ func (r *readRequest) TimeOut() time.Duration {
 
 func (r *readRequest) Count() uint64 {
 	return r.count
-}
-
-// ReadFn reads the data from the source.
-func (fs *Service) ReadFn(d *sourcepb.ReadRequest, stream sourcepb.Source_ReadFnServer) error {
-	request := readRequest{
-		count:   d.Request.GetNumRecords(),
-		timeout: time.Duration(d.Request.GetTimeoutInMs()) * time.Millisecond,
-	}
-	ctx := stream.Context()
-	messageCh := make(chan Message)
-
-	// Start the read in a goroutine
-	go func() {
-		defer close(messageCh)
-		// handle panic
-		defer func() {
-			if r := recover(); r != nil {
-				log.Printf("panic inside source handler: %v %v", r, string(debug.Stack()))
-				fs.shutdownCh <- struct{}{}
-			}
-		}()
-		fs.Source.Read(ctx, &request, messageCh)
-	}()
-
-	// Read messages from the channel and send them to the stream, until the channel is closed
-	for msg := range messageCh {
-		offset := &sourcepb.Offset{
-			Offset:      msg.Offset().Value(),
-			PartitionId: msg.Offset().PartitionId(),
-		}
-		element := &sourcepb.ReadResponse{
-			Result: &sourcepb.ReadResponse_Result{
-				Payload:   msg.Value(),
-				Offset:    offset,
-				EventTime: timestamppb.New(msg.EventTime()),
-				Keys:      msg.Keys(),
-				Headers:   msg.Headers(),
-			},
-		}
-		// The error here is returned by the stream, which is already a gRPC error
-		if err := stream.Send(element); err != nil {
-			// The channel may or may not be closed, as we are not sure, we leave it to GC.
-			return err
-		}
-	}
-	return nil
-}
-
-// ackRequest implements the AckRequest interface and is used in the ack handler.
-type ackRequest struct {
-	offsets []Offset
-}
-
-// Offsets returns the offsets of the records to ack.
-func (a *ackRequest) Offsets() []Offset {
-	return a.offsets
-}
-
-// AckFn applies a function to each datum element.
-func (fs *Service) AckFn(ctx context.Context, d *sourcepb.AckRequest) (*sourcepb.AckResponse, error) {
-	// handle panic
-	defer func() {
-		if r := recover(); r != nil {
-			log.Printf("panic inside source handler: %v %v", r, string(debug.Stack()))
-			fs.shutdownCh <- struct{}{}
-		}
-	}()
-
-	offsets := make([]Offset, len(d.Request.GetOffsets()))
-	for i, offset := range d.Request.GetOffsets() {
-		offsets[i] = NewOffset(offset.GetOffset(), offset.GetPartitionId())
-	}
-
-	request := ackRequest{
-		offsets: offsets,
-	}
-	fs.Source.Ack(ctx, &request)
-	return &sourcepb.AckResponse{
-		Result: &sourcepb.AckResponse_Result{},
-	}, nil
 }
 
 func (fs *Service) PartitionsFn(ctx context.Context, _ *emptypb.Empty) (*sourcepb.PartitionsResponse, error) {
