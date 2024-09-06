@@ -39,22 +39,22 @@ func (m *MockSourceClient) EXPECT() *MockSourceClientMockRecorder {
 }
 
 // AckFn mocks base method.
-func (m *MockSourceClient) AckFn(arg0 context.Context, arg1 *v1.AckRequest, arg2 ...grpc.CallOption) (*v1.AckResponse, error) {
+func (m *MockSourceClient) AckFn(arg0 context.Context, arg1 ...grpc.CallOption) (v1.Source_AckFnClient, error) {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
+	varargs := []interface{}{arg0}
+	for _, a := range arg1 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "AckFn", varargs...)
-	ret0, _ := ret[0].(*v1.AckResponse)
+	ret0, _ := ret[0].(v1.Source_AckFnClient)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // AckFn indicates an expected call of AckFn.
-func (mr *MockSourceClientMockRecorder) AckFn(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+func (mr *MockSourceClientMockRecorder) AckFn(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	varargs := append([]interface{}{arg0}, arg1...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AckFn", reflect.TypeOf((*MockSourceClient)(nil).AckFn), varargs...)
 }
 
@@ -119,10 +119,10 @@ func (mr *MockSourceClientMockRecorder) PendingFn(arg0, arg1 interface{}, arg2 .
 }
 
 // ReadFn mocks base method.
-func (m *MockSourceClient) ReadFn(arg0 context.Context, arg1 *v1.ReadRequest, arg2 ...grpc.CallOption) (v1.Source_ReadFnClient, error) {
+func (m *MockSourceClient) ReadFn(arg0 context.Context, arg1 ...grpc.CallOption) (v1.Source_ReadFnClient, error) {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
+	varargs := []interface{}{arg0}
+	for _, a := range arg1 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "ReadFn", varargs...)
@@ -132,9 +132,9 @@ func (m *MockSourceClient) ReadFn(arg0 context.Context, arg1 *v1.ReadRequest, ar
 }
 
 // ReadFn indicates an expected call of ReadFn.
-func (mr *MockSourceClientMockRecorder) ReadFn(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+func (mr *MockSourceClientMockRecorder) ReadFn(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	varargs := append([]interface{}{arg0}, arg1...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadFn", reflect.TypeOf((*MockSourceClient)(nil).ReadFn), varargs...)
 }
 
@@ -231,6 +231,20 @@ func (m *MockSource_ReadFnClient) RecvMsg(arg0 interface{}) error {
 func (mr *MockSource_ReadFnClientMockRecorder) RecvMsg(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecvMsg", reflect.TypeOf((*MockSource_ReadFnClient)(nil).RecvMsg), arg0)
+}
+
+// Send mocks base method.
+func (m *MockSource_ReadFnClient) Send(arg0 *v1.ReadRequest) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Send", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Send indicates an expected call of Send.
+func (mr *MockSource_ReadFnClientMockRecorder) Send(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockSource_ReadFnClient)(nil).Send), arg0)
 }
 
 // SendMsg mocks base method.
