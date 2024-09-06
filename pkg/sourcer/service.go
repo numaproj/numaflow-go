@@ -138,12 +138,10 @@ func (fs *Service) AckFn(stream sourcepb.Source_AckFnServer) error {
 			return err
 		}
 
-		for _, offset := range req.Request.GetOffsets() {
-			request := ackRequest{
-				offset: NewOffset(offset.GetOffset(), offset.GetPartitionId()),
-			}
-			fs.Source.Ack(ctx, &request)
+		request := ackRequest{
+			offset: NewOffset(req.Request.Offset.GetOffset(), req.Request.Offset.GetPartitionId()),
 		}
+		fs.Source.Ack(ctx, &request)
 	}
 }
 

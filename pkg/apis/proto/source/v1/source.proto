@@ -78,11 +78,8 @@ message ReadResponse {
  */
 message AckRequest {
   message Request {
-    // Required field holding a list of offsets to be acknowledged.
-    // The offsets must be strictly corresponding to the previously read batch,
-    // meaning the offsets must be in the same order as the datum responses in the ReadResponse.
-    // By enforcing ordering, we can save deserialization effort on the server side, assuming the server keeps a local copy of the raw/un-serialized offsets.
-    repeated Offset offsets = 1;
+    // Required field holding the offset to be acked
+    Offset offset = 1;
   }
   // Required field holding the request. The list will be ordered and will have the same order as the original Read response.
   Request request = 1;

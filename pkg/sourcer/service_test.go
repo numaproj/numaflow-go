@@ -131,7 +131,7 @@ func (a *AckFnServerTest) Recv() (*sourcepb.AckRequest, error) {
 	a.index++
 	return &sourcepb.AckRequest{
 		Request: &sourcepb.AckRequest_Request{
-			Offsets: []*sourcepb.Offset{offset},
+			Offset: offset,
 		},
 	}, nil
 }
@@ -146,7 +146,7 @@ func NewAckFnServerTest(
 	}
 }
 
-func (a *AckFnServerTest) SendAndClose(response *sourcepb.AckResponse) error {
+func (a *AckFnServerTest) SendAndClose(*sourcepb.AckResponse) error {
 	return nil
 }
 
