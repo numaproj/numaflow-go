@@ -171,23 +171,23 @@ func TestService_ReadFn(t *testing.T) {
 						Keys:      []string{testKey},
 						Headers:   map[string]string{"x-txn-id": "test-txn-id"},
 					},
+					Status: &sourcepb.ReadResponse_Status{
+						Eot:  false,
+						Code: sourcepb.ReadResponse_Status_SUCCESS,
+					},
+				},
+				{
+					Status: &sourcepb.ReadResponse_Status{
+						Eot:  true,
+						Code: sourcepb.ReadResponse_Status_SUCCESS,
+					},
 				},
 			},
 			expectedErr: false,
 		},
 		{
-			name: "read_fn_err",
-			expected: []*sourcepb.ReadResponse{
-				{
-					Result: &sourcepb.ReadResponse_Result{
-						Payload:   []byte(`test`),
-						Offset:    &sourcepb.Offset{},
-						EventTime: timestamppb.New(testEventTime),
-						Keys:      []string{testKey},
-						Headers:   map[string]string{"x-txn-id": "test-txn-id"},
-					},
-				},
-			},
+			name:        "read_fn_err",
+			expected:    []*sourcepb.ReadResponse{},
 			expectedErr: true,
 		},
 	}

@@ -2,8 +2,6 @@ module redis-e2e-test-sink
 
 go 1.21
 
-toolchain go1.22.4
-
 replace github.com/numaproj/numaflow-go => ../../../..
 
 require (

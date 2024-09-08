@@ -68,8 +68,30 @@ message ReadResponse {
     // e.g. Kafka and Redis Stream message usually include information about the headers.
     map<string, string> headers = 5;
   }
+  message Status {
+    // Code to indicate the status of the response.
+    enum Code {
+      SUCCESS = 0;
+      FAILURE = 1;
+    }
+
+    // Error to indicate the error type. If the code is FAILURE, then the error field will be populated.
+    enum Error {
+      UNACKED = 0;
+      OTHER = 1;
+    }
+
+    // End of transmission flag.
+    bool eot = 1;
+    Code code = 2;
+    Error error = 3;
+    optional string msg = 4;
+  }
   // Required field holding the result.
   Result result = 1;
+  // Status of the response. Holds the end of transmission flag and the status code.
+  //
+  Status status = 2;
 }
 
 /*

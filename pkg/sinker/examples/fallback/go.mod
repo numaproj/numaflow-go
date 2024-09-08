@@ -2,8 +2,6 @@ module fallback
 
 go 1.21
 
-toolchain go1.22.4
-
 replace github.com/numaproj/numaflow-go => ../../../..
 
 require github.com/numaproj/numaflow-go v0.8.0

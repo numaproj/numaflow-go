@@ -32,7 +32,6 @@ type Service struct {
 // ReadFn reads the data from the source.
 func (fs *Service) ReadFn(stream sourcepb.Source_ReadFnServer) error {
 	ctx := stream.Context()
-	messageCh := make(chan Message)
 	errCh := make(chan error, 1)
 
 	var wg sync.WaitGroup
@@ -40,7 +39,6 @@ func (fs *Service) ReadFn(stream sourcepb.Source_ReadFnServer) error {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		defer close(messageCh)
 		// handle panic
 		defer func() {
 			if r := recover(); r != nil {
@@ -62,35 +60,53 @@ func (fs *Service) ReadFn(stream sourcepb.Source_ReadFnServer) error {
 				return
 			}
 
-			request := readRequest{
-				count:   req.Request.GetNumRecords(),
-				timeout: time.Duration(req.Request.GetTimeoutInMs()) * time.Millisecond,
-			}
+			messageCh := make(chan Message)
+			go func() {
+				defer close(messageCh)
+				request := readRequest{
+					count:   req.Request.GetNumRecords(),
+					timeout: time.Duration(req.Request.GetTimeoutInMs()) * time.Millisecond,
+				}
+				fs.Source.Read(ctx, &request, messageCh)
+			}()
 
-			fs.Source.Read(ctx, &request, messageCh)
+			// Read messages from the channel and send them to the stream.
+			for msg := range messageCh {
+				offset := &sourcepb.Offset{
+					Offset:      msg.Offset().Value(),
+					PartitionId: msg.Offset().PartitionId(),
+				}
+				element := &sourcepb.ReadResponse{
+					Result: &sourcepb.ReadResponse_Result{
+						Payload:   msg.Value(),
+						Offset:    offset,
+						EventTime: timestamppb.New(msg.EventTime()),
+						Keys:      msg.Keys(),
+						Headers:   msg.Headers(),
+					},
+					Status: &sourcepb.ReadResponse_Status{
+						Eot:  false,
+						Code: 0,
+					},
+				}
+				// The error here is returned by the stream, which is already a gRPC error
+				if err := stream.Send(element); err != nil {
+					errCh <- err
+					return
+				}
+			}
+			err = stream.Send(&sourcepb.ReadResponse{
+				Status: &sourcepb.ReadResponse_Status{
+					Eot:  true,
+					Code: 0,
+				},
+			})
+			if err != nil {
+				errCh <- err
+				return
+			}
 		}
 	}()
-	// Read messages from the channel and send them to the stream, until the channel is closed
-	for msg := range messageCh {
-		offset := &sourcepb.Offset{
-			Offset:      msg.Offset().Value(),
-			PartitionId: msg.Offset().PartitionId(),
-		}
-		element := &sourcepb.ReadResponse{
-			Result: &sourcepb.ReadResponse_Result{
-				Payload:   msg.Value(),
-				Offset:    offset,
-				EventTime: timestamppb.New(msg.EventTime()),
-				Keys:      msg.Keys(),
-				Headers:   msg.Headers(),
-			},
-		}
-		// The error here is returned by the stream, which is already a gRPC error
-		if err := stream.Send(element); err != nil {
-			// The channel may or may not be closed, as we are not sure, we leave it to GC.
-			return err
-		}
-	}
 
 	// Wait for the goroutine to finish
 	wg.Wait()

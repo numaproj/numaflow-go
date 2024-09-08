@@ -2,8 +2,6 @@ module github.com/numaproj/numaflow-go
 
 go 1.21
 
-toolchain go1.22.4
-
 require (
 	github.com/golang/mock v1.6.0
 	github.com/stretchr/testify v1.8.1
