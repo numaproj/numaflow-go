@@ -34,6 +34,13 @@ func (fs *Service) ReadFn(stream sourcepb.Source_ReadFnServer) error {
 	ctx := stream.Context()
 	errCh := make(chan error, 1)
 
+	// Send an empty header so that the client can start sending read requests
+	// (rust client does not send read requests until it receives a header)
+	err := stream.SendHeader(map[string][]string{})
+	if err != nil {
+		return err
+	}
+
 	var wg sync.WaitGroup
 
 	wg.Add(1)
@@ -132,6 +139,13 @@ func (a *ackRequest) Offset() Offset {
 // AckFn acknowledges the data from the source.
 func (fs *Service) AckFn(stream sourcepb.Source_AckFnServer) error {
 	ctx := stream.Context()
+
+	// Send an empty header so that the client can start sending ack requests
+	// (rust client does not send ack requests until it receives a header)
+	err := stream.SendHeader(map[string][]string{})
+	if err != nil {
+		return err
+	}
 
 	// handle panic
 	defer func() {
