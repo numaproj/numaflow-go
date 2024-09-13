@@ -11,6 +11,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -61,6 +62,10 @@ type ReadFnServerTest struct {
 	index int
 }
 
+func (t *ReadFnServerTest) SendHeader(metadata.MD) error {
+	return nil
+}
+
 func (t *ReadFnServerTest) Recv() (*sourcepb.ReadRequest, error) {
 	if t.index >= len(t.requests) {
 		return nil, io.EOF
@@ -94,6 +99,10 @@ func (t *ReadFnServerTest) Context() context.Context {
 type ReadFnServerErrTest struct {
 	ctx context.Context
 	grpc.ServerStream
+}
+
+func (te *ReadFnServerErrTest) SendHeader(metadata.MD) error {
+	return nil
 }
 
 func (te *ReadFnServerErrTest) Recv() (*sourcepb.ReadRequest, error) {
@@ -144,6 +153,10 @@ func NewAckFnServerTest(
 		ctx:     ctx,
 		offsets: offsets,
 	}
+}
+
+func (a *AckFnServerTest) SendHeader(metadata.MD) error {
+	return nil
 }
 
 func (a *AckFnServerTest) SendAndClose(*sourcepb.AckResponse) error {
