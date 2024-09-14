@@ -6,7 +6,7 @@ replace github.com/numaproj/numaflow-go => ../../../..
 
 require (
 	github.com/go-redis/redis/v8 v8.11.5
-	github.com/numaproj/numaflow-go v0.8.0
+	github.com/numaproj/numaflow-go v0.8.1
 )
 
 require (
