@@ -2,7 +2,6 @@ package impl
 
 import (
 	"context"
-	"log"
 	"strconv"
 	"sync"
 	"time"
@@ -30,7 +29,6 @@ func NewSimpleSource() *SimpleSource {
 func (s *SimpleSource) Pending(_ context.Context) int64 {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	log.Println("Number of pending records: ", len(s.toAckSet))
 	// The simple source always returns zero to indicate there is no pending record.
 	return int64(len(s.toAckSet))
 }
@@ -46,9 +44,9 @@ func (s *SimpleSource) Read(_ context.Context, readRequest sourcesdk.ReadRequest
 	// leaving the toAckSet not empty on the UDSource container side.
 	// In this case, for the next batch read, we should read the data from the last acked offset instead of returning.
 	// Our built-in Kafka source follows this logic.
-	//if len(s.toAckSet) > 0 {
-	//	return
-	//}
+	if len(s.toAckSet) > 0 {
+		return
+	}
 
 	// Read the data from the source and send the data to the message channel.
 	for i := 0; uint64(i) < readRequest.Count(); i++ {
