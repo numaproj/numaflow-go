@@ -6,11 +6,10 @@ replace github.com/numaproj/numaflow-go => ../../../../..
 
 require (
 	github.com/fsnotify/fsnotify v1.7.0
-	github.com/numaproj/numaflow-go v0.8.0
+	github.com/numaproj/numaflow-go v0.8.1
 )
 
 require (
-	github.com/golang/protobuf v1.5.3 // indirect
 	golang.org/x/net v0.28.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.25.0 // indirect
