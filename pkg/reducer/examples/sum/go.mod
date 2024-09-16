@@ -7,7 +7,7 @@ replace github.com/numaproj/numaflow-go => ../../../..
 require github.com/numaproj/numaflow-go v0.8.1
 
 require (
-	golang.org/x/net v0.28.0 // indirect
+	golang.org/x/net v0.29.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.25.0 // indirect
 	golang.org/x/text v0.18.0 // indirect
