@@ -95,13 +95,13 @@ message ReadResponse {
     Code code = 2;
     optional Error error = 3;
     optional string msg = 4;
-    optional Handshake handshake = 5;
   }
   // Required field holding the result.
   Result result = 1;
   // Status of the response. Holds the end of transmission flag and the status code.
   //
   Status status = 2;
+  optional Handshake handshake = 3;
 }
 
 /*

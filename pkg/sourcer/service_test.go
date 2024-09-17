@@ -167,9 +167,9 @@ func TestService_ReadFn(t *testing.T) {
 					Status: &sourcepb.ReadResponse_Status{
 						Eot:  false,
 						Code: sourcepb.ReadResponse_Status_SUCCESS,
-						Handshake: &sourcepb.Handshake{
-							Sot: true,
-						},
+					},
+					Handshake: &sourcepb.Handshake{
+						Sot: true,
 					},
 				},
 				{

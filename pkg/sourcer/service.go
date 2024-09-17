@@ -65,9 +65,9 @@ func (fs *Service) ReadFn(stream sourcepb.Source_ReadFnServer) error {
 			Status: &sourcepb.ReadResponse_Status{
 				Eot:  false,
 				Code: sourcepb.ReadResponse_Status_SUCCESS,
-				Handshake: &sourcepb.Handshake{
-					Sot: true,
-				},
+			},
+			Handshake: &sourcepb.Handshake{
+				Sot: true,
 			},
 		}
 		if err := stream.Send(handshakeResponse); err != nil {
