@@ -11,7 +11,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -62,10 +61,6 @@ type ReadFnServerTest struct {
 	index int
 }
 
-func (t *ReadFnServerTest) SendHeader(metadata.MD) error {
-	return nil
-}
-
 func (t *ReadFnServerTest) Recv() (*sourcepb.ReadRequest, error) {
 	if t.index >= len(t.requests) {
 		return nil, io.EOF
@@ -99,10 +94,6 @@ func (t *ReadFnServerTest) Context() context.Context {
 type ReadFnServerErrTest struct {
 	ctx context.Context
 	grpc.ServerStream
-}
-
-func (te *ReadFnServerErrTest) SendHeader(metadata.MD) error {
-	return nil
 }
 
 func (te *ReadFnServerErrTest) Recv() (*sourcepb.ReadRequest, error) {
@@ -155,10 +146,6 @@ func NewAckFnServerTest(
 	}
 }
 
-func (a *AckFnServerTest) SendHeader(metadata.MD) error {
-	return nil
-}
-
 func (a *AckFnServerTest) SendAndClose(*sourcepb.AckResponse) error {
 	return nil
 }
@@ -176,6 +163,15 @@ func TestService_ReadFn(t *testing.T) {
 		{
 			name: "read_fn_read_msg",
 			expected: []*sourcepb.ReadResponse{
+				{
+					Status: &sourcepb.ReadResponse_Status{
+						Eot:  false,
+						Code: sourcepb.ReadResponse_Status_SUCCESS,
+						Handshake: &sourcepb.Handshake{
+							Sot: true,
+						},
+					},
+				},
 				{
 					Result: &sourcepb.ReadResponse_Result{
 						Payload:   []byte(`test`),
@@ -218,13 +214,18 @@ func TestService_ReadFn(t *testing.T) {
 			if tt.expectedErr {
 				readFnStream = NewReadFnServerErrTest(ctx)
 			} else {
-				requests := &sourcepb.ReadRequest{
+				handshakeRequest := &sourcepb.ReadRequest{
+					Handshake: &sourcepb.Handshake{
+						Sot: true,
+					},
+				}
+				readRequest := &sourcepb.ReadRequest{
 					Request: &sourcepb.ReadRequest_Request{
 						NumRecords:  1,
 						TimeoutInMs: 1000,
 					},
 				}
-				readFnStream = NewReadFnServerTest(ctx, outputCh, []*sourcepb.ReadRequest{requests})
+				readFnStream = NewReadFnServerTest(ctx, outputCh, []*sourcepb.ReadRequest{handshakeRequest, readRequest})
 			}
 
 			var wg sync.WaitGroup

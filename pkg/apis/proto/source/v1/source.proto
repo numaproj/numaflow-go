@@ -18,7 +18,7 @@ service Source {
   // When AckFn is called, it implicitly indicates that the datum stream has been processed by the source vertex.
   // The caller (numa) expects the AckFn to be successful, and it does not expect any errors.
   // If there are some irrecoverable errors when the callee (UDSource) is processing the AckFn request,
-  // then it is best to crash because there are no other retry mechanisms possible. 
+  // then it is best to crash because there are no other retry mechanisms possible.
   rpc AckFn(stream AckRequest) returns (AckResponse);
 
   // PendingFn returns the number of pending records at the user defined source.
@@ -29,6 +29,14 @@ service Source {
 
   // IsReady is the heartbeat endpoint for user defined source gRPC.
   rpc IsReady(google.protobuf.Empty) returns (ReadyResponse);
+}
+
+/*
+ * Handshake message between client and server to indicate the start of transmission.
+ */
+message Handshake {
+  // Required field indicating the start of transmission.
+  bool sot = 1;
 }
 
 /*
@@ -45,6 +53,7 @@ message ReadRequest {
   }
   // Required field indicating the request.
   Request request = 1;
+  optional Handshake handshake = 2;
 }
 
 /*
@@ -84,8 +93,9 @@ message ReadResponse {
     // End of transmission flag.
     bool eot = 1;
     Code code = 2;
-    Error error = 3;
+    optional Error error = 3;
     optional string msg = 4;
+    optional Handshake handshake = 5;
   }
   // Required field holding the result.
   Result result = 1;

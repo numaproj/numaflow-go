@@ -34,15 +34,7 @@ func (fs *Service) ReadFn(stream sourcepb.Source_ReadFnServer) error {
 	ctx := stream.Context()
 	errCh := make(chan error, 1)
 
-	// Send an empty header so that the client can start sending read requests
-	// (rust client does not send read requests until it receives a header)
-	err := stream.SendHeader(map[string][]string{})
-	if err != nil {
-		return err
-	}
-
 	var wg sync.WaitGroup
-
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -54,6 +46,34 @@ func (fs *Service) ReadFn(stream sourcepb.Source_ReadFnServer) error {
 				errCh <- fmt.Errorf("panic: %v", r)
 			}
 		}()
+
+		// Do a handshake with the client before starting to read
+		req, err := stream.Recv()
+		if err != nil {
+			log.Printf("error receiving handshake from stream: %v", err)
+			errCh <- err
+			return
+		}
+
+		if req.Handshake == nil || !req.Handshake.Sot {
+			errCh <- fmt.Errorf("expected handshake message")
+			return
+		}
+
+		// Send handshake response
+		handshakeResponse := &sourcepb.ReadResponse{
+			Status: &sourcepb.ReadResponse_Status{
+				Eot:  false,
+				Code: sourcepb.ReadResponse_Status_SUCCESS,
+				Handshake: &sourcepb.Handshake{
+					Sot: true,
+				},
+			},
+		}
+		if err := stream.Send(handshakeResponse); err != nil {
+			errCh <- err
+			return
+		}
 
 		for {
 			// Receive read requests from the stream
@@ -139,13 +159,6 @@ func (a *ackRequest) Offset() Offset {
 // AckFn acknowledges the data from the source.
 func (fs *Service) AckFn(stream sourcepb.Source_AckFnServer) error {
 	ctx := stream.Context()
-
-	// Send an empty header so that the client can start sending ack requests
-	// (rust client does not send ack requests until it receives a header)
-	err := stream.SendHeader(map[string][]string{})
-	if err != nil {
-		return err
-	}
 
 	// handle panic
 	defer func() {
