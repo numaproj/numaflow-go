@@ -298,21 +298,6 @@ func (m *MockSource_AckFnClient) EXPECT() *MockSource_AckFnClientMockRecorder {
 	return m.recorder
 }
 
-// CloseAndRecv mocks base method.
-func (m *MockSource_AckFnClient) CloseAndRecv() (*v1.AckResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CloseAndRecv")
-	ret0, _ := ret[0].(*v1.AckResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CloseAndRecv indicates an expected call of CloseAndRecv.
-func (mr *MockSource_AckFnClientMockRecorder) CloseAndRecv() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CloseAndRecv", reflect.TypeOf((*MockSource_AckFnClient)(nil).CloseAndRecv))
-}
-
 // CloseSend mocks base method.
 func (m *MockSource_AckFnClient) CloseSend() error {
 	m.ctrl.T.Helper()
@@ -354,6 +339,21 @@ func (m *MockSource_AckFnClient) Header() (metadata.MD, error) {
 func (mr *MockSource_AckFnClientMockRecorder) Header() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Header", reflect.TypeOf((*MockSource_AckFnClient)(nil).Header))
+}
+
+// Recv mocks base method.
+func (m *MockSource_AckFnClient) Recv() (*v1.AckResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Recv")
+	ret0, _ := ret[0].(*v1.AckResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Recv indicates an expected call of Recv.
+func (mr *MockSource_AckFnClientMockRecorder) Recv() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Recv", reflect.TypeOf((*MockSource_AckFnClient)(nil).Recv))
 }
 
 // RecvMsg mocks base method.
