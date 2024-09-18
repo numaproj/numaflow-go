@@ -121,10 +121,19 @@ type AckFnServerTest struct {
 	offsets   []*sourcepb.Offset
 	responses []*sourcepb.AckResponse
 	grpc.ServerStream
-	index int
+	index         int
+	handshakeDone bool
 }
 
 func (a *AckFnServerTest) Recv() (*sourcepb.AckRequest, error) {
+	if !a.handshakeDone {
+		a.handshakeDone = true
+		return &sourcepb.AckRequest{
+			Handshake: &sourcepb.Handshake{
+				Sot: true,
+			},
+		}, nil
+	}
 	if a.index >= len(a.offsets) {
 		return nil, io.EOF
 	}
@@ -274,6 +283,14 @@ func TestService_AckFn(t *testing.T) {
 	assert.NoError(t, err)
 
 	expectedResponses := []*sourcepb.AckResponse{
+		{
+			Result: &sourcepb.AckResponse_Result{
+				Success: &emptypb.Empty{},
+			},
+			Handshake: &sourcepb.Handshake{
+				Sot: true,
+			},
+		},
 		{
 			Result: &sourcepb.AckResponse_Result{
 				Success: &emptypb.Empty{},

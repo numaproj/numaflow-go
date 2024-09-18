@@ -169,6 +169,31 @@ func (fs *Service) AckFn(stream sourcepb.Source_AckFnServer) error {
 		}
 	}()
 
+	// Do a handshake with the client before starting to ack
+	// first message should be a handshake
+	req, err := stream.Recv()
+	if err != nil {
+		log.Printf("error receiving handshake from stream: %v", err)
+		return err
+	}
+
+	if req.Handshake == nil || !req.Handshake.Sot {
+		return fmt.Errorf("expected handshake message")
+	}
+
+	// Send handshake response
+	handshakeResponse := &sourcepb.AckResponse{
+		Result: &sourcepb.AckResponse_Result{
+			Success: &emptypb.Empty{},
+		},
+		Handshake: &sourcepb.Handshake{
+			Sot: true,
+		},
+	}
+	if err := stream.Send(handshakeResponse); err != nil {
+		return err
+	}
+
 	for {
 		// Receive ack requests from the stream
 		req, err := stream.Recv()

@@ -115,6 +115,7 @@ message AckRequest {
   }
   // Required field holding the request. The list will be ordered and will have the same order as the original Read response.
   Request request = 1;
+  optional Handshake handshake = 2;
 }
 
 /*
@@ -134,6 +135,7 @@ message AckResponse {
   }
   // Required field holding the result.
   Result result = 1;
+  optional Handshake handshake = 2;
 }
 
 /*
