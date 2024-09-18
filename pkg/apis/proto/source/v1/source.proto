@@ -19,7 +19,7 @@ service Source {
   // The caller (numa) expects the AckFn to be successful, and it does not expect any errors.
   // If there are some irrecoverable errors when the callee (UDSource) is processing the AckFn request,
   // then it is best to crash because there are no other retry mechanisms possible.
-  rpc AckFn(stream AckRequest) returns (AckResponse);
+  rpc AckFn(stream AckRequest) returns (stream AckResponse);
 
   // PendingFn returns the number of pending records at the user defined source.
   rpc PendingFn(google.protobuf.Empty) returns (PendingResponse);

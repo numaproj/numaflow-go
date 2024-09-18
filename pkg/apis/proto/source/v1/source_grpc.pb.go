@@ -102,7 +102,7 @@ func (c *sourceClient) AckFn(ctx context.Context, opts ...grpc.CallOption) (Sour
 
 type Source_AckFnClient interface {
 	Send(*AckRequest) error
-	CloseAndRecv() (*AckResponse, error)
+	Recv() (*AckResponse, error)
 	grpc.ClientStream
 }
 
@@ -114,10 +114,7 @@ func (x *sourceAckFnClient) Send(m *AckRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *sourceAckFnClient) CloseAndRecv() (*AckResponse, error) {
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
+func (x *sourceAckFnClient) Recv() (*AckResponse, error) {
 	m := new(AckResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -242,7 +239,7 @@ func _Source_AckFn_Handler(srv interface{}, stream grpc.ServerStream) error {
 }
 
 type Source_AckFnServer interface {
-	SendAndClose(*AckResponse) error
+	Send(*AckResponse) error
 	Recv() (*AckRequest, error)
 	grpc.ServerStream
 }
@@ -251,7 +248,7 @@ type sourceAckFnServer struct {
 	grpc.ServerStream
 }
 
-func (x *sourceAckFnServer) SendAndClose(m *AckResponse) error {
+func (x *sourceAckFnServer) Send(m *AckResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -347,6 +344,7 @@ var Source_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "AckFn",
 			Handler:       _Source_AckFn_Handler,
+			ServerStreams: true,
 			ClientStreams: true,
 		},
 	},

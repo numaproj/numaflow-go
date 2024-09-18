@@ -117,8 +117,9 @@ func (te *ReadFnServerErrTest) Context() context.Context {
 }
 
 type AckFnServerTest struct {
-	ctx     context.Context
-	offsets []*sourcepb.Offset
+	ctx       context.Context
+	offsets   []*sourcepb.Offset
+	responses []*sourcepb.AckResponse
 	grpc.ServerStream
 	index int
 }
@@ -136,18 +137,20 @@ func (a *AckFnServerTest) Recv() (*sourcepb.AckRequest, error) {
 	}, nil
 }
 
+func (a *AckFnServerTest) Send(response *sourcepb.AckResponse) error {
+	a.responses = append(a.responses, response)
+	return nil
+}
+
 func NewAckFnServerTest(
 	ctx context.Context,
 	offsets []*sourcepb.Offset,
 ) *AckFnServerTest {
 	return &AckFnServerTest{
-		ctx:     ctx,
-		offsets: offsets,
+		ctx:       ctx,
+		offsets:   offsets,
+		responses: make([]*sourcepb.AckResponse, 0),
 	}
-}
-
-func (a *AckFnServerTest) SendAndClose(*sourcepb.AckResponse) error {
-	return nil
 }
 
 func (a *AckFnServerTest) Context() context.Context {
@@ -269,6 +272,18 @@ func TestService_AckFn(t *testing.T) {
 
 	err := fs.AckFn(ackFnStream)
 	assert.NoError(t, err)
+
+	expectedResponses := []*sourcepb.AckResponse{
+		{
+			Result: &sourcepb.AckResponse_Result{
+				Success: &emptypb.Empty{},
+			},
+		},
+	}
+
+	if !reflect.DeepEqual(ackFnStream.responses, expectedResponses) {
+		t.Errorf("AckFn() responses = %v, want %v", ackFnStream.responses, expectedResponses)
+	}
 }
 
 func TestService_PendingFn(t *testing.T) {

@@ -79,10 +79,11 @@ func (fs *Service) ReadFn(stream sourcepb.Source_ReadFnServer) error {
 			// Receive read requests from the stream
 			req, err := stream.Recv()
 			if err == io.EOF {
+				log.Printf("end of read stream")
 				return
 			}
 			if err != nil {
-				log.Printf("error receiving from stream: %v", err)
+				log.Printf("error receiving from read stream: %v", err)
 				errCh <- err
 				return
 			}
@@ -172,12 +173,11 @@ func (fs *Service) AckFn(stream sourcepb.Source_AckFnServer) error {
 		// Receive ack requests from the stream
 		req, err := stream.Recv()
 		if err == io.EOF {
-			return stream.SendAndClose(&sourcepb.AckResponse{
-				Result: &sourcepb.AckResponse_Result{},
-			})
+			log.Printf("end of ack stream")
+			return nil
 		}
 		if err != nil {
-			log.Printf("error receiving from stream: %v", err)
+			log.Printf("error receiving from ack stream: %v", err)
 			return err
 		}
 
@@ -185,6 +185,17 @@ func (fs *Service) AckFn(stream sourcepb.Source_AckFnServer) error {
 			offset: NewOffset(req.Request.Offset.GetOffset(), req.Request.Offset.GetPartitionId()),
 		}
 		fs.Source.Ack(ctx, &request)
+
+		// Send ack response
+		ackResponse := &sourcepb.AckResponse{
+			Result: &sourcepb.AckResponse_Result{
+				Success: &emptypb.Empty{},
+			},
+		}
+		if err := stream.Send(ackResponse); err != nil {
+			log.Printf("error sending ack response: %v", err)
+			return err
+		}
 	}
 }
 
