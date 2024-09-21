@@ -73,7 +73,7 @@ func TestMapServer_GracefulShutdown(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 
 	// create a client
-	conn, err := grpc.Dial(
+	conn, err := grpc.NewClient(
 		"unix://"+socketFile.Name(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)

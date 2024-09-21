@@ -27,8 +27,10 @@ func NewSimpleSource() *SimpleSource {
 }
 
 func (s *SimpleSource) Pending(_ context.Context) int64 {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	// The simple source always returns zero to indicate there is no pending record.
-	return 0
+	return int64(len(s.toAckSet))
 }
 
 func (s *SimpleSource) Read(_ context.Context, readRequest sourcesdk.ReadRequest, messageCh chan<- sourcesdk.Message) {
@@ -72,9 +74,10 @@ func (s *SimpleSource) Read(_ context.Context, readRequest sourcesdk.ReadRequest
 }
 
 func (s *SimpleSource) Ack(_ context.Context, request sourcesdk.AckRequest) {
-	for _, offset := range request.Offsets() {
-		delete(s.toAckSet, deserializeOffset(offset.Value()))
-	}
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	offset := deserializeOffset(request.Offset().Value())
+	delete(s.toAckSet, offset)
 }
 
 func (s *SimpleSource) Partitions(_ context.Context) []int32 {
