@@ -231,8 +231,9 @@ type ReadResponse struct {
 	// Required field holding the result.
 	Result *ReadResponse_Result `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
 	// Status of the response. Holds the end of transmission flag and the status code.
-	Status    *ReadResponse_Status `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
-	Handshake *Handshake           `protobuf:"bytes,3,opt,name=handshake,proto3,oneof" json:"handshake,omitempty"`
+	Status *ReadResponse_Status `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	// Handshake message between client and server to indicate the start of transmission.
+	Handshake *Handshake `protobuf:"bytes,3,opt,name=handshake,proto3,oneof" json:"handshake,omitempty"`
 }
 
 func (x *ReadResponse) Reset() {
@@ -360,8 +361,9 @@ type AckResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Required field holding the result.
-	Result    *AckResponse_Result `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
-	Handshake *Handshake          `protobuf:"bytes,2,opt,name=handshake,proto3,oneof" json:"handshake,omitempty"`
+	Result *AckResponse_Result `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
+	// Handshake message between client and server to indicate the start of transmission.
+	Handshake *Handshake `protobuf:"bytes,2,opt,name=handshake,proto3,oneof" json:"handshake,omitempty"`
 }
 
 func (x *AckResponse) Reset() {

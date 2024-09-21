@@ -32,15 +32,17 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SourceClient interface {
 	// Read returns a stream of datum responses.
-	// The size of the returned ReadResponse is less than or equal to the num_records specified in each ReadRequest.
-	// If the request timeout is reached on the server side, the returned ReadResponse will contain all the datum that have been read (which could be an empty list).
+	// The size of the returned responses is less than or equal to the num_records specified in each ReadRequest.
+	// If the request timeout is reached on the server side, the returned responses will contain all the datum that have been read (which could be an empty list).
 	// The server will continue to read and respond to subsequent ReadRequests until the client closes the stream.
+	// Once it has sent all the datum, the server will send a ReadResponse with the end of transmission flag set to true.
 	ReadFn(ctx context.Context, opts ...grpc.CallOption) (Source_ReadFnClient, error)
 	// AckFn acknowledges a stream of datum offsets.
 	// When AckFn is called, it implicitly indicates that the datum stream has been processed by the source vertex.
 	// The caller (numa) expects the AckFn to be successful, and it does not expect any errors.
 	// If there are some irrecoverable errors when the callee (UDSource) is processing the AckFn request,
 	// then it is best to crash because there are no other retry mechanisms possible.
+	// Clients sends n requests and expects n responses.
 	AckFn(ctx context.Context, opts ...grpc.CallOption) (Source_AckFnClient, error)
 	// PendingFn returns the number of pending records at the user defined source.
 	PendingFn(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PendingResponse, error)
@@ -157,15 +159,17 @@ func (c *sourceClient) IsReady(ctx context.Context, in *emptypb.Empty, opts ...g
 // for forward compatibility
 type SourceServer interface {
 	// Read returns a stream of datum responses.
-	// The size of the returned ReadResponse is less than or equal to the num_records specified in each ReadRequest.
-	// If the request timeout is reached on the server side, the returned ReadResponse will contain all the datum that have been read (which could be an empty list).
+	// The size of the returned responses is less than or equal to the num_records specified in each ReadRequest.
+	// If the request timeout is reached on the server side, the returned responses will contain all the datum that have been read (which could be an empty list).
 	// The server will continue to read and respond to subsequent ReadRequests until the client closes the stream.
+	// Once it has sent all the datum, the server will send a ReadResponse with the end of transmission flag set to true.
 	ReadFn(Source_ReadFnServer) error
 	// AckFn acknowledges a stream of datum offsets.
 	// When AckFn is called, it implicitly indicates that the datum stream has been processed by the source vertex.
 	// The caller (numa) expects the AckFn to be successful, and it does not expect any errors.
 	// If there are some irrecoverable errors when the callee (UDSource) is processing the AckFn request,
 	// then it is best to crash because there are no other retry mechanisms possible.
+	// Clients sends n requests and expects n responses.
 	AckFn(Source_AckFnServer) error
 	// PendingFn returns the number of pending records at the user defined source.
 	PendingFn(context.Context, *emptypb.Empty) (*PendingResponse, error)
