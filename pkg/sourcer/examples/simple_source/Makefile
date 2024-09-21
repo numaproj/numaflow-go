@@ -1,6 +1,6 @@
 TAG ?= stable
 PUSH ?= false
-IMAGE_REGISTRY = quay.io/yhl25/numaflow-go/source-simple-source:${TAG}
+IMAGE_REGISTRY = quay.io/numaio/numaflow-go/source-simple-source:${TAG}
 ARCHITECTURES = amd64 arm64
 
 .PHONY: build
