@@ -2,6 +2,11 @@ package sourcetransformer
 
 import (
 	"context"
+	"errors"
+	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"io"
 	"log"
 	"runtime/debug"
 
@@ -34,7 +39,7 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*v1.ReadyResponse, 
 // SourceTransformFn applies a function to each request element.
 // In addition to map function, SourceTransformFn also supports assigning a new event time to response.
 // SourceTransformFn can be used only at source vertex by source data transformer.
-func (fs *Service) SourceTransformFn(ctx context.Context, d *v1.SourceTransformRequest) (*v1.SourceTransformResponse, error) {
+func (fs *Service) SourceTransformFn(stream v1.SourceTransform_SourceTransformFnServer) error {
 	// handle panic
 	defer func() {
 		if r := recover(); r != nil {
@@ -42,19 +47,64 @@ func (fs *Service) SourceTransformFn(ctx context.Context, d *v1.SourceTransformR
 			fs.shutdownCh <- struct{}{}
 		}
 	}()
-	var hd = NewHandlerDatum(d.GetValue(), d.EventTime.AsTime(), d.Watermark.AsTime(), d.Headers)
-	messageTs := fs.Transformer.Transform(ctx, d.GetKeys(), hd)
-	var results []*v1.SourceTransformResponse_Result
-	for _, m := range messageTs.Items() {
-		results = append(results, &v1.SourceTransformResponse_Result{
-			EventTime: timestamppb.New(m.EventTime()),
-			Keys:      m.Keys(),
-			Value:     m.Value(),
-			Tags:      m.Tags(),
+
+	ctx := stream.Context()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	grp, grpCtx := errgroup.WithContext(ctx)
+
+	senderCh := make(chan *v1.SourceTransformResponse, 500) // TODO: identify the right buffer size
+	// goroutine to send the response to the stream
+	grp.Go(func() error {
+		for {
+			select {
+			case <-grpCtx.Done():
+				return grpCtx.Err()
+			default:
+			}
+			if err := stream.Send(<-senderCh); err != nil {
+				cancel()
+				return err
+			}
+		}
+	})
+
+	for {
+		d, err := stream.Recv()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+		grp.Go(func() error {
+			var hd = NewHandlerDatum(d.GetValue(), d.EventTime.AsTime(), d.Watermark.AsTime(), d.Headers)
+			messageTs := fs.Transformer.Transform(grpCtx, d.GetKeys(), hd)
+			var results []*v1.SourceTransformResponse_Result
+			for _, m := range messageTs.Items() {
+				results = append(results, &v1.SourceTransformResponse_Result{
+					EventTime: timestamppb.New(m.EventTime()),
+					Keys:      m.Keys(),
+					Value:     m.Value(),
+					Tags:      m.Tags(),
+				})
+			}
+			resp := &v1.SourceTransformResponse{
+				Results: results,
+				Id:      d.GetId(),
+			}
+			select {
+			case senderCh <- resp:
+			case <-grpCtx.Done():
+				return grpCtx.Err()
+			}
+			return nil
 		})
 	}
-	responseList := &v1.SourceTransformResponse{
-		Results: results,
+
+	if err := grp.Wait(); err != nil {
+		statusErr := status.Errorf(codes.Internal, err.Error())
+		return statusErr
 	}
-	return responseList, nil
+	return nil
 }
