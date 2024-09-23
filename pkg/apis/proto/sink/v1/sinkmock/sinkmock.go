@@ -101,21 +101,6 @@ func (m *MockSink_SinkFnClient) EXPECT() *MockSink_SinkFnClientMockRecorder {
 	return m.recorder
 }
 
-// CloseAndRecv mocks base method.
-func (m *MockSink_SinkFnClient) CloseAndRecv() (*v1.SinkResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CloseAndRecv")
-	ret0, _ := ret[0].(*v1.SinkResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CloseAndRecv indicates an expected call of CloseAndRecv.
-func (mr *MockSink_SinkFnClientMockRecorder) CloseAndRecv() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CloseAndRecv", reflect.TypeOf((*MockSink_SinkFnClient)(nil).CloseAndRecv))
-}
-
 // CloseSend mocks base method.
 func (m *MockSink_SinkFnClient) CloseSend() error {
 	m.ctrl.T.Helper()
@@ -157,6 +142,21 @@ func (m *MockSink_SinkFnClient) Header() (metadata.MD, error) {
 func (mr *MockSink_SinkFnClientMockRecorder) Header() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Header", reflect.TypeOf((*MockSink_SinkFnClient)(nil).Header))
+}
+
+// Recv mocks base method.
+func (m *MockSink_SinkFnClient) Recv() (*v1.SinkResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Recv")
+	ret0, _ := ret[0].(*v1.SinkResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Recv indicates an expected call of Recv.
+func (mr *MockSink_SinkFnClientMockRecorder) Recv() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Recv", reflect.TypeOf((*MockSink_SinkFnClient)(nil).Recv))
 }
 
 // RecvMsg mocks base method.

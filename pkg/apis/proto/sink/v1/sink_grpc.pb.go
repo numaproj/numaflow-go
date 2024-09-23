@@ -54,7 +54,7 @@ func (c *sinkClient) SinkFn(ctx context.Context, opts ...grpc.CallOption) (Sink_
 
 type Sink_SinkFnClient interface {
 	Send(*SinkRequest) error
-	CloseAndRecv() (*SinkResponse, error)
+	Recv() (*SinkResponse, error)
 	grpc.ClientStream
 }
 
@@ -66,10 +66,7 @@ func (x *sinkSinkFnClient) Send(m *SinkRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *sinkSinkFnClient) CloseAndRecv() (*SinkResponse, error) {
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
+func (x *sinkSinkFnClient) Recv() (*SinkResponse, error) {
 	m := new(SinkResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -126,7 +123,7 @@ func _Sink_SinkFn_Handler(srv interface{}, stream grpc.ServerStream) error {
 }
 
 type Sink_SinkFnServer interface {
-	SendAndClose(*SinkResponse) error
+	Send(*SinkResponse) error
 	Recv() (*SinkRequest, error)
 	grpc.ServerStream
 }
@@ -135,7 +132,7 @@ type sinkSinkFnServer struct {
 	grpc.ServerStream
 }
 
-func (x *sinkSinkFnServer) SendAndClose(m *SinkResponse) error {
+func (x *sinkSinkFnServer) Send(m *SinkResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -181,6 +178,7 @@ var Sink_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "SinkFn",
 			Handler:       _Sink_SinkFn_Handler,
+			ServerStreams: true,
 			ClientStreams: true,
 		},
 	},
