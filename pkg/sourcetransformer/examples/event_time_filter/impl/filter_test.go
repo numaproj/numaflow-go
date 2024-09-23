@@ -23,6 +23,10 @@ func (d beforeYear2022Datum) Watermark() time.Time {
 	return time.Now()
 }
 
+func (d beforeYear2022Datum) Headers() map[string]string {
+	return map[string]string{}
+}
+
 type withinYear2022Datum struct{}
 
 func (d withinYear2022Datum) ID() string {
@@ -39,6 +43,9 @@ func (d withinYear2022Datum) EventTime() time.Time {
 func (d withinYear2022Datum) Watermark() time.Time {
 	return time.Now()
 }
+func (d withinYear2022Datum) Headers() map[string]string {
+	return map[string]string{}
+}
 
 type afterYear2022Datum struct{}
 
@@ -51,6 +58,9 @@ func (d afterYear2022Datum) EventTime() time.Time {
 }
 func (d afterYear2022Datum) Watermark() time.Time {
 	return time.Now()
+}
+func (d afterYear2022Datum) Headers() map[string]string {
+	return map[string]string{}
 }
 
 func Test_FilterEventTime(t *testing.T) {
