@@ -31,7 +31,7 @@ type SourceTransformClient interface {
 	// SourceTransformFn applies a function to each request element.
 	// In addition to map function, SourceTransformFn also supports assigning a new event time to response.
 	// SourceTransformFn can be used only at source vertex by source data transformer.
-	SourceTransformFn(ctx context.Context, in *SourceTransformRequest, opts ...grpc.CallOption) (*SourceTransformResponse, error)
+	SourceTransformFn(ctx context.Context, opts ...grpc.CallOption) (SourceTransform_SourceTransformFnClient, error)
 	// IsReady is the heartbeat endpoint for gRPC.
 	IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReadyResponse, error)
 }
@@ -44,14 +44,36 @@ func NewSourceTransformClient(cc grpc.ClientConnInterface) SourceTransformClient
 	return &sourceTransformClient{cc}
 }
 
-func (c *sourceTransformClient) SourceTransformFn(ctx context.Context, in *SourceTransformRequest, opts ...grpc.CallOption) (*SourceTransformResponse, error) {
+func (c *sourceTransformClient) SourceTransformFn(ctx context.Context, opts ...grpc.CallOption) (SourceTransform_SourceTransformFnClient, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SourceTransformResponse)
-	err := c.cc.Invoke(ctx, SourceTransform_SourceTransformFn_FullMethodName, in, out, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &SourceTransform_ServiceDesc.Streams[0], SourceTransform_SourceTransformFn_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &sourceTransformSourceTransformFnClient{ClientStream: stream}
+	return x, nil
+}
+
+type SourceTransform_SourceTransformFnClient interface {
+	Send(*SourceTransformRequest) error
+	Recv() (*SourceTransformResponse, error)
+	grpc.ClientStream
+}
+
+type sourceTransformSourceTransformFnClient struct {
+	grpc.ClientStream
+}
+
+func (x *sourceTransformSourceTransformFnClient) Send(m *SourceTransformRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *sourceTransformSourceTransformFnClient) Recv() (*SourceTransformResponse, error) {
+	m := new(SourceTransformResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func (c *sourceTransformClient) IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReadyResponse, error) {
@@ -71,7 +93,7 @@ type SourceTransformServer interface {
 	// SourceTransformFn applies a function to each request element.
 	// In addition to map function, SourceTransformFn also supports assigning a new event time to response.
 	// SourceTransformFn can be used only at source vertex by source data transformer.
-	SourceTransformFn(context.Context, *SourceTransformRequest) (*SourceTransformResponse, error)
+	SourceTransformFn(SourceTransform_SourceTransformFnServer) error
 	// IsReady is the heartbeat endpoint for gRPC.
 	IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error)
 	mustEmbedUnimplementedSourceTransformServer()
@@ -81,8 +103,8 @@ type SourceTransformServer interface {
 type UnimplementedSourceTransformServer struct {
 }
 
-func (UnimplementedSourceTransformServer) SourceTransformFn(context.Context, *SourceTransformRequest) (*SourceTransformResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SourceTransformFn not implemented")
+func (UnimplementedSourceTransformServer) SourceTransformFn(SourceTransform_SourceTransformFnServer) error {
+	return status.Errorf(codes.Unimplemented, "method SourceTransformFn not implemented")
 }
 func (UnimplementedSourceTransformServer) IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsReady not implemented")
@@ -100,22 +122,30 @@ func RegisterSourceTransformServer(s grpc.ServiceRegistrar, srv SourceTransformS
 	s.RegisterService(&SourceTransform_ServiceDesc, srv)
 }
 
-func _SourceTransform_SourceTransformFn_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SourceTransformRequest)
-	if err := dec(in); err != nil {
+func _SourceTransform_SourceTransformFn_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(SourceTransformServer).SourceTransformFn(&sourceTransformSourceTransformFnServer{ServerStream: stream})
+}
+
+type SourceTransform_SourceTransformFnServer interface {
+	Send(*SourceTransformResponse) error
+	Recv() (*SourceTransformRequest, error)
+	grpc.ServerStream
+}
+
+type sourceTransformSourceTransformFnServer struct {
+	grpc.ServerStream
+}
+
+func (x *sourceTransformSourceTransformFnServer) Send(m *SourceTransformResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *sourceTransformSourceTransformFnServer) Recv() (*SourceTransformRequest, error) {
+	m := new(SourceTransformRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
-	if interceptor == nil {
-		return srv.(SourceTransformServer).SourceTransformFn(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: SourceTransform_SourceTransformFn_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SourceTransformServer).SourceTransformFn(ctx, req.(*SourceTransformRequest))
-	}
-	return interceptor(ctx, in, info, handler)
+	return m, nil
 }
 
 func _SourceTransform_IsReady_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -144,14 +174,17 @@ var SourceTransform_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*SourceTransformServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "SourceTransformFn",
-			Handler:    _SourceTransform_SourceTransformFn_Handler,
-		},
-		{
 			MethodName: "IsReady",
 			Handler:    _SourceTransform_IsReady_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "SourceTransformFn",
+			Handler:       _SourceTransform_SourceTransformFn_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+	},
 	Metadata: "pkg/apis/proto/sourcetransform/v1/transform.proto",
 }
