@@ -4,7 +4,7 @@ This document explains the release process for the Go SDK. You can find the most
 
 ### Before Release
 
-If the version to be released has backwards incompatible changes, i.e. it does not support older versions of the Numaflow platform,
+If the version to be released has backwards incompatible changes, i.e., it does not support older versions of the Numaflow platform,
 you must update the `MinimumNumaflowVersion` constant in the `pkg/info/types.go` file to the minimum Numaflow version that is supported by your new SDK version.
 Ensure that this change is merged and included in the release.
 
