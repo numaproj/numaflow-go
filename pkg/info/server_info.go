@@ -112,8 +112,9 @@ func Read(opts ...Option) (*ServerInfo, error) {
 
 // GetDefaultServerInfo returns a ServerInfo object with the default fields populated for Go-SDK
 func GetDefaultServerInfo() *ServerInfo {
-	serverInfo := &ServerInfo{Protocol: UDS, Language: Go, MinimumNumaflowVersion: MinimumNumaflowVersion,
-		Version: getSDKVersion()}
-	return serverInfo
-
+	return &ServerInfo{
+		Protocol: UDS,
+		Language: Go,
+		Version:  getSDKVersion(),
+	}
 }

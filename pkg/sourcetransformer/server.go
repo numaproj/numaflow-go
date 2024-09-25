@@ -50,8 +50,10 @@ func (m *server) Start(ctx context.Context) error {
 	defer stop()
 
 	// write server info to the file
+	serverInfo := info.GetDefaultServerInfo()
+	serverInfo.MinimumNumaflowVersion = info.MinimumNumaflowVersion[info.Sourcetransformer]
 	// start listening on unix domain socket
-	lis, err := shared.PrepareServer(m.opts.sockAddr, m.opts.serverInfoFilePath, info.GetDefaultServerInfo())
+	lis, err := shared.PrepareServer(m.opts.sockAddr, m.opts.serverInfoFilePath, serverInfo)
 	if err != nil {
 		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", uds, address, err)
 	}

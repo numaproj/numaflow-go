@@ -10,10 +10,23 @@ const (
 type Language string
 
 const (
-	Go     Language = "go"
-	Python Language = "python"
-	Java   Language = "java"
-	Rust   Language = "rust"
+	Go Language = "go"
+)
+
+type ContainerType string
+
+// the string content matches the corresponding server info file name.
+// DO NOT change it unless the server info file name is changed.
+const (
+	Sourcer           ContainerType = "sourcer"
+	Sourcetransformer ContainerType = "sourcetransformer"
+	Sinker            ContainerType = "sinker"
+	Mapper            ContainerType = "mapper"
+	Reducer           ContainerType = "reducer"
+	Reducestreamer    ContainerType = "reducestreamer"
+	Sessionreducer    ContainerType = "sessionreducer"
+	Sideinput         ContainerType = "sideinput"
+	Fbsinker          ContainerType = "fb-sinker"
 )
 
 type MapMode string
@@ -30,7 +43,17 @@ const MapModeKey = "MAP_MODE"
 // MinimumNumaflowVersion is the minimum version of Numaflow required by the current SDK version
 // To update this value, please follow the instructions for MINIMUM_NUMAFLOW_VERSION in
 // https://github.com/numaproj/numaflow-rs/blob/main/src/shared.rs
-const MinimumNumaflowVersion = "1.3.1-z"
+var MinimumNumaflowVersion = map[ContainerType]string{
+	Sourcer:           "1.3.1-z",
+	Sourcetransformer: "1.3.1-z",
+	Sinker:            "1.3.1-z",
+	Mapper:            "1.3.1-z",
+	Reducestreamer:    "1.3.1-z",
+	Reducer:           "1.3.1-z",
+	Sessionreducer:    "1.3.1-z",
+	Sideinput:         "1.3.1-z",
+	Fbsinker:          "1.3.1-z",
+}
 
 // ServerInfo is the information about the server
 type ServerInfo struct {
