@@ -53,6 +53,7 @@ func (m *server) Start(ctx context.Context) error {
 	// create a server info to the file, we need to add metadata to ensure selection of the
 	// correct map mode, in this case unary map
 	serverInfo := info.GetDefaultServerInfo()
+	serverInfo.MinimumNumaflowVersion = info.MinimumNumaflowVersion[info.Mapper]
 	serverInfo.Metadata = map[string]string{info.MapModeKey: string(info.UnaryMap)}
 
 	// start listening on unix domain socket

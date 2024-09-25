@@ -56,8 +56,8 @@ func Test_Read_Write(t *testing.T) {
 	defer os.Remove(filepath)
 	info := &ServerInfo{
 		Protocol:               TCP,
-		Language:               Java,
-		MinimumNumaflowVersion: MinimumNumaflowVersion,
+		Language:               Go,
+		MinimumNumaflowVersion: "1.3.1-z",
 		Version:                "11",
 		Metadata:               map[string]string{"key1": "value1", "key2": "value2"},
 	}
