@@ -3,12 +3,14 @@ package sourcetransformer
 import (
 	"context"
 	"errors"
-	"golang.org/x/sync/errgroup"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"fmt"
 	"io"
 	"log"
 	"runtime/debug"
+
+	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -48,6 +50,24 @@ func (fs *Service) SourceTransformFn(stream v1.SourceTransform_SourceTransformFn
 		}
 	}()
 
+	req, err := stream.Recv()
+	if err != nil {
+		return fmt.Errorf("reading handshake message from stream: %w", err)
+	}
+
+	if req.Handshake == nil || !req.Handshake.Sot {
+		return fmt.Errorf("invalid handshake message: %+v", req)
+	}
+
+	handshakeResponse := &v1.SourceTransformResponse{
+		Handshake: &v1.Handshake{
+			Sot: true,
+		},
+	}
+	if err := stream.Send(handshakeResponse); err != nil {
+		return fmt.Errorf("sending handshake response to client over gRPC stream: %w", err)
+	}
+
 	ctx := stream.Context()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -77,9 +97,14 @@ func (fs *Service) SourceTransformFn(stream v1.SourceTransform_SourceTransformFn
 			}
 			return err
 		}
+		if d.Handshake != nil {
+			return fmt.Errorf("expected source transform messages, received handshake message")
+		}
+
+		req := d.Request
 		grp.Go(func() error {
-			var hd = NewHandlerDatum(d.GetValue(), d.EventTime.AsTime(), d.Watermark.AsTime(), d.Headers)
-			messageTs := fs.Transformer.Transform(grpCtx, d.GetKeys(), hd)
+			var hd = NewHandlerDatum(req.GetValue(), req.EventTime.AsTime(), req.Watermark.AsTime(), req.Headers)
+			messageTs := fs.Transformer.Transform(grpCtx, req.GetKeys(), hd)
 			var results []*v1.SourceTransformResponse_Result
 			for _, m := range messageTs.Items() {
 				results = append(results, &v1.SourceTransformResponse_Result{
@@ -91,7 +116,7 @@ func (fs *Service) SourceTransformFn(stream v1.SourceTransform_SourceTransformFn
 			}
 			resp := &v1.SourceTransformResponse{
 				Results: results,
-				Id:      d.GetId(),
+				Id:      req.GetId(),
 			}
 			select {
 			case senderCh <- resp:
