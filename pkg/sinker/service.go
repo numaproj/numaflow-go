@@ -2,12 +2,14 @@ package sinker
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"io"
 	"log"
 	"runtime/debug"
-	"sync"
 	"time"
 
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
@@ -72,69 +74,127 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*sinkpb.ReadyRespon
 
 // SinkFn applies a sink function to a every element.
 func (fs *Service) SinkFn(stream sinkpb.Sink_SinkFnServer) error {
-	var (
-		resultList    []*sinkpb.SinkResponse_Result
-		wg            sync.WaitGroup
-		datumStreamCh = make(chan Datum)
-		ctx           = stream.Context()
-	)
+	ctx := stream.Context()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		// handle panic
-		defer func() {
-			if r := recover(); r != nil {
-				log.Printf("panic inside sink handler: %v %v", r, string(debug.Stack()))
-				fs.shutdownCh <- struct{}{}
+	// Perform handshake before entering the main loop
+	if err := fs.performHandshake(stream); err != nil {
+		return err
+	}
+
+	for {
+		datumStreamCh := make(chan Datum)
+		g, ctx := errgroup.WithContext(ctx)
+
+		g.Go(func() error {
+			return fs.receiveRequests(stream, datumStreamCh)
+		})
+
+		g.Go(func() error {
+			return fs.processData(ctx, stream, datumStreamCh)
+		})
+
+		// Wait for the goroutines to finish
+		if err := g.Wait(); err != nil {
+			if errors.Is(err, io.EOF) {
+				log.Printf("Stopping the SinkFn")
+				return nil
 			}
-		}()
-		messages := fs.Sinker.Sink(ctx, datumStreamCh)
-		for _, msg := range messages {
-			if msg.Fallback {
-				resultList = append(resultList, &sinkpb.SinkResponse_Result{
-					Id:     msg.ID,
-					Status: sinkpb.Status_FALLBACK,
-				})
-			} else if msg.Success {
-				resultList = append(resultList, &sinkpb.SinkResponse_Result{
-					Id:     msg.ID,
-					Status: sinkpb.Status_SUCCESS,
-				})
-			} else {
-				resultList = append(resultList, &sinkpb.SinkResponse_Result{
-					Id:     msg.ID,
-					Status: sinkpb.Status_FAILURE,
-					ErrMsg: msg.Err,
-				})
-			}
+			log.Printf("Stopping the SinkFn with err, %s", err)
+			return err
+		}
+	}
+}
+
+// performHandshake performs the handshake with the client.
+func (fs *Service) performHandshake(stream sinkpb.Sink_SinkFnServer) error {
+	req, err := stream.Recv()
+	if err != nil {
+		log.Printf("error receiving handshake from stream: %v", err)
+		return err
+	}
+
+	if req.Handshake == nil || !req.Handshake.Sot {
+		return fmt.Errorf("expected handshake message")
+	}
+
+	handshakeResponse := &sinkpb.SinkResponse{
+		Result: &sinkpb.SinkResponse_Result{
+			Status: sinkpb.Status_SUCCESS,
+		},
+		Handshake: &sinkpb.Handshake{
+			Sot: true,
+		},
+	}
+	if err := stream.Send(handshakeResponse); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// receiveRequests receives the requests from the client writes them to the datumStreamCh channel.
+func (fs *Service) receiveRequests(stream sinkpb.Sink_SinkFnServer, datumStreamCh chan<- Datum) error {
+	defer close(datumStreamCh)
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("panic inside sink handler: %v %v", r, string(debug.Stack()))
+			fs.shutdownCh <- struct{}{}
 		}
 	}()
 
 	for {
-		d, err := stream.Recv()
+		req, err := stream.Recv()
 		if err == io.EOF {
-			close(datumStreamCh)
-			break
-		}
-		if err != nil {
-			close(datumStreamCh)
-			// TODO: research on gRPC errors and revisit the error handler
+			log.Printf("end of sink stream")
 			return err
 		}
-		var hd = &handlerDatum{
-			id:        d.GetId(),
-			value:     d.GetValue(),
-			keys:      d.GetKeys(),
-			eventTime: d.GetEventTime().AsTime(),
-			watermark: d.GetWatermark().AsTime(),
-			headers:   d.GetHeaders(),
+		if err != nil {
+			log.Printf("error receiving from sink stream: %v", err)
+			return err
 		}
-		datumStreamCh <- hd
-	}
 
-	wg.Wait()
-	return stream.SendAndClose(&sinkpb.SinkResponse{
-		Results: resultList,
-	})
+		if req.Status != nil && req.Status.Eot {
+			break
+		}
+
+		datum := &handlerDatum{
+			id:        req.GetRequest().GetId(),
+			value:     req.GetRequest().GetValue(),
+			keys:      req.GetRequest().GetKeys(),
+			eventTime: req.GetRequest().GetEventTime().AsTime(),
+			watermark: req.GetRequest().GetWatermark().AsTime(),
+			headers:   req.GetRequest().GetHeaders(),
+		}
+
+		datumStreamCh <- datum
+	}
+	return nil
+}
+
+// processData invokes the sinker to process the data and sends the response back to the client.
+func (fs *Service) processData(ctx context.Context, stream sinkpb.Sink_SinkFnServer, datumStreamCh chan Datum) error {
+	responses := fs.Sinker.Sink(ctx, datumStreamCh)
+	for _, response := range responses {
+		var status sinkpb.Status
+		if response.Fallback {
+			status = sinkpb.Status_FALLBACK
+		} else if response.Success {
+			status = sinkpb.Status_SUCCESS
+		} else {
+			status = sinkpb.Status_FAILURE
+		}
+
+		sinkResponse := &sinkpb.SinkResponse{
+			Result: &sinkpb.SinkResponse_Result{
+				Id:     response.ID,
+				Status: status,
+				ErrMsg: response.Err,
+			},
+		}
+		if err := stream.Send(sinkResponse); err != nil {
+			log.Printf("error sending sink response: %v", err)
+			return err
+		}
+	}
+	return nil
 }

@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -19,12 +20,12 @@ import (
 type SinkFnServerTest struct {
 	ctx     context.Context
 	inputCh chan *sinkpb.SinkRequest
-	rl      *sinkpb.SinkResponse
+	rl      []*sinkpb.SinkResponse
 	grpc.ServerStream
 }
 
-func (t *SinkFnServerTest) SendAndClose(list *sinkpb.SinkResponse) error {
-	t.rl = list
+func (t *SinkFnServerTest) Send(response *sinkpb.SinkResponse) error {
+	t.rl = append(t.rl, response)
 	return nil
 }
 
@@ -45,35 +46,51 @@ func TestService_SinkFn(t *testing.T) {
 		name     string
 		sh       Sinker
 		input    []*sinkpb.SinkRequest
-		expected []*sinkpb.SinkResponse_Result
+		expected []*sinkpb.SinkResponse
 	}{
 		{
 			name: "sink_fn_test_success",
 
 			input: []*sinkpb.SinkRequest{
 				{
-					Id:        "one-processed",
-					Keys:      []string{"sink-test"},
-					Value:     []byte(strconv.Itoa(10)),
-					EventTime: timestamppb.New(time.Time{}),
-					Watermark: timestamppb.New(time.Time{}),
-					Headers:   map[string]string{"x-txn-id": "test-txn-1"},
+					Request: &sinkpb.SinkRequest_Request{},
+					Handshake: &sinkpb.Handshake{
+						Sot: true,
+					},
 				},
 				{
-					Id:        "two-processed",
-					Keys:      []string{"sink-test"},
-					Value:     []byte(strconv.Itoa(20)),
-					EventTime: timestamppb.New(time.Time{}),
-					Watermark: timestamppb.New(time.Time{}),
-					Headers:   map[string]string{"x-txn-id": "test-txn-2"},
+					Request: &sinkpb.SinkRequest_Request{
+						Id:        "one-processed",
+						Keys:      []string{"sink-test"},
+						Value:     []byte(strconv.Itoa(10)),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
+						Headers:   map[string]string{"x-txn-id": "test-txn-1"},
+					},
 				},
 				{
-					Id:        "three-processed",
-					Keys:      []string{"sink-test"},
-					Value:     []byte(strconv.Itoa(30)),
-					EventTime: timestamppb.New(time.Time{}),
-					Watermark: timestamppb.New(time.Time{}),
-					Headers:   map[string]string{"x-txn-id": "test-txn-3"},
+					Request: &sinkpb.SinkRequest_Request{
+						Id:        "two-processed",
+						Keys:      []string{"sink-test"},
+						Value:     []byte(strconv.Itoa(20)),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
+						Headers:   map[string]string{"x-txn-id": "test-txn-2"},
+					},
+				},
+				{
+					Request: &sinkpb.SinkRequest_Request{
+						Id:        "three-processed",
+						Keys:      []string{"sink-test"},
+						Value:     []byte(strconv.Itoa(30)),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
+						Headers:   map[string]string{"x-txn-id": "test-txn-3"},
+					},
+				},
+				{
+					Request: &sinkpb.SinkRequest_Request{},
+					Status:  &sinkpb.SinkRequest_Status{Eot: true},
 				},
 			},
 			sh: SinkerFunc(func(ctx context.Context, rch <-chan Datum) Responses {
@@ -84,50 +101,77 @@ func TestService_SinkFn(t *testing.T) {
 				}
 				return result
 			}),
-			expected: []*sinkpb.SinkResponse_Result{
+			expected: []*sinkpb.SinkResponse{
 				{
-					Status: sinkpb.Status_SUCCESS,
-					Id:     "one-processed",
-					ErrMsg: "",
+					Result: &sinkpb.SinkResponse_Result{},
+					Handshake: &sinkpb.Handshake{
+						Sot: true,
+					},
 				},
 				{
-					Status: sinkpb.Status_SUCCESS,
-					Id:     "two-processed",
-					ErrMsg: "",
+					Result: &sinkpb.SinkResponse_Result{
+						Status: sinkpb.Status_SUCCESS,
+						Id:     "one-processed",
+						ErrMsg: "",
+					},
 				},
 				{
-					Status: sinkpb.Status_SUCCESS,
-					Id:     "three-processed",
-					ErrMsg: "",
+					Result: &sinkpb.SinkResponse_Result{
+						Status: sinkpb.Status_SUCCESS,
+						Id:     "two-processed",
+						ErrMsg: "",
+					},
+				},
+				{
+					Result: &sinkpb.SinkResponse_Result{
+						Status: sinkpb.Status_SUCCESS,
+						Id:     "three-processed",
+						ErrMsg: "",
+					},
 				},
 			},
 		},
 		{
 			name: "sink_fn_test_failure",
-
 			input: []*sinkpb.SinkRequest{
 				{
-					Id:        "one-processed",
-					Keys:      []string{"sink-test-1", "sink-test-2"},
-					Value:     []byte(strconv.Itoa(10)),
-					EventTime: timestamppb.New(time.Time{}),
-					Watermark: timestamppb.New(time.Time{}),
-					Headers:   map[string]string{"x-txn-id": "test-txn-1"},
+					Request: &sinkpb.SinkRequest_Request{},
+					Handshake: &sinkpb.Handshake{
+						Sot: true,
+					},
 				},
 				{
-					Id:        "two-processed",
-					Keys:      []string{"sink-test-1", "sink-test-2"},
-					Value:     []byte(strconv.Itoa(20)),
-					EventTime: timestamppb.New(time.Time{}),
-					Watermark: timestamppb.New(time.Time{}),
+					Request: &sinkpb.SinkRequest_Request{
+						Id:        "one-processed",
+						Keys:      []string{"sink-test-1", "sink-test-2"},
+						Value:     []byte(strconv.Itoa(10)),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
+						Headers:   map[string]string{"x-txn-id": "test-txn-1"},
+					},
 				},
 				{
-					Id:        "three-processed",
-					Keys:      []string{"sink-test-1", "sink-test-2"},
-					Value:     []byte(strconv.Itoa(30)),
-					EventTime: timestamppb.New(time.Time{}),
-					Watermark: timestamppb.New(time.Time{}),
-					Headers:   map[string]string{"x-txn-id": "test-txn-2"},
+					Request: &sinkpb.SinkRequest_Request{
+						Id:        "two-processed",
+						Keys:      []string{"sink-test-1", "sink-test-2"},
+						Value:     []byte(strconv.Itoa(20)),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
+					},
+				},
+				{
+					Request: &sinkpb.SinkRequest_Request{
+						Id:        "three-processed",
+						Keys:      []string{"sink-test-1", "sink-test-2"},
+						Value:     []byte(strconv.Itoa(30)),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
+						Headers:   map[string]string{"x-txn-id": "test-txn-2"},
+					},
+				},
+				{
+					Request: &sinkpb.SinkRequest_Request{},
+					Status:  &sinkpb.SinkRequest_Status{Eot: true},
 				},
 			},
 			sh: SinkerFunc(func(ctx context.Context, rch <-chan Datum) Responses {
@@ -138,21 +182,33 @@ func TestService_SinkFn(t *testing.T) {
 				}
 				return result
 			}),
-			expected: []*sinkpb.SinkResponse_Result{
+			expected: []*sinkpb.SinkResponse{
 				{
-					Status: sinkpb.Status_FAILURE,
-					Id:     "one-processed",
-					ErrMsg: "unknown error",
+					Result: &sinkpb.SinkResponse_Result{},
+					Handshake: &sinkpb.Handshake{
+						Sot: true,
+					},
 				},
 				{
-					Status: sinkpb.Status_FAILURE,
-					Id:     "two-processed",
-					ErrMsg: "unknown error",
+					Result: &sinkpb.SinkResponse_Result{
+						Status: sinkpb.Status_FAILURE,
+						Id:     "one-processed",
+						ErrMsg: "unknown error",
+					},
 				},
 				{
-					Status: sinkpb.Status_FAILURE,
-					Id:     "three-processed",
-					ErrMsg: "unknown error",
+					Result: &sinkpb.SinkResponse_Result{
+						Status: sinkpb.Status_FAILURE,
+						Id:     "two-processed",
+						ErrMsg: "unknown error",
+					},
+				},
+				{
+					Result: &sinkpb.SinkResponse_Result{
+						Status: sinkpb.Status_FAILURE,
+						Id:     "three-processed",
+						ErrMsg: "unknown error",
+					},
 				},
 			},
 		},
@@ -173,7 +229,8 @@ func TestService_SinkFn(t *testing.T) {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				_ = ss.SinkFn(udfReduceFnStream)
+				err := ss.SinkFn(udfReduceFnStream)
+				assert.NoError(t, err)
 			}()
 
 			for _, val := range tt.input {
@@ -183,8 +240,8 @@ func TestService_SinkFn(t *testing.T) {
 
 			wg.Wait()
 
-			if !reflect.DeepEqual(udfReduceFnStream.rl.Results, tt.expected) {
-				t.Errorf("ReduceFn() got = %v, want %v", udfReduceFnStream.rl.Results, tt.expected)
+			if !reflect.DeepEqual(udfReduceFnStream.rl, tt.expected) {
+				t.Errorf("ReduceFn() got = %v, want %v", udfReduceFnStream.rl, tt.expected)
 			}
 		})
 	}
