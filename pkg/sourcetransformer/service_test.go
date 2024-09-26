@@ -4,13 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/stretchr/testify/assert"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/test/bufconn"
 	"net"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/test/bufconn"
 
 	proto "github.com/numaproj/numaflow-go/pkg/apis/proto/sourcetransform/v1"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -90,10 +92,12 @@ func TestService_sourceTransformFn(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				d: &proto.SourceTransformRequest{
-					Keys:      []string{"client"},
-					Value:     []byte(`test`),
-					EventTime: timestamppb.New(time.Time{}),
-					Watermark: timestamppb.New(time.Time{}),
+					Request: &proto.SourceTransformRequest_Request{
+						Keys:      []string{"client"},
+						Value:     []byte(`test`),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
+					},
 				},
 			},
 			want: &proto.SourceTransformResponse{
@@ -115,10 +119,12 @@ func TestService_sourceTransformFn(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				d: &proto.SourceTransformRequest{
-					Keys:      []string{"client"},
-					Value:     []byte(`test`),
-					EventTime: timestamppb.New(time.Time{}),
-					Watermark: timestamppb.New(time.Time{}),
+					Request: &proto.SourceTransformRequest_Request{
+						Keys:      []string{"client"},
+						Value:     []byte(`test`),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
+					},
 				},
 			},
 			want: &proto.SourceTransformResponse{
@@ -138,10 +144,12 @@ func TestService_sourceTransformFn(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				d: &proto.SourceTransformRequest{
-					Keys:      []string{"client"},
-					Value:     []byte(`test`),
-					EventTime: timestamppb.New(time.Time{}),
-					Watermark: timestamppb.New(time.Time{}),
+					Request: &proto.SourceTransformRequest_Request{
+						Keys:      []string{"client"},
+						Value:     []byte(`test`),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
+					},
 				},
 			},
 			want: &proto.SourceTransformResponse{
@@ -170,6 +178,8 @@ func TestService_sourceTransformFn(t *testing.T) {
 			stream, err := client.SourceTransformFn(context.Background())
 			assert.NoError(t, err, "Creating stream")
 
+			doHandshake(t, stream)
+
 			err = stream.Send(tt.args.d)
 			assert.NoError(t, err, "Sending message over the stream")
 
@@ -179,6 +189,23 @@ func TestService_sourceTransformFn(t *testing.T) {
 			assert.Equal(t, got.Results, tt.want.Results)
 		})
 	}
+}
+
+func doHandshake(t *testing.T, stream proto.SourceTransform_SourceTransformFnClient) {
+	t.Helper()
+	handshakeReq := &proto.SourceTransformRequest{
+		Handshake: &proto.Handshake{Sot: true},
+	}
+	err := stream.Send(handshakeReq)
+	require.NoError(t, err, "Sending handshake request to the stream")
+
+	handshakeResp, err := stream.Recv()
+	require.NoError(t, err, "Receiving handshake response")
+
+	require.Empty(t, handshakeResp.Results, "Invalid handshake response")
+	require.Empty(t, handshakeResp.Id, "Invalid handshake response")
+	require.NotNil(t, handshakeResp.Handshake, "Invalid handshake response")
+	require.True(t, handshakeResp.Handshake.Sot, "Invalid handshake response")
 }
 
 func TestService_SourceTransformFn_Multiple_Messages(t *testing.T) {
@@ -194,21 +221,25 @@ func TestService_SourceTransformFn_Multiple_Messages(t *testing.T) {
 
 	client := proto.NewSourceTransformClient(conn)
 	stream, err := client.SourceTransformFn(context.Background())
-	assert.NoError(t, err, "Creating stream")
+	require.NoError(t, err, "Creating stream")
+
+	doHandshake(t, stream)
 
 	const msgCount = 10
 	for i := 0; i < msgCount; i++ {
 		msg := proto.SourceTransformRequest{
-			Keys:      []string{"client"},
-			Value:     []byte(fmt.Sprintf("test_%d", i)),
-			EventTime: timestamppb.New(time.Time{}),
-			Watermark: timestamppb.New(time.Time{}),
+			Request: &proto.SourceTransformRequest_Request{
+				Keys:      []string{"client"},
+				Value:     []byte(fmt.Sprintf("test_%d", i)),
+				EventTime: timestamppb.New(time.Time{}),
+				Watermark: timestamppb.New(time.Time{}),
+			},
 		}
 		err = stream.Send(&msg)
-		assert.NoError(t, err, "Sending message over the stream")
+		require.NoError(t, err, "Sending message over the stream")
 	}
 	err = stream.CloseSend()
-	assert.NoError(t, err, "Closing the send direction of the stream")
+	require.NoError(t, err, "Closing the send direction of the stream")
 
 	expectedResults := make([][]*proto.SourceTransformResponse_Result, msgCount)
 	for i := 0; i < msgCount; i++ {
@@ -224,8 +255,8 @@ func TestService_SourceTransformFn_Multiple_Messages(t *testing.T) {
 	results := make([][]*proto.SourceTransformResponse_Result, msgCount)
 	for i := 0; i < msgCount; i++ {
 		got, err := stream.Recv()
-		assert.NoError(t, err, "Receiving message from the stream")
+		require.NoError(t, err, "Receiving message from the stream")
 		results[i] = got.Results
 	}
-	assert.ElementsMatch(t, results, expectedResults)
+	require.ElementsMatch(t, results, expectedResults)
 }

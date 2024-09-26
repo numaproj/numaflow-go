@@ -17,17 +17,29 @@ service SourceTransform {
   rpc IsReady(google.protobuf.Empty) returns (ReadyResponse);
 }
 
+/*
+ * Handshake message between client and server to indicate the start of transmission.
+ */
+ message Handshake {
+  // Required field indicating the start of transmission.
+  bool sot = 1;
+}
+
 /**
  * SourceTransformerRequest represents a request element.
  */
 message SourceTransformRequest {
-  repeated string keys = 1;
-  bytes value = 2;
-  google.protobuf.Timestamp event_time = 3;
-  google.protobuf.Timestamp watermark = 4;
-  map<string, string> headers = 5;
-  // This ID is used uniquely identify a transform request
-  string id = 6;
+  message Request {
+    repeated string keys = 1;
+    bytes value = 2;
+    google.protobuf.Timestamp event_time = 3;
+    google.protobuf.Timestamp watermark = 4;
+    map<string, string> headers = 5;
+    // This ID is used to uniquely identify a transform request
+    string id = 6;
+  }
+  Request request = 1;
+  optional Handshake handshake = 2;
 }
 
 /**
@@ -43,6 +55,8 @@ message SourceTransformResponse {
   repeated Result results = 1;
   // This ID is used to refer the responses to the request it corresponds to.
   string id = 2;
+  // Handshake message between client and server to indicate the start of transmission.
+  optional Handshake handshake = 3;
 }
 
 /**
