@@ -96,8 +96,10 @@ func (fs *Service) SinkFn(stream sinkpb.Sink_SinkFnServer) error {
 		// Wait for the goroutines to finish
 		if err := g.Wait(); err != nil {
 			if errors.Is(err, io.EOF) {
+				log.Printf("Stopping the SinkFn")
 				return nil
 			}
+			log.Printf("Stopping the SinkFn with err, %s", err)
 			return err
 		}
 	}
