@@ -9,7 +9,6 @@ import (
 	"runtime/debug"
 	"time"
 
-	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -167,14 +166,9 @@ func (fs *Service) AckFn(stream sourcepb.Source_AckFnServer) error {
 	}
 
 	for {
-		g, ctx := errgroup.WithContext(ctx)
+		err := fs.receiveAckRequests(ctx, stream)
 
-		g.Go(func() error {
-			return fs.receiveAckRequests(ctx, stream)
-		})
-
-		// Wait for the goroutines to finish
-		if err := g.Wait(); err != nil {
+		if err != nil {
 			if errors.Is(err, io.EOF) {
 				return nil
 			}
