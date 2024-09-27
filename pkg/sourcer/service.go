@@ -168,7 +168,6 @@ func (fs *Service) AckFn(stream sourcepb.Source_AckFnServer) error {
 	for {
 		err := fs.receiveAckRequests(ctx, stream)
 
-		// Wait for the goroutines to finish
 		if err != nil {
 			if errors.Is(err, io.EOF) {
 				return nil
