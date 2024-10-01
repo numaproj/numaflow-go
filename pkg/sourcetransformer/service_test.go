@@ -11,14 +11,16 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
 
 	proto "github.com/numaproj/numaflow-go/pkg/apis/proto/sourcetransform/v1"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func newServer(t *testing.T, register func(server *grpc.Server)) *grpc.ClientConn {
+func newTestServer(t *testing.T, register func(server *grpc.Server)) *grpc.ClientConn {
 	lis := bufconn.Listen(1024 * 1024)
 	t.Cleanup(func() {
 		_ = lis.Close()
@@ -43,12 +45,7 @@ func newServer(t *testing.T, register func(server *grpc.Server)) *grpc.ClientCon
 		return lis.Dial()
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	t.Cleanup(func() {
-		cancel()
-	})
-
-	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient("passthrough://", grpc.WithContextDialer(dialer), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	t.Cleanup(func() {
 		_ = conn.Close()
 	})
@@ -170,21 +167,21 @@ func TestService_sourceTransformFn(t *testing.T) {
 				Transformer: tt.handler,
 			}
 
-			conn := newServer(t, func(server *grpc.Server) {
+			conn := newTestServer(t, func(server *grpc.Server) {
 				proto.RegisterSourceTransformServer(server, svc)
 			})
 
 			client := proto.NewSourceTransformClient(conn)
 			stream, err := client.SourceTransformFn(context.Background())
-			assert.NoError(t, err, "Creating stream")
+			require.NoError(t, err, "Creating stream")
 
 			doHandshake(t, stream)
 
 			err = stream.Send(tt.args.d)
-			assert.NoError(t, err, "Sending message over the stream")
+			require.NoError(t, err, "Sending message over the stream")
 
 			got, err := stream.Recv()
-			assert.NoError(t, err, "Receiving message from the stream")
+			require.NoError(t, err, "Receiving message from the stream")
 
 			assert.Equal(t, got.Results, tt.want.Results)
 		})
@@ -215,7 +212,7 @@ func TestService_SourceTransformFn_Multiple_Messages(t *testing.T) {
 			return MessagesBuilder().Append(NewMessage(msg, testTime).WithKeys([]string{keys[0] + "_test"}))
 		}),
 	}
-	conn := newServer(t, func(server *grpc.Server) {
+	conn := newTestServer(t, func(server *grpc.Server) {
 		proto.RegisterSourceTransformServer(server, svc)
 	})
 
@@ -259,4 +256,43 @@ func TestService_SourceTransformFn_Multiple_Messages(t *testing.T) {
 		results[i] = got.Results
 	}
 	require.ElementsMatch(t, results, expectedResults)
+}
+
+func TestService_SourceTransformFn_Panic(t *testing.T) {
+	svc := &Service{
+		Transformer: SourceTransformFunc(func(ctx context.Context, keys []string, datum Datum) Messages {
+			panic("transformer panicked")
+		}),
+		// panic in the transformer causes the server to send a shutdown signal to shutdownCh channel.
+		// The function that errgroup runs in a goroutine will be blocked until this shutdown signal is received somewhere else.
+		// Since we don't listen for shutdown signal in the tests, we use buffered channel to unblock the server function.
+		shutdownCh: make(chan<- struct{}, 1),
+	}
+	conn := newTestServer(t, func(server *grpc.Server) {
+		proto.RegisterSourceTransformServer(server, svc)
+	})
+
+	client := proto.NewSourceTransformClient(conn)
+	stream, err := client.SourceTransformFn(context.Background())
+	require.NoError(t, err, "Creating stream")
+
+	doHandshake(t, stream)
+
+	msg := proto.SourceTransformRequest{
+		Request: &proto.SourceTransformRequest_Request{
+			Keys:      []string{"client"},
+			Value:     []byte("test"),
+			EventTime: timestamppb.New(time.Time{}),
+			Watermark: timestamppb.New(time.Time{}),
+		},
+	}
+	err = stream.Send(&msg)
+	require.NoError(t, err, "Sending message over the stream")
+	err = stream.CloseSend()
+	require.NoError(t, err, "Closing the send direction of the stream")
+	_, err = stream.Recv()
+	require.Error(t, err, "Expected error while receiving message from the stream")
+	gotStatus, _ := status.FromError(err)
+	expectedStatus := status.Convert(status.Errorf(codes.Internal, errTransformerPanic.Error()))
+	require.Equal(t, expectedStatus, gotStatus)
 }

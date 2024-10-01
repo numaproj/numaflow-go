@@ -38,6 +38,8 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*v1.ReadyResponse, 
 	return &v1.ReadyResponse{Ready: true}, nil
 }
 
+var errTransformerPanic = errors.New("transformer function panicked")
+
 // SourceTransformFn applies a function to each request element.
 // In addition to map function, SourceTransformFn also supports assigning a new event time to response.
 // SourceTransformFn can be used only at source vertex by source data transformer.
@@ -69,27 +71,36 @@ func (fs *Service) SourceTransformFn(stream v1.SourceTransform_SourceTransformFn
 	}
 
 	ctx := stream.Context()
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+	// We depend on grpContext to cancel all goroutines, since it will be automatically closed when the first function returns a non-nil error.
+	// This error will be caught later with grp.Wait()
 	grp, grpCtx := errgroup.WithContext(ctx)
 
 	senderCh := make(chan *v1.SourceTransformResponse, 500) // FIXME: identify the right buffer size
 	// goroutine to send the response to the stream
 	grp.Go(func() error {
 		for {
+			var resp *v1.SourceTransformResponse
 			select {
 			case <-grpCtx.Done():
 				return grpCtx.Err()
-			default:
+			case resp = <-senderCh:
 			}
-			if err := stream.Send(<-senderCh); err != nil {
-				cancel()
-				return err
+			if err := stream.Send(resp); err != nil {
+				return fmt.Errorf("failed to send response to client: %w", err)
 			}
 		}
 	})
 
+outer:
 	for {
+		// Stop reading new messages when we are shutting down
+		select {
+		case <-grpCtx.Done():
+			// If the context was cancelled while this loop is running, it will be caught and returned in one of the errgroup's goroutines.
+			break outer
+		default:
+		}
+
 		d, err := stream.Recv()
 		if err != nil {
 			if errors.Is(err, io.EOF) {
@@ -99,12 +110,17 @@ func (fs *Service) SourceTransformFn(stream v1.SourceTransform_SourceTransformFn
 		}
 
 		req := d.Request
-		grp.Go(func() error {
+		grp.Go(func() (err error) {
 			defer func() {
 				if r := recover(); r != nil {
-					log.Printf("panic inside source handler: %v %v", r, string(debug.Stack()))
-					cancel()
-					fs.shutdownCh <- struct{}{}
+					log.Printf("Panic inside source transform handler: %v %v", r, string(debug.Stack()))
+					// We only listen for 1 message on the shutdown channel. If multiple requests panic, only the first one will succeed.
+					// The one that succeds returns the errTransformerPanic. This causes grpCtx to be cancelled.
+					select {
+					case fs.shutdownCh <- struct{}{}:
+					case <-grpCtx.Done():
+					}
+					err = errTransformerPanic
 				}
 			}()
 			var hd = NewHandlerDatum(req.GetValue(), req.EventTime.AsTime(), req.Watermark.AsTime(), req.Headers)
