@@ -58,21 +58,21 @@ func (mr *MockSourceTransformClientMockRecorder) IsReady(arg0, arg1 interface{},
 }
 
 // SourceTransformFn mocks base method.
-func (m *MockSourceTransformClient) SourceTransformFn(arg0 context.Context, arg1 *v1.SourceTransformRequest, arg2 ...grpc.CallOption) (*v1.SourceTransformResponse, error) {
+func (m *MockSourceTransformClient) SourceTransformFn(arg0 context.Context, arg1 ...grpc.CallOption) (v1.SourceTransform_SourceTransformFnClient, error) {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
+	varargs := []interface{}{arg0}
+	for _, a := range arg1 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "SourceTransformFn", varargs...)
-	ret0, _ := ret[0].(*v1.SourceTransformResponse)
+	ret0, _ := ret[0].(v1.SourceTransform_SourceTransformFnClient)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SourceTransformFn indicates an expected call of SourceTransformFn.
-func (mr *MockSourceTransformClientMockRecorder) SourceTransformFn(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+func (mr *MockSourceTransformClientMockRecorder) SourceTransformFn(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	varargs := append([]interface{}{arg0}, arg1...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SourceTransformFn", reflect.TypeOf((*MockSourceTransformClient)(nil).SourceTransformFn), varargs...)
 }
