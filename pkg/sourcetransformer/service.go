@@ -44,23 +44,83 @@ var errTransformerPanic = errors.New("transformer function panicked")
 // In addition to map function, SourceTransformFn also supports assigning a new event time to response.
 // SourceTransformFn can be used only at source vertex by source data transformer.
 func (fs *Service) SourceTransformFn(stream v1.SourceTransform_SourceTransformFnServer) error {
-	// handle panic
-	defer func() {
-		if r := recover(); r != nil {
-			log.Printf("panic inside sourcetransform handler: %v %v", r, string(debug.Stack()))
-			fs.shutdownCh <- struct{}{}
-		}
-	}()
 
+	// perform handshake with client before processing requests
+	if err := fs.performHandshake(stream); err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithCancel(stream.Context())
+	defer cancel()
+
+	// Use error group to manage goroutines, the grpCtx is cancelled when any of the
+	// goroutines return an error for the first time or the first time the wait returns.
+	grp, grpCtx := errgroup.WithContext(ctx)
+
+	senderCh := make(chan *v1.SourceTransformResponse, 500) // FIXME: identify the right buffer size
+	// goroutine to send the responses back to the client
+	grp.Go(func() error {
+		for {
+			select {
+			case <-grpCtx.Done():
+				return nil
+			case resp := <-senderCh:
+				if err := stream.Send(resp); err != nil {
+					return fmt.Errorf("failed to send response to client: %w", err)
+				}
+			}
+		}
+	})
+
+	var readErr error
+outer:
+	for {
+		select {
+
+		case <-grpCtx.Done(): // Stop reading new messages when we are shutting down
+			break outer
+		default:
+			d, err := stream.Recv()
+			if err == io.EOF {
+				break outer
+			}
+			if err != nil {
+				log.Printf("failed to receive request: %v", err)
+				readErr = err
+				// read loop is not part of the errgroup, so we need to cancel the context
+				// to signal the other goroutines to stop processing.
+				cancel()
+				break outer
+			}
+			grp.Go(func() (err error) {
+				return fs.handleRequest(grpCtx, d, senderCh)
+			})
+		}
+	}
+
+	// wait for all the goroutines to finish, if any of the goroutines return an error, wait will return that error immediately.
+	if err := grp.Wait(); err != nil {
+		fs.shutdownCh <- struct{}{}
+		statusErr := status.Errorf(codes.Internal, err.Error())
+		return statusErr
+	}
+
+	// check if there was an error while reading from the stream
+	if readErr != nil {
+		return status.Errorf(codes.Internal, readErr.Error())
+	}
+	return nil
+}
+
+// performHandshake handles the handshake logic at the start of the stream.
+func (fs *Service) performHandshake(stream v1.SourceTransform_SourceTransformFnServer) error {
 	req, err := stream.Recv()
 	if err != nil {
-		return fmt.Errorf("reading handshake message from stream: %w", err)
+		return status.Errorf(codes.Internal, "failed to receive handshake: %v", err)
 	}
-
-	if req.Handshake == nil || !req.Handshake.Sot {
-		return fmt.Errorf("invalid handshake message: %+v", req)
+	if req.GetHandshake() == nil || !req.GetHandshake().GetSot() {
+		return status.Errorf(codes.InvalidArgument, "invalid handshake")
 	}
-
 	handshakeResponse := &v1.SourceTransformResponse{
 		Handshake: &v1.Handshake{
 			Sot: true,
@@ -69,87 +129,38 @@ func (fs *Service) SourceTransformFn(stream v1.SourceTransform_SourceTransformFn
 	if err := stream.Send(handshakeResponse); err != nil {
 		return fmt.Errorf("sending handshake response to client over gRPC stream: %w", err)
 	}
+	return nil
+}
 
-	ctx := stream.Context()
-	// We depend on grpContext to cancel all goroutines, since it will be automatically closed when the first function returns a non-nil error.
-	// This error will be caught later with grp.Wait()
-	grp, grpCtx := errgroup.WithContext(ctx)
-
-	senderCh := make(chan *v1.SourceTransformResponse, 500) // FIXME: identify the right buffer size
-	// goroutine to send the response to the stream
-	grp.Go(func() error {
-		for {
-			var resp *v1.SourceTransformResponse
-			select {
-			case <-grpCtx.Done():
-				return grpCtx.Err()
-			case resp = <-senderCh:
-			}
-			if err := stream.Send(resp); err != nil {
-				return fmt.Errorf("failed to send response to client: %w", err)
-			}
+// handleRequest processes each request and sends the response to the response channel.
+func (fs *Service) handleRequest(ctx context.Context, req *v1.SourceTransformRequest, responseCh chan<- *v1.SourceTransformResponse) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("panic inside handler: %v %v", r, string(debug.Stack()))
+			err = errTransformerPanic
 		}
-	})
+	}()
 
-outer:
-	for {
-		// Stop reading new messages when we are shutting down
-		select {
-		case <-grpCtx.Done():
-			// If the context was cancelled while this loop is running, it will be caught and returned in one of the errgroup's goroutines.
-			break outer
-		default:
-		}
-
-		d, err := stream.Recv()
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				break
-			}
-			return err
-		}
-
-		req := d.Request
-		grp.Go(func() (err error) {
-			defer func() {
-				if r := recover(); r != nil {
-					log.Printf("Panic inside source transform handler: %v %v", r, string(debug.Stack()))
-					// We only listen for 1 message on the shutdown channel. If multiple requests panic, only the first one will succeed.
-					// The one that succeds returns the errTransformerPanic. This causes grpCtx to be cancelled.
-					select {
-					case fs.shutdownCh <- struct{}{}:
-					case <-grpCtx.Done():
-					}
-					err = errTransformerPanic
-				}
-			}()
-			var hd = NewHandlerDatum(req.GetValue(), req.EventTime.AsTime(), req.Watermark.AsTime(), req.Headers)
-			messageTs := fs.Transformer.Transform(grpCtx, req.GetKeys(), hd)
-			var results []*v1.SourceTransformResponse_Result
-			for _, m := range messageTs.Items() {
-				results = append(results, &v1.SourceTransformResponse_Result{
-					EventTime: timestamppb.New(m.EventTime()),
-					Keys:      m.Keys(),
-					Value:     m.Value(),
-					Tags:      m.Tags(),
-				})
-			}
-			resp := &v1.SourceTransformResponse{
-				Results: results,
-				Id:      req.GetId(),
-			}
-			select {
-			case senderCh <- resp:
-			case <-grpCtx.Done():
-				return grpCtx.Err()
-			}
-			return nil
+	request := req.GetRequest()
+	hd := NewHandlerDatum(request.GetValue(), request.GetEventTime().AsTime(), request.GetWatermark().AsTime(), request.GetHeaders())
+	messages := fs.Transformer.Transform(ctx, request.GetKeys(), hd)
+	var elements []*v1.SourceTransformResponse_Result
+	for _, m := range messages.Items() {
+		elements = append(elements, &v1.SourceTransformResponse_Result{
+			Keys:      m.Keys(),
+			Value:     m.Value(),
+			Tags:      m.Tags(),
+			EventTime: timestamppb.New(m.EventTime()),
 		})
 	}
-
-	if err := grp.Wait(); err != nil {
-		statusErr := status.Errorf(codes.Internal, err.Error())
-		return statusErr
+	resp := &v1.SourceTransformResponse{
+		Results: elements,
+		Id:      req.GetRequest().GetId(),
+	}
+	select {
+	case responseCh <- resp:
+	case <-ctx.Done():
+		return nil
 	}
 	return nil
 }
