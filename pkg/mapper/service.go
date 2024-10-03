@@ -63,7 +63,7 @@ func (fs *Service) MapFn(stream mappb.Map_MapFnServer) error {
 					return err
 				}
 			case <-grpCtx.Done():
-				return nil
+				return grpCtx.Err()
 			}
 		}
 	})
@@ -129,10 +129,11 @@ func (fs *Service) performHandshake(stream mappb.Map_MapFnServer) error {
 }
 
 // handleRequest processes each request and sends the response to the response channel.
-func (fs *Service) handleRequest(ctx context.Context, req *mappb.MapRequest, responseCh chan<- *mappb.MapResponse) error {
+func (fs *Service) handleRequest(ctx context.Context, req *mappb.MapRequest, responseCh chan<- *mappb.MapResponse) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("panic inside map handler: %v %v", r, string(debug.Stack()))
+			err = status.Errorf(codes.Internal, "panic inside map handler: %v", r)
 		}
 	}()
 
@@ -154,7 +155,7 @@ func (fs *Service) handleRequest(ctx context.Context, req *mappb.MapRequest, res
 	select {
 	case responseCh <- resp:
 	case <-ctx.Done():
-		return nil
+		return ctx.Err()
 	}
 	return nil
 }

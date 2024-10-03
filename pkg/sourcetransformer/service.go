@@ -63,7 +63,7 @@ func (fs *Service) SourceTransformFn(stream v1.SourceTransform_SourceTransformFn
 		for {
 			select {
 			case <-grpCtx.Done():
-				return nil
+				return grpCtx.Err()
 			case resp := <-senderCh:
 				if err := stream.Send(resp); err != nil {
 					return fmt.Errorf("failed to send response to client: %w", err)
@@ -87,7 +87,7 @@ outer:
 			if err != nil {
 				log.Printf("failed to receive request: %v", err)
 				readErr = err
-				// read loop is not part of the errgroup, so we need to cancel the context
+				// read loop is not part of the error group, so we need to cancel the context
 				// to signal the other goroutines to stop processing.
 				cancel()
 				break outer
@@ -160,7 +160,7 @@ func (fs *Service) handleRequest(ctx context.Context, req *v1.SourceTransformReq
 	select {
 	case responseCh <- resp:
 	case <-ctx.Done():
-		return nil
+		return ctx.Err()
 	}
 	return nil
 }
