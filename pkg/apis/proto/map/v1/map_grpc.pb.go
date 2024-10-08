@@ -29,7 +29,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MapClient interface {
 	// MapFn applies a function to each map request element.
-	MapFn(ctx context.Context, in *MapRequest, opts ...grpc.CallOption) (*MapResponse, error)
+	MapFn(ctx context.Context, opts ...grpc.CallOption) (Map_MapFnClient, error)
 	// IsReady is the heartbeat endpoint for gRPC.
 	IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReadyResponse, error)
 }
@@ -42,14 +42,36 @@ func NewMapClient(cc grpc.ClientConnInterface) MapClient {
 	return &mapClient{cc}
 }
 
-func (c *mapClient) MapFn(ctx context.Context, in *MapRequest, opts ...grpc.CallOption) (*MapResponse, error) {
+func (c *mapClient) MapFn(ctx context.Context, opts ...grpc.CallOption) (Map_MapFnClient, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MapResponse)
-	err := c.cc.Invoke(ctx, Map_MapFn_FullMethodName, in, out, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &Map_ServiceDesc.Streams[0], Map_MapFn_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &mapMapFnClient{ClientStream: stream}
+	return x, nil
+}
+
+type Map_MapFnClient interface {
+	Send(*MapRequest) error
+	Recv() (*MapResponse, error)
+	grpc.ClientStream
+}
+
+type mapMapFnClient struct {
+	grpc.ClientStream
+}
+
+func (x *mapMapFnClient) Send(m *MapRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *mapMapFnClient) Recv() (*MapResponse, error) {
+	m := new(MapResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func (c *mapClient) IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReadyResponse, error) {
@@ -67,7 +89,7 @@ func (c *mapClient) IsReady(ctx context.Context, in *emptypb.Empty, opts ...grpc
 // for forward compatibility
 type MapServer interface {
 	// MapFn applies a function to each map request element.
-	MapFn(context.Context, *MapRequest) (*MapResponse, error)
+	MapFn(Map_MapFnServer) error
 	// IsReady is the heartbeat endpoint for gRPC.
 	IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error)
 	mustEmbedUnimplementedMapServer()
@@ -77,8 +99,8 @@ type MapServer interface {
 type UnimplementedMapServer struct {
 }
 
-func (UnimplementedMapServer) MapFn(context.Context, *MapRequest) (*MapResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method MapFn not implemented")
+func (UnimplementedMapServer) MapFn(Map_MapFnServer) error {
+	return status.Errorf(codes.Unimplemented, "method MapFn not implemented")
 }
 func (UnimplementedMapServer) IsReady(context.Context, *emptypb.Empty) (*ReadyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsReady not implemented")
@@ -96,22 +118,30 @@ func RegisterMapServer(s grpc.ServiceRegistrar, srv MapServer) {
 	s.RegisterService(&Map_ServiceDesc, srv)
 }
 
-func _Map_MapFn_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MapRequest)
-	if err := dec(in); err != nil {
+func _Map_MapFn_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(MapServer).MapFn(&mapMapFnServer{ServerStream: stream})
+}
+
+type Map_MapFnServer interface {
+	Send(*MapResponse) error
+	Recv() (*MapRequest, error)
+	grpc.ServerStream
+}
+
+type mapMapFnServer struct {
+	grpc.ServerStream
+}
+
+func (x *mapMapFnServer) Send(m *MapResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *mapMapFnServer) Recv() (*MapRequest, error) {
+	m := new(MapRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
-	if interceptor == nil {
-		return srv.(MapServer).MapFn(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Map_MapFn_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MapServer).MapFn(ctx, req.(*MapRequest))
-	}
-	return interceptor(ctx, in, info, handler)
+	return m, nil
 }
 
 func _Map_IsReady_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -140,14 +170,17 @@ var Map_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*MapServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "MapFn",
-			Handler:    _Map_MapFn_Handler,
-		},
-		{
 			MethodName: "IsReady",
 			Handler:    _Map_IsReady_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "MapFn",
+			Handler:       _Map_MapFn_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+	},
 	Metadata: "pkg/apis/proto/map/v1/map.proto",
 }
