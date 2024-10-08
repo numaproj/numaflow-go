@@ -80,7 +80,7 @@ func TestService_mapFn(t *testing.T) {
 		want    *proto.MapResponse
 	}{
 		{
-			name: "sourceTransform_fn_forward_msg",
+			name: "map_fn_forward_msg",
 			handler: MapperFunc(func(ctx context.Context, keys []string, datum Datum) Messages {
 				msg := datum.Value()
 				return MessagesBuilder().Append(NewMessage(msg).WithKeys([]string{keys[0] + "_test"}))
@@ -106,7 +106,7 @@ func TestService_mapFn(t *testing.T) {
 			},
 		},
 		{
-			name: "sourceTransform_fn_forward_msg_forward_to_all",
+			name: "map_fn_forward_msg_forward_to_all",
 			handler: MapperFunc(func(ctx context.Context, keys []string, datum Datum) Messages {
 				msg := datum.Value()
 				return MessagesBuilder().Append(NewMessage(msg))
@@ -131,7 +131,7 @@ func TestService_mapFn(t *testing.T) {
 			},
 		},
 		{
-			name: "sourceTransform_fn_forward_msg_drop_msg",
+			name: "map_fn_forward_msg_drop_msg",
 			handler: MapperFunc(func(ctx context.Context, keys []string, datum Datum) Messages {
 				return MessagesBuilder().Append(MessageToDrop())
 			}),

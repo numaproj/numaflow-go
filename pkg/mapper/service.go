@@ -76,22 +76,22 @@ outer:
 		case <-grpCtx.Done():
 			break outer
 		default:
-			req, err := stream.Recv()
-			if err == io.EOF {
-				break outer
-			}
-			if err != nil {
-				log.Printf("failed to receive request: %v", err)
-				readErr = err
-				// read loop is not part of the error group, so we need to cancel the context
-				// to signal the other goroutines to stop processing.
-				cancel()
-				break outer
-			}
-			g.Go(func() error {
-				return fs.handleRequest(grpCtx, req, responseCh)
-			})
 		}
+		req, err := stream.Recv()
+		if err == io.EOF {
+			break outer
+		}
+		if err != nil {
+			log.Printf("Failed to receive request: %v", err)
+			readErr = err
+			// read loop is not part of the error group, so we need to cancel the context
+			// to signal the other goroutines to stop processing.
+			cancel()
+			break outer
+		}
+		g.Go(func() error {
+			return fs.handleRequest(grpCtx, req, responseCh)
+		})
 	}
 
 	// wait for all goroutines to finish

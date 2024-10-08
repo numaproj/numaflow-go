@@ -80,22 +80,22 @@ outer:
 		case <-grpCtx.Done(): // Stop reading new messages when we are shutting down
 			break outer
 		default:
-			d, err := stream.Recv()
-			if err == io.EOF {
-				break outer
-			}
-			if err != nil {
-				log.Printf("failed to receive request: %v", err)
-				readErr = err
-				// read loop is not part of the error group, so we need to cancel the context
-				// to signal the other goroutines to stop processing.
-				cancel()
-				break outer
-			}
-			grp.Go(func() (err error) {
-				return fs.handleRequest(grpCtx, d, senderCh)
-			})
 		}
+		d, err := stream.Recv()
+		if err == io.EOF {
+			break outer
+		}
+		if err != nil {
+			log.Printf("Failed to receive request: %v", err)
+			readErr = err
+			// read loop is not part of the error group, so we need to cancel the context
+			// to signal the other goroutines to stop processing.
+			cancel()
+			break outer
+		}
+		grp.Go(func() (err error) {
+			return fs.handleRequest(grpCtx, d, senderCh)
+		})
 	}
 
 	// wait for all the goroutines to finish, if any of the goroutines return an error, wait will return that error immediately.
