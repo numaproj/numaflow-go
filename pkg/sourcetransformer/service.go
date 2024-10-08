@@ -53,19 +53,20 @@ func (fs *Service) SourceTransformFn(stream v1.SourceTransform_SourceTransformFn
 	ctx, cancel := context.WithCancel(stream.Context())
 	defer cancel()
 
-	// Use error group to manage goroutines, the grpCtx is cancelled when any of the
+	// Use error group to manage goroutines, the groupCtx is cancelled when any of the
 	// goroutines return an error for the first time or the first time the wait returns.
-	grp, grpCtx := errgroup.WithContext(ctx)
+	grp, groupCtx := errgroup.WithContext(ctx)
 
 	senderCh := make(chan *v1.SourceTransformResponse, 500) // FIXME: identify the right buffer size
 	// goroutine to send the responses back to the client
 	grp.Go(func() error {
 		for {
 			select {
-			case <-grpCtx.Done():
-				return grpCtx.Err()
+			case <-groupCtx.Done():
+				return groupCtx.Err()
 			case resp := <-senderCh:
 				if err := stream.Send(resp); err != nil {
+					log.Printf("Failed to send response: %v", err)
 					return fmt.Errorf("failed to send response to client: %w", err)
 				}
 			}
@@ -76,10 +77,11 @@ func (fs *Service) SourceTransformFn(stream v1.SourceTransform_SourceTransformFn
 outer:
 	for {
 		select {
-
-		case <-grpCtx.Done(): // Stop reading new messages when we are shutting down
+		case <-groupCtx.Done():
+			// Stop reading new messages when we are shutting down
 			break outer
 		default:
+			// get out of select and process
 		}
 		d, err := stream.Recv()
 		if err == io.EOF {
@@ -94,7 +96,7 @@ outer:
 			break outer
 		}
 		grp.Go(func() (err error) {
-			return fs.handleRequest(grpCtx, d, senderCh)
+			return fs.handleRequest(groupCtx, d, senderCh)
 		})
 	}
 

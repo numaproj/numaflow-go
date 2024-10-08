@@ -45,9 +45,9 @@ func (fs *Service) MapFn(stream mappb.Map_MapFnServer) error {
 	ctx, cancel := context.WithCancel(stream.Context())
 	defer cancel()
 
-	// Use error group to manage goroutines, the grpCtx is cancelled when any of the
+	// Use error group to manage goroutines, the groupCtx is cancelled when any of the
 	// goroutines return an error for the first time or the first time the wait returns.
-	g, grpCtx := errgroup.WithContext(ctx)
+	g, groupCtx := errgroup.WithContext(ctx)
 
 	// Channel to collect responses
 	responseCh := make(chan *mappb.MapResponse, 500) // FIXME: identify the right buffer size
@@ -59,11 +59,11 @@ func (fs *Service) MapFn(stream mappb.Map_MapFnServer) error {
 			select {
 			case resp := <-responseCh:
 				if err := stream.Send(resp); err != nil {
-					log.Printf("failed to send response: %v", err)
+					log.Printf("Failed to send response: %v", err)
 					return err
 				}
-			case <-grpCtx.Done():
-				return grpCtx.Err()
+			case <-groupCtx.Done():
+				return groupCtx.Err()
 			}
 		}
 	})
@@ -73,7 +73,7 @@ func (fs *Service) MapFn(stream mappb.Map_MapFnServer) error {
 outer:
 	for {
 		select {
-		case <-grpCtx.Done():
+		case <-groupCtx.Done():
 			break outer
 		default:
 		}
@@ -90,7 +90,7 @@ outer:
 			break outer
 		}
 		g.Go(func() error {
-			return fs.handleRequest(grpCtx, req, responseCh)
+			return fs.handleRequest(groupCtx, req, responseCh)
 		})
 	}
 
