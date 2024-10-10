@@ -13,20 +13,20 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	batchmappb "github.com/numaproj/numaflow-go/pkg/apis/proto/batchmap/v1"
+	mappb "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1"
 )
 
 type BatchMapStreamFnServerTest struct {
 	ctx      context.Context
-	outputCh chan *batchmappb.BatchMapResponse
-	inputCh  chan *batchmappb.BatchMapRequest
+	outputCh chan *mappb.MapResponse
+	inputCh  chan *mappb.MapRequest
 	grpc.ServerStream
 }
 
 func NewBatchBatchMapStreamFnServerTest(
 	ctx context.Context,
-	inputCh chan *batchmappb.BatchMapRequest,
-	outputCh chan *batchmappb.BatchMapResponse,
+	inputCh chan *mappb.MapRequest,
+	outputCh chan *mappb.MapResponse,
 ) *BatchMapStreamFnServerTest {
 	return &BatchMapStreamFnServerTest{
 		ctx:      ctx,
@@ -35,7 +35,7 @@ func NewBatchBatchMapStreamFnServerTest(
 	}
 }
 
-func (u *BatchMapStreamFnServerTest) Recv() (*batchmappb.BatchMapRequest, error) {
+func (u *BatchMapStreamFnServerTest) Recv() (*mappb.MapRequest, error) {
 	val, ok := <-u.inputCh
 	if !ok {
 		return val, io.EOF
@@ -43,7 +43,7 @@ func (u *BatchMapStreamFnServerTest) Recv() (*batchmappb.BatchMapRequest, error)
 	return val, nil
 }
 
-func (u *BatchMapStreamFnServerTest) Send(d *batchmappb.BatchMapResponse) error {
+func (u *BatchMapStreamFnServerTest) Send(d *mappb.MapResponse) error {
 	u.outputCh <- d
 	return nil
 }
@@ -54,15 +54,15 @@ func (u *BatchMapStreamFnServerTest) Context() context.Context {
 
 type BatchMapFnServerErrTest struct {
 	ctx      context.Context
-	inputCh  chan *batchmappb.BatchMapRequest
-	outputCh chan *batchmappb.BatchMapResponse
+	inputCh  chan *mappb.MapRequest
+	outputCh chan *mappb.MapResponse
 	grpc.ServerStream
 }
 
 func NewBatchMapFnServerErrTest(
 	ctx context.Context,
-	inputCh chan *batchmappb.BatchMapRequest,
-	outputCh chan *batchmappb.BatchMapResponse,
+	inputCh chan *mappb.MapRequest,
+	outputCh chan *mappb.MapResponse,
 
 ) *BatchMapFnServerErrTest {
 	return &BatchMapFnServerErrTest{
@@ -72,7 +72,7 @@ func NewBatchMapFnServerErrTest(
 	}
 }
 
-func (u *BatchMapFnServerErrTest) Recv() (*batchmappb.BatchMapRequest, error) {
+func (u *BatchMapFnServerErrTest) Recv() (*mappb.MapRequest, error) {
 	val, ok := <-u.inputCh
 	if !ok {
 		return val, io.EOF
@@ -80,7 +80,7 @@ func (u *BatchMapFnServerErrTest) Recv() (*batchmappb.BatchMapRequest, error) {
 	return val, nil
 }
 
-func (u *BatchMapFnServerErrTest) Send(_ *batchmappb.BatchMapResponse) error {
+func (u *BatchMapFnServerErrTest) Send(_ *mappb.MapResponse) error {
 	return fmt.Errorf("send error")
 }
 
@@ -92,8 +92,8 @@ func TestService_BatchMapFn(t *testing.T) {
 	tests := []struct {
 		name        string
 		handler     BatchMapper
-		input       []*batchmappb.BatchMapRequest
-		expected    []*batchmappb.BatchMapResponse
+		input       []*mappb.MapRequest
+		expected    []*mappb.MapResponse
 		expectedErr bool
 	}{
 		{
@@ -107,22 +107,26 @@ func TestService_BatchMapFn(t *testing.T) {
 				}
 				return batchResponses
 			}),
-			input: []*batchmappb.BatchMapRequest{{
-				Keys:      []string{"client"},
-				Value:     []byte(`test1`),
-				EventTime: timestamppb.New(time.Time{}),
-				Watermark: timestamppb.New(time.Time{}),
-				Id:        "test1",
+			input: []*mappb.MapRequest{{
+				Request: &mappb.MapRequest_Request{
+					Keys:      []string{"client"},
+					Value:     []byte(`test1`),
+					EventTime: timestamppb.New(time.Time{}),
+					Watermark: timestamppb.New(time.Time{}),
+				},
+				Id: "test1",
 			}, {
-				Keys:      []string{"client"},
-				Value:     []byte(`test2`),
-				EventTime: timestamppb.New(time.Time{}),
-				Watermark: timestamppb.New(time.Time{}),
-				Id:        "test2",
+				Request: &mappb.MapRequest_Request{
+					Keys:      []string{"client"},
+					Value:     []byte(`test2`),
+					EventTime: timestamppb.New(time.Time{}),
+					Watermark: timestamppb.New(time.Time{}),
+				},
+				Id: "test2",
 			}},
-			expected: []*batchmappb.BatchMapResponse{
+			expected: []*mappb.MapResponse{
 				{
-					Results: []*batchmappb.BatchMapResponse_Result{
+					Results: []*mappb.MapResponse_Result{
 						{
 							Keys:  []string{"client_test"},
 							Value: []byte(`test1`),
@@ -131,7 +135,7 @@ func TestService_BatchMapFn(t *testing.T) {
 					Id: "test1",
 				},
 				{
-					Results: []*batchmappb.BatchMapResponse_Result{
+					Results: []*mappb.MapResponse_Result{
 						{
 							Keys:  []string{"client_test"},
 							Value: []byte(`test2`),
@@ -153,22 +157,26 @@ func TestService_BatchMapFn(t *testing.T) {
 				}
 				return batchResponses
 			}),
-			input: []*batchmappb.BatchMapRequest{{
-				Keys:      []string{"client"},
-				Value:     []byte(`test1`),
-				EventTime: timestamppb.New(time.Time{}),
-				Watermark: timestamppb.New(time.Time{}),
-				Id:        "test1",
+			input: []*mappb.MapRequest{{
+				Request: &mappb.MapRequest_Request{
+					Keys:      []string{"client"},
+					Value:     []byte(`test1`),
+					EventTime: timestamppb.New(time.Time{}),
+					Watermark: timestamppb.New(time.Time{}),
+				},
+				Id: "test1",
 			}, {
-				Keys:      []string{"client"},
-				Value:     []byte(`test2`),
-				EventTime: timestamppb.New(time.Time{}),
-				Watermark: timestamppb.New(time.Time{}),
-				Id:        "test2",
+				Request: &mappb.MapRequest_Request{
+					Keys:      []string{"client"},
+					Value:     []byte(`test2`),
+					EventTime: timestamppb.New(time.Time{}),
+					Watermark: timestamppb.New(time.Time{}),
+				},
+				Id: "test2",
 			}},
-			expected: []*batchmappb.BatchMapResponse{
+			expected: []*mappb.MapResponse{
 				{
-					Results: []*batchmappb.BatchMapResponse_Result{
+					Results: []*mappb.MapResponse_Result{
 						{
 							Keys:  []string{"client_test"},
 							Value: []byte(`test1`),
@@ -177,7 +185,7 @@ func TestService_BatchMapFn(t *testing.T) {
 					Id: "test1",
 				},
 				{
-					Results: []*batchmappb.BatchMapResponse_Result{
+					Results: []*mappb.MapResponse_Result{
 						{
 							Keys:  []string{"client_test"},
 							Value: []byte(`test2`),
@@ -199,11 +207,11 @@ func TestService_BatchMapFn(t *testing.T) {
 			// instead of the regular outgoing context in the real gRPC connection.
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 			defer cancel()
-			inputCh := make(chan *batchmappb.BatchMapRequest)
-			outputCh := make(chan *batchmappb.BatchMapResponse)
-			result := make([]*batchmappb.BatchMapResponse, 0)
+			inputCh := make(chan *mappb.MapRequest)
+			outputCh := make(chan *mappb.MapResponse)
+			result := make([]*mappb.MapResponse, 0)
 
-			var udfBatchMapFnStream batchmappb.BatchMap_BatchMapFnServer
+			var udfBatchMapFnStream mappb.Map_MapFnServer
 			if tt.expectedErr {
 				udfBatchMapFnStream = NewBatchMapFnServerErrTest(ctx, inputCh, outputCh)
 			} else {

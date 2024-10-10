@@ -13,7 +13,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	batchmappb "github.com/numaproj/numaflow-go/pkg/apis/proto/batchmap/v1"
+	mappb "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1"
 )
 
 const (
@@ -26,18 +26,18 @@ const (
 // Service implements the proto gen server interface and contains the map operation
 // handler.
 type Service struct {
-	batchmappb.UnimplementedBatchMapServer
+	mappb.UnimplementedMapServer
 	BatchMapper BatchMapper
 	shutdownCh  chan<- struct{}
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
-func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*batchmappb.ReadyResponse, error) {
-	return &batchmappb.ReadyResponse{Ready: true}, nil
+func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*mappb.ReadyResponse, error) {
+	return &mappb.ReadyResponse{Ready: true}, nil
 }
 
 // BatchMapFn applies a user defined function to a stream of request element and streams back the responses for them.
-func (fs *Service) BatchMapFn(stream batchmappb.BatchMap_BatchMapFnServer) error {
+func (fs *Service) BatchMapFn(stream mappb.Map_MapFnServer) error {
 	ctx := stream.Context()
 	var g errgroup.Group
 
@@ -56,7 +56,7 @@ func (fs *Service) BatchMapFn(stream batchmappb.BatchMap_BatchMapFnServer) error
 		// handle panic
 		defer func() {
 			if r := recover(); r != nil {
-				log.Printf("panic inside reduce handler: %v %v", r, string(debug.Stack()))
+				log.Printf("panic inside batch map handler: %v %v", r, string(debug.Stack()))
 				fs.shutdownCh <- struct{}{}
 			}
 		}()
@@ -76,15 +76,15 @@ func (fs *Service) BatchMapFn(stream batchmappb.BatchMap_BatchMapFnServer) error
 
 		// iterate over the responses received and covert to the required proto format
 		for _, batchResp := range responses.Items() {
-			var elements []*batchmappb.BatchMapResponse_Result
+			var elements []*mappb.MapResponse_Result
 			for _, resp := range batchResp.Items() {
-				elements = append(elements, &batchmappb.BatchMapResponse_Result{
+				elements = append(elements, &mappb.MapResponse_Result{
 					Keys:  resp.Keys(),
 					Value: resp.Value(),
 					Tags:  resp.Tags(),
 				})
 			}
-			singleRequestResp := &batchmappb.BatchMapResponse{
+			singleRequestResp := &mappb.MapResponse{
 				Results: elements,
 				Id:      batchResp.Id(),
 			}
@@ -101,7 +101,7 @@ func (fs *Service) BatchMapFn(stream batchmappb.BatchMap_BatchMapFnServer) error
 
 	// loop to keep reading messages from the stream and sending it to the datumStreamCh
 	for {
-		d, err := stream.Recv()
+		req, err := stream.Recv()
 		// if we see EOF on the stream we do not have any more messages coming up
 		if err == io.EOF {
 			// close the input data channel to indicate that no more messages expected
@@ -114,7 +114,7 @@ func (fs *Service) BatchMapFn(stream batchmappb.BatchMap_BatchMapFnServer) error
 			log.Println("BatchMapFn: Got an error while recv() on stream", err)
 			return err
 		}
-		var hd = NewHandlerDatum(d.GetValue(), d.GetEventTime().AsTime(), d.GetWatermark().AsTime(), d.GetHeaders(), d.GetId(), d.GetKeys())
+		var hd = NewHandlerDatum(req.GetRequest().GetValue(), req.GetRequest().GetEventTime().AsTime(), req.GetRequest().GetWatermark().AsTime(), req.GetRequest().GetHeaders(), req.GetId(), req.GetRequest().GetKeys())
 		// send the datum to the input channel
 		datumStreamCh <- hd
 		// Increase the counter for number of requests received
