@@ -26,10 +26,14 @@ message MapRequest {
     google.protobuf.Timestamp watermark = 4;
     map<string, string> headers = 5;
   }
+  message Status {
+    bool eot = 1;
+  }
   Request request = 1;
   // This ID is used to uniquely identify a map request
   string id = 2;
   optional Handshake handshake = 3;
+  optional Status status = 4;
 }
 
 /*

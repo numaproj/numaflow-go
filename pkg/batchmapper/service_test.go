@@ -107,24 +107,37 @@ func TestService_BatchMapFn(t *testing.T) {
 				}
 				return batchResponses
 			}),
-			input: []*mappb.MapRequest{{
-				Request: &mappb.MapRequest_Request{
-					Keys:      []string{"client"},
-					Value:     []byte(`test1`),
-					EventTime: timestamppb.New(time.Time{}),
-					Watermark: timestamppb.New(time.Time{}),
+			input: []*mappb.MapRequest{
+				{
+					Handshake: &mappb.Handshake{
+						Sot: true,
+					},
 				},
-				Id: "test1",
-			}, {
-				Request: &mappb.MapRequest_Request{
-					Keys:      []string{"client"},
-					Value:     []byte(`test2`),
-					EventTime: timestamppb.New(time.Time{}),
-					Watermark: timestamppb.New(time.Time{}),
+				{
+					Request: &mappb.MapRequest_Request{
+						Keys:      []string{"client"},
+						Value:     []byte(`test1`),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
+					},
+					Id: "test1",
 				},
-				Id: "test2",
-			}},
+				{
+					Request: &mappb.MapRequest_Request{
+						Keys:      []string{"client"},
+						Value:     []byte(`test2`),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
+					},
+					Id: "test2",
+				},
+			},
 			expected: []*mappb.MapResponse{
+				{
+					Handshake: &mappb.Handshake{
+						Sot: true,
+					},
+				},
 				{
 					Results: []*mappb.MapResponse_Result{
 						{
@@ -157,24 +170,37 @@ func TestService_BatchMapFn(t *testing.T) {
 				}
 				return batchResponses
 			}),
-			input: []*mappb.MapRequest{{
-				Request: &mappb.MapRequest_Request{
-					Keys:      []string{"client"},
-					Value:     []byte(`test1`),
-					EventTime: timestamppb.New(time.Time{}),
-					Watermark: timestamppb.New(time.Time{}),
+			input: []*mappb.MapRequest{
+				{
+					Handshake: &mappb.Handshake{
+						Sot: true,
+					},
 				},
-				Id: "test1",
-			}, {
-				Request: &mappb.MapRequest_Request{
-					Keys:      []string{"client"},
-					Value:     []byte(`test2`),
-					EventTime: timestamppb.New(time.Time{}),
-					Watermark: timestamppb.New(time.Time{}),
+				{
+					Request: &mappb.MapRequest_Request{
+						Keys:      []string{"client"},
+						Value:     []byte(`test1`),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
+					},
+					Id: "test1",
 				},
-				Id: "test2",
-			}},
+				{
+					Request: &mappb.MapRequest_Request{
+						Keys:      []string{"client"},
+						Value:     []byte(`test2`),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
+					},
+					Id: "test2",
+				},
+			},
 			expected: []*mappb.MapResponse{
+				{
+					Handshake: &mappb.Handshake{
+						Sot: true,
+					},
+				},
 				{
 					Results: []*mappb.MapResponse_Result{
 						{
@@ -207,7 +233,7 @@ func TestService_BatchMapFn(t *testing.T) {
 			// instead of the regular outgoing context in the real gRPC connection.
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 			defer cancel()
-			inputCh := make(chan *mappb.MapRequest)
+			inputCh := make(chan *mappb.MapRequest, 3)
 			outputCh := make(chan *mappb.MapResponse)
 			result := make([]*mappb.MapResponse, 0)
 
@@ -251,7 +277,6 @@ func TestService_BatchMapFn(t *testing.T) {
 			if !reflect.DeepEqual(result, tt.expected) {
 				t.Errorf("BatchMapFn() got = %v, want %v", result, tt.expected)
 			}
-
 		})
 	}
 }
