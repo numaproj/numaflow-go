@@ -39,7 +39,7 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*mappb.ReadyRespons
 // BatchMapFn applies a user defined function to a stream of request element and streams back the responses for them.
 func (fs *Service) BatchMapFn(stream mappb.Map_MapFnServer) error {
 	ctx := stream.Context()
-	var g errgroup.Group
+	g, groupCtx := errgroup.WithContext(ctx)
 
 	// totalRequests is a counter for keeping a track of the number of datum requests
 	// that were received on the stream. We use an atomic int as this needs to be synchronized
@@ -61,7 +61,7 @@ func (fs *Service) BatchMapFn(stream mappb.Map_MapFnServer) error {
 			}
 		}()
 		// Apply the user BatchMap implementation function
-		responses := fs.BatchMapper.BatchMap(ctx, datumStreamCh)
+		responses := fs.BatchMapper.BatchMap(groupCtx, datumStreamCh)
 
 		// If the number of responses received does not align with the request batch size,
 		// we will not be able to process the data correctly.
@@ -101,6 +101,10 @@ func (fs *Service) BatchMapFn(stream mappb.Map_MapFnServer) error {
 
 	// loop to keep reading messages from the stream and sending it to the datumStreamCh
 	for {
+		select {
+		case <-groupCtx.Done():
+		default:
+		}
 		req, err := stream.Recv()
 		// if we see EOF on the stream we do not have any more messages coming up
 		if err == io.EOF {
