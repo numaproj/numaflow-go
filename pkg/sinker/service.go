@@ -100,6 +100,7 @@ func (fs *Service) SinkFn(stream sinkpb.Sink_SinkFnServer) error {
 				return nil
 			}
 			log.Printf("Stopping the SinkFn with err, %s", err)
+			fs.shutdownCh <- struct{}{}
 			return err
 		}
 	}
@@ -135,12 +136,6 @@ func (fs *Service) performHandshake(stream sinkpb.Sink_SinkFnServer) error {
 // receiveRequests receives the requests from the client writes them to the datumStreamCh channel.
 func (fs *Service) receiveRequests(stream sinkpb.Sink_SinkFnServer, datumStreamCh chan<- Datum) error {
 	defer close(datumStreamCh)
-	defer func() {
-		if r := recover(); r != nil {
-			log.Printf("panic inside sink handler: %v %v", r, string(debug.Stack()))
-			fs.shutdownCh <- struct{}{}
-		}
-	}()
 
 	for {
 		req, err := stream.Recv()
@@ -172,7 +167,13 @@ func (fs *Service) receiveRequests(stream sinkpb.Sink_SinkFnServer, datumStreamC
 }
 
 // processData invokes the sinker to process the data and sends the response back to the client.
-func (fs *Service) processData(ctx context.Context, stream sinkpb.Sink_SinkFnServer, datumStreamCh chan Datum) error {
+func (fs *Service) processData(ctx context.Context, stream sinkpb.Sink_SinkFnServer, datumStreamCh chan Datum) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("panic inside sink handler: %v %v", r, string(debug.Stack()))
+			err = fmt.Errorf("panic inside sink handler: %v", r)
+		}
+	}()
 	responses := fs.Sinker.Sink(ctx, datumStreamCh)
 	for _, response := range responses {
 		var status sinkpb.Status
