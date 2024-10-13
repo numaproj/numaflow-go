@@ -26,9 +26,6 @@ message MapRequest {
     google.protobuf.Timestamp watermark = 4;
     map<string, string> headers = 5;
   }
-  message Status {
-    bool eot = 1;
-  }
   Request request = 1;
   // This ID is used to uniquely identify a map request
   string id = 2;
@@ -44,6 +41,13 @@ message Handshake {
   bool sot = 1;
 }
 
+/*
+ * Status message to indicate the status of the message.
+ */
+message Status {
+  bool eot = 1;
+}
+
 /**
  * MapResponse represents a response element.
  */
@@ -57,6 +61,7 @@ message MapResponse {
   // This ID is used to refer the responses to the request it corresponds to.
   string id = 2;
   optional Handshake handshake = 3;
+  optional Status status = 4;
 }
 
 /**

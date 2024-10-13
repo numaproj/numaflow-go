@@ -33,8 +33,8 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*mappb.ReadyRespons
 	return &mappb.ReadyResponse{Ready: true}, nil
 }
 
-// BatchMapFn applies a user defined function to a stream of request elements and streams back the responses for them.
-func (fs *Service) BatchMapFn(stream mappb.Map_MapFnServer) error {
+// MapFn applies a user defined function to a stream of request elements and streams back the responses for them.
+func (fs *Service) MapFn(stream mappb.Map_MapFnServer) error {
 	ctx := stream.Context()
 
 	// Perform handshake before entering the main loop
@@ -153,9 +153,29 @@ func (fs *Service) processData(ctx context.Context, stream mappb.Map_MapFnServer
 			Results: elements,
 			Id:      batchResp.Id(),
 		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
 		if err := stream.Send(singleRequestResp); err != nil {
 			log.Println("BatchMapFn: Got an error while Send() on stream", err)
 			return err
+		}
+	}
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+		// send the end of transmission message
+		eot := &mappb.MapResponse{
+			Status: &mappb.Status{
+				Eot: true,
+			},
+		}
+		if err := stream.Send(eot); err != nil {
+			log.Println("BatchMapFn: Got an error while Send() on stream", err)
 		}
 	}
 	return nil

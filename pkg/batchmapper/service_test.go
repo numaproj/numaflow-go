@@ -131,6 +131,12 @@ func TestService_BatchMapFn(t *testing.T) {
 					},
 					Id: "test2",
 				},
+				{
+					Request: &mappb.MapRequest_Request{},
+					Status: &mappb.Status{
+						Eot: true,
+					},
+				},
 			},
 			expected: []*mappb.MapResponse{
 				{
@@ -155,6 +161,11 @@ func TestService_BatchMapFn(t *testing.T) {
 						},
 					},
 					Id: "test2",
+				},
+				{
+					Status: &mappb.Status{
+						Eot: true,
+					},
 				},
 			},
 			expectedErr: false,
@@ -219,6 +230,11 @@ func TestService_BatchMapFn(t *testing.T) {
 					},
 					Id: "test2",
 				},
+				{
+					Status: &mappb.Status{
+						Eot: true,
+					},
+				},
 			},
 			expectedErr: true,
 		},
@@ -250,7 +266,7 @@ func TestService_BatchMapFn(t *testing.T) {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				err = fs.BatchMapFn(udfBatchMapFnStream)
+				err = fs.MapFn(udfBatchMapFnStream)
 				close(outputCh)
 			}()
 
