@@ -2,18 +2,16 @@ package batchmapper
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"runtime/debug"
 
-	"go.uber.org/atomic"
 	"golang.org/x/sync/errgroup"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	batchmappb "github.com/numaproj/numaflow-go/pkg/apis/proto/batchmap/v1"
+	mappb "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1"
 )
 
 const (
@@ -23,113 +21,162 @@ const (
 	serverInfoFilePath    = "/var/run/numaflow/mapper-server-info"
 )
 
-// Service implements the proto gen server interface and contains the map operation
-// handler.
+// Service implements the proto gen server interface and contains the map operation handler.
 type Service struct {
-	batchmappb.UnimplementedBatchMapServer
+	mappb.UnimplementedMapServer
 	BatchMapper BatchMapper
 	shutdownCh  chan<- struct{}
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
-func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*batchmappb.ReadyResponse, error) {
-	return &batchmappb.ReadyResponse{Ready: true}, nil
+func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*mappb.ReadyResponse, error) {
+	return &mappb.ReadyResponse{Ready: true}, nil
 }
 
-// BatchMapFn applies a user defined function to a stream of request element and streams back the responses for them.
-func (fs *Service) BatchMapFn(stream batchmappb.BatchMap_BatchMapFnServer) error {
+// MapFn applies a user defined function to a stream of request elements and streams back the responses for them.
+func (fs *Service) MapFn(stream mappb.Map_MapFnServer) error {
 	ctx := stream.Context()
-	var g errgroup.Group
 
-	// totalRequests is a counter for keeping a track of the number of datum requests
-	// that were received on the stream. We use an atomic int as this needs to be synchronized
-	// between the request/response go routines.
-	totalRequests := atomic.NewInt32(0)
+	// Perform handshake before entering the main loop
+	if err := fs.performHandshake(stream); err != nil {
+		return err
+	}
 
-	// datumStreamCh is used to stream messages to the user code interface
-	// As the BatchMap interface expects a list of request elements
-	// we read all the requests coming on the stream and keep streaming them to the user code on this channel.
-	datumStreamCh := make(chan Datum)
-
-	// go routine to invoke the user handler function, and process the responses.
-	g.Go(func() error {
-		// handle panic
-		defer func() {
-			if r := recover(); r != nil {
-				log.Printf("panic inside reduce handler: %v %v", r, string(debug.Stack()))
-				fs.shutdownCh <- struct{}{}
-			}
-		}()
-		// Apply the user BatchMap implementation function
-		responses := fs.BatchMapper.BatchMap(ctx, datumStreamCh)
-
-		// If the number of responses received does not align with the request batch size,
-		// we will not be able to process the data correctly.
-		// This should be marked as an error and the container is restarted.
-		// As this is a user error, we restart the container to mitigate any transient error otherwise, this
-		// crash should indicate to the user that there is some issue.
-		if len(responses.Items()) != int(totalRequests.Load()) {
-			errMsg := fmt.Sprintf("batchMapFn: mismatch between length of batch requests and responses, "+
-				"expected:%d, got:%d", int(totalRequests.Load()), len(responses.Items()))
-			log.Panic(errMsg)
-		}
-
-		// iterate over the responses received and covert to the required proto format
-		for _, batchResp := range responses.Items() {
-			var elements []*batchmappb.BatchMapResponse_Result
-			for _, resp := range batchResp.Items() {
-				elements = append(elements, &batchmappb.BatchMapResponse_Result{
-					Keys:  resp.Keys(),
-					Value: resp.Value(),
-					Tags:  resp.Tags(),
-				})
-			}
-			singleRequestResp := &batchmappb.BatchMapResponse{
-				Results: elements,
-				Id:      batchResp.Id(),
-			}
-			// We stream back the result for a single request ID
-			// this would contain all the responses for that request.
-			err := stream.Send(singleRequestResp)
-			if err != nil {
-				log.Println("BatchMapFn: Got an error while Send() on stream", err)
-				return err
-			}
-		}
-		return nil
-	})
-
-	// loop to keep reading messages from the stream and sending it to the datumStreamCh
 	for {
-		d, err := stream.Recv()
-		// if we see EOF on the stream we do not have any more messages coming up
-		if err == io.EOF {
-			// close the input data channel to indicate that no more messages expected
-			close(datumStreamCh)
-			break
-		}
-		if err != nil {
-			// close the input data channel to indicate that no more messages expected
-			close(datumStreamCh)
-			log.Println("BatchMapFn: Got an error while recv() on stream", err)
+		datumStreamCh := make(chan Datum)
+		g, ctx := errgroup.WithContext(ctx)
+
+		g.Go(func() error {
+			return fs.receiveRequests(ctx, stream, datumStreamCh)
+		})
+
+		g.Go(func() error {
+			return fs.processData(ctx, stream, datumStreamCh)
+		})
+
+		// Wait for the goroutines to finish
+		if err := g.Wait(); err != nil {
+			if errors.Is(err, io.EOF) {
+				log.Printf("Stopping the BatchMapFn")
+				return nil
+			}
+			log.Printf("Stopping the BatchMapFn with err, %s", err)
+			fs.shutdownCh <- struct{}{}
 			return err
 		}
-		var hd = NewHandlerDatum(d.GetValue(), d.GetEventTime().AsTime(), d.GetWatermark().AsTime(), d.GetHeaders(), d.GetId(), d.GetKeys())
-		// send the datum to the input channel
-		datumStreamCh <- hd
-		// Increase the counter for number of requests received
-		totalRequests.Inc()
 	}
+}
 
-	// wait for all the responses to be processed
-	err := g.Wait()
-	// if there was any error during processing return the error
+// performHandshake performs the handshake with the client.
+func (fs *Service) performHandshake(stream mappb.Map_MapFnServer) error {
+	req, err := stream.Recv()
 	if err != nil {
-		statusErr := status.Errorf(codes.Internal, err.Error())
-		return statusErr
+		log.Printf("error receiving handshake from stream: %v", err)
+		return err
 	}
 
-	// Once all responses are sent we can return, this would indicate the end of the rpc and
-	// send an EOF to the client on the stream
+	if req.Handshake == nil || !req.Handshake.Sot {
+		return fmt.Errorf("expected handshake message")
+	}
+
+	handshakeResponse := &mappb.MapResponse{
+		Handshake: &mappb.Handshake{
+			Sot: true,
+		},
+	}
+	if err := stream.Send(handshakeResponse); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// receiveRequests receives the requests from the client and writes them to the datumStreamCh channel.
+func (fs *Service) receiveRequests(ctx context.Context, stream mappb.Map_MapFnServer, datumStreamCh chan<- Datum) error {
+	defer close(datumStreamCh)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+		}
+		req, err := stream.Recv()
+		if err == io.EOF {
+			log.Printf("end of batch map stream")
+			return err
+		}
+		if err != nil {
+			log.Printf("error receiving from batch map stream: %v", err)
+			return err
+		}
+
+		if req.Status != nil && req.Status.Eot {
+			break
+		}
+
+		datum := &handlerDatum{
+			id:        req.GetId(),
+			value:     req.GetRequest().GetValue(),
+			keys:      req.GetRequest().GetKeys(),
+			eventTime: req.GetRequest().GetEventTime().AsTime(),
+			watermark: req.GetRequest().GetWatermark().AsTime(),
+			headers:   req.GetRequest().GetHeaders(),
+		}
+
+		datumStreamCh <- datum
+	}
+	return nil
+}
+
+// processData invokes the batch mapper to process the data and sends the response back to the client.
+func (fs *Service) processData(ctx context.Context, stream mappb.Map_MapFnServer, datumStreamCh chan Datum) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("panic inside batch map handler: %v %v", r, string(debug.Stack()))
+			err = fmt.Errorf("panic inside batch map handler: %v", r)
+		}
+	}()
+
+	responses := fs.BatchMapper.BatchMap(ctx, datumStreamCh)
+
+	for _, batchResp := range responses.Items() {
+		var elements []*mappb.MapResponse_Result
+		for _, resp := range batchResp.Items() {
+			elements = append(elements, &mappb.MapResponse_Result{
+				Keys:  resp.Keys(),
+				Value: resp.Value(),
+				Tags:  resp.Tags(),
+			})
+		}
+		singleRequestResp := &mappb.MapResponse{
+			Results: elements,
+			Id:      batchResp.Id(),
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+		if err := stream.Send(singleRequestResp); err != nil {
+			log.Println("BatchMapFn: Got an error while Send() on stream", err)
+			return err
+		}
+	}
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+		// send the end of transmission message
+		eot := &mappb.MapResponse{
+			Status: &mappb.Status{
+				Eot: true,
+			},
+		}
+		if err := stream.Send(eot); err != nil {
+			log.Println("BatchMapFn: Got an error while Send() on stream", err)
+		}
+	}
 	return nil
 }
