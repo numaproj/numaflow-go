@@ -2,229 +2,346 @@ package mapstreamer
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"reflect"
-	"sync"
+	"net"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
+	"google.golang.org/grpc/test/bufconn"
 
-	mapstreampb "github.com/numaproj/numaflow-go/pkg/apis/proto/mapstream/v1"
+	proto "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1"
+
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-type MapStreamFnServerTest struct {
-	ctx      context.Context
-	outputCh chan mapstreampb.MapStreamResponse
-	grpc.ServerStream
-}
+func newTestServer(t *testing.T, register func(server *grpc.Server)) *grpc.ClientConn {
+	lis := bufconn.Listen(1024 * 1024)
+	t.Cleanup(func() {
+		_ = lis.Close()
+	})
 
-func NewMapStreamFnServerTest(
-	ctx context.Context,
-	outputCh chan mapstreampb.MapStreamResponse,
-) *MapStreamFnServerTest {
-	return &MapStreamFnServerTest{
-		ctx:      ctx,
-		outputCh: outputCh,
+	server := grpc.NewServer()
+	t.Cleanup(func() {
+		server.Stop()
+	})
+
+	register(server)
+
+	errChan := make(chan error, 1)
+	go func() {
+		// t.Fatal should only be called from the goroutine running the test
+		if err := server.Serve(lis); err != nil {
+			errChan <- err
+		}
+	}()
+
+	dialer := func(context.Context, string) (net.Conn, error) {
+		return lis.Dial()
 	}
-}
 
-func (u *MapStreamFnServerTest) Send(d *mapstreampb.MapStreamResponse) error {
-	u.outputCh <- *d
-	return nil
-}
-
-func (u *MapStreamFnServerTest) Context() context.Context {
-	return u.ctx
-}
-
-type MapStreamFnServerErrTest struct {
-	ctx context.Context
-	grpc.ServerStream
-}
-
-func NewMapStreamFnServerErrTest(
-	ctx context.Context,
-
-) *MapStreamFnServerErrTest {
-	return &MapStreamFnServerErrTest{
-		ctx: ctx,
+	conn, err := grpc.NewClient("passthrough://", grpc.WithContextDialer(dialer), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	t.Cleanup(func() {
+		_ = conn.Close()
+	})
+	if err != nil {
+		t.Fatalf("Creating new gRPC client connection: %v", err)
 	}
+
+	var grpcServerErr error
+	select {
+	case grpcServerErr = <-errChan:
+	case <-time.After(500 * time.Millisecond):
+		grpcServerErr = errors.New("gRPC server didn't start in 500ms")
+	}
+	if err != nil {
+		t.Fatalf("Failed to start gRPC server: %v", grpcServerErr)
+	}
+
+	return conn
 }
 
-func (u *MapStreamFnServerErrTest) Send(_ *mapstreampb.MapStreamResponse) error {
-	return fmt.Errorf("send error")
-}
+func TestService_MapFn(t *testing.T) {
+	type args struct {
+		ctx context.Context
+		d   *proto.MapRequest
+	}
 
-func (u *MapStreamFnServerErrTest) Context() context.Context {
-	return u.ctx
-}
-
-func TestService_MapFnStream(t *testing.T) {
 	tests := []struct {
-		name        string
-		handler     MapStreamer
-		input       *mapstreampb.MapStreamRequest
-		expected    []*mapstreampb.MapStreamResponse
-		expectedErr bool
-		streamErr   bool
+		name    string
+		handler MapStreamer
+		args    args
+		want    *proto.MapResponse
 	}{
 		{
-			name: "map_stream_fn_forward_msg",
+			name: "map_fn_forward_msg",
 			handler: MapStreamerFunc(func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
 				msg := datum.Value()
 				messageCh <- NewMessage(msg).WithKeys([]string{keys[0] + "_test"})
-				close(messageCh)
 			}),
-			input: &mapstreampb.MapStreamRequest{
-				Keys:      []string{"client"},
-				Value:     []byte(`test`),
-				EventTime: timestamppb.New(time.Time{}),
-				Watermark: timestamppb.New(time.Time{}),
+			args: args{
+				ctx: context.Background(),
+				d: &proto.MapRequest{
+					Request: &proto.MapRequest_Request{
+						Keys:      []string{"client"},
+						Value:     []byte(`test`),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
+					},
+				},
 			},
-			expected: []*mapstreampb.MapStreamResponse{
-				{
-					Result: &mapstreampb.MapStreamResponse_Result{
+			want: &proto.MapResponse{
+				Results: []*proto.MapResponse_Result{
+					{
 						Keys:  []string{"client_test"},
 						Value: []byte(`test`),
 					},
 				},
 			},
-			expectedErr: false,
 		},
 		{
-			name: "map_stream_fn_forward_msg_without_close_stream",
-			handler: MapStreamerFunc(func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
-				msg := datum.Value()
-				messageCh <- NewMessage(msg).WithKeys([]string{keys[0] + "_test"})
-			}),
-			input: &mapstreampb.MapStreamRequest{
-				Keys:      []string{"client"},
-				Value:     []byte(`test`),
-				EventTime: timestamppb.New(time.Time{}),
-				Watermark: timestamppb.New(time.Time{}),
-			},
-			expected: []*mapstreampb.MapStreamResponse{
-				{
-					Result: &mapstreampb.MapStreamResponse_Result{
-						Keys:  []string{"client_test"},
-						Value: []byte(`test`),
-					},
-				},
-			},
-			expectedErr: false,
-		},
-		{
-			name: "map_stream_fn_forward_msg_forward_to_all",
+			name: "map_fn_forward_msg_forward_to_all",
 			handler: MapStreamerFunc(func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
 				msg := datum.Value()
 				messageCh <- NewMessage(msg)
-				close(messageCh)
 			}),
-			input: &mapstreampb.MapStreamRequest{
-				Keys:      []string{"client"},
-				Value:     []byte(`test`),
-				EventTime: timestamppb.New(time.Time{}),
-				Watermark: timestamppb.New(time.Time{}),
+			args: args{
+				ctx: context.Background(),
+				d: &proto.MapRequest{
+					Request: &proto.MapRequest_Request{
+						Keys:      []string{"client"},
+						Value:     []byte(`test`),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
+					},
+				},
 			},
-			expected: []*mapstreampb.MapStreamResponse{
-				{
-					Result: &mapstreampb.MapStreamResponse_Result{
+			want: &proto.MapResponse{
+				Results: []*proto.MapResponse_Result{
+					{
 						Value: []byte(`test`),
 					},
 				},
 			},
-			expectedErr: false,
 		},
 		{
-			name: "map_stream_fn_forward_msg_drop_msg",
+			name: "map_fn_forward_msg_drop_msg",
 			handler: MapStreamerFunc(func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
 				messageCh <- MessageToDrop()
-				close(messageCh)
 			}),
-			input: &mapstreampb.MapStreamRequest{
-				Keys:      []string{"client"},
-				Value:     []byte(`test`),
-				EventTime: timestamppb.New(time.Time{}),
-				Watermark: timestamppb.New(time.Time{}),
-			},
-			expected: []*mapstreampb.MapStreamResponse{
-				{
-					Result: &mapstreampb.MapStreamResponse_Result{
-						Tags:  []string{DROP},
-						Value: []byte{},
+			args: args{
+				ctx: context.Background(),
+				d: &proto.MapRequest{
+					Request: &proto.MapRequest_Request{
+						Keys:      []string{"client"},
+						Value:     []byte(`test`),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
 					},
 				},
 			},
-			expectedErr: false,
-		},
-		{
-			name: "map_stream_fn_forward_err",
-			handler: MapStreamerFunc(func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
-				messageCh <- MessageToDrop()
-				close(messageCh)
-			}),
-			input: &mapstreampb.MapStreamRequest{
-				Keys:      []string{"client"},
-				Value:     []byte(`test`),
-				EventTime: timestamppb.New(time.Time{}),
-				Watermark: timestamppb.New(time.Time{}),
-			},
-			expected: []*mapstreampb.MapStreamResponse{
-				{
-					Result: &mapstreampb.MapStreamResponse_Result{
+			want: &proto.MapResponse{
+				Results: []*proto.MapResponse_Result{
+					{
 						Tags:  []string{DROP},
-						Value: []byte{},
+						Value: nil,
 					},
 				},
 			},
-			expectedErr: true,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &Service{
+			svc := &Service{
 				MapperStream: tt.handler,
 			}
-			// here's a trick for testing:
-			// because we are not using gRPC, we directly set a new incoming ctx
-			// instead of the regular outgoing context in the real gRPC connection.
-			ctx := context.Background()
-			outputCh := make(chan mapstreampb.MapStreamResponse)
-			result := make([]*mapstreampb.MapStreamResponse, 0)
 
-			var udfMapStreamFnStream mapstreampb.MapStream_MapStreamFnServer
-			if tt.streamErr {
-				udfMapStreamFnStream = NewMapStreamFnServerErrTest(ctx)
-			} else {
-				udfMapStreamFnStream = NewMapStreamFnServerTest(ctx, outputCh)
-			}
+			conn := newTestServer(t, func(server *grpc.Server) {
+				proto.RegisterMapServer(server, svc)
+			})
 
-			var wg sync.WaitGroup
+			client := proto.NewMapClient(conn)
+			stream, err := client.MapFn(context.Background())
+			require.NoError(t, err, "Creating stream")
 
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				for msg := range outputCh {
-					result = append(result, &msg)
-				}
-			}()
+			doHandshake(t, stream)
 
-			err := fs.MapStreamFn(tt.input, udfMapStreamFnStream)
-			close(outputCh)
-			wg.Wait()
+			err = stream.Send(tt.args.d)
+			require.NoError(t, err, "Sending message over the stream")
 
-			if err != nil {
-				assert.True(t, tt.expectedErr, "MapStreamFn() error = %v, expectedErr %v", err, tt.expectedErr)
-				return
-			}
+			got, err := stream.Recv()
+			require.NoError(t, err, "Receiving message from the stream")
 
-			if !reflect.DeepEqual(result, tt.expected) {
-				t.Errorf("MapStreamFn() got = %v, want %v", result, tt.expected)
-			}
-
+			assert.Equal(t, got.Results, tt.want.Results)
 		})
 	}
+}
+
+func doHandshake(t *testing.T, stream proto.Map_MapFnClient) {
+	t.Helper()
+	handshakeReq := &proto.MapRequest{
+		Handshake: &proto.Handshake{Sot: true},
+	}
+	err := stream.Send(handshakeReq)
+	require.NoError(t, err, "Sending handshake request to the stream")
+
+	handshakeResp, err := stream.Recv()
+	require.NoError(t, err, "Receiving handshake response")
+
+	require.Empty(t, handshakeResp.Results, "Invalid handshake response")
+	require.Empty(t, handshakeResp.Id, "Invalid handshake response")
+	require.NotNil(t, handshakeResp.Handshake, "Invalid handshake response")
+	require.True(t, handshakeResp.Handshake.Sot, "Invalid handshake response")
+}
+
+func TestService_MapFn_SingleMessage_MultipleResponses(t *testing.T) {
+	svc := &Service{
+		MapperStream: MapStreamerFunc(func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
+			for i := 0; i < 10; i++ {
+				msg := fmt.Sprintf("response_%d", i)
+				messageCh <- NewMessage([]byte(msg)).WithKeys([]string{keys[0] + "_test"})
+			}
+		}),
+	}
+	conn := newTestServer(t, func(server *grpc.Server) {
+		proto.RegisterMapServer(server, svc)
+	})
+
+	client := proto.NewMapClient(conn)
+	stream, err := client.MapFn(context.Background())
+	require.NoError(t, err, "Creating stream")
+
+	doHandshake(t, stream)
+
+	msg := proto.MapRequest{
+		Request: &proto.MapRequest_Request{
+			Keys:      []string{"client"},
+			Value:     []byte("test"),
+			EventTime: timestamppb.New(time.Time{}),
+			Watermark: timestamppb.New(time.Time{}),
+		},
+	}
+	err = stream.Send(&msg)
+	require.NoError(t, err, "Sending message over the stream")
+	err = stream.CloseSend()
+	require.NoError(t, err, "Closing the send direction of the stream")
+
+	expectedResults := make([][]*proto.MapResponse_Result, 10)
+	for i := 0; i < 10; i++ {
+		expectedResults[i] = []*proto.MapResponse_Result{
+			{
+				Keys:  []string{"client_test"},
+				Value: []byte(fmt.Sprintf("response_%d", i)),
+			},
+		}
+	}
+
+	results := make([][]*proto.MapResponse_Result, 0)
+	for i := 0; i < 10; i++ {
+		got, err := stream.Recv()
+		require.NoError(t, err, "Receiving message from the stream")
+		results = append(results, got.Results)
+	}
+
+	require.ElementsMatch(t, results, expectedResults)
+
+}
+
+func TestService_MapFn_Multiple_Messages(t *testing.T) {
+	svc := &Service{
+		MapperStream: MapStreamerFunc(func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
+			msg := datum.Value()
+			messageCh <- NewMessage(msg).WithKeys([]string{keys[0] + "_test"})
+		}),
+	}
+	conn := newTestServer(t, func(server *grpc.Server) {
+		proto.RegisterMapServer(server, svc)
+	})
+
+	client := proto.NewMapClient(conn)
+	stream, err := client.MapFn(context.Background())
+	require.NoError(t, err, "Creating stream")
+
+	doHandshake(t, stream)
+
+	const msgCount = 10
+	for i := 0; i < msgCount; i++ {
+		msg := proto.MapRequest{
+			Request: &proto.MapRequest_Request{
+				Keys:      []string{"client"},
+				Value:     []byte(fmt.Sprintf("test_%d", i)),
+				EventTime: timestamppb.New(time.Time{}),
+				Watermark: timestamppb.New(time.Time{}),
+			},
+		}
+		err = stream.Send(&msg)
+		require.NoError(t, err, "Sending message over the stream")
+	}
+	err = stream.CloseSend()
+	require.NoError(t, err, "Closing the send direction of the stream")
+
+	expectedResults := make([][]*proto.MapResponse_Result, msgCount)
+	results := make([][]*proto.MapResponse_Result, 0)
+
+	for i := 0; i < msgCount; i++ {
+		expectedResults[i] = []*proto.MapResponse_Result{
+			{
+				Keys:  []string{"client_test"},
+				Value: []byte(fmt.Sprintf("test_%d", i)),
+			},
+		}
+
+		got, err := stream.Recv()
+		require.NoError(t, err, "Receiving message from the stream")
+		results = append(results, got.Results)
+
+		eot, err := stream.Recv()
+		require.NoError(t, err, "Receiving message from the stream")
+		require.True(t, eot.Status.Eot, "Expected EOT message")
+	}
+
+	require.ElementsMatch(t, results, expectedResults)
+}
+
+func TestService_MapFn_Panic(t *testing.T) {
+	svc := &Service{
+		MapperStream: MapStreamerFunc(func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
+			panic("map failed")
+		}),
+		shutdownCh: make(chan<- struct{}, 1),
+	}
+	conn := newTestServer(t, func(server *grpc.Server) {
+		proto.RegisterMapServer(server, svc)
+	})
+
+	client := proto.NewMapClient(conn)
+	stream, err := client.MapFn(context.Background())
+	require.NoError(t, err, "Creating stream")
+
+	doHandshake(t, stream)
+
+	msg := proto.MapRequest{
+		Request: &proto.MapRequest_Request{
+			Keys:      []string{"client"},
+			Value:     []byte("test"),
+			EventTime: timestamppb.New(time.Time{}),
+			Watermark: timestamppb.New(time.Time{}),
+		},
+	}
+	err = stream.Send(&msg)
+	require.NoError(t, err, "Sending message over the stream")
+	err = stream.CloseSend()
+	require.NoError(t, err, "Closing the send direction of the stream")
+	_, err = stream.Recv()
+	require.Error(t, err, "Expected error while receiving message from the stream")
+	gotStatus, _ := status.FromError(err)
+	expectedStatus := status.Convert(status.Errorf(codes.Internal, "error processing requests: panic inside mapStream handler: map failed"))
+	require.Equal(t, expectedStatus, gotStatus)
 }
