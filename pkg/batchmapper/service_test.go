@@ -133,7 +133,7 @@ func TestService_BatchMapFn(t *testing.T) {
 				},
 				{
 					Request: &mappb.MapRequest_Request{},
-					Status: &mappb.Status{
+					Status: &mappb.TransmissionStatus{
 						Eot: true,
 					},
 				},
@@ -163,7 +163,7 @@ func TestService_BatchMapFn(t *testing.T) {
 					Id: "test2",
 				},
 				{
-					Status: &mappb.Status{
+					Status: &mappb.TransmissionStatus{
 						Eot: true,
 					},
 				},
@@ -231,7 +231,7 @@ func TestService_BatchMapFn(t *testing.T) {
 					Id: "test2",
 				},
 				{
-					Status: &mappb.Status{
+					Status: &mappb.TransmissionStatus{
 						Eot: true,
 					},
 				},

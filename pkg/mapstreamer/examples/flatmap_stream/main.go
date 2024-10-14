@@ -13,6 +13,7 @@ type FlatMap struct {
 }
 
 func (f *FlatMap) MapStream(ctx context.Context, keys []string, d mapstreamer.Datum, messageCh chan<- mapstreamer.Message) {
+	// we have to close to indicate the end of the stream, otherwise the client will wait forever.
 	defer close(messageCh)
 	msg := d.Value()
 	_ = d.EventTime() // Event time is available

@@ -90,7 +90,7 @@ func TestService_SinkFn(t *testing.T) {
 				},
 				{
 					Request: &sinkpb.SinkRequest_Request{},
-					Status:  &sinkpb.SinkRequest_Status{Eot: true},
+					Status:  &sinkpb.TransmissionStatus{Eot: true},
 				},
 			},
 			sh: SinkerFunc(func(ctx context.Context, rch <-chan Datum) Responses {
@@ -128,6 +128,9 @@ func TestService_SinkFn(t *testing.T) {
 						Id:     "three-processed",
 						ErrMsg: "",
 					},
+				},
+				{
+					Status: &sinkpb.TransmissionStatus{Eot: true},
 				},
 			},
 		},
@@ -171,7 +174,7 @@ func TestService_SinkFn(t *testing.T) {
 				},
 				{
 					Request: &sinkpb.SinkRequest_Request{},
-					Status:  &sinkpb.SinkRequest_Status{Eot: true},
+					Status:  &sinkpb.TransmissionStatus{Eot: true},
 				},
 			},
 			sh: SinkerFunc(func(ctx context.Context, rch <-chan Datum) Responses {
@@ -209,6 +212,9 @@ func TestService_SinkFn(t *testing.T) {
 						Id:     "three-processed",
 						ErrMsg: "unknown error",
 					},
+				},
+				{
+					Status: &sinkpb.TransmissionStatus{Eot: true},
 				},
 			},
 		},
