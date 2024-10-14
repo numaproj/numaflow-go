@@ -87,8 +87,6 @@ func (fs *Service) invokeHandler(ctx context.Context, req *mappb.MapRequest, mes
 			err = fmt.Errorf("panic inside mapStream handler: %v", r)
 			return
 		}
-		// close the message channel after the handler is done processing the request
-		close(messageCh)
 	}()
 	streamReq := req.GetRequest()
 	hd := NewHandlerDatum(streamReq.GetValue(), streamReq.GetEventTime().AsTime(), streamReq.GetWatermark().AsTime(), streamReq.GetHeaders())

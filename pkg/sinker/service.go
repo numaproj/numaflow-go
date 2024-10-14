@@ -197,5 +197,19 @@ func (fs *Service) processData(ctx context.Context, stream sinkpb.Sink_SinkFnSer
 			return err
 		}
 	}
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+	// send the end of transmission message
+	eotResponse := &sinkpb.SinkResponse{
+		Status: &sinkpb.TransmissionStatus{Eot: true},
+	}
+	if err := stream.Send(eotResponse); err != nil {
+		log.Printf("error sending end of transmission message: %v", err)
+		return err
+	}
 	return nil
 }
