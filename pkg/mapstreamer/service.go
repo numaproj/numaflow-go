@@ -102,7 +102,7 @@ func (fs *Service) writeResponseToClient(ctx context.Context, stream mappb.Map_M
 			if !ok {
 				// Send EOT message since we are done processing the request.
 				eotMessage := &mappb.MapResponse{
-					Status: &mappb.Status{Eot: true},
+					Status: &mappb.TransmissionStatus{Eot: true},
 					Id:     reqID,
 				}
 				if err := stream.Send(eotMessage); err != nil {

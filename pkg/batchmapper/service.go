@@ -170,7 +170,7 @@ func (fs *Service) processData(ctx context.Context, stream mappb.Map_MapFnServer
 	default:
 		// send the end of transmission message
 		eot := &mappb.MapResponse{
-			Status: &mappb.Status{
+			Status: &mappb.TransmissionStatus{
 				Eot: true,
 			},
 		}

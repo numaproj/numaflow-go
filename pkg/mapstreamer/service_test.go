@@ -82,6 +82,7 @@ func TestService_MapFn(t *testing.T) {
 		{
 			name: "map_fn_forward_msg",
 			handler: MapStreamerFunc(func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
+				defer close(messageCh)
 				msg := datum.Value()
 				messageCh <- NewMessage(msg).WithKeys([]string{keys[0] + "_test"})
 			}),
@@ -108,6 +109,7 @@ func TestService_MapFn(t *testing.T) {
 		{
 			name: "map_fn_forward_msg_forward_to_all",
 			handler: MapStreamerFunc(func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
+				defer close(messageCh)
 				msg := datum.Value()
 				messageCh <- NewMessage(msg)
 			}),
@@ -133,6 +135,7 @@ func TestService_MapFn(t *testing.T) {
 		{
 			name: "map_fn_forward_msg_drop_msg",
 			handler: MapStreamerFunc(func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
+				defer close(messageCh)
 				messageCh <- MessageToDrop()
 			}),
 			args: args{
@@ -204,6 +207,7 @@ func doHandshake(t *testing.T, stream proto.Map_MapFnClient) {
 func TestService_MapFn_SingleMessage_MultipleResponses(t *testing.T) {
 	svc := &Service{
 		MapperStream: MapStreamerFunc(func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
+			defer close(messageCh)
 			for i := 0; i < 10; i++ {
 				msg := fmt.Sprintf("response_%d", i)
 				messageCh <- NewMessage([]byte(msg)).WithKeys([]string{keys[0] + "_test"})
@@ -257,6 +261,7 @@ func TestService_MapFn_SingleMessage_MultipleResponses(t *testing.T) {
 func TestService_MapFn_Multiple_Messages(t *testing.T) {
 	svc := &Service{
 		MapperStream: MapStreamerFunc(func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
+			defer close(messageCh)
 			msg := datum.Value()
 			messageCh <- NewMessage(msg).WithKeys([]string{keys[0] + "_test"})
 		}),
