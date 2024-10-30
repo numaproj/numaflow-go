@@ -75,7 +75,9 @@ func (s *SimpleSource) Read(_ context.Context, readRequest sourcesdk.ReadRequest
 }
 
 func (s *SimpleSource) Ack(_ context.Context, request sourcesdk.AckRequest) {
-	delete(s.toAckSet, deserializeOffset(request.Offset().Value()))
+	for _, offset := range request.Offsets() {
+		delete(s.toAckSet, deserializeOffset(offset.Value()))
+	}
 }
 
 func (s *SimpleSource) Partitions(_ context.Context) []int32 {
