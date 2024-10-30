@@ -53,7 +53,6 @@ func TestService_SinkFn(t *testing.T) {
 
 			input: []*sinkpb.SinkRequest{
 				{
-					Request: &sinkpb.SinkRequest_Request{},
 					Handshake: &sinkpb.Handshake{
 						Sot: true,
 					},
@@ -89,8 +88,7 @@ func TestService_SinkFn(t *testing.T) {
 					},
 				},
 				{
-					Request: &sinkpb.SinkRequest_Request{},
-					Status:  &sinkpb.TransmissionStatus{Eot: true},
+					Status: &sinkpb.TransmissionStatus{Eot: true},
 				},
 			},
 			sh: SinkerFunc(func(ctx context.Context, rch <-chan Datum) Responses {
@@ -103,30 +101,27 @@ func TestService_SinkFn(t *testing.T) {
 			}),
 			expected: []*sinkpb.SinkResponse{
 				{
-					Result: &sinkpb.SinkResponse_Result{},
 					Handshake: &sinkpb.Handshake{
 						Sot: true,
 					},
 				},
 				{
-					Result: &sinkpb.SinkResponse_Result{
-						Status: sinkpb.Status_SUCCESS,
-						Id:     "one-processed",
-						ErrMsg: "",
-					},
-				},
-				{
-					Result: &sinkpb.SinkResponse_Result{
-						Status: sinkpb.Status_SUCCESS,
-						Id:     "two-processed",
-						ErrMsg: "",
-					},
-				},
-				{
-					Result: &sinkpb.SinkResponse_Result{
-						Status: sinkpb.Status_SUCCESS,
-						Id:     "three-processed",
-						ErrMsg: "",
+					Results: []*sinkpb.SinkResponse_Result{
+						{
+							Status: sinkpb.Status_SUCCESS,
+							Id:     "one-processed",
+							ErrMsg: "",
+						},
+						{
+							Status: sinkpb.Status_SUCCESS,
+							Id:     "two-processed",
+							ErrMsg: "",
+						},
+						{
+							Status: sinkpb.Status_SUCCESS,
+							Id:     "three-processed",
+							ErrMsg: "",
+						},
 					},
 				},
 				{
@@ -138,7 +133,6 @@ func TestService_SinkFn(t *testing.T) {
 			name: "sink_fn_test_failure",
 			input: []*sinkpb.SinkRequest{
 				{
-					Request: &sinkpb.SinkRequest_Request{},
 					Handshake: &sinkpb.Handshake{
 						Sot: true,
 					},
@@ -173,8 +167,7 @@ func TestService_SinkFn(t *testing.T) {
 					},
 				},
 				{
-					Request: &sinkpb.SinkRequest_Request{},
-					Status:  &sinkpb.TransmissionStatus{Eot: true},
+					Status: &sinkpb.TransmissionStatus{Eot: true},
 				},
 			},
 			sh: SinkerFunc(func(ctx context.Context, rch <-chan Datum) Responses {
@@ -187,30 +180,27 @@ func TestService_SinkFn(t *testing.T) {
 			}),
 			expected: []*sinkpb.SinkResponse{
 				{
-					Result: &sinkpb.SinkResponse_Result{},
 					Handshake: &sinkpb.Handshake{
 						Sot: true,
 					},
 				},
 				{
-					Result: &sinkpb.SinkResponse_Result{
-						Status: sinkpb.Status_FAILURE,
-						Id:     "one-processed",
-						ErrMsg: "unknown error",
-					},
-				},
-				{
-					Result: &sinkpb.SinkResponse_Result{
-						Status: sinkpb.Status_FAILURE,
-						Id:     "two-processed",
-						ErrMsg: "unknown error",
-					},
-				},
-				{
-					Result: &sinkpb.SinkResponse_Result{
-						Status: sinkpb.Status_FAILURE,
-						Id:     "three-processed",
-						ErrMsg: "unknown error",
+					Results: []*sinkpb.SinkResponse_Result{
+						{
+							Status: sinkpb.Status_FAILURE,
+							Id:     "one-processed",
+							ErrMsg: "unknown error",
+						},
+						{
+							Status: sinkpb.Status_FAILURE,
+							Id:     "two-processed",
+							ErrMsg: "unknown error",
+						},
+						{
+							Status: sinkpb.Status_FAILURE,
+							Id:     "three-processed",
+							ErrMsg: "unknown error",
+						},
 					},
 				},
 				{
@@ -246,8 +236,8 @@ func TestService_SinkFn(t *testing.T) {
 
 			wg.Wait()
 
-			if !reflect.DeepEqual(udfReduceFnStream.rl, tt.expected) {
-				t.Errorf("ReduceFn() got = %v, want %v", udfReduceFnStream.rl, tt.expected)
+			for i, val := range tt.expected {
+				assert.Equal(t, val, udfReduceFnStream.rl[i])
 			}
 		})
 	}

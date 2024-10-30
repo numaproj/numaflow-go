@@ -149,12 +149,12 @@ func (fs *Service) processReadData(stream sourcepb.Source_ReadFnServer, messageC
 
 // ackRequest implements the AckRequest interface and is used in the ack handler.
 type ackRequest struct {
-	offset Offset
+	offsets []Offset
 }
 
-// Offset returns the offset of the record to ack.
-func (a *ackRequest) Offset() Offset {
-	return a.offset
+// Offsets returns the offsets to be acknowledged.
+func (a *ackRequest) Offsets() []Offset {
+	return a.offsets
 }
 
 // AckFn acknowledges the data from the source.
@@ -223,8 +223,13 @@ func (fs *Service) receiveAckRequests(ctx context.Context, stream sourcepb.Sourc
 		return err
 	}
 
+	offsets := make([]Offset, len(req.Request.GetOffsets()))
+	for i, offset := range req.Request.GetOffsets() {
+		offsets[i] = NewOffset(offset.GetOffset(), offset.GetPartitionId())
+	}
+
 	request := ackRequest{
-		offset: NewOffset(req.Request.Offset.GetOffset(), req.Request.Offset.GetPartitionId()),
+		offsets: offsets,
 	}
 	fs.Source.Ack(ctx, &request)
 
