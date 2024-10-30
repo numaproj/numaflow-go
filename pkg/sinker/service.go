@@ -119,9 +119,6 @@ func (fs *Service) performHandshake(stream sinkpb.Sink_SinkFnServer) error {
 	}
 
 	handshakeResponse := &sinkpb.SinkResponse{
-		Result: &sinkpb.SinkResponse_Result{
-			Status: sinkpb.Status_SUCCESS,
-		},
 		Handshake: &sinkpb.Handshake{
 			Sot: true,
 		},
@@ -175,27 +172,32 @@ func (fs *Service) processData(ctx context.Context, stream sinkpb.Sink_SinkFnSer
 		}
 	}()
 	responses := fs.Sinker.Sink(ctx, datumStreamCh)
-	for _, response := range responses {
-		var status sinkpb.Status
-		if response.Fallback {
-			status = sinkpb.Status_FALLBACK
-		} else if response.Success {
-			status = sinkpb.Status_SUCCESS
-		} else {
-			status = sinkpb.Status_FAILURE
-		}
 
-		sinkResponse := &sinkpb.SinkResponse{
-			Result: &sinkpb.SinkResponse_Result{
-				Id:     response.ID,
-				Status: status,
-				ErrMsg: response.Err,
-			},
+	var resultList []*sinkpb.SinkResponse_Result
+	for _, msg := range responses {
+		if msg.Fallback {
+			resultList = append(resultList, &sinkpb.SinkResponse_Result{
+				Id:     msg.ID,
+				Status: sinkpb.Status_FALLBACK,
+			})
+		} else if msg.Success {
+			resultList = append(resultList, &sinkpb.SinkResponse_Result{
+				Id:     msg.ID,
+				Status: sinkpb.Status_SUCCESS,
+			})
+		} else {
+			resultList = append(resultList, &sinkpb.SinkResponse_Result{
+				Id:     msg.ID,
+				Status: sinkpb.Status_FAILURE,
+				ErrMsg: msg.Err,
+			})
 		}
-		if err := stream.Send(sinkResponse); err != nil {
-			log.Printf("error sending sink response: %v", err)
-			return err
-		}
+	}
+	if err := stream.Send(&sinkpb.SinkResponse{
+		Results: resultList,
+	}); err != nil {
+		log.Printf("error sending sink response: %v", err)
+		return err
 	}
 
 	select {
