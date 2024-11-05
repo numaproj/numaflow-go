@@ -40,6 +40,27 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*v1.ReadyResponse, 
 
 var errTransformerPanic = errors.New("transformer function panicked")
 
+// recvWithContext wraps stream.Recv() to respect context cancellation.
+func recvWithContext(ctx context.Context, stream v1.SourceTransform_SourceTransformFnServer) (*v1.SourceTransformRequest, error) {
+	type recvResult struct {
+		req *v1.SourceTransformRequest
+		err error
+	}
+
+	resultCh := make(chan recvResult, 1)
+	go func() {
+		req, err := stream.Recv()
+		resultCh <- recvResult{req: req, err: err}
+	}()
+
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case result := <-resultCh:
+		return result.req, result.err
+	}
+}
+
 // SourceTransformFn applies a function to each request element.
 // In addition to map function, SourceTransformFn also supports assigning a new event time to response.
 // SourceTransformFn can be used only at source vertex by source data transformer.
@@ -76,15 +97,13 @@ func (fs *Service) SourceTransformFn(stream v1.SourceTransform_SourceTransformFn
 	var readErr error
 outer:
 	for {
-		select {
-		case <-groupCtx.Done():
-			// Stop reading new messages when we are shutting down
+		d, err := recvWithContext(groupCtx, stream)
+		if errors.Is(err, context.Canceled) {
+			log.Printf("Context cancelled, stopping the SourceTransformFn")
 			break outer
-		default:
-			// get out of select and process
 		}
-		d, err := stream.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
+			log.Printf("EOF received, stopping the SourceTransformFn")
 			break outer
 		}
 		if err != nil {
@@ -102,9 +121,9 @@ outer:
 
 	// wait for all the goroutines to finish, if any of the goroutines return an error, wait will return that error immediately.
 	if err := grp.Wait(); err != nil {
+		log.Printf("Stopping the SourceTransformFn with err, %s", err)
 		fs.shutdownCh <- struct{}{}
-		statusErr := status.Errorf(codes.Internal, err.Error())
-		return statusErr
+		return status.Errorf(codes.Internal, err.Error())
 	}
 
 	// check if there was an error while reading from the stream

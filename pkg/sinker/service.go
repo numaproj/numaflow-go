@@ -83,14 +83,14 @@ func (fs *Service) SinkFn(stream sinkpb.Sink_SinkFnServer) error {
 
 	for {
 		datumStreamCh := make(chan Datum)
-		g, ctx := errgroup.WithContext(ctx)
+		g, groupCtx := errgroup.WithContext(ctx)
 
 		g.Go(func() error {
-			return fs.receiveRequests(stream, datumStreamCh)
+			return fs.receiveRequests(groupCtx, stream, datumStreamCh)
 		})
 
 		g.Go(func() error {
-			return fs.processData(ctx, stream, datumStreamCh)
+			return fs.processData(groupCtx, stream, datumStreamCh)
 		})
 
 		// Wait for the goroutines to finish
@@ -130,12 +130,33 @@ func (fs *Service) performHandshake(stream sinkpb.Sink_SinkFnServer) error {
 	return nil
 }
 
+// recvWithContext wraps stream.Recv() to respect context cancellation.
+func recvWithContext(ctx context.Context, stream sinkpb.Sink_SinkFnServer) (*sinkpb.SinkRequest, error) {
+	type recvResult struct {
+		req *sinkpb.SinkRequest
+		err error
+	}
+
+	resultCh := make(chan recvResult, 1)
+	go func() {
+		req, err := stream.Recv()
+		resultCh <- recvResult{req: req, err: err}
+	}()
+
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case result := <-resultCh:
+		return result.req, result.err
+	}
+}
+
 // receiveRequests receives the requests from the client writes them to the datumStreamCh channel.
-func (fs *Service) receiveRequests(stream sinkpb.Sink_SinkFnServer, datumStreamCh chan<- Datum) error {
+func (fs *Service) receiveRequests(ctx context.Context, stream sinkpb.Sink_SinkFnServer, datumStreamCh chan<- Datum) error {
 	defer close(datumStreamCh)
 
 	for {
-		req, err := stream.Recv()
+		req, err := recvWithContext(ctx, stream)
 		if err == io.EOF {
 			log.Printf("end of sink stream")
 			return err
@@ -158,7 +179,11 @@ func (fs *Service) receiveRequests(stream sinkpb.Sink_SinkFnServer, datumStreamC
 			headers:   req.GetRequest().GetHeaders(),
 		}
 
-		datumStreamCh <- datum
+		select {
+		case <-ctx.Done():
+			return nil
+		case datumStreamCh <- datum:
+		}
 	}
 	return nil
 }
