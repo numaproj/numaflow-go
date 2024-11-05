@@ -9,6 +9,7 @@ import (
 	"runtime/debug"
 	"time"
 
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -43,6 +44,8 @@ func (fs *Service) ReadFn(stream sourcepb.Source_ReadFnServer) error {
 			if errors.Is(err, io.EOF) {
 				return nil
 			}
+			log.Printf("error processing requests: %v", err)
+			fs.shutdownCh <- struct{}{}
 			return err
 		}
 	}
@@ -76,19 +79,33 @@ func (fs *Service) performReadHandshake(stream sourcepb.Source_ReadFnServer) err
 	return nil
 }
 
+// recvWithContext wraps stream.Recv() to respect context cancellation for ReadFn.
+func recvWithContextRead(ctx context.Context, stream sourcepb.Source_ReadFnServer) (*sourcepb.ReadRequest, error) {
+	type recvResult struct {
+		req *sourcepb.ReadRequest
+		err error
+	}
+
+	resultCh := make(chan recvResult, 1)
+	go func() {
+		req, err := stream.Recv()
+		resultCh <- recvResult{req: req, err: err}
+	}()
+
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case result := <-resultCh:
+		return result.req, result.err
+	}
+}
+
 // receiveReadRequests receives read requests from the client and invokes the source Read method.
 // writes the read data to the message channel.
 func (fs *Service) receiveReadRequests(ctx context.Context, stream sourcepb.Source_ReadFnServer) error {
 	messageCh := make(chan Message)
-	// handle panic
-	defer func() {
-		if r := recover(); r != nil {
-			log.Printf("panic inside source handler: %v %v", r, string(debug.Stack()))
-			fs.shutdownCh <- struct{}{}
-		}
-	}()
-
-	req, err := stream.Recv()
+	eg, groupCtx := errgroup.WithContext(ctx)
+	req, err := recvWithContextRead(groupCtx, stream)
 	if err == io.EOF {
 		log.Printf("end of read stream")
 		return err
@@ -98,22 +115,44 @@ func (fs *Service) receiveReadRequests(ctx context.Context, stream sourcepb.Sour
 		return err
 	}
 
-	go func() {
-		defer close(messageCh)
+	eg.Go(func() (err error) {
+		// handle panic
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("panic inside source handler: %v %v", r, string(debug.Stack()))
+				err = fmt.Errorf("panic inside source handler: %v", r)
+				return
+			}
+			close(messageCh)
+		}()
 		request := readRequest{
 			count:   req.Request.GetNumRecords(),
 			timeout: time.Duration(req.Request.GetTimeoutInMs()) * time.Millisecond,
 		}
 		fs.Source.Read(ctx, &request, messageCh)
-	}()
+		return nil
+	})
 
 	// invoke the processReadData method to send the read data to the client.
-	return fs.processReadData(stream, messageCh)
+	eg.Go(func() error {
+		return fs.processReadData(groupCtx, stream, messageCh)
+	})
+
+	if err := eg.Wait(); err != nil {
+		return err
+	}
+	return nil
 }
 
 // processReadData processes the read data and sends it to the client.
-func (fs *Service) processReadData(stream sourcepb.Source_ReadFnServer, messageCh <-chan Message) error {
-	for msg := range messageCh {
+func (fs *Service) processReadData(ctx context.Context, stream sourcepb.Source_ReadFnServer, messageCh <-chan Message) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case msg, ok := <-messageCh:
+		if !ok {
+			break
+		}
 		offset := &sourcepb.Offset{
 			Offset:      msg.Offset().Value(),
 			PartitionId: msg.Offset().PartitionId(),
@@ -204,16 +243,38 @@ func (fs *Service) performAckHandshake(stream sourcepb.Source_AckFnServer) error
 	return nil
 }
 
+// recvWithContext wraps stream.Recv() to respect context cancellation for AckFn.
+func recvWithContextAck(ctx context.Context, stream sourcepb.Source_AckFnServer) (*sourcepb.AckRequest, error) {
+	type recvResult struct {
+		req *sourcepb.AckRequest
+		err error
+	}
+
+	resultCh := make(chan recvResult, 1)
+	go func() {
+		req, err := stream.Recv()
+		resultCh <- recvResult{req: req, err: err}
+	}()
+
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case result := <-resultCh:
+		return result.req, result.err
+	}
+}
+
 // receiveAckRequests receives ack requests from the client and invokes the source Ack method.
-func (fs *Service) receiveAckRequests(ctx context.Context, stream sourcepb.Source_AckFnServer) error {
+func (fs *Service) receiveAckRequests(ctx context.Context, stream sourcepb.Source_AckFnServer) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("panic inside source handler: %v %v", r, string(debug.Stack()))
 			fs.shutdownCh <- struct{}{}
+			err = fmt.Errorf("panic inside source handler: %v", r)
 		}
 	}()
 
-	req, err := stream.Recv()
+	req, err := recvWithContextAck(ctx, stream)
 	if err == io.EOF {
 		log.Printf("end of ack stream")
 		return err

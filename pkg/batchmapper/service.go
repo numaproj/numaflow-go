@@ -44,14 +44,14 @@ func (fs *Service) MapFn(stream mappb.Map_MapFnServer) error {
 
 	for {
 		datumStreamCh := make(chan Datum)
-		g, ctx := errgroup.WithContext(ctx)
+		g, groupCtx := errgroup.WithContext(ctx)
 
 		g.Go(func() error {
-			return fs.receiveRequests(ctx, stream, datumStreamCh)
+			return fs.receiveRequests(groupCtx, stream, datumStreamCh)
 		})
 
 		g.Go(func() error {
-			return fs.processData(ctx, stream, datumStreamCh)
+			return fs.processData(groupCtx, stream, datumStreamCh)
 		})
 
 		// Wait for the goroutines to finish
@@ -91,19 +91,39 @@ func (fs *Service) performHandshake(stream mappb.Map_MapFnServer) error {
 	return nil
 }
 
+// recvWithContext wraps stream.Recv() to respect context cancellation.
+func recvWithContext(ctx context.Context, stream mappb.Map_MapFnServer) (*mappb.MapRequest, error) {
+	type recvResult struct {
+		req *mappb.MapRequest
+		err error
+	}
+
+	resultCh := make(chan recvResult, 1)
+	go func() {
+		req, err := stream.Recv()
+		resultCh <- recvResult{req: req, err: err}
+	}()
+
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case result := <-resultCh:
+		return result.req, result.err
+	}
+}
+
 // receiveRequests receives the requests from the client and writes them to the datumStreamCh channel.
 func (fs *Service) receiveRequests(ctx context.Context, stream mappb.Map_MapFnServer, datumStreamCh chan<- Datum) error {
 	defer close(datumStreamCh)
 
 	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		default:
+		req, err := recvWithContext(ctx, stream)
+		if errors.Is(err, context.Canceled) {
+			log.Printf("Context cancelled, stopping the MapBatchFn")
+			return err
 		}
-		req, err := stream.Recv()
-		if err == io.EOF {
-			log.Printf("end of batch map stream")
+		if errors.Is(err, io.EOF) {
+			log.Printf("EOF received, stopping the MapBatchFn")
 			return err
 		}
 		if err != nil {
@@ -123,8 +143,11 @@ func (fs *Service) receiveRequests(ctx context.Context, stream mappb.Map_MapFnSe
 			watermark: req.GetRequest().GetWatermark().AsTime(),
 			headers:   req.GetRequest().GetHeaders(),
 		}
-
-		datumStreamCh <- datum
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case datumStreamCh <- datum:
+		}
 	}
 	return nil
 }

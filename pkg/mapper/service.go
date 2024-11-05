@@ -2,6 +2,7 @@ package mapper
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -33,6 +34,27 @@ type Service struct {
 // IsReady returns true to indicate the gRPC connection is ready.
 func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*mappb.ReadyResponse, error) {
 	return &mappb.ReadyResponse{Ready: true}, nil
+}
+
+// recvWithContext wraps stream.Recv() to respect context cancellation.
+func recvWithContext(ctx context.Context, stream mappb.Map_MapFnServer) (*mappb.MapRequest, error) {
+	type recvResult struct {
+		req *mappb.MapRequest
+		err error
+	}
+
+	resultCh := make(chan recvResult, 1)
+	go func() {
+		req, err := stream.Recv()
+		resultCh <- recvResult{req: req, err: err}
+	}()
+
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case result := <-resultCh:
+		return result.req, result.err
+	}
 }
 
 // MapFn applies a user defined function to each request element and returns a list of results.
@@ -72,13 +94,13 @@ func (fs *Service) MapFn(stream mappb.Map_MapFnServer) error {
 	// Read requests from the stream and process them
 outer:
 	for {
-		select {
-		case <-groupCtx.Done():
+		req, err := recvWithContext(groupCtx, stream)
+		if errors.Is(err, context.Canceled) {
+			log.Printf("Context cancelled, stopping the MapFn")
 			break outer
-		default:
 		}
-		req, err := stream.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
+			log.Printf("EOF received, stopping the MapFn")
 			break outer
 		}
 		if err != nil {
@@ -96,6 +118,7 @@ outer:
 
 	// wait for all goroutines to finish
 	if err := g.Wait(); err != nil {
+		log.Printf("Stopping the MapFn with err, %s", err)
 		fs.shutdownCh <- struct{}{}
 		return status.Errorf(codes.Internal, "error processing requests: %v", err)
 	}

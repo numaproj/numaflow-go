@@ -2,6 +2,7 @@ package mapstreamer
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -35,6 +36,27 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*mappb.ReadyRespons
 	return &mappb.ReadyResponse{Ready: true}, nil
 }
 
+// recvWithContext wraps stream.Recv() to respect context cancellation.
+func recvWithContext(ctx context.Context, stream mappb.Map_MapFnServer) (*mappb.MapRequest, error) {
+	type recvResult struct {
+		req *mappb.MapRequest
+		err error
+	}
+
+	resultCh := make(chan recvResult, 1)
+	go func() {
+		req, err := stream.Recv()
+		resultCh <- recvResult{req: req, err: err}
+	}()
+
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case result := <-resultCh:
+		return result.req, result.err
+	}
+}
+
 // MapFn applies a function to each request element and streams the results back.
 func (fs *Service) MapFn(stream mappb.Map_MapFnServer) error {
 	// perform handshake with client before processing requests
@@ -43,12 +65,17 @@ func (fs *Service) MapFn(stream mappb.Map_MapFnServer) error {
 	}
 
 	ctx := stream.Context()
-
 	for {
-		req, err := stream.Recv()
-		if err == io.EOF {
+		req, err := recvWithContext(ctx, stream)
+		if errors.Is(err, context.Canceled) {
+			log.Printf("Context cancelled, stopping the MapStreamFn")
 			break
 		}
+		if errors.Is(err, io.EOF) {
+			log.Printf("EOF received, stopping the MapStreamFn")
+			break
+		}
+
 		if err != nil {
 			log.Printf("Failed to receive request: %v", err)
 			return err
