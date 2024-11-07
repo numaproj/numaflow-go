@@ -51,7 +51,7 @@ var MinimumNumaflowVersion = map[ContainerType]string{
 	Reducestreamer:    "1.3.1-z",
 	Reducer:           "1.3.1-z",
 	Sessionreducer:    "1.3.1-z",
-	Sideinput:         "1.4.0-z",
+	Sideinput:         "1.3.1-z",
 	Fbsinker:          "1.4.0-z",
 }
 
