@@ -5,7 +5,7 @@ go 1.21
 replace github.com/numaproj/numaflow-go => ../../../..
 
 require (
-	github.com/numaproj/numaflow-go v0.8.1
+	github.com/numaproj/numaflow-go v0.9.0
 	github.com/stretchr/testify v1.9.0
 )
 
