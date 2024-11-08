@@ -44,15 +44,15 @@ const MapModeKey = "MAP_MODE"
 // To update this value, please follow the instructions for MINIMUM_NUMAFLOW_VERSION in
 // https://github.com/numaproj/numaflow-rs/blob/main/src/shared.rs
 var MinimumNumaflowVersion = map[ContainerType]string{
-	Sourcer:           "1.3.1-z",
-	Sourcetransformer: "1.3.1-z",
-	Sinker:            "1.3.1-z",
-	Mapper:            "1.3.1-z",
-	Reducestreamer:    "1.3.1-z",
-	Reducer:           "1.3.1-z",
-	Sessionreducer:    "1.3.1-z",
-	Sideinput:         "1.3.1-z",
-	Fbsinker:          "1.3.1-z",
+	Sourcer:           "1.4.0-z",
+	Sourcetransformer: "1.4.0-z",
+	Sinker:            "1.4.0-z",
+	Mapper:            "1.4.0-z",
+	Reducestreamer:    "1.4.0-z",
+	Reducer:           "1.4.0-z",
+	Sessionreducer:    "1.4.0-z",
+	Sideinput:         "1.4.0-z",
+	Fbsinker:          "1.4.0-z",
 }
 
 // ServerInfo is the information about the server
