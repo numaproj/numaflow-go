@@ -350,3 +350,60 @@ func TestService_MapFn_Panic(t *testing.T) {
 	expectedStatus := status.Convert(status.Errorf(codes.Internal, "error processing requests: panic inside mapStream handler: map failed"))
 	require.Equal(t, expectedStatus, gotStatus)
 }
+
+func TestService_MapFn_MultipleRequestsTogether(t *testing.T) {
+	svc := &Service{
+		MapperStream: MapStreamerFunc(func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
+			defer close(messageCh)
+			msg := datum.Value()
+			messageCh <- NewMessage(msg).WithKeys([]string{keys[0] + "_test"})
+		}),
+	}
+	conn := newTestServer(t, func(server *grpc.Server) {
+		proto.RegisterMapServer(server, svc)
+	})
+
+	client := proto.NewMapClient(conn)
+	stream, err := client.MapFn(context.Background())
+	require.NoError(t, err, "Creating stream")
+
+	doHandshake(t, stream)
+
+	const msgCount = 5
+	for i := 0; i < msgCount; i++ {
+		msg := proto.MapRequest{
+			Request: &proto.MapRequest_Request{
+				Keys:      []string{"client"},
+				Value:     []byte(fmt.Sprintf("test_%d", i)),
+				EventTime: timestamppb.New(time.Time{}),
+				Watermark: timestamppb.New(time.Time{}),
+			},
+		}
+		err = stream.Send(&msg)
+		require.NoError(t, err, "Sending message over the stream")
+	}
+	err = stream.CloseSend()
+	require.NoError(t, err, "Closing the send direction of the stream")
+
+	expectedResults := make([][]*proto.MapResponse_Result, msgCount)
+	results := make([][]*proto.MapResponse_Result, 0)
+
+	for i := 0; i < msgCount; i++ {
+		expectedResults[i] = []*proto.MapResponse_Result{
+			{
+				Keys:  []string{"client_test"},
+				Value: []byte(fmt.Sprintf("test_%d", i)),
+			},
+		}
+
+		got, err := stream.Recv()
+		require.NoError(t, err, "Receiving message from the stream")
+		results = append(results, got.Results)
+
+		eot, err := stream.Recv()
+		require.NoError(t, err, "Receiving message from the stream")
+		require.True(t, eot.Status.Eot, "Expected EOT message")
+	}
+
+	require.ElementsMatch(t, results, expectedResults)
+}

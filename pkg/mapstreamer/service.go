@@ -64,43 +64,79 @@ func (fs *Service) MapFn(stream mappb.Map_MapFnServer) error {
 		return err
 	}
 
-	ctx := stream.Context()
+	ctx, cancel := context.WithCancel(stream.Context())
+	defer cancel()
+
+	// Use error group to manage goroutines, the groupCtx is cancelled when any of the
+	// goroutines return an error for the first time or the first time the wait returns.
+	g, groupCtx := errgroup.WithContext(ctx)
+
+	// Channel to collect responses
+	responseCh := make(chan *mappb.MapResponse, 500) // FIXME: identify the right buffer size
+	defer close(responseCh)
+
+	// Dedicated goroutine to send responses to the stream
+	g.Go(func() error {
+		for {
+			select {
+			case resp := <-responseCh:
+				if err := stream.Send(resp); err != nil {
+					log.Printf("Failed to send response: %v", err)
+					return err
+				}
+			case <-groupCtx.Done():
+				return groupCtx.Err()
+			}
+		}
+	})
+
+	var readErr error
+	// Read requests from the stream and process them
+outer:
 	for {
-		req, err := recvWithContext(ctx, stream)
+		req, err := recvWithContext(groupCtx, stream)
 		if errors.Is(err, context.Canceled) {
-			log.Printf("Context cancelled, stopping the MapStreamFn")
-			break
+			log.Printf("Context cancelled, stopping the MapFn")
+			break outer
 		}
 		if errors.Is(err, io.EOF) {
-			log.Printf("EOF received, stopping the MapStreamFn")
-			break
+			log.Printf("EOF received, stopping the MapFn")
+			break outer
 		}
-
 		if err != nil {
 			log.Printf("Failed to receive request: %v", err)
-			return err
+			readErr = err
+			// read loop is not part of the error group, so we need to cancel the context
+			// to signal the other goroutines to stop processing.
+			cancel()
+			break outer
 		}
-
-		messageCh := make(chan Message)
-		g, groupCtx := errgroup.WithContext(ctx)
-
 		g.Go(func() error {
-			return fs.invokeHandler(groupCtx, req, messageCh)
-		})
+			messageCh := make(chan Message)
+			workerGroup, innerCtx := errgroup.WithContext(groupCtx)
 
-		g.Go(func() error {
-			return fs.writeResponseToClient(groupCtx, stream, req.GetId(), messageCh)
-		})
+			workerGroup.Go(func() error {
+				return fs.invokeHandler(innerCtx, req, messageCh)
+			})
 
-		// Wait for the error group to finish
-		if err := g.Wait(); err != nil {
-			log.Printf("error processing requests: %v", err)
-			if err == io.EOF {
-				return nil
-			}
-			fs.shutdownCh <- struct{}{}
-			return status.Errorf(codes.Internal, "error processing requests: %v", err)
-		}
+			workerGroup.Go(func() error {
+				return fs.writeResponseToClient(innerCtx, stream, req.GetId(), messageCh)
+			})
+
+			return workerGroup.Wait()
+		})
+	}
+
+	// wait for all goroutines to finish
+	if err := g.Wait(); err != nil {
+		log.Printf("Stopping the MapFn with err, %s", err)
+		fs.shutdownCh <- struct{}{}
+		return status.Errorf(codes.Internal, "error processing requests: %v", err)
+	}
+
+	// check if there was an error while reading from the stream
+	if readErr != nil {
+		return status.Errorf(codes.Internal, readErr.Error())
 	}
 
 	return nil
