@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"testing"
 	"time"
@@ -294,6 +295,23 @@ func TestService_MapFn_Multiple_Messages(t *testing.T) {
 
 	expectedResults := make([][]*proto.MapResponse_Result, msgCount)
 	results := make([][]*proto.MapResponse_Result, 0)
+	eotCount := 0
+
+	for {
+		got, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		require.NoError(t, err, "Receiving message from the stream")
+
+		if got.Status != nil && got.Status.Eot {
+			eotCount++
+		} else {
+			results = append(results, got.Results)
+		}
+	}
+
+	require.Equal(t, msgCount, eotCount, "Expected number of EOT messages")
 
 	for i := 0; i < msgCount; i++ {
 		expectedResults[i] = []*proto.MapResponse_Result{
@@ -302,14 +320,6 @@ func TestService_MapFn_Multiple_Messages(t *testing.T) {
 				Value: []byte(fmt.Sprintf("test_%d", i)),
 			},
 		}
-
-		got, err := stream.Recv()
-		require.NoError(t, err, "Receiving message from the stream")
-		results = append(results, got.Results)
-
-		eot, err := stream.Recv()
-		require.NoError(t, err, "Receiving message from the stream")
-		require.True(t, eot.Status.Eot, "Expected EOT message")
 	}
 
 	require.ElementsMatch(t, results, expectedResults)
@@ -351,12 +361,14 @@ func TestService_MapFn_Panic(t *testing.T) {
 	require.Equal(t, expectedStatus, gotStatus)
 }
 
-func TestService_MapFn_MultipleRequestsTogether(t *testing.T) {
+func TestService_MapFn_MultipleRequestsAndResponses(t *testing.T) {
 	svc := &Service{
 		MapperStream: MapStreamerFunc(func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
 			defer close(messageCh)
-			msg := datum.Value()
-			messageCh <- NewMessage(msg).WithKeys([]string{keys[0] + "_test"})
+			for i := 0; i < 3; i++ { // Send multiple responses for each request
+				msg := fmt.Sprintf("response_%d_for_%s", i, string(datum.Value()))
+				messageCh <- NewMessage([]byte(msg)).WithKeys([]string{keys[0] + "_test"})
+			}
 		}),
 	}
 	conn := newTestServer(t, func(server *grpc.Server) {
@@ -385,24 +397,35 @@ func TestService_MapFn_MultipleRequestsTogether(t *testing.T) {
 	err = stream.CloseSend()
 	require.NoError(t, err, "Closing the send direction of the stream")
 
-	expectedResults := make([][]*proto.MapResponse_Result, msgCount)
+	expectedResults := make([][]*proto.MapResponse_Result, msgCount*3)
 	results := make([][]*proto.MapResponse_Result, 0)
+	eotCount := 0
+
+	for {
+		got, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		require.NoError(t, err, "Receiving message from the stream")
+
+		if got.Status != nil && got.Status.Eot {
+			eotCount++
+		} else {
+			results = append(results, got.Results)
+		}
+	}
+
+	require.Equal(t, msgCount, eotCount, "Expected number of EOT messages")
 
 	for i := 0; i < msgCount; i++ {
-		expectedResults[i] = []*proto.MapResponse_Result{
-			{
-				Keys:  []string{"client_test"},
-				Value: []byte(fmt.Sprintf("test_%d", i)),
-			},
+		for j := 0; j < 3; j++ {
+			expectedResults[i*3+j] = []*proto.MapResponse_Result{
+				{
+					Keys:  []string{"client_test"},
+					Value: []byte(fmt.Sprintf("response_%d_for_test_%d", j, i)),
+				},
+			}
 		}
-
-		got, err := stream.Recv()
-		require.NoError(t, err, "Receiving message from the stream")
-		results = append(results, got.Results)
-
-		eot, err := stream.Recv()
-		require.NoError(t, err, "Receiving message from the stream")
-		require.True(t, eot.Status.Eot, "Expected EOT message")
 	}
 
 	require.ElementsMatch(t, results, expectedResults)

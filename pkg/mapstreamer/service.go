@@ -70,26 +70,6 @@ func (fs *Service) MapFn(stream mappb.Map_MapFnServer) error {
 	// Use error group to manage goroutines, the groupCtx is cancelled when any of the
 	// goroutines return an error for the first time or the first time the wait returns.
 	g, groupCtx := errgroup.WithContext(ctx)
-
-	// Channel to collect responses
-	responseCh := make(chan *mappb.MapResponse, 500) // FIXME: identify the right buffer size
-	defer close(responseCh)
-
-	// Dedicated goroutine to send responses to the stream
-	g.Go(func() error {
-		for {
-			select {
-			case resp := <-responseCh:
-				if err := stream.Send(resp); err != nil {
-					log.Printf("Failed to send response: %v", err)
-					return err
-				}
-			case <-groupCtx.Done():
-				return groupCtx.Err()
-			}
-		}
-	})
-
 	var readErr error
 	// Read requests from the stream and process them
 outer:
