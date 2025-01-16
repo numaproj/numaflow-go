@@ -17,6 +17,7 @@ type CatSleep struct {
 
 func (e *CatSleep) Map(ctx context.Context, keys []string, d mapper.Datum) mapper.Messages {
 
+	// sleep for as long as the environment variable indicates (or default if not configured)
 	sleepSeconds := DEFAULT_SLEEP_SECONDS
 	secondsString := os.Getenv("SLEEP_SECONDS")
 	if secondsString == "" {
