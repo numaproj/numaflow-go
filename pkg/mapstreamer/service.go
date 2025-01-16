@@ -2,10 +2,18 @@ package mapstreamer
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"io"
+	"log"
+	"runtime/debug"
 
+	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	mapstreampb "github.com/numaproj/numaflow-go/pkg/apis/proto/mapstream/v1"
+	mappb "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1"
 )
 
 const (
@@ -18,62 +26,168 @@ const (
 // Service implements the proto gen server interface and contains the map
 // streaming function.
 type Service struct {
-	mapstreampb.UnimplementedMapStreamServer
+	mappb.UnimplementedMapServer
 	shutdownCh   chan<- struct{}
 	MapperStream MapStreamer
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
-func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*mapstreampb.ReadyResponse, error) {
-	return &mapstreampb.ReadyResponse{Ready: true}, nil
+func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*mappb.ReadyResponse, error) {
+	return &mappb.ReadyResponse{Ready: true}, nil
 }
 
-// MapStreamFn applies a function to each request element and streams the results back.
-func (fs *Service) MapStreamFn(d *mapstreampb.MapStreamRequest, stream mapstreampb.MapStream_MapStreamFnServer) error {
-	var hd = NewHandlerDatum(d.GetValue(), d.GetEventTime().AsTime(), d.GetWatermark().AsTime(), d.GetHeaders())
-	ctx := stream.Context()
-	messageCh := make(chan Message)
+// recvWithContext wraps stream.Recv() to respect context cancellation.
+func recvWithContext(ctx context.Context, stream mappb.Map_MapFnServer) (*mappb.MapRequest, error) {
+	type recvResult struct {
+		req *mappb.MapRequest
+		err error
+	}
 
-	done := make(chan bool)
+	resultCh := make(chan recvResult, 1)
 	go func() {
-		// handle panic
-		defer func() {
-			if r := recover(); r != nil {
-				fs.shutdownCh <- struct{}{}
-			}
-		}()
-		fs.MapperStream.MapStream(ctx, d.GetKeys(), hd, messageCh)
-		done <- true
+		req, err := stream.Recv()
+		resultCh <- recvResult{req: req, err: err}
 	}()
 
-	finished := false
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case result := <-resultCh:
+		return result.req, result.err
+	}
+}
+
+// MapFn applies a function to each request element and streams the results back.
+func (fs *Service) MapFn(stream mappb.Map_MapFnServer) error {
+	// perform handshake with client before processing requests
+	if err := fs.performHandshake(stream); err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithCancel(stream.Context())
+	defer cancel()
+
+	// Use error group to manage goroutines, the groupCtx is cancelled when any of the
+	// goroutines return an error for the first time or the first time the wait returns.
+	g, groupCtx := errgroup.WithContext(ctx)
+	var readErr error
+	// Read requests from the stream and process them
+outer:
+	for {
+		req, err := recvWithContext(groupCtx, stream)
+		if errors.Is(err, context.Canceled) {
+			log.Printf("Context cancelled, stopping the MapFn")
+			break outer
+		}
+		if errors.Is(err, io.EOF) {
+			log.Printf("EOF received, stopping the MapFn")
+			break outer
+		}
+		if err != nil {
+			log.Printf("Failed to receive request: %v", err)
+			readErr = err
+			// read loop is not part of the error group, so we need to cancel the context
+			// to signal the other goroutines to stop processing.
+			cancel()
+			break outer
+		}
+		g.Go(func() error {
+			messageCh := make(chan Message)
+			workerGroup, innerCtx := errgroup.WithContext(groupCtx)
+
+			workerGroup.Go(func() error {
+				return fs.invokeHandler(innerCtx, req, messageCh)
+			})
+
+			workerGroup.Go(func() error {
+				return fs.writeResponseToClient(innerCtx, stream, req.GetId(), messageCh)
+			})
+
+			return workerGroup.Wait()
+		})
+	}
+
+	// wait for all goroutines to finish
+	if err := g.Wait(); err != nil {
+		log.Printf("Stopping the MapFn with err, %s", err)
+		fs.shutdownCh <- struct{}{}
+		return status.Errorf(codes.Internal, "error processing requests: %v", err)
+	}
+
+	// check if there was an error while reading from the stream
+	if readErr != nil {
+		return status.Errorf(codes.Internal, readErr.Error())
+	}
+
+	return nil
+}
+
+// invokeHandler handles the map stream invocation.
+func (fs *Service) invokeHandler(ctx context.Context, req *mappb.MapRequest, messageCh chan<- Message) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("panic inside mapStream handler: %v %v", r, string(debug.Stack()))
+			err = fmt.Errorf("panic inside mapStream handler: %v", r)
+			return
+		}
+	}()
+	streamReq := req.GetRequest()
+	hd := NewHandlerDatum(streamReq.GetValue(), streamReq.GetEventTime().AsTime(), streamReq.GetWatermark().AsTime(), streamReq.GetHeaders())
+	fs.MapperStream.MapStream(ctx, req.GetRequest().GetKeys(), hd, messageCh)
+	return nil
+}
+
+// writeResponseToClient writes the response back to the client.
+func (fs *Service) writeResponseToClient(ctx context.Context, stream mappb.Map_MapFnServer, reqID string, messageCh <-chan Message) error {
 	for {
 		select {
-		case <-done:
-			finished = true
 		case message, ok := <-messageCh:
 			if !ok {
-				// Channel already closed, not closing again.
+				// Send EOT message since we are done processing the request.
+				eotMessage := &mappb.MapResponse{
+					Status: &mappb.TransmissionStatus{Eot: true},
+					Id:     reqID,
+				}
+				if err := stream.Send(eotMessage); err != nil {
+					return err
+				}
 				return nil
 			}
-			element := &mapstreampb.MapStreamResponse{
-				Result: &mapstreampb.MapStreamResponse_Result{
-					Keys:  message.Keys(),
-					Value: message.Value(),
-					Tags:  message.Tags(),
+			element := &mappb.MapResponse{
+				Results: []*mappb.MapResponse_Result{
+					{
+						Keys:  message.Keys(),
+						Value: message.Value(),
+						Tags:  message.Tags(),
+					},
 				},
+				Id: reqID,
 			}
-			err := stream.Send(element)
-			// the error here is returned by stream.Send() which is already a gRPC error
-			if err != nil {
-				// Channel may or may not be closed, as we are not sure leave it to GC.
+			if err := stream.Send(element); err != nil {
 				return err
 			}
-		default:
-			if finished {
-				close(messageCh)
-				return nil
-			}
+		case <-ctx.Done():
+			return ctx.Err()
 		}
 	}
+}
+
+// performHandshake handles the handshake logic at the start of the stream.
+func (fs *Service) performHandshake(stream mappb.Map_MapFnServer) error {
+	req, err := stream.Recv()
+	if err != nil {
+		return status.Errorf(codes.Internal, "failed to receive handshake: %v", err)
+	}
+	if req.GetHandshake() == nil || !req.GetHandshake().GetSot() {
+		return status.Errorf(codes.InvalidArgument, "invalid handshake")
+	}
+	handshakeResponse := &mappb.MapResponse{
+		Handshake: &mappb.Handshake{
+			Sot: true,
+		},
+	}
+	if err := stream.Send(handshakeResponse); err != nil {
+		return fmt.Errorf("sending handshake response to client over gRPC stream: %w", err)
+	}
+	return nil
 }

@@ -3,6 +3,7 @@ package sessionreducer
 import (
 	"context"
 	"fmt"
+	"log"
 	"os/signal"
 	"sync"
 	"syscall"
@@ -50,8 +51,10 @@ func (r *server) Start(ctx context.Context) error {
 	defer stop()
 
 	// write server info to the file
+	serverInfo := info.GetDefaultServerInfo()
+	serverInfo.MinimumNumaflowVersion = info.MinimumNumaflowVersion[info.Sessionreducer]
 	// start listening on unix domain socket
-	lis, err := shared.PrepareServer(r.opts.sockAddr, r.opts.serverInfoFilePath, info.GetDefaultServerInfo())
+	lis, err := shared.PrepareServer(r.opts.sockAddr, r.opts.serverInfoFilePath, serverInfo)
 	if err != nil {
 		return fmt.Errorf("failed to execute net.Listen(%q, %q): %v", uds, address, err)
 	}
@@ -73,6 +76,7 @@ func (r *server) Start(ctx context.Context) error {
 		defer wg.Done()
 		select {
 		case <-r.shutdownCh:
+			log.Printf("received shutdown signal")
 		case <-ctxWithSignal.Done():
 		}
 		shared.StopGRPCServer(r.grpcServer)

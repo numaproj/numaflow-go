@@ -3,6 +3,8 @@ package reducestreamer
 import (
 	"context"
 	"fmt"
+	"log"
+	"runtime/debug"
 	"strings"
 	"sync"
 
@@ -102,6 +104,7 @@ func (rtm *reduceStreamTaskManager) CreateTask(ctx context.Context, request *v1.
 		// handle panic
 		defer func() {
 			if r := recover(); r != nil {
+				log.Printf("panic inside reduce handler: %v %v", r, string(debug.Stack()))
 				rtm.shutdownCh <- struct{}{}
 			}
 		}()

@@ -3,6 +3,7 @@ package batchmapper
 import (
 	"context"
 	"fmt"
+	"log"
 	"os/signal"
 	"sync"
 	"syscall"
@@ -10,7 +11,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/numaproj/numaflow-go/pkg"
-	batchmappb "github.com/numaproj/numaflow-go/pkg/apis/proto/batchmap/v1"
+	mappb "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1"
 	"github.com/numaproj/numaflow-go/pkg/info"
 	"github.com/numaproj/numaflow-go/pkg/shared"
 )
@@ -66,7 +67,7 @@ func (m *server) Start(ctx context.Context) error {
 	m.grpcServer = shared.CreateGRPCServer(m.opts.maxMessageSize)
 
 	// register the batch map service
-	batchmappb.RegisterBatchMapServer(m.grpcServer, m.svc)
+	mappb.RegisterMapServer(m.grpcServer, m.svc)
 
 	// start a go routine to stop the server gracefully when the context is done
 	// or a shutdown signal is received from the service
@@ -76,6 +77,7 @@ func (m *server) Start(ctx context.Context) error {
 		defer wg.Done()
 		select {
 		case <-m.shutdownCh:
+			log.Printf("received shutdown signal")
 		case <-ctxWithSignal.Done():
 		}
 		shared.StopGRPCServer(m.grpcServer)

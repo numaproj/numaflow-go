@@ -36,6 +36,6 @@ type ReadRequest interface {
 
 // AckRequest is the interface of ack request.
 type AckRequest interface {
-	// Offsets returns the offsets of the records to ack.
+	// Offsets returns the offsets to be acknowledged.
 	Offsets() []Offset
 }

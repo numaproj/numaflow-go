@@ -2,6 +2,7 @@ package shared
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"os"
 	"time"
@@ -54,6 +55,7 @@ func StopGRPCServer(grpcServer *grpc.Server) {
 	// if it is not stopped, stop it forcefully
 	stopped := make(chan struct{})
 	go func() {
+		log.Printf("gracefully stopping grpc server")
 		grpcServer.GracefulStop()
 		close(stopped)
 	}()
@@ -61,8 +63,10 @@ func StopGRPCServer(grpcServer *grpc.Server) {
 	t := time.NewTimer(30 * time.Second)
 	select {
 	case <-t.C:
+		log.Printf("forcefully stopping grpc server")
 		grpcServer.Stop()
 	case <-stopped:
 		t.Stop()
 	}
+	log.Printf("grpc server stopped")
 }

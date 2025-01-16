@@ -2,10 +2,14 @@ package sinker
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"io"
-	"sync"
+	"log"
+	"runtime/debug"
 	"time"
 
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
@@ -70,68 +74,169 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*sinkpb.ReadyRespon
 
 // SinkFn applies a sink function to a every element.
 func (fs *Service) SinkFn(stream sinkpb.Sink_SinkFnServer) error {
-	var (
-		resultList    []*sinkpb.SinkResponse_Result
-		wg            sync.WaitGroup
-		datumStreamCh = make(chan Datum)
-		ctx           = stream.Context()
-	)
+	ctx := stream.Context()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		// handle panic
-		defer func() {
-			if r := recover(); r != nil {
-				fs.shutdownCh <- struct{}{}
-			}
-		}()
-		messages := fs.Sinker.Sink(ctx, datumStreamCh)
-		for _, msg := range messages {
-			if msg.Fallback {
-				resultList = append(resultList, &sinkpb.SinkResponse_Result{
-					Id:     msg.ID,
-					Status: sinkpb.Status_FALLBACK,
-				})
-			} else if msg.Success {
-				resultList = append(resultList, &sinkpb.SinkResponse_Result{
-					Id:     msg.ID,
-					Status: sinkpb.Status_SUCCESS,
-				})
-			} else {
-				resultList = append(resultList, &sinkpb.SinkResponse_Result{
-					Id:     msg.ID,
-					Status: sinkpb.Status_FAILURE,
-					ErrMsg: msg.Err,
-				})
-			}
-		}
-	}()
-
-	for {
-		d, err := stream.Recv()
-		if err == io.EOF {
-			close(datumStreamCh)
-			break
-		}
-		if err != nil {
-			close(datumStreamCh)
-			// TODO: research on gRPC errors and revisit the error handler
-			return err
-		}
-		var hd = &handlerDatum{
-			id:        d.GetId(),
-			value:     d.GetValue(),
-			keys:      d.GetKeys(),
-			eventTime: d.GetEventTime().AsTime(),
-			watermark: d.GetWatermark().AsTime(),
-			headers:   d.GetHeaders(),
-		}
-		datumStreamCh <- hd
+	// Perform handshake before entering the main loop
+	if err := fs.performHandshake(stream); err != nil {
+		return err
 	}
 
-	wg.Wait()
-	return stream.SendAndClose(&sinkpb.SinkResponse{
+	for {
+		datumStreamCh := make(chan Datum)
+		g, groupCtx := errgroup.WithContext(ctx)
+
+		g.Go(func() error {
+			return fs.receiveRequests(groupCtx, stream, datumStreamCh)
+		})
+
+		g.Go(func() error {
+			return fs.processData(groupCtx, stream, datumStreamCh)
+		})
+
+		// Wait for the goroutines to finish
+		if err := g.Wait(); err != nil {
+			if errors.Is(err, io.EOF) {
+				log.Printf("Stopping the SinkFn")
+				return nil
+			}
+			log.Printf("Stopping the SinkFn with err, %s", err)
+			fs.shutdownCh <- struct{}{}
+			return err
+		}
+	}
+}
+
+// performHandshake performs the handshake with the client.
+func (fs *Service) performHandshake(stream sinkpb.Sink_SinkFnServer) error {
+	req, err := stream.Recv()
+	if err != nil {
+		log.Printf("error receiving handshake from stream: %v", err)
+		return err
+	}
+
+	if req.Handshake == nil || !req.Handshake.Sot {
+		return fmt.Errorf("expected handshake message")
+	}
+
+	handshakeResponse := &sinkpb.SinkResponse{
+		Handshake: &sinkpb.Handshake{
+			Sot: true,
+		},
+	}
+	if err := stream.Send(handshakeResponse); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// recvWithContext wraps stream.Recv() to respect context cancellation.
+func recvWithContext(ctx context.Context, stream sinkpb.Sink_SinkFnServer) (*sinkpb.SinkRequest, error) {
+	type recvResult struct {
+		req *sinkpb.SinkRequest
+		err error
+	}
+
+	resultCh := make(chan recvResult, 1)
+	go func() {
+		req, err := stream.Recv()
+		resultCh <- recvResult{req: req, err: err}
+	}()
+
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case result := <-resultCh:
+		return result.req, result.err
+	}
+}
+
+// receiveRequests receives the requests from the client writes them to the datumStreamCh channel.
+func (fs *Service) receiveRequests(ctx context.Context, stream sinkpb.Sink_SinkFnServer, datumStreamCh chan<- Datum) error {
+	defer close(datumStreamCh)
+
+	for {
+		req, err := recvWithContext(ctx, stream)
+		if err == io.EOF {
+			log.Printf("end of sink stream")
+			return err
+		}
+		if err != nil {
+			log.Printf("error receiving from sink stream: %v", err)
+			return err
+		}
+
+		if req.Status != nil && req.Status.Eot {
+			break
+		}
+
+		datum := &handlerDatum{
+			id:        req.GetRequest().GetId(),
+			value:     req.GetRequest().GetValue(),
+			keys:      req.GetRequest().GetKeys(),
+			eventTime: req.GetRequest().GetEventTime().AsTime(),
+			watermark: req.GetRequest().GetWatermark().AsTime(),
+			headers:   req.GetRequest().GetHeaders(),
+		}
+
+		select {
+		case <-ctx.Done():
+			return nil
+		case datumStreamCh <- datum:
+		}
+	}
+	return nil
+}
+
+// processData invokes the sinker to process the data and sends the response back to the client.
+func (fs *Service) processData(ctx context.Context, stream sinkpb.Sink_SinkFnServer, datumStreamCh chan Datum) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("panic inside sink handler: %v %v", r, string(debug.Stack()))
+			err = fmt.Errorf("panic inside sink handler: %v", r)
+		}
+	}()
+	responses := fs.Sinker.Sink(ctx, datumStreamCh)
+
+	var resultList []*sinkpb.SinkResponse_Result
+	for _, msg := range responses {
+		if msg.Fallback {
+			resultList = append(resultList, &sinkpb.SinkResponse_Result{
+				Id:     msg.ID,
+				Status: sinkpb.Status_FALLBACK,
+			})
+		} else if msg.Success {
+			resultList = append(resultList, &sinkpb.SinkResponse_Result{
+				Id:     msg.ID,
+				Status: sinkpb.Status_SUCCESS,
+			})
+		} else {
+			resultList = append(resultList, &sinkpb.SinkResponse_Result{
+				Id:     msg.ID,
+				Status: sinkpb.Status_FAILURE,
+				ErrMsg: msg.Err,
+			})
+		}
+	}
+	if err := stream.Send(&sinkpb.SinkResponse{
 		Results: resultList,
-	})
+	}); err != nil {
+		log.Printf("error sending sink response: %v", err)
+		return err
+	}
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+	// send the end of transmission message
+	eotResponse := &sinkpb.SinkResponse{
+		Status: &sinkpb.TransmissionStatus{Eot: true},
+	}
+	if err := stream.Send(eotResponse); err != nil {
+		log.Printf("error sending end of transmission message: %v", err)
+		return err
+	}
+	return nil
 }
