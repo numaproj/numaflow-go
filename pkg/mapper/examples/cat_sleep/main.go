@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	//"fmt"
 	"log"
 	"time"
 
@@ -14,7 +13,6 @@ type CatSleep struct {
 
 func (e *CatSleep) Map(ctx context.Context, keys []string, d mapper.Datum) mapper.Messages {
 	time.Sleep(10 * time.Second)
-	//fmt.Println("adding a log line")
 	return mapper.MessagesBuilder().Append(mapper.NewMessage(d.Value()).WithKeys(keys))
 }
 
