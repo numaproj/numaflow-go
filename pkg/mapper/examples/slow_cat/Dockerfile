@@ -7,14 +7,14 @@ RUN apk update && apk upgrade && \
     apk add ca-certificates && \
     apk --no-cache add tzdata
 
-COPY dist/cat-sleep-example-${TARGETARCH} /bin/cat-sleep-example
-RUN chmod +x /bin/cat-sleep-example
+COPY dist/slow-cat-example-${TARGETARCH} /bin/slow-cat-example
+RUN chmod +x /bin/slow-cat-example
 
 ####################################################################################################
-# cat-sleep
+# slow-cat
 ####################################################################################################
-FROM scratch AS cat-sleep
+FROM scratch AS slow-cat
 COPY --from=base /usr/share/zoneinfo /usr/share/zoneinfo
 COPY --from=base /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-COPY --from=base /bin/cat-sleep-example /bin/cat-sleep-example
-ENTRYPOINT [ "/bin/cat-sleep-example" ]
+COPY --from=base /bin/slow-cat-example /bin/slow-cat-example
+ENTRYPOINT [ "/bin/slow-cat-example" ]
