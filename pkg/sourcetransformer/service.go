@@ -123,12 +123,12 @@ outer:
 	if err := grp.Wait(); err != nil {
 		log.Printf("Stopping the SourceTransformFn with err, %s", err)
 		fs.shutdownCh <- struct{}{}
-		return status.Errorf(codes.Internal, err.Error())
+		return status.Errorf(codes.Internal, "%s", err.Error())
 	}
 
 	// check if there was an error while reading from the stream
 	if readErr != nil {
-		return status.Errorf(codes.Internal, readErr.Error())
+		return status.Errorf(codes.Internal, "%s", readErr.Error())
 	}
 	return nil
 }
@@ -158,7 +158,7 @@ func (fs *Service) handleRequest(ctx context.Context, req *v1.SourceTransformReq
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("panic inside handler: %v %v", r, string(debug.Stack()))
-			err = errTransformerPanic
+			err = fmt.Errorf("%s: %v", errTransformerPanic, r)
 		}
 	}()
 
