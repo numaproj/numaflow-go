@@ -259,9 +259,10 @@ func TestService_SourceTransformFn_Multiple_Messages(t *testing.T) {
 }
 
 func TestService_SourceTransformFn_Panic(t *testing.T) {
+	panicMssg := "transformer panicked"
 	svc := &Service{
 		Transformer: SourceTransformFunc(func(ctx context.Context, keys []string, datum Datum) Messages {
-			panic("transformer panicked")
+			panic(panicMssg)
 		}),
 		// panic in the transformer causes the server to send a shutdown signal to shutdownCh channel.
 		// The function that errgroup runs in a goroutine will be blocked until this shutdown signal is received somewhere else.
@@ -293,6 +294,6 @@ func TestService_SourceTransformFn_Panic(t *testing.T) {
 	_, err = stream.Recv()
 	require.Error(t, err, "Expected error while receiving message from the stream")
 	gotStatus, _ := status.FromError(err)
-	expectedStatus := status.Convert(status.Errorf(codes.Internal, errTransformerPanic.Error()))
+	expectedStatus := status.Convert(status.Errorf(codes.Internal, "%s: %v", errTransformerPanic, panicMssg))
 	require.Equal(t, expectedStatus, gotStatus)
 }
