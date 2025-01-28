@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -30,6 +32,8 @@ type Service struct {
 	shutdownCh chan<- struct{}
 }
 
+var errSourceReadPanic = errors.New("USER_CODE_ERROR: source read function panicked")
+
 // ReadFn reads the data from the source.
 func (fs *Service) ReadFn(stream sourcepb.Source_ReadFnServer) error {
 	ctx := stream.Context()
@@ -46,7 +50,7 @@ func (fs *Service) ReadFn(stream sourcepb.Source_ReadFnServer) error {
 			}
 			log.Printf("error processing requests: %v", err)
 			fs.shutdownCh <- struct{}{}
-			return err
+			return status.Errorf(codes.Internal, "%s", err.Error())
 		}
 	}
 }
@@ -120,7 +124,7 @@ func (fs *Service) receiveReadRequests(ctx context.Context, stream sourcepb.Sour
 		defer func() {
 			if r := recover(); r != nil {
 				log.Printf("panic inside source handler: %v %v", r, string(debug.Stack()))
-				err = fmt.Errorf("panic inside source handler: %v", r)
+				err = fmt.Errorf("%s: %v", errSourceReadPanic, r)
 				return
 			}
 			close(messageCh)

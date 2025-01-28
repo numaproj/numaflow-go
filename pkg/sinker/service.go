@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
@@ -25,6 +27,8 @@ const (
 	EnvUDContainerType      = "NUMAFLOW_UD_CONTAINER_TYPE"
 	UDContainerFallbackSink = "fb-udsink"
 )
+
+var errSinkHandlerPanic = errors.New("USER_CODE_ERROR: sink handler panicked")
 
 // handlerDatum implements the Datum interface and is used in the sink functions.
 type handlerDatum struct {
@@ -101,7 +105,7 @@ func (fs *Service) SinkFn(stream sinkpb.Sink_SinkFnServer) error {
 			}
 			log.Printf("Stopping the SinkFn with err, %s", err)
 			fs.shutdownCh <- struct{}{}
-			return err
+			return status.Errorf(codes.Internal, "%s", err.Error())
 		}
 	}
 }
@@ -193,7 +197,7 @@ func (fs *Service) processData(ctx context.Context, stream sinkpb.Sink_SinkFnSer
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("panic inside sink handler: %v %v", r, string(debug.Stack()))
-			err = fmt.Errorf("panic inside sink handler: %v", r)
+			err = fmt.Errorf("%s: %v", errSinkHandlerPanic, r)
 		}
 	}()
 	responses := fs.Sinker.Sink(ctx, datumStreamCh)
