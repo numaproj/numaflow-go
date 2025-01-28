@@ -23,6 +23,8 @@ const (
 	serverInfoFilePath    = "/var/run/numaflow/mapper-server-info"
 )
 
+var errMapStreamHandlerPanic = errors.New("USER_CODE_ERROR: map stream handler panicked")
+
 // Service implements the proto gen server interface and contains the map
 // streaming function.
 type Service struct {
@@ -111,12 +113,12 @@ outer:
 	if err := g.Wait(); err != nil {
 		log.Printf("Stopping the MapFn with err, %s", err)
 		fs.shutdownCh <- struct{}{}
-		return status.Errorf(codes.Internal, "error processing requests: %v", err)
+		return status.Errorf(codes.Internal, "%s", err.Error())
 	}
 
 	// check if there was an error while reading from the stream
 	if readErr != nil {
-		return status.Errorf(codes.Internal, readErr.Error())
+		return status.Errorf(codes.Internal, "%s", readErr.Error())
 	}
 
 	return nil
@@ -127,7 +129,7 @@ func (fs *Service) invokeHandler(ctx context.Context, req *mappb.MapRequest, mes
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("panic inside mapStream handler: %v %v", r, string(debug.Stack()))
-			err = fmt.Errorf("panic inside mapStream handler: %v", r)
+			err = fmt.Errorf("%s: %v", errMapStreamHandlerPanic, r)
 			return
 		}
 	}()
