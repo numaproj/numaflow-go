@@ -59,7 +59,7 @@ func (fs *Service) SessionReduceFn(stream sessionreducepb.SessionReduce_SessionR
 		}
 
 		if recvErr != nil {
-			statusErr := status.Errorf(codes.Internal, recvErr.Error())
+			statusErr := status.Errorf(codes.Internal, "%s", recvErr.Error())
 			return statusErr
 		}
 
@@ -70,7 +70,7 @@ func (fs *Service) SessionReduceFn(stream sessionreducepb.SessionReduce_SessionR
 			// also append the datum to the task
 			err := taskManager.CreateTask(ctx, d)
 			if err != nil {
-				statusErr := status.Errorf(codes.Internal, err.Error())
+				statusErr := status.Errorf(codes.Internal, "%s", err.Error())
 				return statusErr
 			}
 		case sessionreducepb.SessionReduceRequest_WindowOperation_CLOSE:
@@ -80,21 +80,21 @@ func (fs *Service) SessionReduceFn(stream sessionreducepb.SessionReduce_SessionR
 			// append the datum to the task
 			err := taskManager.AppendToTask(ctx, d)
 			if err != nil {
-				statusErr := status.Errorf(codes.Internal, err.Error())
+				statusErr := status.Errorf(codes.Internal, "%s", err.Error())
 				return statusErr
 			}
 		case sessionreducepb.SessionReduceRequest_WindowOperation_MERGE:
 			// merge the tasks
 			err := taskManager.MergeTasks(ctx, d)
 			if err != nil {
-				statusErr := status.Errorf(codes.Internal, err.Error())
+				statusErr := status.Errorf(codes.Internal, "%s", err.Error())
 				return statusErr
 			}
 		case sessionreducepb.SessionReduceRequest_WindowOperation_EXPAND:
 			// expand the task
 			err := taskManager.ExpandTask(d)
 			if err != nil {
-				statusErr := status.Errorf(codes.Internal, err.Error())
+				statusErr := status.Errorf(codes.Internal, "%s", err.Error())
 				return statusErr
 			}
 		}
@@ -107,7 +107,7 @@ func (fs *Service) SessionReduceFn(stream sessionreducepb.SessionReduce_SessionR
 	// wait for the go routine which reads from the output channel and sends to the stream to return
 	err := g.Wait()
 	if err != nil {
-		statusErr := status.Errorf(codes.Internal, err.Error())
+		statusErr := status.Errorf(codes.Internal, "%s", err.Error())
 		return statusErr
 	}
 

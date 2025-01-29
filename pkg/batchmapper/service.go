@@ -9,6 +9,8 @@ import (
 	"runtime/debug"
 
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	mappb "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1"
@@ -20,6 +22,8 @@ const (
 	defaultMaxMessageSize = 1024 * 1024 * 64
 	serverInfoFilePath    = "/var/run/numaflow/mapper-server-info"
 )
+
+var errBatchMapHandlerPanic = errors.New("USER_CODE_ERROR: batch map handler panicked")
 
 // Service implements the proto gen server interface and contains the map operation handler.
 type Service struct {
@@ -62,7 +66,7 @@ func (fs *Service) MapFn(stream mappb.Map_MapFnServer) error {
 			}
 			log.Printf("Stopping the BatchMapFn with err, %s", err)
 			fs.shutdownCh <- struct{}{}
-			return err
+			return status.Errorf(codes.Internal, "%s", err.Error())
 		}
 	}
 }
@@ -157,7 +161,7 @@ func (fs *Service) processData(ctx context.Context, stream mappb.Map_MapFnServer
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("panic inside batch map handler: %v %v", r, string(debug.Stack()))
-			err = fmt.Errorf("panic inside batch map handler: %v", r)
+			err = fmt.Errorf("%s: %v", errBatchMapHandlerPanic, r)
 		}
 	}()
 
