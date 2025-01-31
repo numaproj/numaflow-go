@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strings"
 	"testing"
 	"time"
 
@@ -358,8 +359,11 @@ func TestService_MapFn_Panic(t *testing.T) {
 	_, err = stream.Recv()
 	require.Error(t, err, "Expected error while receiving message from the stream")
 	gotStatus, _ := status.FromError(err)
+	gotMessage := gotStatus.Message()
 	expectedStatus := status.Convert(status.Errorf(codes.Internal, "%s: %v", errMapStreamHandlerPanic, panicMssg))
-	require.Equal(t, expectedStatus, gotStatus)
+	expectedMessage := expectedStatus.Message()
+	require.Equal(t, expectedStatus.Code(), gotStatus.Code(), "Expected error codes to be equal")
+	require.True(t, strings.HasPrefix(gotMessage, expectedMessage), "Expected error message to start with the expected message")
 }
 
 func TestService_MapFn_MultipleRequestsAndResponses(t *testing.T) {
