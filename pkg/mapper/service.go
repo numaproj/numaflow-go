@@ -23,7 +23,7 @@ const (
 	serverInfoFilePath    = "/var/run/numaflow/mapper-server-info"
 )
 
-var errMapHandlerPanic = errors.New("USER_CODE_ERROR: map handler panicked")
+var errMapHandlerPanic = errors.New("USER_CODE_ERROR(map)")
 
 // Service implements the proto gen server interface and contains the map operation
 // handler.
@@ -158,7 +158,7 @@ func (fs *Service) handleRequest(ctx context.Context, req *mappb.MapRequest, res
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("panic inside map handler: %v %v", r, string(debug.Stack()))
-			err = fmt.Errorf("%s: %v", errMapHandlerPanic, r)
+			err = fmt.Errorf("%s: %v %v", errMapHandlerPanic, r, string(debug.Stack()))
 		}
 	}()
 

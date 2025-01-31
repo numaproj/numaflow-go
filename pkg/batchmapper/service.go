@@ -23,7 +23,7 @@ const (
 	serverInfoFilePath    = "/var/run/numaflow/mapper-server-info"
 )
 
-var errBatchMapHandlerPanic = errors.New("USER_CODE_ERROR: batch map handler panicked")
+var errBatchMapHandlerPanic = errors.New("USER_CODE_ERROR(batchmap)")
 
 // Service implements the proto gen server interface and contains the map operation handler.
 type Service struct {
@@ -161,7 +161,7 @@ func (fs *Service) processData(ctx context.Context, stream mappb.Map_MapFnServer
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("panic inside batch map handler: %v %v", r, string(debug.Stack()))
-			err = fmt.Errorf("%s: %v", errBatchMapHandlerPanic, r)
+			err = fmt.Errorf("%s: %v %v", errBatchMapHandlerPanic, r, string(debug.Stack()))
 		}
 	}()
 

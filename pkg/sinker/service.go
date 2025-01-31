@@ -28,7 +28,7 @@ const (
 	UDContainerFallbackSink = "fb-udsink"
 )
 
-var errSinkHandlerPanic = errors.New("USER_CODE_ERROR: sink handler panicked")
+var errSinkHandlerPanic = errors.New("USER_CODE_ERROR(sink)")
 
 // handlerDatum implements the Datum interface and is used in the sink functions.
 type handlerDatum struct {
@@ -197,7 +197,7 @@ func (fs *Service) processData(ctx context.Context, stream sinkpb.Sink_SinkFnSer
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("panic inside sink handler: %v %v", r, string(debug.Stack()))
-			err = fmt.Errorf("%s: %v", errSinkHandlerPanic, r)
+			err = fmt.Errorf("%s: %v %v", errSinkHandlerPanic, r, string(debug.Stack()))
 		}
 	}()
 	responses := fs.Sinker.Sink(ctx, datumStreamCh)

@@ -38,7 +38,7 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*v1.ReadyResponse, 
 	return &v1.ReadyResponse{Ready: true}, nil
 }
 
-var errTransformerPanic = errors.New("USER_CODE_ERROR: transformer function panicked")
+var errTransformerPanic = errors.New("USER_CODE_ERROR(transformer)")
 
 // recvWithContext wraps stream.Recv() to respect context cancellation.
 func recvWithContext(ctx context.Context, stream v1.SourceTransform_SourceTransformFnServer) (*v1.SourceTransformRequest, error) {
@@ -159,7 +159,7 @@ func (fs *Service) handleRequest(ctx context.Context, req *v1.SourceTransformReq
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("panic inside handler: %v %v", r, string(debug.Stack()))
-			err = fmt.Errorf("%s: %v", errTransformerPanic, r)
+			err = fmt.Errorf("%s: %v %v", errTransformerPanic, r, string(debug.Stack()))
 		}
 	}()
 

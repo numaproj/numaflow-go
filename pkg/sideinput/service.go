@@ -21,7 +21,7 @@ const (
 	serverInfoFilePath    = "/var/run/numaflow/sideinput-server-info"
 )
 
-var errSideInputHandlerPanic = errors.New("USER_CODE_ERROR: side input handler panicked")
+var errSideInputHandlerPanic = errors.New("USER_CODE_ERROR(side input)")
 
 // Service implements the proto gen server interface and contains the retrieve operation handler
 type Service struct {
@@ -42,7 +42,7 @@ func (fs *Service) RetrieveSideInput(ctx context.Context, _ *emptypb.Empty) (res
 		if r := recover(); r != nil {
 			log.Printf("panic inside sideinput handler: %v %v", r, string(debug.Stack()))
 			fs.shutdownCh <- struct{}{}
-			err = status.Errorf(codes.Internal, "%s: %v", errSideInputHandlerPanic, r)
+			err = status.Errorf(codes.Internal, "%s: %v %v", errSideInputHandlerPanic, r, string(debug.Stack()))
 		}
 	}()
 	messageSi := fs.Retriever.RetrieveSideInput(ctx)

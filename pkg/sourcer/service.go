@@ -32,7 +32,7 @@ type Service struct {
 	shutdownCh chan<- struct{}
 }
 
-var errSourceReadPanic = errors.New("USER_CODE_ERROR: source read function panicked")
+var errSourceReadPanic = errors.New("USER_CODE_ERROR(source)")
 
 // ReadFn reads the data from the source.
 func (fs *Service) ReadFn(stream sourcepb.Source_ReadFnServer) error {
@@ -124,7 +124,7 @@ func (fs *Service) receiveReadRequests(ctx context.Context, stream sourcepb.Sour
 		defer func() {
 			if r := recover(); r != nil {
 				log.Printf("panic inside source handler: %v %v", r, string(debug.Stack()))
-				err = fmt.Errorf("%s: %v", errSourceReadPanic, r)
+				err = fmt.Errorf("%s: %v %v", errSourceReadPanic, r, string(debug.Stack()))
 				return
 			}
 			close(messageCh)
