@@ -9,6 +9,7 @@ import (
 	"runtime/debug"
 
 	"golang.org/x/sync/errgroup"
+	epb "google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -23,7 +24,7 @@ const (
 	serverInfoFilePath    = "/var/run/numaflow/mapper-server-info"
 )
 
-var errBatchMapHandlerPanic = errors.New("USER_CODE_ERROR(batchmap)")
+var errBatchMapHandlerPanic = errors.New("UDF_EXECUTION_ERROR(batchmap)")
 
 // Service implements the proto gen server interface and contains the map operation handler.
 type Service struct {
@@ -66,7 +67,7 @@ func (fs *Service) MapFn(stream mappb.Map_MapFnServer) error {
 			}
 			log.Printf("Stopping the BatchMapFn with err, %s", err)
 			fs.shutdownCh <- struct{}{}
-			return status.Errorf(codes.Internal, "%s", err.Error())
+			return err
 		}
 	}
 }
@@ -161,7 +162,10 @@ func (fs *Service) processData(ctx context.Context, stream mappb.Map_MapFnServer
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("panic inside batch map handler: %v %v", r, string(debug.Stack()))
-			err = fmt.Errorf("%s: %v %v", errBatchMapHandlerPanic, r, string(debug.Stack()))
+			st, _ := status.Newf(codes.Internal, "%s: %v", errBatchMapHandlerPanic, r).WithDetails(&epb.DebugInfo{
+				Detail: string(debug.Stack()),
+			})
+			err = st.Err()
 		}
 	}()
 

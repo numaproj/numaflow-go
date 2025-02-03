@@ -9,6 +9,7 @@ import (
 	"runtime/debug"
 
 	"golang.org/x/sync/errgroup"
+	epb "google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -23,7 +24,7 @@ const (
 	serverInfoFilePath    = "/var/run/numaflow/mapper-server-info"
 )
 
-var errMapHandlerPanic = errors.New("USER_CODE_ERROR(map)")
+var errMapHandlerPanic = errors.New("UDF_EXECUTION_ERROR(map)")
 
 // Service implements the proto gen server interface and contains the map operation
 // handler.
@@ -122,7 +123,7 @@ outer:
 	if err := g.Wait(); err != nil {
 		log.Printf("Stopping the MapFn with err, %s", err)
 		fs.shutdownCh <- struct{}{}
-		return status.Errorf(codes.Internal, "%s", err.Error())
+		return err
 	}
 
 	// check if there was an error while reading from the stream
@@ -158,7 +159,10 @@ func (fs *Service) handleRequest(ctx context.Context, req *mappb.MapRequest, res
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("panic inside map handler: %v %v", r, string(debug.Stack()))
-			err = fmt.Errorf("%s: %v %v", errMapHandlerPanic, r, string(debug.Stack()))
+			st, _ := status.Newf(codes.Internal, "%s: %v", errMapHandlerPanic, r).WithDetails(&epb.DebugInfo{
+				Detail: string(debug.Stack()),
+			})
+			err = st.Err()
 		}
 	}()
 

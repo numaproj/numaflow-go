@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"golang.org/x/sync/errgroup"
+	epb "google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -28,7 +29,7 @@ const (
 	UDContainerFallbackSink = "fb-udsink"
 )
 
-var errSinkHandlerPanic = errors.New("USER_CODE_ERROR(sink)")
+var errSinkHandlerPanic = errors.New("UDF_EXECUTION_ERROR(sink)")
 
 // handlerDatum implements the Datum interface and is used in the sink functions.
 type handlerDatum struct {
@@ -105,7 +106,7 @@ func (fs *Service) SinkFn(stream sinkpb.Sink_SinkFnServer) error {
 			}
 			log.Printf("Stopping the SinkFn with err, %s", err)
 			fs.shutdownCh <- struct{}{}
-			return status.Errorf(codes.Internal, "%s", err.Error())
+			return err
 		}
 	}
 }
@@ -197,7 +198,10 @@ func (fs *Service) processData(ctx context.Context, stream sinkpb.Sink_SinkFnSer
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("panic inside sink handler: %v %v", r, string(debug.Stack()))
-			err = fmt.Errorf("%s: %v %v", errSinkHandlerPanic, r, string(debug.Stack()))
+			st, _ := status.Newf(codes.Internal, "%s: %v", errSinkHandlerPanic, r).WithDetails(&epb.DebugInfo{
+				Detail: string(debug.Stack()),
+			})
+			err = st.Err()
 		}
 	}()
 	responses := fs.Sinker.Sink(ctx, datumStreamCh)

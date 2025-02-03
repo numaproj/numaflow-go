@@ -6,6 +6,7 @@ import (
 	"log"
 	"runtime/debug"
 
+	epb "google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -21,7 +22,7 @@ const (
 	serverInfoFilePath    = "/var/run/numaflow/sideinput-server-info"
 )
 
-var errSideInputHandlerPanic = errors.New("USER_CODE_ERROR(side input)")
+var errSideInputHandlerPanic = errors.New("UDF_EXECUTION_ERROR(side input)")
 
 // Service implements the proto gen server interface and contains the retrieve operation handler
 type Service struct {
@@ -42,7 +43,10 @@ func (fs *Service) RetrieveSideInput(ctx context.Context, _ *emptypb.Empty) (res
 		if r := recover(); r != nil {
 			log.Printf("panic inside sideinput handler: %v %v", r, string(debug.Stack()))
 			fs.shutdownCh <- struct{}{}
-			err = status.Errorf(codes.Internal, "%s: %v %v", errSideInputHandlerPanic, r, string(debug.Stack()))
+			st, _ := status.Newf(codes.Internal, "%s: %v", errSideInputHandlerPanic, r).WithDetails(&epb.DebugInfo{
+				Detail: string(debug.Stack()),
+			})
+			err = st.Err()
 		}
 	}()
 	messageSi := fs.Retriever.RetrieveSideInput(ctx)
