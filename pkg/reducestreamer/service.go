@@ -78,14 +78,14 @@ func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
 			// create a new reduce task and start the reduce operation
 			err = taskManager.CreateTask(ctx, d)
 			if err != nil {
-				statusErr := status.Errorf(codes.Internal, err.Error())
+				statusErr := status.Errorf(codes.Internal, "%s", err.Error())
 				return statusErr
 			}
 		case reducepb.ReduceRequest_WindowOperation_APPEND:
 			// append the datum to the reduce task
 			err = taskManager.AppendToTask(ctx, d)
 			if err != nil {
-				statusErr := status.Errorf(codes.Internal, err.Error())
+				statusErr := status.Errorf(codes.Internal, "%s", err.Error())
 				return statusErr
 			}
 		}
@@ -95,7 +95,7 @@ func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
 	// wait for the go routine which reads from the output channel and sends to the stream to return
 	err = g.Wait()
 	if err != nil {
-		statusErr := status.Errorf(codes.Internal, err.Error())
+		statusErr := status.Errorf(codes.Internal, "%s", err.Error())
 		return statusErr
 	}
 

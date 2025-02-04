@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strings"
 	"testing"
 	"time"
 
@@ -254,9 +255,10 @@ func TestService_MapFn_Multiple_Messages(t *testing.T) {
 }
 
 func TestService_MapFn_Panic(t *testing.T) {
+	panicMssg := "map failed"
 	svc := &Service{
 		Mapper: MapperFunc(func(ctx context.Context, keys []string, datum Datum) Messages {
-			panic("map failed")
+			panic(panicMssg)
 		}),
 		// panic in the transformer causes the server to send a shutdown signal to shutdownCh channel.
 		// The function that errgroup runs in a goroutine will be blocked until this shutdown signal is received somewhere else.
@@ -288,6 +290,9 @@ func TestService_MapFn_Panic(t *testing.T) {
 	_, err = stream.Recv()
 	require.Error(t, err, "Expected error while receiving message from the stream")
 	gotStatus, _ := status.FromError(err)
-	expectedStatus := status.Convert(status.Errorf(codes.Internal, "error processing requests: rpc error: code = Internal desc = panic inside map handler: map failed"))
-	require.Equal(t, expectedStatus, gotStatus)
+	gotMessage := gotStatus.Message()
+	expectedStatus := status.Convert(status.Errorf(codes.Internal, "%s: %v", errMapHandlerPanic, panicMssg))
+	expectedMessage := expectedStatus.Message()
+	require.Equal(t, expectedStatus.Code(), gotStatus.Code(), "Expected error codes to be equal")
+	require.True(t, strings.HasPrefix(gotMessage, expectedMessage), "Expected error message to start with the expected message")
 }

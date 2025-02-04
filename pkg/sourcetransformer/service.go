@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	epb "google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -38,7 +39,7 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*v1.ReadyResponse, 
 	return &v1.ReadyResponse{Ready: true}, nil
 }
 
-var errTransformerPanic = errors.New("transformer function panicked")
+var errTransformerPanic = errors.New("UDF_EXECUTION_ERROR(transformer)")
 
 // recvWithContext wraps stream.Recv() to respect context cancellation.
 func recvWithContext(ctx context.Context, stream v1.SourceTransform_SourceTransformFnServer) (*v1.SourceTransformRequest, error) {
@@ -123,13 +124,14 @@ outer:
 	if err := grp.Wait(); err != nil {
 		log.Printf("Stopping the SourceTransformFn with err, %s", err)
 		fs.shutdownCh <- struct{}{}
-		return status.Errorf(codes.Internal, err.Error())
+		return err
 	}
 
 	// check if there was an error while reading from the stream
 	if readErr != nil {
-		return status.Errorf(codes.Internal, readErr.Error())
+		return status.Errorf(codes.Internal, "%s", readErr.Error())
 	}
+
 	return nil
 }
 
@@ -158,7 +160,10 @@ func (fs *Service) handleRequest(ctx context.Context, req *v1.SourceTransformReq
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("panic inside handler: %v %v", r, string(debug.Stack()))
-			err = errTransformerPanic
+			st, _ := status.Newf(codes.Internal, "%s: %v", errTransformerPanic, r).WithDetails(&epb.DebugInfo{
+				Detail: string(debug.Stack()),
+			})
+			err = st.Err()
 		}
 	}()
 

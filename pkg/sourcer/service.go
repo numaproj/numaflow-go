@@ -10,6 +10,9 @@ import (
 	"time"
 
 	"golang.org/x/sync/errgroup"
+	epb "google.golang.org/genproto/googleapis/rpc/errdetails"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -29,6 +32,8 @@ type Service struct {
 	Source     Sourcer
 	shutdownCh chan<- struct{}
 }
+
+var errSourceReadPanic = errors.New("UDF_EXECUTION_ERROR(source)")
 
 // ReadFn reads the data from the source.
 func (fs *Service) ReadFn(stream sourcepb.Source_ReadFnServer) error {
@@ -120,7 +125,10 @@ func (fs *Service) receiveReadRequests(ctx context.Context, stream sourcepb.Sour
 		defer func() {
 			if r := recover(); r != nil {
 				log.Printf("panic inside source handler: %v %v", r, string(debug.Stack()))
-				err = fmt.Errorf("panic inside source handler: %v", r)
+				st, _ := status.Newf(codes.Internal, "%s: %v", errSourceReadPanic, r).WithDetails(&epb.DebugInfo{
+					Detail: string(debug.Stack()),
+				})
+				err = st.Err()
 				return
 			}
 			close(messageCh)

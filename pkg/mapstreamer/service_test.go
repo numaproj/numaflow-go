@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strings"
 	"testing"
 	"time"
 
@@ -326,9 +327,10 @@ func TestService_MapFn_Multiple_Messages(t *testing.T) {
 }
 
 func TestService_MapFn_Panic(t *testing.T) {
+	panicMssg := "map failed"
 	svc := &Service{
 		MapperStream: MapStreamerFunc(func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
-			panic("map failed")
+			panic(panicMssg)
 		}),
 		shutdownCh: make(chan<- struct{}, 1),
 	}
@@ -357,8 +359,11 @@ func TestService_MapFn_Panic(t *testing.T) {
 	_, err = stream.Recv()
 	require.Error(t, err, "Expected error while receiving message from the stream")
 	gotStatus, _ := status.FromError(err)
-	expectedStatus := status.Convert(status.Errorf(codes.Internal, "error processing requests: panic inside mapStream handler: map failed"))
-	require.Equal(t, expectedStatus, gotStatus)
+	gotMessage := gotStatus.Message()
+	expectedStatus := status.Convert(status.Errorf(codes.Internal, "%s: %v", errMapStreamHandlerPanic, panicMssg))
+	expectedMessage := expectedStatus.Message()
+	require.Equal(t, expectedStatus.Code(), gotStatus.Code(), "Expected error codes to be equal")
+	require.True(t, strings.HasPrefix(gotMessage, expectedMessage), "Expected error message to start with the expected message")
 }
 
 func TestService_MapFn_MultipleRequestsAndResponses(t *testing.T) {
