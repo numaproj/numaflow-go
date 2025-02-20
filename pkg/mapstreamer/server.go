@@ -36,6 +36,7 @@ func NewServer(ms MapStreamer, inputOptions ...Option) numaflow.Server {
 	svc := &Service{
 		MapperStream: ms,
 		shutdownCh:   shutdownCh,
+		once:         sync.Once{},
 	}
 
 	return &server{

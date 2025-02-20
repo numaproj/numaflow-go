@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"runtime/debug"
+	"sync"
 	"time"
 
 	"golang.org/x/sync/errgroup"
@@ -70,6 +71,7 @@ type Service struct {
 	sinkpb.UnimplementedSinkServer
 	shutdownCh chan<- struct{}
 	Sinker     Sinker
+	once       sync.Once
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
@@ -104,8 +106,10 @@ func (fs *Service) SinkFn(stream sinkpb.Sink_SinkFnServer) error {
 				log.Printf("Stopping the SinkFn")
 				return nil
 			}
-			log.Printf("Stopping the SinkFn with err, %s", err)
-			fs.shutdownCh <- struct{}{}
+			fs.once.Do(func() {
+				log.Printf("Stopping the SinkFn with err, %s", err)
+				fs.shutdownCh <- struct{}{}
+			})
 			return err
 		}
 	}

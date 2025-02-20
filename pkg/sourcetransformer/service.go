@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"runtime/debug"
+	"sync"
 
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
@@ -32,6 +33,7 @@ type Service struct {
 	v1.UnimplementedSourceTransformServer
 	Transformer SourceTransformer
 	shutdownCh  chan<- struct{}
+	once        sync.Once
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
@@ -122,8 +124,10 @@ outer:
 
 	// wait for all the goroutines to finish, if any of the goroutines return an error, wait will return that error immediately.
 	if err := grp.Wait(); err != nil {
-		log.Printf("Stopping the SourceTransformFn with err, %s", err)
-		fs.shutdownCh <- struct{}{}
+		fs.once.Do(func() {
+			log.Printf("Stopping the SourceTransformFn with err, %s", err)
+			fs.shutdownCh <- struct{}{}
+		})
 		return err
 	}
 

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"runtime/debug"
+	"sync"
 
 	epb "google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
@@ -29,6 +30,7 @@ type Service struct {
 	sideinputpb.UnimplementedSideInputServer
 	Retriever  SideInputRetriever
 	shutdownCh chan<- struct{}
+	once       sync.Once
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
@@ -42,7 +44,9 @@ func (fs *Service) RetrieveSideInput(ctx context.Context, _ *emptypb.Empty) (res
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("panic inside sideinput handler: %v %v", r, string(debug.Stack()))
-			fs.shutdownCh <- struct{}{}
+			fs.once.Do(func() {
+				fs.shutdownCh <- struct{}{}
+			})
 			st, _ := status.Newf(codes.Internal, "%s: %v", errSideInputHandlerPanic, r).WithDetails(&epb.DebugInfo{
 				Detail: string(debug.Stack()),
 			})
