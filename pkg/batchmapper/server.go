@@ -36,6 +36,7 @@ func NewServer(m BatchMapper, inputOptions ...Option) numaflow.Server {
 	svc := &Service{
 		BatchMapper: m,
 		shutdownCh:  shutdownCh,
+		once:        sync.Once{},
 	}
 
 	return &server{

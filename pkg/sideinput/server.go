@@ -36,6 +36,7 @@ func NewSideInputServer(r SideInputRetriever, inputOptions ...Option) numaflow.S
 	svc := &Service{
 		Retriever:  r,
 		shutdownCh: shutdownCh,
+		once:       sync.Once{},
 	}
 
 	return &server{

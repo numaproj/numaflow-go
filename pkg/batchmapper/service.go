@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"runtime/debug"
+	"sync"
 
 	"golang.org/x/sync/errgroup"
 	epb "google.golang.org/genproto/googleapis/rpc/errdetails"
@@ -31,6 +32,7 @@ type Service struct {
 	mappb.UnimplementedMapServer
 	BatchMapper BatchMapper
 	shutdownCh  chan<- struct{}
+	once        sync.Once
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
@@ -65,8 +67,10 @@ func (fs *Service) MapFn(stream mappb.Map_MapFnServer) error {
 				log.Printf("Stopping the BatchMapFn")
 				return nil
 			}
-			log.Printf("Stopping the BatchMapFn with err, %s", err)
-			fs.shutdownCh <- struct{}{}
+			fs.once.Do(func() {
+				log.Printf("Stopping the BatchMapFn with err, %s", err)
+				fs.shutdownCh <- struct{}{}
+			})
 			return err
 		}
 	}

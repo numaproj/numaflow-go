@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"runtime/debug"
+	"sync"
 	"time"
 
 	"golang.org/x/sync/errgroup"
@@ -31,6 +32,7 @@ type Service struct {
 	sourcepb.UnimplementedSourceServer
 	Source     Sourcer
 	shutdownCh chan<- struct{}
+	once       sync.Once
 }
 
 var errSourceReadPanic = errors.New("UDF_EXECUTION_ERROR(source)")
@@ -49,8 +51,10 @@ func (fs *Service) ReadFn(stream sourcepb.Source_ReadFnServer) error {
 			if errors.Is(err, io.EOF) {
 				return nil
 			}
-			log.Printf("error processing requests: %v", err)
-			fs.shutdownCh <- struct{}{}
+			log.Printf("error processing read  requests: %v", err)
+			fs.once.Do(func() {
+				fs.shutdownCh <- struct{}{}
+			})
 			return err
 		}
 	}
@@ -280,7 +284,9 @@ func (fs *Service) receiveAckRequests(ctx context.Context, stream sourcepb.Sourc
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("panic inside source handler: %v %v", r, string(debug.Stack()))
-			fs.shutdownCh <- struct{}{}
+			fs.once.Do(func() {
+				fs.shutdownCh <- struct{}{}
+			})
 			err = fmt.Errorf("panic inside source handler: %v", r)
 		}
 	}()
@@ -328,7 +334,9 @@ func (fs *Service) PendingFn(ctx context.Context, _ *emptypb.Empty) (*sourcepb.P
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("panic inside sourcer handler: %v %v", r, string(debug.Stack()))
-			fs.shutdownCh <- struct{}{}
+			fs.once.Do(func() {
+				fs.shutdownCh <- struct{}{}
+			})
 		}
 	}()
 

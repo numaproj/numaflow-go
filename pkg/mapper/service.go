@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"runtime/debug"
+	"sync"
 
 	"golang.org/x/sync/errgroup"
 	epb "google.golang.org/genproto/googleapis/rpc/errdetails"
@@ -32,6 +33,7 @@ type Service struct {
 	mappb.UnimplementedMapServer
 	Mapper     Mapper
 	shutdownCh chan<- struct{}
+	once       sync.Once
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
@@ -121,8 +123,10 @@ outer:
 
 	// wait for all goroutines to finish
 	if err := g.Wait(); err != nil {
-		log.Printf("Stopping the MapFn with err, %s", err)
-		fs.shutdownCh <- struct{}{}
+		fs.once.Do(func() {
+			log.Printf("Stopping the MapFn with err, %s", err)
+			fs.shutdownCh <- struct{}{}
+		})
 		return err
 	}
 
