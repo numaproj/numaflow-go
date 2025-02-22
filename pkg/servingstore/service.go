@@ -42,6 +42,7 @@ func handlePanic() (err error) {
 	return err
 }
 
+// Put puts tine payload into the Store.
 func (s *Service) Put(ctx context.Context, request *servingpb.PutRequest) (*servingpb.PutResponse, error) {
 	var err error
 	// handle panic
@@ -57,11 +58,32 @@ func (s *Service) Put(ctx context.Context, request *servingpb.PutRequest) (*serv
 	return &servingpb.PutResponse{Success: true}, err
 }
 
+// Get gets the data stored in the Store.
 func (s *Service) Get(ctx context.Context, request *servingpb.GetRequest) (*servingpb.GetResponse, error) {
-	//TODO implement me
-	panic("implement me")
+	var err error
+	// handle panic
+	defer func() { err = handlePanic() }()
+
+	storedResults := s.ServingStore.Get(ctx, &GetRequest{id: request.Id})
+
+	items := storedResults.Items()
+	var payloads = make([]*servingpb.OriginalPayload, 0, len(items))
+
+	for _, storedResult := range items {
+		var p = make([]*servingpb.Payload, 0)
+		for _, payload := range storedResult.payloads {
+			p = append(p, &servingpb.Payload{Id: request.GetId(), Value: payload.value})
+		}
+		payloads = append(payloads, &servingpb.OriginalPayload{
+			Origin:   storedResult.origin,
+			Payloads: p,
+		})
+	}
+
+	return &servingpb.GetResponse{Payloads: payloads}, err
 }
 
+// IsReady is used to indicate that the server is ready.
 func (s *Service) IsReady(_ context.Context, _ *emptypb.Empty) (*servingpb.ReadyResponse, error) {
 	return &servingpb.ReadyResponse{Ready: true}, nil
 }
