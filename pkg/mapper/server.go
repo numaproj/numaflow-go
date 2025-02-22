@@ -36,6 +36,7 @@ func NewServer(m Mapper, inputOptions ...Option) numaflow.Server {
 	svc := &Service{
 		Mapper:     m,
 		shutdownCh: shutdownCh,
+		once:       sync.Once{},
 	}
 
 	return &server{

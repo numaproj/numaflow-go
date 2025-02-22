@@ -38,6 +38,7 @@ func NewServer(
 	svc := &Service{
 		Source:     source,
 		shutdownCh: shutdownCh,
+		once:       sync.Once{},
 	}
 
 	return &server{

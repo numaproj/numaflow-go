@@ -36,6 +36,7 @@ func NewServer(h Sinker, inputOptions ...Option) numaflow.Server {
 	svc := &Service{
 		Sinker:     h,
 		shutdownCh: shutdownCh,
+		once:       sync.Once{},
 	}
 
 	return &sinkServer{

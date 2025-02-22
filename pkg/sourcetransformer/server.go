@@ -35,6 +35,7 @@ func NewServer(m SourceTransformer, inputOptions ...Option) numaflow.Server {
 	svc := &Service{
 		Transformer: m,
 		shutdownCh:  shutdownCh,
+		once:        sync.Once{},
 	}
 
 	return &server{
