@@ -9,7 +9,8 @@ type Response struct {
 	// Err represents the error message when "success" is false.
 	Err string `json:"err,omitempty"`
 	// Fallback is true if the message to be sent to the fallback sink.
-	Fallback bool `json:"fallback,omitempty"`
+	Fallback      bool   `json:"fallback,omitempty"`
+	ServeResponse []byte `json:"serve_reponse,omitempty"`
 }
 
 type Responses []Response
@@ -46,4 +47,8 @@ func ResponseFailure(id, errMsg string) Response {
 // This indicates that the message should be sent to the fallback sink.
 func ResponseFallback(id string) Response {
 	return Response{ID: id, Fallback: true}
+}
+
+func ResponseServe(id string, result []byte) Response {
+	return Response{ID: id, Success: true, ServeResponse: result}
 }

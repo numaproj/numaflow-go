@@ -219,8 +219,9 @@ func (fs *Service) processData(ctx context.Context, stream sinkpb.Sink_SinkFnSer
 			})
 		} else if msg.Success {
 			resultList = append(resultList, &sinkpb.SinkResponse_Result{
-				Id:     msg.ID,
-				Status: sinkpb.Status_SUCCESS,
+				Id:            msg.ID,
+				Status:        sinkpb.Status_SUCCESS,
+				ServeResponse: msg.ServeResponse,
 			})
 		} else {
 			resultList = append(resultList, &sinkpb.SinkResponse_Result{
