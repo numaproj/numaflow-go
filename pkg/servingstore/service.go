@@ -48,13 +48,12 @@ func (s *Service) Put(ctx context.Context, request *servingpb.PutRequest) (*serv
 	// handle panic
 	defer func() { err = handlePanic() }()
 
-	var payloads = make([][]byte, 0, len(request.Payloads))
+	var payloads = make([]Payload, 0, len(request.Payloads))
 	for _, payload := range request.Payloads {
-		payloads = append(payloads, payload.Value)
+		payloads = append(payloads, Payload{origin: payload.Origin, value: payload.Value})
 	}
 
-	s.ServingStore.Put(ctx, &PutRequest{origin: request.Origin, payloads: payloads})
-
+	s.ServingStore.Put(ctx, &PutRequest{id: request.Id, payloads: payloads})
 	return &servingpb.PutResponse{Success: true}, err
 }
 
@@ -64,23 +63,14 @@ func (s *Service) Get(ctx context.Context, request *servingpb.GetRequest) (*serv
 	// handle panic
 	defer func() { err = handlePanic() }()
 
-	storedResults := s.ServingStore.Get(ctx, &GetRequest{id: request.Id})
+	storedResult := s.ServingStore.Get(ctx, &GetRequest{id: request.Id})
 
-	items := storedResults.Items()
-	var payloads = make([]*servingpb.OriginalPayload, 0, len(items))
-
-	for _, storedResult := range items {
-		var p = make([]*servingpb.Payload, 0)
-		for _, payload := range storedResult.payloads {
-			p = append(p, &servingpb.Payload{Id: request.GetId(), Value: payload.value})
-		}
-		payloads = append(payloads, &servingpb.OriginalPayload{
-			Origin:   storedResult.origin,
-			Payloads: p,
-		})
+	var payloads = make([]*servingpb.Payload, 0)
+	for _, payload := range storedResult.payloads {
+		payloads = append(payloads, &servingpb.Payload{Origin: payload.origin, Value: payload.value})
 	}
 
-	return &servingpb.GetResponse{Payloads: payloads}, err
+	return &servingpb.GetResponse{Id: request.GetId(), Payloads: payloads}, err
 }
 
 // IsReady is used to indicate that the server is ready.

@@ -23,7 +23,7 @@ func TestBatchMapServer_Start(t *testing.T) {
 	var batchMapHandler = BatchMapperFunc(func(ctx context.Context, datums <-chan Datum) BatchResponses {
 		batchResponses := BatchResponsesBuilder()
 		for d := range datums {
-			results := NewBatchResponse(d.Id())
+			results := NewBatchResponse(d.ID())
 			results.Append(NewMessage(d.Value()).WithKeys([]string{d.Keys()[0] + "_test"}))
 			batchResponses.Append(results)
 		}
