@@ -7,16 +7,16 @@ import (
 // ServingStorer is the interface for serving store to store and retrieve from a custom store.
 type ServingStorer interface {
 	// Put is to put data into the Serving Store.
-	Put(ctx context.Context, put PutRequester)
+	Put(ctx context.Context, put PutDatum)
 
 	// Get is to retrieve data from the Serving Store.
-	Get(ctx context.Context, get GetRequester) StoredResults
+	Get(ctx context.Context, get GetDatum) StoredResults
 }
 
-// PutRequester interface exposes methods to retrieve data from the Put rpc.
-type PutRequester interface {
+// PutDatum interface exposes methods to retrieve data from the Put rpc.
+type PutDatum interface {
 	Origin() string
-	Payload() [][]byte
+	Payloads() [][]byte
 }
 
 // PutRequest contains the details to store the payload to the Store.
@@ -30,13 +30,13 @@ func (p *PutRequest) Origin() string {
 	return p.origin
 }
 
-// Payload returns the payloads to be stored.
-func (p *PutRequest) Payload() [][]byte {
+// Payloads returns the payloads to be stored.
+func (p *PutRequest) Payloads() [][]byte {
 	return p.payloads
 }
 
-// GetRequester is the interface to expose methods to retrieve from the Get rpc.
-type GetRequester interface {
+// GetDatum is the interface to expose methods to retrieve from the Get rpc.
+type GetDatum interface {
 	Id() string
 }
 
