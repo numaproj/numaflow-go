@@ -10,34 +10,34 @@ type ServingStorer interface {
 	Put(ctx context.Context, put PutDatum)
 
 	// Get is to retrieve data from the Serving Store.
-	Get(ctx context.Context, get GetDatum) StoredResults
+	Get(ctx context.Context, get GetDatum) StoredResult
 }
 
 // PutDatum interface exposes methods to retrieve data from the Put rpc.
 type PutDatum interface {
-	Origin() string
-	Payloads() [][]byte
+	ID() string
+	Payloads() []Payload
 }
 
 // PutRequest contains the details to store the payload to the Store.
 type PutRequest struct {
-	origin   string
-	payloads [][]byte
+	id       string
+	payloads []Payload
 }
 
-// Origin returns the origin name.
-func (p *PutRequest) Origin() string {
-	return p.origin
+// ID returns the id of the original request.
+func (p *PutRequest) ID() string {
+	return p.id
 }
 
 // Payloads returns the payloads to be stored.
-func (p *PutRequest) Payloads() [][]byte {
+func (p *PutRequest) Payloads() []Payload {
 	return p.payloads
 }
 
 // GetDatum is the interface to expose methods to retrieve from the Get rpc.
 type GetDatum interface {
-	Id() string
+	ID() string
 }
 
 // GetRequest has details on the Get rpc.
@@ -45,7 +45,7 @@ type GetRequest struct {
 	id string
 }
 
-// Id is the unique ID original request which is used get the data stored in the Store.
-func (g *GetRequest) Id() string {
+// ID is the unique ID original request which is used get the data stored in the Store.
+func (g *GetRequest) ID() string {
 	return g.id
 }

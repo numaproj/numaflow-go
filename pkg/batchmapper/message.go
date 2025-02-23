@@ -61,7 +61,7 @@ type batchResponse struct {
 }
 
 // Id returns request ID for the given list of responses
-func (m batchResponse) Id() string {
+func (m batchResponse) ID() string {
 	return m.id
 }
 
