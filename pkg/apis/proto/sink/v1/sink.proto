@@ -66,6 +66,7 @@ enum Status {
   SUCCESS = 0;
   FAILURE = 1;
   FALLBACK = 2;
+  SERVE = 3;
 }
 
 /**
