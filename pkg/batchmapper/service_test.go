@@ -101,7 +101,7 @@ func TestService_BatchMapFn(t *testing.T) {
 			handler: BatchMapperFunc(func(ctx context.Context, datums <-chan Datum) BatchResponses {
 				batchResponses := BatchResponsesBuilder()
 				for d := range datums {
-					results := NewBatchResponse(d.Id())
+					results := NewBatchResponse(d.ID())
 					results = results.Append(NewMessage(d.Value()).WithKeys([]string{d.Keys()[0] + "_test"}))
 					batchResponses = batchResponses.Append(results)
 				}
@@ -175,7 +175,7 @@ func TestService_BatchMapFn(t *testing.T) {
 			handler: BatchMapperFunc(func(ctx context.Context, datums <-chan Datum) BatchResponses {
 				batchResponses := BatchResponsesBuilder()
 				for d := range datums {
-					results := NewBatchResponse(d.Id())
+					results := NewBatchResponse(d.ID())
 					results = results.Append(NewMessage(d.Value()).WithKeys([]string{d.Keys()[0] + "_test"}))
 					batchResponses = batchResponses.Append(results)
 				}
