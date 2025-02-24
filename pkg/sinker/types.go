@@ -11,7 +11,8 @@ type Response struct {
 	// Fallback is true if the message to be sent to the fallback sink.
 	Fallback bool `json:"fallback,omitempty"`
 	// Serve is true if the message to be sent to serving store.
-	Serve         bool   `json:"serve,omitempty"`
+	Serve bool `json:"serve,omitempty"`
+	// ServeResponse is the response that will be sent to the serving store.
 	ServeResponse []byte `json:"serve_reponse,omitempty"`
 }
 
