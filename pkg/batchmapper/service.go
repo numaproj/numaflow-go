@@ -186,7 +186,7 @@ func (fs *Service) processData(ctx context.Context, stream mappb.Map_MapFnServer
 		}
 		singleRequestResp := &mappb.MapResponse{
 			Results: elements,
-			Id:      batchResp.Id(),
+			Id:      batchResp.ID(),
 		}
 		select {
 		case <-ctx.Done():

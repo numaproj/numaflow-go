@@ -1,6 +1,8 @@
 module map_sideinput
 
-go 1.21.2
+go 1.22
+
+toolchain go1.23.1
 
 replace github.com/numaproj/numaflow-go => ../../../..
 

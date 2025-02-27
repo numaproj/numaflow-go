@@ -39,7 +39,7 @@ func (h *handlerDatum) Headers() map[string]string {
 	return h.headers
 }
 
-func (h *handlerDatum) Id() string {
+func (h *handlerDatum) ID() string {
 	return h.id
 }
 
