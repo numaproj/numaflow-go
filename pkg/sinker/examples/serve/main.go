@@ -16,8 +16,6 @@ func (l *serveSink) Sink(ctx context.Context, datumStreamCh <-chan sinksdk.Datum
 	for d := range datumStreamCh {
 		id := d.ID()
 		result = result.Append(sinksdk.ResponseServe(id, d.Value()))
-		// if we are not able to write to sink and if we have a fallback sink configured
-		// we can use sinksdk.ResponseFallback(id)) to write the message to fallback sink
 	}
 	return result
 }
