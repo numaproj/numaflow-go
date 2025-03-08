@@ -27,6 +27,7 @@ const (
 	Sessionreducer    ContainerType = "sessionreducer"
 	Sideinput         ContainerType = "sideinput"
 	Fbsinker          ContainerType = "fb-sinker"
+	Serving           ContainerType = "serving"
 )
 
 type MapMode string
@@ -53,6 +54,7 @@ var MinimumNumaflowVersion = map[ContainerType]string{
 	Sessionreducer:    "1.4.0-z",
 	Sideinput:         "1.4.0-z",
 	Fbsinker:          "1.4.0-z",
+	Serving:           "1.5.0-z",
 }
 
 // ServerInfo is the information about the server
