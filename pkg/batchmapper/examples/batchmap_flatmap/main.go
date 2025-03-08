@@ -14,7 +14,7 @@ func batchMapFn(_ context.Context, datums <-chan batchmapper.Datum) batchmapper.
 		msg := d.Value()
 		_ = d.EventTime() // Event time is available
 		_ = d.Watermark() // Watermark is available
-		batchResponse := batchmapper.NewBatchResponse(d.ID())
+		batchResponse := batchmapper.NewBatchResponse(d.Id())
 		strs := strings.Split(string(msg), ",")
 		for _, s := range strs {
 			batchResponse = batchResponse.Append(batchmapper.NewMessage([]byte(s)))

@@ -16,7 +16,7 @@ type Datum interface {
 	// Headers returns the headers of the message.
 	Headers() map[string]string
 	// Id returns the unique ID set for the given message
-	ID() string
+	Id() string
 	// Keys returns the keys associated with a given datum
 	Keys() []string
 }

@@ -52,6 +52,8 @@ func ResponseFallback(id string) Response {
 	return Response{ID: id, Fallback: true}
 }
 
+// ResponseServe creates a Response with the Serve field set to true.
+// This indicates that the message should be sent to the serving store.
 func ResponseServe(id string, result []byte) Response {
 	return Response{ID: id, Serve: true, ServeResponse: result}
 }
