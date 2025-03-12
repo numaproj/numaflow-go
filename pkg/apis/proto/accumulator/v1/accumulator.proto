@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+option go_package = "github.com/numaproj/numaflow-go/pkg/apis/proto/accumulator/v1";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+
+package accumulator.v1;
+
+service Accumulator {
+  // AccumulateFn applies a accumulate function to a request stream.
+  rpc AccumulateFn(stream AccumulatorRequest) returns (stream AccumulatorResponse);
+
+  // IsReady is the heartbeat endpoint for gRPC.
+  rpc IsReady(google.protobuf.Empty) returns (ReadyResponse);
+}
+
+// Payload represents a payload element.
+message Payload {
+  repeated string keys = 1;
+  bytes value = 2;
+  google.protobuf.Timestamp event_time = 3;
+  google.protobuf.Timestamp watermark = 4;
+  map<string, string> headers = 5;
+}
+
+/**
+ * AccumulatorRequest represents a request element.
+ */
+message AccumulatorRequest {
+  Payload payload = 1;
+  optional Handshake handshake = 3;
+}
+
+/**
+ * AccumulatorResponse represents a response element.
+ */
+message AccumulatorResponse {
+  Payload payload = 1;
+  optional Handshake handshake = 3;
+}
+
+
+/**
+ * ReadyResponse is the health check result.
+ */
+message ReadyResponse {
+  bool ready = 1;
+}
+
+/*
+ * Handshake message between client and server to indicate the start of transmission.
+ */
+message Handshake {
+  // Required field indicating the start of transmission.
+  bool sot = 1;
+}
