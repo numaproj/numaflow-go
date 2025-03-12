@@ -25,7 +25,8 @@ jobs:
           "pkg/sinker/examples/fallback", "pkg/sideinput/examples/map_sideinput", "pkg/sideinput/examples/reduce_sideinput",
           "pkg/sideinput/examples/sideinput_function", "pkg/sideinput/examples/simple_source_with_sideinput",
           "pkg/sideinput/examples/sink_sideinput", "pkg/sinker/examples/redis_sink", "pkg/sideinput/examples/map_sideinput/udf",
-          "pkg/sideinput/examples/reduce_sideinput/udf", "pkg/batchmapper/examples/batchmap_flatmap"
+          "pkg/sideinput/examples/reduce_sideinput/udf", "pkg/batchmapper/examples/batchmap_flatmap",
+          "pkg/sinker/examples/serve", "pkg/servingstore/examples/redis-store"
         ]
 
     steps:
