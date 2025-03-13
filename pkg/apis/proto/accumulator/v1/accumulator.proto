@@ -35,7 +35,7 @@ message AccumulatorRequest {
     enum Event {
       OPEN = 0;
       CLOSE = 1;
-      APPEND = 4;
+      APPEND = 2;
     }
 
     Event event = 1;

@@ -25,7 +25,7 @@ type server struct {
 }
 
 // NewServer creates a new accumulator server.
-func NewServer(r Accumulator, inputOptions ...Option) numaflow.Server {
+func NewServer(r AccumulatorCreator, inputOptions ...Option) numaflow.Server {
 	opts := DefaultOptions()
 	for _, inputOption := range inputOptions {
 		inputOption(opts)
