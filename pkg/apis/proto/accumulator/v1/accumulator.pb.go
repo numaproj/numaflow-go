@@ -22,6 +22,55 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type AccumulatorRequest_WindowOperation_Event int32
+
+const (
+	AccumulatorRequest_WindowOperation_OPEN   AccumulatorRequest_WindowOperation_Event = 0
+	AccumulatorRequest_WindowOperation_CLOSE  AccumulatorRequest_WindowOperation_Event = 1
+	AccumulatorRequest_WindowOperation_APPEND AccumulatorRequest_WindowOperation_Event = 4
+)
+
+// Enum value maps for AccumulatorRequest_WindowOperation_Event.
+var (
+	AccumulatorRequest_WindowOperation_Event_name = map[int32]string{
+		0: "OPEN",
+		1: "CLOSE",
+		4: "APPEND",
+	}
+	AccumulatorRequest_WindowOperation_Event_value = map[string]int32{
+		"OPEN":   0,
+		"CLOSE":  1,
+		"APPEND": 4,
+	}
+)
+
+func (x AccumulatorRequest_WindowOperation_Event) Enum() *AccumulatorRequest_WindowOperation_Event {
+	p := new(AccumulatorRequest_WindowOperation_Event)
+	*p = x
+	return p
+}
+
+func (x AccumulatorRequest_WindowOperation_Event) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (AccumulatorRequest_WindowOperation_Event) Descriptor() protoreflect.EnumDescriptor {
+	return file_pkg_apis_proto_accumulator_v1_accumulator_proto_enumTypes[0].Descriptor()
+}
+
+func (AccumulatorRequest_WindowOperation_Event) Type() protoreflect.EnumType {
+	return &file_pkg_apis_proto_accumulator_v1_accumulator_proto_enumTypes[0]
+}
+
+func (x AccumulatorRequest_WindowOperation_Event) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use AccumulatorRequest_WindowOperation_Event.Descriptor instead.
+func (AccumulatorRequest_WindowOperation_Event) EnumDescriptor() ([]byte, []int) {
+	return file_pkg_apis_proto_accumulator_v1_accumulator_proto_rawDescGZIP(), []int{1, 0, 0}
+}
+
 // Payload represents a payload element.
 type Payload struct {
 	state         protoimpl.MessageState
@@ -109,8 +158,9 @@ type AccumulatorRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Payload   *Payload   `protobuf:"bytes,1,opt,name=payload,proto3" json:"payload,omitempty"`
-	Handshake *Handshake `protobuf:"bytes,3,opt,name=handshake,proto3,oneof" json:"handshake,omitempty"`
+	Payload   *Payload                            `protobuf:"bytes,1,opt,name=payload,proto3" json:"payload,omitempty"`
+	Operation *AccumulatorRequest_WindowOperation `protobuf:"bytes,2,opt,name=operation,proto3" json:"operation,omitempty"`
+	Handshake *Handshake                          `protobuf:"bytes,3,opt,name=handshake,proto3,oneof" json:"handshake,omitempty"`
 }
 
 func (x *AccumulatorRequest) Reset() {
@@ -152,11 +202,83 @@ func (x *AccumulatorRequest) GetPayload() *Payload {
 	return nil
 }
 
+func (x *AccumulatorRequest) GetOperation() *AccumulatorRequest_WindowOperation {
+	if x != nil {
+		return x.Operation
+	}
+	return nil
+}
+
 func (x *AccumulatorRequest) GetHandshake() *Handshake {
 	if x != nil {
 		return x.Handshake
 	}
 	return nil
+}
+
+// *
+// Window represents a window.
+type Window struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Start *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=start,proto3" json:"start,omitempty"`
+	End   *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=end,proto3" json:"end,omitempty"`
+	Slot  string                 `protobuf:"bytes,3,opt,name=slot,proto3" json:"slot,omitempty"`
+}
+
+func (x *Window) Reset() {
+	*x = Window{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_apis_proto_accumulator_v1_accumulator_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Window) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Window) ProtoMessage() {}
+
+func (x *Window) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_apis_proto_accumulator_v1_accumulator_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Window.ProtoReflect.Descriptor instead.
+func (*Window) Descriptor() ([]byte, []int) {
+	return file_pkg_apis_proto_accumulator_v1_accumulator_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *Window) GetStart() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Start
+	}
+	return nil
+}
+
+func (x *Window) GetEnd() *timestamppb.Timestamp {
+	if x != nil {
+		return x.End
+	}
+	return nil
+}
+
+func (x *Window) GetSlot() string {
+	if x != nil {
+		return x.Slot
+	}
+	return ""
 }
 
 // *
@@ -166,14 +288,16 @@ type AccumulatorResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Payload   *Payload   `protobuf:"bytes,1,opt,name=payload,proto3" json:"payload,omitempty"`
+	Payload *Payload `protobuf:"bytes,1,opt,name=payload,proto3" json:"payload,omitempty"`
+	// window represents a window to which the result belongs.
+	Window    *Window    `protobuf:"bytes,2,opt,name=window,proto3" json:"window,omitempty"`
 	Handshake *Handshake `protobuf:"bytes,3,opt,name=handshake,proto3,oneof" json:"handshake,omitempty"`
 }
 
 func (x *AccumulatorResponse) Reset() {
 	*x = AccumulatorResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_apis_proto_accumulator_v1_accumulator_proto_msgTypes[2]
+		mi := &file_pkg_apis_proto_accumulator_v1_accumulator_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -186,7 +310,7 @@ func (x *AccumulatorResponse) String() string {
 func (*AccumulatorResponse) ProtoMessage() {}
 
 func (x *AccumulatorResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_apis_proto_accumulator_v1_accumulator_proto_msgTypes[2]
+	mi := &file_pkg_apis_proto_accumulator_v1_accumulator_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -199,12 +323,19 @@ func (x *AccumulatorResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AccumulatorResponse.ProtoReflect.Descriptor instead.
 func (*AccumulatorResponse) Descriptor() ([]byte, []int) {
-	return file_pkg_apis_proto_accumulator_v1_accumulator_proto_rawDescGZIP(), []int{2}
+	return file_pkg_apis_proto_accumulator_v1_accumulator_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *AccumulatorResponse) GetPayload() *Payload {
 	if x != nil {
 		return x.Payload
+	}
+	return nil
+}
+
+func (x *AccumulatorResponse) GetWindow() *Window {
+	if x != nil {
+		return x.Window
 	}
 	return nil
 }
@@ -229,7 +360,7 @@ type ReadyResponse struct {
 func (x *ReadyResponse) Reset() {
 	*x = ReadyResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_apis_proto_accumulator_v1_accumulator_proto_msgTypes[3]
+		mi := &file_pkg_apis_proto_accumulator_v1_accumulator_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -242,7 +373,7 @@ func (x *ReadyResponse) String() string {
 func (*ReadyResponse) ProtoMessage() {}
 
 func (x *ReadyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_apis_proto_accumulator_v1_accumulator_proto_msgTypes[3]
+	mi := &file_pkg_apis_proto_accumulator_v1_accumulator_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -255,7 +386,7 @@ func (x *ReadyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadyResponse.ProtoReflect.Descriptor instead.
 func (*ReadyResponse) Descriptor() ([]byte, []int) {
-	return file_pkg_apis_proto_accumulator_v1_accumulator_proto_rawDescGZIP(), []int{3}
+	return file_pkg_apis_proto_accumulator_v1_accumulator_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ReadyResponse) GetReady() bool {
@@ -278,7 +409,7 @@ type Handshake struct {
 func (x *Handshake) Reset() {
 	*x = Handshake{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_apis_proto_accumulator_v1_accumulator_proto_msgTypes[4]
+		mi := &file_pkg_apis_proto_accumulator_v1_accumulator_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -291,7 +422,7 @@ func (x *Handshake) String() string {
 func (*Handshake) ProtoMessage() {}
 
 func (x *Handshake) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_apis_proto_accumulator_v1_accumulator_proto_msgTypes[4]
+	mi := &file_pkg_apis_proto_accumulator_v1_accumulator_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -304,7 +435,7 @@ func (x *Handshake) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Handshake.ProtoReflect.Descriptor instead.
 func (*Handshake) Descriptor() ([]byte, []int) {
-	return file_pkg_apis_proto_accumulator_v1_accumulator_proto_rawDescGZIP(), []int{4}
+	return file_pkg_apis_proto_accumulator_v1_accumulator_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Handshake) GetSot() bool {
@@ -312,6 +443,63 @@ func (x *Handshake) GetSot() bool {
 		return x.Sot
 	}
 	return false
+}
+
+// WindowOperation represents a window operation.
+// For Aligned windows, OPEN, APPEND and CLOSE events are sent.
+type AccumulatorRequest_WindowOperation struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Event   AccumulatorRequest_WindowOperation_Event `protobuf:"varint,1,opt,name=event,proto3,enum=accumulator.v1.AccumulatorRequest_WindowOperation_Event" json:"event,omitempty"`
+	Windows []*Window                                `protobuf:"bytes,2,rep,name=windows,proto3" json:"windows,omitempty"`
+}
+
+func (x *AccumulatorRequest_WindowOperation) Reset() {
+	*x = AccumulatorRequest_WindowOperation{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pkg_apis_proto_accumulator_v1_accumulator_proto_msgTypes[7]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *AccumulatorRequest_WindowOperation) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AccumulatorRequest_WindowOperation) ProtoMessage() {}
+
+func (x *AccumulatorRequest_WindowOperation) ProtoReflect() protoreflect.Message {
+	mi := &file_pkg_apis_proto_accumulator_v1_accumulator_proto_msgTypes[7]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AccumulatorRequest_WindowOperation.ProtoReflect.Descriptor instead.
+func (*AccumulatorRequest_WindowOperation) Descriptor() ([]byte, []int) {
+	return file_pkg_apis_proto_accumulator_v1_accumulator_proto_rawDescGZIP(), []int{1, 0}
+}
+
+func (x *AccumulatorRequest_WindowOperation) GetEvent() AccumulatorRequest_WindowOperation_Event {
+	if x != nil {
+		return x.Event
+	}
+	return AccumulatorRequest_WindowOperation_OPEN
+}
+
+func (x *AccumulatorRequest_WindowOperation) GetWindows() []*Window {
+	if x != nil {
+		return x.Windows
+	}
+	return nil
 }
 
 var File_pkg_apis_proto_accumulator_v1_accumulator_proto protoreflect.FileDescriptor
@@ -343,21 +531,49 @@ var file_pkg_apis_proto_accumulator_v1_accumulator_proto_rawDesc = []byte{
 	0x61, 0x64, 0x65, 0x72, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65,
 	0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x14, 0x0a, 0x05,
 	0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x76, 0x61, 0x6c,
-	0x75, 0x65, 0x3a, 0x02, 0x38, 0x01, 0x22, 0x93, 0x01, 0x0a, 0x12, 0x41, 0x63, 0x63, 0x75, 0x6d,
+	0x75, 0x65, 0x3a, 0x02, 0x38, 0x01, 0x22, 0xa5, 0x03, 0x0a, 0x12, 0x41, 0x63, 0x63, 0x75, 0x6d,
 	0x75, 0x6c, 0x61, 0x74, 0x6f, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x31, 0x0a,
 	0x07, 0x70, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x17,
 	0x2e, 0x61, 0x63, 0x63, 0x75, 0x6d, 0x75, 0x6c, 0x61, 0x74, 0x6f, 0x72, 0x2e, 0x76, 0x31, 0x2e,
 	0x50, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x52, 0x07, 0x70, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64,
-	0x12, 0x3c, 0x0a, 0x09, 0x68, 0x61, 0x6e, 0x64, 0x73, 0x68, 0x61, 0x6b, 0x65, 0x18, 0x03, 0x20,
-	0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x61, 0x63, 0x63, 0x75, 0x6d, 0x75, 0x6c, 0x61, 0x74, 0x6f,
-	0x72, 0x2e, 0x76, 0x31, 0x2e, 0x48, 0x61, 0x6e, 0x64, 0x73, 0x68, 0x61, 0x6b, 0x65, 0x48, 0x00,
-	0x52, 0x09, 0x68, 0x61, 0x6e, 0x64, 0x73, 0x68, 0x61, 0x6b, 0x65, 0x88, 0x01, 0x01, 0x42, 0x0c,
-	0x0a, 0x0a, 0x5f, 0x68, 0x61, 0x6e, 0x64, 0x73, 0x68, 0x61, 0x6b, 0x65, 0x22, 0x94, 0x01, 0x0a,
+	0x12, 0x50, 0x0a, 0x09, 0x6f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x32, 0x2e, 0x61, 0x63, 0x63, 0x75, 0x6d, 0x75, 0x6c, 0x61, 0x74, 0x6f,
+	0x72, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x63, 0x63, 0x75, 0x6d, 0x75, 0x6c, 0x61, 0x74, 0x6f, 0x72,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x57, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x4f, 0x70,
+	0x65, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x09, 0x6f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x12, 0x3c, 0x0a, 0x09, 0x68, 0x61, 0x6e, 0x64, 0x73, 0x68, 0x61, 0x6b, 0x65, 0x18,
+	0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x61, 0x63, 0x63, 0x75, 0x6d, 0x75, 0x6c, 0x61,
+	0x74, 0x6f, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x48, 0x61, 0x6e, 0x64, 0x73, 0x68, 0x61, 0x6b, 0x65,
+	0x48, 0x00, 0x52, 0x09, 0x68, 0x61, 0x6e, 0x64, 0x73, 0x68, 0x61, 0x6b, 0x65, 0x88, 0x01, 0x01,
+	0x1a, 0xbd, 0x01, 0x0a, 0x0f, 0x57, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x4f, 0x70, 0x65, 0x72, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x12, 0x4e, 0x0a, 0x05, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x0e, 0x32, 0x38, 0x2e, 0x61, 0x63, 0x63, 0x75, 0x6d, 0x75, 0x6c, 0x61, 0x74, 0x6f,
+	0x72, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x63, 0x63, 0x75, 0x6d, 0x75, 0x6c, 0x61, 0x74, 0x6f, 0x72,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x57, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x4f, 0x70,
+	0x65, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x52, 0x05, 0x65,
+	0x76, 0x65, 0x6e, 0x74, 0x12, 0x30, 0x0a, 0x07, 0x77, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x73, 0x18,
+	0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x16, 0x2e, 0x61, 0x63, 0x63, 0x75, 0x6d, 0x75, 0x6c, 0x61,
+	0x74, 0x6f, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x57, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x52, 0x07, 0x77,
+	0x69, 0x6e, 0x64, 0x6f, 0x77, 0x73, 0x22, 0x28, 0x0a, 0x05, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12,
+	0x08, 0x0a, 0x04, 0x4f, 0x50, 0x45, 0x4e, 0x10, 0x00, 0x12, 0x09, 0x0a, 0x05, 0x43, 0x4c, 0x4f,
+	0x53, 0x45, 0x10, 0x01, 0x12, 0x0a, 0x0a, 0x06, 0x41, 0x50, 0x50, 0x45, 0x4e, 0x44, 0x10, 0x04,
+	0x42, 0x0c, 0x0a, 0x0a, 0x5f, 0x68, 0x61, 0x6e, 0x64, 0x73, 0x68, 0x61, 0x6b, 0x65, 0x22, 0x7c,
+	0x0a, 0x06, 0x57, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x12, 0x30, 0x0a, 0x05, 0x73, 0x74, 0x61, 0x72,
+	0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74,
+	0x61, 0x6d, 0x70, 0x52, 0x05, 0x73, 0x74, 0x61, 0x72, 0x74, 0x12, 0x2c, 0x0a, 0x03, 0x65, 0x6e,
+	0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74,
+	0x61, 0x6d, 0x70, 0x52, 0x03, 0x65, 0x6e, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x73, 0x6c, 0x6f, 0x74,
+	0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x73, 0x6c, 0x6f, 0x74, 0x22, 0xc4, 0x01, 0x0a,
 	0x13, 0x41, 0x63, 0x63, 0x75, 0x6d, 0x75, 0x6c, 0x61, 0x74, 0x6f, 0x72, 0x52, 0x65, 0x73, 0x70,
 	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x31, 0x0a, 0x07, 0x70, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x18,
 	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x17, 0x2e, 0x61, 0x63, 0x63, 0x75, 0x6d, 0x75, 0x6c, 0x61,
 	0x74, 0x6f, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x52, 0x07,
-	0x70, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x12, 0x3c, 0x0a, 0x09, 0x68, 0x61, 0x6e, 0x64, 0x73,
+	0x70, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x12, 0x2e, 0x0a, 0x06, 0x77, 0x69, 0x6e, 0x64, 0x6f,
+	0x77, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x16, 0x2e, 0x61, 0x63, 0x63, 0x75, 0x6d, 0x75,
+	0x6c, 0x61, 0x74, 0x6f, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x57, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x52,
+	0x06, 0x77, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x12, 0x3c, 0x0a, 0x09, 0x68, 0x61, 0x6e, 0x64, 0x73,
 	0x68, 0x61, 0x6b, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x61, 0x63, 0x63,
 	0x75, 0x6d, 0x75, 0x6c, 0x61, 0x74, 0x6f, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x48, 0x61, 0x6e, 0x64,
 	0x73, 0x68, 0x61, 0x6b, 0x65, 0x48, 0x00, 0x52, 0x09, 0x68, 0x61, 0x6e, 0x64, 0x73, 0x68, 0x61,
@@ -397,34 +613,44 @@ func file_pkg_apis_proto_accumulator_v1_accumulator_proto_rawDescGZIP() []byte {
 	return file_pkg_apis_proto_accumulator_v1_accumulator_proto_rawDescData
 }
 
-var file_pkg_apis_proto_accumulator_v1_accumulator_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_pkg_apis_proto_accumulator_v1_accumulator_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_pkg_apis_proto_accumulator_v1_accumulator_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_pkg_apis_proto_accumulator_v1_accumulator_proto_goTypes = []any{
-	(*Payload)(nil),               // 0: accumulator.v1.Payload
-	(*AccumulatorRequest)(nil),    // 1: accumulator.v1.AccumulatorRequest
-	(*AccumulatorResponse)(nil),   // 2: accumulator.v1.AccumulatorResponse
-	(*ReadyResponse)(nil),         // 3: accumulator.v1.ReadyResponse
-	(*Handshake)(nil),             // 4: accumulator.v1.Handshake
-	nil,                           // 5: accumulator.v1.Payload.HeadersEntry
-	(*timestamppb.Timestamp)(nil), // 6: google.protobuf.Timestamp
-	(*emptypb.Empty)(nil),         // 7: google.protobuf.Empty
+	(AccumulatorRequest_WindowOperation_Event)(0), // 0: accumulator.v1.AccumulatorRequest.WindowOperation.Event
+	(*Payload)(nil),             // 1: accumulator.v1.Payload
+	(*AccumulatorRequest)(nil),  // 2: accumulator.v1.AccumulatorRequest
+	(*Window)(nil),              // 3: accumulator.v1.Window
+	(*AccumulatorResponse)(nil), // 4: accumulator.v1.AccumulatorResponse
+	(*ReadyResponse)(nil),       // 5: accumulator.v1.ReadyResponse
+	(*Handshake)(nil),           // 6: accumulator.v1.Handshake
+	nil,                         // 7: accumulator.v1.Payload.HeadersEntry
+	(*AccumulatorRequest_WindowOperation)(nil), // 8: accumulator.v1.AccumulatorRequest.WindowOperation
+	(*timestamppb.Timestamp)(nil),              // 9: google.protobuf.Timestamp
+	(*emptypb.Empty)(nil),                      // 10: google.protobuf.Empty
 }
 var file_pkg_apis_proto_accumulator_v1_accumulator_proto_depIdxs = []int32{
-	6, // 0: accumulator.v1.Payload.event_time:type_name -> google.protobuf.Timestamp
-	6, // 1: accumulator.v1.Payload.watermark:type_name -> google.protobuf.Timestamp
-	5, // 2: accumulator.v1.Payload.headers:type_name -> accumulator.v1.Payload.HeadersEntry
-	0, // 3: accumulator.v1.AccumulatorRequest.payload:type_name -> accumulator.v1.Payload
-	4, // 4: accumulator.v1.AccumulatorRequest.handshake:type_name -> accumulator.v1.Handshake
-	0, // 5: accumulator.v1.AccumulatorResponse.payload:type_name -> accumulator.v1.Payload
-	4, // 6: accumulator.v1.AccumulatorResponse.handshake:type_name -> accumulator.v1.Handshake
-	1, // 7: accumulator.v1.Accumulator.AccumulateFn:input_type -> accumulator.v1.AccumulatorRequest
-	7, // 8: accumulator.v1.Accumulator.IsReady:input_type -> google.protobuf.Empty
-	2, // 9: accumulator.v1.Accumulator.AccumulateFn:output_type -> accumulator.v1.AccumulatorResponse
-	3, // 10: accumulator.v1.Accumulator.IsReady:output_type -> accumulator.v1.ReadyResponse
-	9, // [9:11] is the sub-list for method output_type
-	7, // [7:9] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	9,  // 0: accumulator.v1.Payload.event_time:type_name -> google.protobuf.Timestamp
+	9,  // 1: accumulator.v1.Payload.watermark:type_name -> google.protobuf.Timestamp
+	7,  // 2: accumulator.v1.Payload.headers:type_name -> accumulator.v1.Payload.HeadersEntry
+	1,  // 3: accumulator.v1.AccumulatorRequest.payload:type_name -> accumulator.v1.Payload
+	8,  // 4: accumulator.v1.AccumulatorRequest.operation:type_name -> accumulator.v1.AccumulatorRequest.WindowOperation
+	6,  // 5: accumulator.v1.AccumulatorRequest.handshake:type_name -> accumulator.v1.Handshake
+	9,  // 6: accumulator.v1.Window.start:type_name -> google.protobuf.Timestamp
+	9,  // 7: accumulator.v1.Window.end:type_name -> google.protobuf.Timestamp
+	1,  // 8: accumulator.v1.AccumulatorResponse.payload:type_name -> accumulator.v1.Payload
+	3,  // 9: accumulator.v1.AccumulatorResponse.window:type_name -> accumulator.v1.Window
+	6,  // 10: accumulator.v1.AccumulatorResponse.handshake:type_name -> accumulator.v1.Handshake
+	0,  // 11: accumulator.v1.AccumulatorRequest.WindowOperation.event:type_name -> accumulator.v1.AccumulatorRequest.WindowOperation.Event
+	3,  // 12: accumulator.v1.AccumulatorRequest.WindowOperation.windows:type_name -> accumulator.v1.Window
+	2,  // 13: accumulator.v1.Accumulator.AccumulateFn:input_type -> accumulator.v1.AccumulatorRequest
+	10, // 14: accumulator.v1.Accumulator.IsReady:input_type -> google.protobuf.Empty
+	4,  // 15: accumulator.v1.Accumulator.AccumulateFn:output_type -> accumulator.v1.AccumulatorResponse
+	5,  // 16: accumulator.v1.Accumulator.IsReady:output_type -> accumulator.v1.ReadyResponse
+	15, // [15:17] is the sub-list for method output_type
+	13, // [13:15] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_pkg_apis_proto_accumulator_v1_accumulator_proto_init() }
@@ -458,7 +684,7 @@ func file_pkg_apis_proto_accumulator_v1_accumulator_proto_init() {
 			}
 		}
 		file_pkg_apis_proto_accumulator_v1_accumulator_proto_msgTypes[2].Exporter = func(v any, i int) any {
-			switch v := v.(*AccumulatorResponse); i {
+			switch v := v.(*Window); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -470,7 +696,7 @@ func file_pkg_apis_proto_accumulator_v1_accumulator_proto_init() {
 			}
 		}
 		file_pkg_apis_proto_accumulator_v1_accumulator_proto_msgTypes[3].Exporter = func(v any, i int) any {
-			switch v := v.(*ReadyResponse); i {
+			switch v := v.(*AccumulatorResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -482,7 +708,31 @@ func file_pkg_apis_proto_accumulator_v1_accumulator_proto_init() {
 			}
 		}
 		file_pkg_apis_proto_accumulator_v1_accumulator_proto_msgTypes[4].Exporter = func(v any, i int) any {
+			switch v := v.(*ReadyResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pkg_apis_proto_accumulator_v1_accumulator_proto_msgTypes[5].Exporter = func(v any, i int) any {
 			switch v := v.(*Handshake); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pkg_apis_proto_accumulator_v1_accumulator_proto_msgTypes[7].Exporter = func(v any, i int) any {
+			switch v := v.(*AccumulatorRequest_WindowOperation); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -495,19 +745,20 @@ func file_pkg_apis_proto_accumulator_v1_accumulator_proto_init() {
 		}
 	}
 	file_pkg_apis_proto_accumulator_v1_accumulator_proto_msgTypes[1].OneofWrappers = []any{}
-	file_pkg_apis_proto_accumulator_v1_accumulator_proto_msgTypes[2].OneofWrappers = []any{}
+	file_pkg_apis_proto_accumulator_v1_accumulator_proto_msgTypes[3].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_pkg_apis_proto_accumulator_v1_accumulator_proto_rawDesc,
-			NumEnums:      0,
-			NumMessages:   6,
+			NumEnums:      1,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_pkg_apis_proto_accumulator_v1_accumulator_proto_goTypes,
 		DependencyIndexes: file_pkg_apis_proto_accumulator_v1_accumulator_proto_depIdxs,
+		EnumInfos:         file_pkg_apis_proto_accumulator_v1_accumulator_proto_enumTypes,
 		MessageInfos:      file_pkg_apis_proto_accumulator_v1_accumulator_proto_msgTypes,
 	}.Build()
 	File_pkg_apis_proto_accumulator_v1_accumulator_proto = out.File

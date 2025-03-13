@@ -16,7 +16,12 @@ type Datum interface {
 	Headers() map[string]string
 }
 
-// Accumulator is the interface which can be used to implement a session reduce operation.
+// Accumulator is the interface which can be used to implement the accumulator operation.
 type Accumulator interface {
-	Accumulate(ctx context.Context, input <-chan Datum, output <-chan Datum)
+	Accumulate(ctx context.Context, input <-chan Datum, output chan<- Datum)
+}
+
+// AccumulatorCreator is the interface which is used to create an Accumulator.
+type AccumulatorCreator interface {
+	Create() Accumulator
 }

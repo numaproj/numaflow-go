@@ -6,15 +6,12 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"runtime/debug"
 	"sync"
 
 	"golang.org/x/sync/errgroup"
-	epb "google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	accumulatorpb "github.com/numaproj/numaflow-go/pkg/apis/proto/accumulator/v1"
 )
@@ -31,7 +28,7 @@ var errAccumulatorPanic = errors.New("UDF_EXECUTION_ERROR(accumulator)")
 // Service implements the proto gen server interface and contains the accumulator operation handler.
 type Service struct {
 	accumulatorpb.UnimplementedAccumulatorServer
-	accumulator Accumulator
+	accumulator AccumulatorCreator
 	once        sync.Once
 	shutdownCh  chan<- struct{}
 }
@@ -55,74 +52,51 @@ func (fs *Service) AccumulateFn(stream accumulatorpb.Accumulator_AccumulateFnSer
 	// goroutines return an error for the first time or the first time the wait returns.
 	g, groupCtx := errgroup.WithContext(ctx)
 
-	// Channel to collect responses
-	responseCh := make(chan *accumulatorpb.AccumulatorResponse, 500) // FIXME: identify the right buffer size
-	defer close(responseCh)
+	taskManager := newAccumulateTaskManager(groupCtx, g, fs.accumulator)
 
-	datumInputCh := make(chan Datum, 500)
-	datumOutputCh := make(chan Datum, 500)
-
-	// Start the accumulator
-	g.Go(func() error {
-		if err := invokeAccumulator(groupCtx, fs.accumulator, datumInputCh, datumOutputCh); err != nil {
-			log.Printf("Accumulator handler failed: %v", err)
-			return err
-		}
-		close(datumOutputCh)
-		return nil
-	})
-
-	// Start the accumulator response sender
 	g.Go(func() error {
 		for {
 			select {
-			case <-groupCtx.Done():
+			case <-ctx.Done():
 				return nil
-			case datum, ok := <-datumOutputCh:
+			case response, ok := <-taskManager.OutputChannel():
 				if !ok {
 					return nil
 				}
-				responseCh <- &accumulatorpb.AccumulatorResponse{
-					Payload: &accumulatorpb.Payload{
-						Keys:      datum.Keys(),
-						Value:     datum.Value(),
-						EventTime: timestamppb.New(datum.EventTime()),
-						Watermark: timestamppb.New(datum.Watermark()),
-						Headers:   datum.Headers(),
-					},
+				if err := stream.Send(response); err != nil {
+					return status.Errorf(codes.Internal, "failed to send response: %v", err)
 				}
 			}
 		}
 	})
 
-	// Start the accumulator request sender
-	g.Go(func() error {
-		for {
-			req, err := recvWithContext(groupCtx, stream)
-			if errors.Is(err, context.Canceled) {
-				log.Printf("Context cancelled, stopping the AccumulateFn")
-				return nil
-			}
-			if errors.Is(err, io.EOF) {
-				log.Printf("EOF received, stopping the AccumulateFn")
-				return nil
-			}
-			if err != nil {
-				log.Printf("Failed to receive request: %v", err)
-				// read loop is not part of the error group, so we need to cancel the context
-				// to signal the other goroutines to stop processing.
-				cancel()
-				return err
-			}
-			datumInputCh <- &handlerDatum{
-				value:     req.GetPayload().GetValue(),
-				eventTime: req.GetPayload().GetEventTime().AsTime(),
-				watermark: req.GetPayload().GetWatermark().AsTime(),
-				keys:      req.GetPayload().GetKeys(),
-				headers:   req.GetPayload().GetHeaders(),
-			}
+	for {
+		req, err := recvWithContext(groupCtx, stream)
+		if errors.Is(err, context.Canceled) {
+			log.Printf("Context cancelled, stopping the AccumulateFn")
+			break
 		}
-	})
+		if errors.Is(err, io.EOF) {
+			log.Printf("EOF received, stopping the AccumulateFn")
+			return nil
+		}
+		if err != nil {
+			log.Printf("Failed to receive request: %v", err)
+			// read loop is not part of the error group, so we need to cancel the context
+			// to signal the other goroutines to stop processing.
+			cancel()
+			break
+		}
+
+		switch req.Operation.Event {
+		case accumulatorpb.AccumulatorRequest_WindowOperation_OPEN:
+			taskManager.CreateTask(req)
+		case accumulatorpb.AccumulatorRequest_WindowOperation_CLOSE:
+			taskManager.CloseTask(req)
+		case accumulatorpb.AccumulatorRequest_WindowOperation_APPEND:
+			taskManager.AppendToTask(req)
+		}
+	}
 
 	// wait for all goroutines to finish
 	if err := g.Wait(); err != nil {
@@ -175,21 +149,4 @@ func recvWithContext(ctx context.Context, stream accumulatorpb.Accumulator_Accum
 	case result := <-resultCh:
 		return result.req, result.err
 	}
-}
-
-// invokeAccumulator invokes the accumulator handler and recovers from panics.
-func invokeAccumulator(ctx context.Context, accumulator Accumulator, inputDatumCh chan Datum, outputDatumCh chan Datum) (err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			log.Printf("panic inside accumulator handler: %v %v", r, string(debug.Stack()))
-			st, _ := status.Newf(codes.Internal, "%s: %v", errAccumulatorPanic, r).WithDetails(&epb.DebugInfo{
-				Detail: string(debug.Stack()),
-			})
-			err = st.Err()
-		}
-	}()
-
-	// Start the accumulator
-	accumulator.Accumulate(ctx, inputDatumCh, outputDatumCh)
-	return
 }
