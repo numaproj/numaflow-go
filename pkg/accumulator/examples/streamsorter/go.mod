@@ -1,4 +1,4 @@
-module accumulator
+module streamsorter
 
 go 1.22
 

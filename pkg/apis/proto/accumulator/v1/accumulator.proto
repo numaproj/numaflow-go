@@ -65,6 +65,8 @@ message AccumulatorResponse {
   // window represents a window to which the result belongs.
   Window window = 2;
   optional Handshake handshake = 3;
+  // EOF represents the end of the response for a window.
+  bool EOF = 4;
 }
 
 

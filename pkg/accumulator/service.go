@@ -3,7 +3,6 @@ package accumulator
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"sync"
@@ -40,10 +39,6 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*accumulatorpb.Read
 
 func (fs *Service) AccumulateFn(stream accumulatorpb.Accumulator_AccumulateFnServer) error {
 	ctx := stream.Context()
-	// perform handshake with client before processing requests
-	if err := fs.performHandshake(stream); err != nil {
-		return err
-	}
 
 	ctx, cancel := context.WithCancel(stream.Context())
 	defer cancel()
@@ -78,6 +73,7 @@ func (fs *Service) AccumulateFn(stream accumulatorpb.Accumulator_AccumulateFnSer
 		}
 		if errors.Is(err, io.EOF) {
 			log.Printf("EOF received, stopping the AccumulateFn")
+			taskManager.CloseAll()
 			return nil
 		}
 		if err != nil {
@@ -105,27 +101,6 @@ func (fs *Service) AccumulateFn(stream accumulatorpb.Accumulator_AccumulateFnSer
 			fs.shutdownCh <- struct{}{}
 		})
 		return err
-	}
-
-	return nil
-}
-
-// performHandshake handles the handshake logic at the start of the stream.
-func (fs *Service) performHandshake(stream accumulatorpb.Accumulator_AccumulateFnServer) error {
-	req, err := stream.Recv()
-	if err != nil {
-		return status.Errorf(codes.Internal, "failed to receive handshake: %v", err)
-	}
-	if req.GetHandshake() == nil || !req.GetHandshake().GetSot() {
-		return status.Errorf(codes.InvalidArgument, "invalid handshake")
-	}
-	handshakeResponse := &accumulatorpb.AccumulatorResponse{
-		Handshake: &accumulatorpb.Handshake{
-			Sot: true,
-		},
-	}
-	if err := stream.Send(handshakeResponse); err != nil {
-		return fmt.Errorf("sending handshake response to client over gRPC stream: %w", err)
 	}
 	return nil
 }

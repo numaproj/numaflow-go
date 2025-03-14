@@ -91,8 +91,14 @@ func (atm *accumulateTaskManager) CreateTask(request *v1.AccumulatorRequest) {
 						End:   timestamppb.New(output.EventTime()),
 						Slot:  "slot-0",
 					},
+					EOF: false,
 				}:
 				}
+			}
+
+			// send EOF response to the response channel
+			atm.responseCh <- &v1.AccumulatorResponse{
+				EOF: true,
 			}
 		}()
 
@@ -109,9 +115,14 @@ func (atm *accumulateTaskManager) CreateTask(request *v1.AccumulatorRequest) {
 		accumulatorHandle := atm.accumulatorCreatorHandle.Create()
 		accumulatorHandle.Accumulate(atm.ctx, task.inputCh, task.outputCh)
 		close(task.outputCh)
-		close(task.doneCh)
 
 		wg.Wait()
+		close(task.doneCh)
+
+		// remove the task from the task manager
+		atm.mu.Lock()
+		delete(atm.tasks, key)
+		atm.mu.Unlock()
 		return nil
 	})
 
