@@ -5,19 +5,12 @@ import "time"
 // handlerDatum implements the Datum interface and is used in the accumulator functions.
 type handlerDatum struct {
 	value     []byte
+	id        string
 	eventTime time.Time
 	watermark time.Time
 	keys      []string
 	tags      []string
 	headers   map[string]string
-}
-
-func NewHandlerDatum(value []byte, eventTime time.Time, watermark time.Time) Datum {
-	return &handlerDatum{
-		value:     value,
-		eventTime: eventTime,
-		watermark: watermark,
-	}
 }
 
 func (h *handlerDatum) Value() []byte {
@@ -46,4 +39,8 @@ func (h *handlerDatum) SetTags(tags []string) {
 
 func (h *handlerDatum) Headers() map[string]string {
 	return h.headers
+}
+
+func (h *handlerDatum) ID() string {
+	return h.id
 }

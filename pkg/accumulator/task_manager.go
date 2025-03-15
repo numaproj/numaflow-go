@@ -6,6 +6,7 @@ import (
 	"runtime/debug"
 	"strings"
 	"sync"
+	"time"
 
 	"golang.org/x/sync/errgroup"
 	epb "google.golang.org/genproto/googleapis/rpc/errdetails"
@@ -20,11 +21,12 @@ const delimiter = ":"
 
 // accumulateTask represents a task for performing accumulate operation.
 type accumulateTask struct {
-	keys        []string
-	accumulator Accumulator
-	inputCh     chan Datum
-	outputCh    chan Datum
-	doneCh      chan struct{}
+	keys            []string
+	accumulator     Accumulator
+	inputCh         chan Datum
+	outputCh        chan Datum
+	doneCh          chan struct{}
+	latestWatermark time.Time
 }
 
 // uniqueKey returns the unique key for the accumulate task to be used in the task manager to identify the task.
@@ -59,10 +61,11 @@ func (atm *accumulateTaskManager) CreateTask(request *v1.AccumulatorRequest) {
 	defer atm.mu.Unlock()
 
 	task := &accumulateTask{
-		keys:     request.GetPayload().GetKeys(),
-		inputCh:  make(chan Datum, 500),
-		outputCh: make(chan Datum, 500),
-		doneCh:   make(chan struct{}),
+		keys:            request.GetPayload().GetKeys(),
+		inputCh:         make(chan Datum, 500),
+		outputCh:        make(chan Datum, 500),
+		doneCh:          make(chan struct{}),
+		latestWatermark: time.UnixMilli(-1),
 	}
 
 	key := task.uniqueKey()
@@ -75,6 +78,9 @@ func (atm *accumulateTaskManager) CreateTask(request *v1.AccumulatorRequest) {
 			defer wg.Done()
 			// read responses from the output channel and send to the response channel
 			for output := range task.outputCh {
+				if output.Watermark().After(task.latestWatermark) {
+					task.latestWatermark = output.Watermark()
+				}
 				select {
 				case <-atm.ctx.Done():
 					return
@@ -87,10 +93,11 @@ func (atm *accumulateTaskManager) CreateTask(request *v1.AccumulatorRequest) {
 						Headers:   output.Headers(),
 					},
 					Window: &v1.Window{
-						Start: timestamppb.New(output.EventTime()),
-						End:   timestamppb.New(output.EventTime()),
+						Start: timestamppb.New(time.UnixMilli(0)),
+						End:   timestamppb.New(task.latestWatermark),
 						Slot:  "slot-0",
 					},
+					Id:  output.ID(),
 					EOF: false,
 				}:
 				}
@@ -189,5 +196,6 @@ func buildDatum(request *v1.AccumulatorRequest) Datum {
 		watermark: request.GetPayload().GetWatermark().AsTime(),
 		keys:      request.GetPayload().GetKeys(),
 		headers:   request.GetPayload().GetHeaders(),
+		id:        request.GetId(),
 	}
 }
