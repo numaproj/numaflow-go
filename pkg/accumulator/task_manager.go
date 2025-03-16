@@ -25,7 +25,6 @@ type accumulateTask struct {
 	accumulator     Accumulator
 	inputCh         chan Datum
 	outputCh        chan Datum
-	doneCh          chan struct{}
 	latestWatermark time.Time
 }
 
@@ -34,8 +33,8 @@ func (at *accumulateTask) uniqueKey() string {
 	return strings.Join(at.keys, delimiter)
 }
 
-// accumulateTaskManager manages the accumulate tasks for an accumulate operation.
-type accumulateTaskManager struct {
+// accumulatorTaskManager manages the accumulate tasks for an accumulate operation.
+type accumulatorTaskManager struct {
 	accumulatorCreatorHandle AccumulatorCreator
 	tasks                    map[string]*accumulateTask
 	responseCh               chan *v1.AccumulatorResponse
@@ -45,8 +44,9 @@ type accumulateTaskManager struct {
 	ctx                      context.Context
 }
 
-func newAccumulateTaskManager(ctx context.Context, eg *errgroup.Group, accumulatorCreatorHandle AccumulatorCreator) *accumulateTaskManager {
-	return &accumulateTaskManager{
+// newAccumulatorTaskManager creates a new accumulator task manager.
+func newAccumulatorTaskManager(ctx context.Context, eg *errgroup.Group, accumulatorCreatorHandle AccumulatorCreator) *accumulatorTaskManager {
+	return &accumulatorTaskManager{
 		accumulatorCreatorHandle: accumulatorCreatorHandle,
 		tasks:                    make(map[string]*accumulateTask),
 		responseCh:               make(chan *v1.AccumulatorResponse),
@@ -56,7 +56,7 @@ func newAccumulateTaskManager(ctx context.Context, eg *errgroup.Group, accumulat
 }
 
 // CreateTask creates a new accumulate task and starts the accumulate operation.
-func (atm *accumulateTaskManager) CreateTask(request *v1.AccumulatorRequest) {
+func (atm *accumulatorTaskManager) CreateTask(request *v1.AccumulatorRequest) {
 	atm.mu.Lock()
 	defer atm.mu.Unlock()
 
@@ -64,48 +64,60 @@ func (atm *accumulateTaskManager) CreateTask(request *v1.AccumulatorRequest) {
 		keys:            request.GetPayload().GetKeys(),
 		inputCh:         make(chan Datum, 500),
 		outputCh:        make(chan Datum, 500),
-		doneCh:          make(chan struct{}),
 		latestWatermark: time.UnixMilli(-1),
 	}
 
 	key := task.uniqueKey()
 	atm.tasks[key] = task
 
+	// starts the accumulate operation in a goroutine, any panic inside the accumulator handler is recovered and sent as an error response.
 	atm.eg.Go(func() (err error) {
 		var wg sync.WaitGroup
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			// read responses from the output channel and send to the response channel
-			for output := range task.outputCh {
-				if output.Watermark().After(task.latestWatermark) {
-					task.latestWatermark = output.Watermark()
-				}
+			for {
 				select {
 				case <-atm.ctx.Done():
 					return
-				case atm.responseCh <- &v1.AccumulatorResponse{
-					Payload: &v1.Payload{
-						Keys:      output.Keys(),
-						Value:     output.Value(),
-						EventTime: timestamppb.New(output.EventTime()),
-						Watermark: timestamppb.New(output.Watermark()),
-						Headers:   output.Headers(),
-					},
-					Window: &v1.Window{
-						Start: timestamppb.New(time.UnixMilli(0)),
-						End:   timestamppb.New(task.latestWatermark),
-						Slot:  "slot-0",
-					},
-					Id:  output.ID(),
-					EOF: false,
-				}:
-				}
-			}
+				case output, ok := <-task.outputCh:
+					if !ok {
+						// send EOF response to the response channel
+						atm.responseCh <- &v1.AccumulatorResponse{
+							EOF: true,
+						}
+						return
+					}
 
-			// send EOF response to the response channel
-			atm.responseCh <- &v1.AccumulatorResponse{
-				EOF: true,
+					// update the latest watermark
+					if output.Watermark().After(task.latestWatermark) {
+						task.latestWatermark = output.Watermark()
+					}
+
+					select {
+					case <-atm.ctx.Done():
+						return
+					case atm.responseCh <- &v1.AccumulatorResponse{
+						Payload: &v1.Payload{
+							Keys:      output.Keys(),
+							Value:     output.Value(),
+							EventTime: timestamppb.New(output.EventTime()),
+							Watermark: timestamppb.New(output.Watermark()),
+							Headers:   output.Headers(),
+						},
+						Window: &v1.Window{
+							Start: timestamppb.New(time.UnixMilli(0)),
+							// window end time is considered the latest watermark, based on the window end time, the compaction happens
+							// on the client side.
+							End:  timestamppb.New(task.latestWatermark),
+							Slot: "slot-0",
+						},
+						Id:  output.ID(),
+						EOF: false,
+					}:
+					}
+				}
 			}
 		}()
 
@@ -124,7 +136,6 @@ func (atm *accumulateTaskManager) CreateTask(request *v1.AccumulatorRequest) {
 		close(task.outputCh)
 
 		wg.Wait()
-		close(task.doneCh)
 
 		// remove the task from the task manager
 		atm.mu.Lock()
@@ -142,7 +153,7 @@ func (atm *accumulateTaskManager) CreateTask(request *v1.AccumulatorRequest) {
 
 // AppendToTask writes the message to the accumulate task.
 // If the task is not found, it creates a new task and starts the accumulate operation.
-func (atm *accumulateTaskManager) AppendToTask(request *v1.AccumulatorRequest) {
+func (atm *accumulatorTaskManager) AppendToTask(request *v1.AccumulatorRequest) {
 	atm.mu.RLock()
 	task, ok := atm.tasks[generateKey(request.GetPayload().GetKeys())]
 	atm.mu.RUnlock()
@@ -158,7 +169,8 @@ func (atm *accumulateTaskManager) AppendToTask(request *v1.AccumulatorRequest) {
 	}
 }
 
-func (atm *accumulateTaskManager) CloseTask(request *v1.AccumulatorRequest) {
+// CloseTask closes the accumulate task by closing the input channel.
+func (atm *accumulatorTaskManager) CloseTask(request *v1.AccumulatorRequest) {
 	atm.mu.Lock()
 	defer atm.mu.Unlock()
 
@@ -172,7 +184,7 @@ func (atm *accumulateTaskManager) CloseTask(request *v1.AccumulatorRequest) {
 }
 
 // CloseAll closes all the accumulate tasks.
-func (atm *accumulateTaskManager) CloseAll() {
+func (atm *accumulatorTaskManager) CloseAll() {
 	atm.mu.Lock()
 	defer atm.mu.Unlock()
 
@@ -181,7 +193,7 @@ func (atm *accumulateTaskManager) CloseAll() {
 	}
 }
 
-func (atm *accumulateTaskManager) OutputChannel() <-chan *v1.AccumulatorResponse {
+func (atm *accumulatorTaskManager) OutputChannel() <-chan *v1.AccumulatorResponse {
 	return atm.responseCh
 }
 

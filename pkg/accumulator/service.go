@@ -47,12 +47,12 @@ func (fs *Service) AccumulateFn(stream accumulatorpb.Accumulator_AccumulateFnSer
 	// goroutines return an error for the first time or the first time the wait returns.
 	g, groupCtx := errgroup.WithContext(ctx)
 
-	taskManager := newAccumulateTaskManager(groupCtx, g, fs.accumulator)
+	taskManager := newAccumulatorTaskManager(groupCtx, g, fs.accumulator)
 
 	g.Go(func() error {
 		for {
 			select {
-			case <-ctx.Done():
+			case <-groupCtx.Done():
 				return nil
 			case response, ok := <-taskManager.OutputChannel():
 				if !ok {
