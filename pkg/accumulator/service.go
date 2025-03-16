@@ -27,9 +27,9 @@ var errAccumulatorPanic = errors.New("UDF_EXECUTION_ERROR(accumulator)")
 // Service implements the proto gen server interface and contains the accumulator operation handler.
 type Service struct {
 	accumulatorpb.UnimplementedAccumulatorServer
-	accumulator AccumulatorCreator
-	once        sync.Once
-	shutdownCh  chan<- struct{}
+	AccumulatorCreator AccumulatorCreator
+	once               sync.Once
+	shutdownCh         chan<- struct{}
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
@@ -47,7 +47,7 @@ func (fs *Service) AccumulateFn(stream accumulatorpb.Accumulator_AccumulateFnSer
 	// goroutines return an error for the first time or the first time the wait returns.
 	g, groupCtx := errgroup.WithContext(ctx)
 
-	taskManager := newAccumulatorTaskManager(groupCtx, g, fs.accumulator)
+	taskManager := newAccumulatorTaskManager(groupCtx, g, fs.AccumulatorCreator)
 
 	g.Go(func() error {
 		for {

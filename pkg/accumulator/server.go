@@ -32,7 +32,7 @@ func NewServer(r AccumulatorCreator, inputOptions ...Option) numaflow.Server {
 	}
 	s := new(server)
 	s.svc = new(Service)
-	s.svc.accumulator = r
+	s.svc.AccumulatorCreator = r
 	s.opts = opts
 	return s
 }

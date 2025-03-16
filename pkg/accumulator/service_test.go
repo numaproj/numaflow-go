@@ -80,7 +80,7 @@ func TestService_IsReady(t *testing.T) {
 
 func TestService_AccumulateFn(t *testing.T) {
 	svc := &Service{
-		accumulator: SimpleCreatorWithAccumulateFn(func(ctx context.Context, input <-chan Datum, output chan<- Datum) {
+		AccumulatorCreator: SimpleCreatorWithAccumulateFn(func(ctx context.Context, input <-chan Datum, output chan<- Datum) {
 			for datum := range input {
 				output <- datum
 			}
@@ -117,7 +117,7 @@ func TestService_AccumulateFn(t *testing.T) {
 func TestService_AccumulateFn_Panic(t *testing.T) {
 	panicMssg := "accumulate failed"
 	svc := &Service{
-		accumulator: SimpleCreatorWithAccumulateFn(func(ctx context.Context, input <-chan Datum, output chan<- Datum) {
+		AccumulatorCreator: SimpleCreatorWithAccumulateFn(func(ctx context.Context, input <-chan Datum, output chan<- Datum) {
 			panic(panicMssg)
 		}),
 		shutdownCh: make(chan struct{}, 1),

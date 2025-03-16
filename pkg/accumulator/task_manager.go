@@ -115,6 +115,7 @@ func (atm *accumulatorTaskManager) CreateTask(request *v1.AccumulatorRequest) {
 						},
 						Id:  output.ID(),
 						EOF: false,
+						// TODO: tags
 					}:
 					}
 				}
