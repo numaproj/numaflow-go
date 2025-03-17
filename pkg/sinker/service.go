@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"os"
 	"runtime/debug"
 	"sync"
 	"time"
@@ -30,7 +31,7 @@ const (
 	UDContainerFallbackSink = "fb-udsink"
 )
 
-var errSinkHandlerPanic = errors.New("UDF_EXECUTION_ERROR(sink)")
+var errSinkHandlerPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", os.Getenv(EnvUDContainerType))
 
 // handlerDatum implements the Datum interface and is used in the sink functions.
 type handlerDatum struct {

@@ -2,8 +2,9 @@ package sideinput
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"log"
+	"os"
 	"runtime/debug"
 	"sync"
 
@@ -21,9 +22,10 @@ const (
 	DirPath               = "/var/numaflow/side-inputs"
 	defaultMaxMessageSize = 1024 * 1024 * 64 // 64MB
 	serverInfoFilePath    = "/var/run/numaflow/sideinput-server-info"
+	EnvUDContainerType    = "NUMAFLOW_UD_CONTAINER_TYPE"
 )
 
-var errSideInputHandlerPanic = errors.New("UDF_EXECUTION_ERROR(side input)")
+var errSideInputHandlerPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", os.Getenv(EnvUDContainerType))
 
 // Service implements the proto gen server interface and contains the retrieve operation handler
 type Service struct {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"os"
 	"runtime/debug"
 	"sync"
 
@@ -25,6 +26,7 @@ const (
 	defaultMaxMessageSize = 1024 * 1024 * 64
 	address               = "/var/run/numaflow/sourcetransform.sock"
 	serverInfoFilePath    = "/var/run/numaflow/sourcetransformer-server-info"
+	EnvUDContainerType    = "NUMAFLOW_UD_CONTAINER_TYPE"
 )
 
 // Service implements the proto gen server interface and contains the transformer operation
@@ -41,7 +43,7 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*v1.ReadyResponse, 
 	return &v1.ReadyResponse{Ready: true}, nil
 }
 
-var errTransformerPanic = errors.New("UDF_EXECUTION_ERROR(transformer)")
+var errTransformerPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", os.Getenv(EnvUDContainerType))
 
 // recvWithContext wraps stream.Recv() to respect context cancellation.
 func recvWithContext(ctx context.Context, stream v1.SourceTransform_SourceTransformFnServer) (*v1.SourceTransformRequest, error) {

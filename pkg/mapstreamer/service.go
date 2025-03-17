@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"os"
 	"runtime/debug"
 	"sync"
 
@@ -23,9 +24,10 @@ const (
 	defaultMaxMessageSize = 1024 * 1024 * 64
 	address               = "/var/run/numaflow/mapstream.sock"
 	serverInfoFilePath    = "/var/run/numaflow/mapper-server-info"
+	EnvUDContainerType    = "NUMAFLOW_UD_CONTAINER_TYPE"
 )
 
-var errMapStreamHandlerPanic = errors.New("UDF_EXECUTION_ERROR(mapstream)")
+var errMapStreamHandlerPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", os.Getenv(EnvUDContainerType))
 
 // Service implements the proto gen server interface and contains the map
 // streaming function.

@@ -2,8 +2,9 @@ package servingstore
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"log"
+	"os"
 	"runtime/debug"
 	"sync"
 
@@ -21,6 +22,7 @@ const (
 	address               = "/var/run/numaflow/serving.sock"
 	defaultMaxMessageSize = 1024 * 1024 * 64 // 64MB
 	serverInfoFilePath    = "/var/run/numaflow/serving-server-info"
+	EnvUDContainerType    = "NUMAFLOW_UD_CONTAINER_TYPE"
 )
 
 // Service implements the proto gen server interface
@@ -31,19 +33,7 @@ type Service struct {
 	once         sync.Once
 }
 
-var errServingStorePanic = errors.New("UDF_EXECUTION_ERROR(serving)")
-
-func handlePanic() (err error) {
-	if r := recover(); r != nil {
-		log.Printf("panic inside serving store handler: %v %v", r, string(debug.Stack()))
-		st, _ := status.Newf(codes.Internal, "%s: %v", errServingStorePanic, r).WithDetails(&epb.DebugInfo{
-			Detail: string(debug.Stack()),
-		})
-		err = st.Err()
-	}
-
-	return err
-}
+var errServingStorePanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", os.Getenv(EnvUDContainerType))
 
 // Put puts the payload into the Store.
 func (s *Service) Put(ctx context.Context, request *servingpb.PutRequest) (*servingpb.PutResponse, error) {
