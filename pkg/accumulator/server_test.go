@@ -20,9 +20,9 @@ func TestAccumulatorServer_Start(t *testing.T) {
 		_ = os.RemoveAll(serverInfoFile.Name())
 	}()
 
-	var accumulatorHandle = SimpleCreatorWithAccumulateFn(func(ctx context.Context, input <-chan Datum, output chan<- Datum) {
+	var accumulatorHandle = SimpleCreatorWithAccumulateFn(func(ctx context.Context, input <-chan Datum, output chan<- Message) {
 		for datum := range input {
-			output <- datum
+			output <- MessageFromDatum(datum)
 		}
 	})
 	// note: using actual uds connection

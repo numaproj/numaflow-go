@@ -24,7 +24,7 @@ type accumulateTask struct {
 	keys            []string
 	accumulator     Accumulator
 	inputCh         chan Datum
-	outputCh        chan Datum
+	outputCh        chan Message
 	latestWatermark time.Time
 }
 
@@ -63,7 +63,7 @@ func (atm *accumulatorTaskManager) CreateTask(request *v1.AccumulatorRequest) {
 	task := &accumulateTask{
 		keys:            request.GetPayload().GetKeys(),
 		inputCh:         make(chan Datum, 500),
-		outputCh:        make(chan Datum, 500),
+		outputCh:        make(chan Message, 500),
 		latestWatermark: time.UnixMilli(-1),
 	}
 
@@ -91,8 +91,8 @@ func (atm *accumulatorTaskManager) CreateTask(request *v1.AccumulatorRequest) {
 					}
 
 					// update the latest watermark
-					if output.Watermark().After(task.latestWatermark) {
-						task.latestWatermark = output.Watermark()
+					if output.watermark.After(task.latestWatermark) {
+						task.latestWatermark = output.watermark
 					}
 
 					select {
@@ -102,9 +102,9 @@ func (atm *accumulatorTaskManager) CreateTask(request *v1.AccumulatorRequest) {
 						Payload: &v1.Payload{
 							Keys:      output.Keys(),
 							Value:     output.Value(),
-							EventTime: timestamppb.New(output.EventTime()),
-							Watermark: timestamppb.New(output.Watermark()),
-							Headers:   output.Headers(),
+							EventTime: timestamppb.New(output.eventTime),
+							Watermark: timestamppb.New(output.watermark),
+							Headers:   output.headers,
 						},
 						Window: &v1.Window{
 							Start: timestamppb.New(time.UnixMilli(0)),
@@ -113,7 +113,7 @@ func (atm *accumulatorTaskManager) CreateTask(request *v1.AccumulatorRequest) {
 							End:  timestamppb.New(task.latestWatermark),
 							Slot: "slot-0",
 						},
-						Id:  output.ID(),
+						Id:  output.id,
 						EOF: false,
 						// TODO: tags
 					}:

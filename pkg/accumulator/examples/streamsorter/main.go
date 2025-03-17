@@ -14,7 +14,7 @@ type streamSorter struct {
 	buffer   []accumulator.Datum
 }
 
-func (s *streamSorter) Accumulate(ctx context.Context, input <-chan accumulator.Datum, output chan<- accumulator.Datum) {
+func (s *streamSorter) Accumulate(ctx context.Context, input <-chan accumulator.Datum, output chan<- accumulator.Message) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -40,14 +40,14 @@ func (s *streamSorter) insertSorted(datum accumulator.Datum) {
 	s.buffer[index] = datum
 }
 
-func (s *streamSorter) flushBuffer(output chan<- accumulator.Datum) {
+func (s *streamSorter) flushBuffer(output chan<- accumulator.Message) {
 	log.Println("Watermark updated, flushing buffer: ", s.latestWm.UnixMilli())
 	i := 0
 	for _, datum := range s.buffer {
 		if datum.EventTime().After(s.latestWm) {
 			break
 		}
-		output <- datum
+		output <- accumulator.MessageFromDatum(datum)
 		println("Sent datum with event time: ", datum.EventTime().UnixMilli())
 		i++
 	}

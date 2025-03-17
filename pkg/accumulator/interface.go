@@ -15,10 +15,6 @@ type Datum interface {
 	Watermark() time.Time
 	// Keys returns the keys of the datum.
 	Keys() []string
-	// UpdateValue updates the payload of the datum.
-	UpdateValue([]byte)
-	// SetTags sets the tags of the datum, tags are used for conditional forwarding.
-	SetTags([]string)
 	// Headers returns the headers of the datum.
 	Headers() map[string]string
 	// ID returns the ID of the datum, id will be used for deduplication.
@@ -27,7 +23,7 @@ type Datum interface {
 
 // Accumulator is the interface which can be used to implement the accumulator operation.
 type Accumulator interface {
-	Accumulate(ctx context.Context, input <-chan Datum, output chan<- Datum)
+	Accumulate(ctx context.Context, input <-chan Datum, output chan<- Message)
 }
 
 // AccumulatorCreator is the interface which is used to create an Accumulator.
@@ -36,16 +32,16 @@ type AccumulatorCreator interface {
 }
 
 // accumulatorFn is a utility type used to convert an Accumulate function to an Accumulator.
-type accumulatorFn func(ctx context.Context, input <-chan Datum, output chan<- Datum)
+type accumulatorFn func(ctx context.Context, input <-chan Datum, output chan<- Message)
 
 // Accumulate implements the function of accumulate function.
-func (af accumulatorFn) Accumulate(ctx context.Context, input <-chan Datum, output chan<- Datum) {
+func (af accumulatorFn) Accumulate(ctx context.Context, input <-chan Datum, output chan<- Message) {
 	af(ctx, input, output)
 }
 
 // simpleAccumulatorCreator is an implementation of AccumulatorCreator, which creates an Accumulator for the given function.
 type simpleAccumulatorCreator struct {
-	f func(context.Context, <-chan Datum, chan<- Datum)
+	f func(context.Context, <-chan Datum, chan<- Message)
 }
 
 // Create creates an Accumulator for the given function.
@@ -54,6 +50,6 @@ func (s *simpleAccumulatorCreator) Create() Accumulator {
 }
 
 // SimpleCreatorWithAccumulateFn creates a simple AccumulatorCreator for the given accumulate function.
-func SimpleCreatorWithAccumulateFn(f func(context.Context, <-chan Datum, chan<- Datum)) AccumulatorCreator {
+func SimpleCreatorWithAccumulateFn(f func(context.Context, <-chan Datum, chan<- Message)) AccumulatorCreator {
 	return &simpleAccumulatorCreator{f: f}
 }
