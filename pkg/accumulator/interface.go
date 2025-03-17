@@ -23,11 +23,15 @@ type Datum interface {
 
 // Accumulator is the interface which can be used to implement the accumulator operation.
 type Accumulator interface {
+	// Accumulate can read unordered from the input stream and emit the ordered data to the output stream.
+	// Once the watermark (WM) of the output stream progresses, the data in WAL until that WM will be garbage collected.
+	// NOTE: A message can be silently dropped if need be, and it will be cleared from the WAL when the WM progresses.
 	Accumulate(ctx context.Context, input <-chan Datum, output chan<- Message)
 }
 
 // AccumulatorCreator is the interface which is used to create an Accumulator.
 type AccumulatorCreator interface {
+	// Create is called for every key and will be closed after the keyed stream is idle for the timeout duration.
 	Create() Accumulator
 }
 

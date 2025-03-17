@@ -1,12 +1,7 @@
 package accumulator
 
 import (
-	"fmt"
 	"time"
-)
-
-var (
-	DROP = fmt.Sprintf("%U__DROP__", '\\') // U+005C__DROP__
 )
 
 // Message is used to wrap the data return by Map functions
