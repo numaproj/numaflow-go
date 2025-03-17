@@ -27,7 +27,12 @@ const (
 	EnvUDContainerType    = "NUMAFLOW_UD_CONTAINER_TYPE"
 )
 
-var errBatchMapHandlerPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", os.Getenv(EnvUDContainerType))
+var errBatchMapHandlerPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", func() string {
+	if val, exists := os.LookupEnv(EnvUDContainerType); exists {
+		return val
+	}
+	return "unknown-container"
+}())
 
 // Service implements the proto gen server interface and contains the map operation handler.
 type Service struct {

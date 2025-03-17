@@ -43,7 +43,12 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*v1.ReadyResponse, 
 	return &v1.ReadyResponse{Ready: true}, nil
 }
 
-var errTransformerPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", os.Getenv(EnvUDContainerType))
+var errTransformerPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", func() string {
+	if val, exists := os.LookupEnv(EnvUDContainerType); exists {
+		return val
+	}
+	return "unknown-container"
+}())
 
 // recvWithContext wraps stream.Recv() to respect context cancellation.
 func recvWithContext(ctx context.Context, stream v1.SourceTransform_SourceTransformFnServer) (*v1.SourceTransformRequest, error) {
