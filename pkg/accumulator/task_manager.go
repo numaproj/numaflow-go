@@ -74,6 +74,9 @@ func (atm *accumulatorTaskManager) CreateTask(request *v1.AccumulatorRequest) {
 	atm.eg.Go(func() (err error) {
 		var wg sync.WaitGroup
 		wg.Add(1)
+
+		// listen back on the response channel from the accumulator so that the results can be written back to the
+		// response channel which is eventually read and written to gRPC outbound stream.
 		go func() {
 			defer wg.Done()
 			// read responses from the output channel and send to the response channel
@@ -90,7 +93,7 @@ func (atm *accumulatorTaskManager) CreateTask(request *v1.AccumulatorRequest) {
 						return
 					}
 
-					// update the latest watermark
+					// update the latest watermark. this makes sure there is no accidental WM regression.
 					if output.watermark.After(task.latestWatermark) {
 						task.latestWatermark = output.watermark
 					}
@@ -106,6 +109,7 @@ func (atm *accumulatorTaskManager) CreateTask(request *v1.AccumulatorRequest) {
 							Watermark: timestamppb.New(output.watermark),
 							Headers:   output.headers,
 						},
+						// this a global window (hence ever expanding). the End timestamp is used for WAL GC.
 						Window: &v1.Window{
 							Start: timestamppb.New(time.UnixMilli(0)),
 							// window end time is considered the latest watermark, based on the window end time, the compaction happens
@@ -113,9 +117,9 @@ func (atm *accumulatorTaskManager) CreateTask(request *v1.AccumulatorRequest) {
 							End:  timestamppb.New(task.latestWatermark),
 							Slot: "slot-0",
 						},
-						Id:  output.id,
-						EOF: false,
-						// TODO: tags
+						Id:   output.id,
+						EOF:  false, // will be flipped when timeout happens.
+						Tags: output.tags,
 					}:
 					}
 				}
@@ -132,7 +136,9 @@ func (atm *accumulatorTaskManager) CreateTask(request *v1.AccumulatorRequest) {
 			}
 		}()
 
+		// create the task for the given key
 		accumulatorHandle := atm.accumulatorCreatorHandle.Create()
+		// start the accumulator
 		accumulatorHandle.Accumulate(atm.ctx, task.inputCh, task.outputCh)
 		close(task.outputCh)
 
@@ -145,6 +151,7 @@ func (atm *accumulatorTaskManager) CreateTask(request *v1.AccumulatorRequest) {
 		return nil
 	})
 
+	// write to task's input channel
 	select {
 	case <-atm.ctx.Done():
 		return
@@ -159,10 +166,12 @@ func (atm *accumulatorTaskManager) AppendToTask(request *v1.AccumulatorRequest) 
 	task, ok := atm.tasks[generateKey(request.GetPayload().GetKeys())]
 	atm.mu.RUnlock()
 
+	// shouldn't happen
 	if !ok {
 		atm.CreateTask(request)
 		return
 	}
+
 	select {
 	case <-atm.ctx.Done():
 		return
@@ -194,6 +203,7 @@ func (atm *accumulatorTaskManager) CloseAll() {
 	}
 }
 
+// OutputChannel returns the Task Manager's response channel. There is only one response channel across all tasks/keys.
 func (atm *accumulatorTaskManager) OutputChannel() <-chan *v1.AccumulatorResponse {
 	return atm.responseCh
 }

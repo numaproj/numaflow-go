@@ -49,6 +49,7 @@ func (fs *Service) AccumulateFn(stream accumulatorpb.Accumulator_AccumulateFnSer
 
 	taskManager := newAccumulatorTaskManager(groupCtx, g, fs.AccumulatorCreator)
 
+	// read from the response of the tasks and write to gRPC stream.
 	g.Go(func() error {
 		for {
 			select {
@@ -80,7 +81,9 @@ func (fs *Service) AccumulateFn(stream accumulatorpb.Accumulator_AccumulateFnSer
 			log.Printf("Failed to receive request: %v", err)
 			// read loop is not part of the error group, so we need to cancel the context
 			// to signal the other goroutines to stop processing.
+			// this error is from inner stream wrapped in recvWithContext.
 			cancel()
+			// FIXME: propagate the error
 			break
 		}
 
@@ -105,7 +108,9 @@ func (fs *Service) AccumulateFn(stream accumulatorpb.Accumulator_AccumulateFnSer
 	return nil
 }
 
-// recvWithContext wraps stream.Recv() to respect context cancellation.
+// recvWithContext wraps stream.Recv() to respect context cancellation. We achieve that by writing to another channel and
+// listening on the new channel also with ctx.Done so it can short-circuit if ctx is closed. Without this approach, it would
+// be blocking because nobody is listening on ctx.Done().
 func recvWithContext(ctx context.Context, stream accumulatorpb.Accumulator_AccumulateFnServer) (*accumulatorpb.AccumulatorRequest, error) {
 	type recvResult struct {
 		req *accumulatorpb.AccumulatorRequest

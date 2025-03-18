@@ -44,7 +44,7 @@ func (r *server) Start(ctx context.Context) error {
 
 	// write server info to the file
 	serverInfo := info.GetDefaultServerInfo()
-	serverInfo.MinimumNumaflowVersion = info.MinimumNumaflowVersion[info.Sessionreducer]
+	serverInfo.MinimumNumaflowVersion = info.MinimumNumaflowVersion[info.Accumulator]
 	// start listening on unix domain socket
 	lis, err := shared.PrepareServer(r.opts.sockAddr, r.opts.serverInfoFilePath, serverInfo)
 	if err != nil {
