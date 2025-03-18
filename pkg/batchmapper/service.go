@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"os"
 	"runtime/debug"
 	"sync"
 
@@ -23,9 +24,17 @@ const (
 	address               = "/var/run/numaflow/batchmap.sock"
 	defaultMaxMessageSize = 1024 * 1024 * 64
 	serverInfoFilePath    = "/var/run/numaflow/mapper-server-info"
+	EnvUDContainerType    = "NUMAFLOW_UD_CONTAINER_TYPE"
 )
 
-var errBatchMapHandlerPanic = errors.New("UDF_EXECUTION_ERROR(batchmap)")
+var containerType = func() string {
+	if val, exists := os.LookupEnv(EnvUDContainerType); exists {
+		return val
+	}
+	return "unknown-container"
+}()
+
+var errBatchMapHandlerPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", containerType)
 
 // Service implements the proto gen server interface and contains the map operation handler.
 type Service struct {
