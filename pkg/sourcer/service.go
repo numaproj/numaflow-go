@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"os"
 	"runtime/debug"
 	"sync"
 	"time"
@@ -25,6 +26,7 @@ const (
 	defaultMaxMessageSize = 1024 * 1024 * 64 // 64MB
 	address               = "/var/run/numaflow/source.sock"
 	serverInfoFilePath    = "/var/run/numaflow/sourcer-server-info"
+	EnvUDContainerType    = "NUMAFLOW_UD_CONTAINER_TYPE"
 )
 
 // Service implements the proto gen server interface
@@ -35,7 +37,14 @@ type Service struct {
 	once       sync.Once
 }
 
-var errSourceReadPanic = errors.New("UDF_EXECUTION_ERROR(source)")
+var containerType = func() string {
+	if val, exists := os.LookupEnv(EnvUDContainerType); exists {
+		return val
+	}
+	return "unknown-container"
+}()
+
+var errSourceReadPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", containerType)
 
 // ReadFn reads the data from the source.
 func (fs *Service) ReadFn(stream sourcepb.Source_ReadFnServer) error {
