@@ -33,12 +33,14 @@ type Service struct {
 	once         sync.Once
 }
 
-var errServingStorePanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", func() string {
+var containerType = func() string {
 	if val, exists := os.LookupEnv(EnvUDContainerType); exists {
 		return val
 	}
 	return "unknown-container"
-}())
+}()
+
+var errServingStorePanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", containerType)
 
 // Put puts the payload into the Store.
 func (s *Service) Put(ctx context.Context, request *servingpb.PutRequest) (*servingpb.PutResponse, error) {

@@ -37,12 +37,14 @@ type Service struct {
 	once       sync.Once
 }
 
-var errSourceReadPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", func() string {
+var containerType = func() string {
 	if val, exists := os.LookupEnv(EnvUDContainerType); exists {
 		return val
 	}
 	return "unknown-container"
-}())
+}()
+
+var errSourceReadPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", containerType)
 
 // ReadFn reads the data from the source.
 func (fs *Service) ReadFn(stream sourcepb.Source_ReadFnServer) error {

@@ -31,12 +31,14 @@ const (
 	UDContainerFallbackSink = "fb-udsink"
 )
 
-var errSinkHandlerPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", func() string {
+var containerType = func() string {
 	if val, exists := os.LookupEnv(EnvUDContainerType); exists {
 		return val
 	}
 	return "unknown-container"
-}())
+}()
+
+var errSinkHandlerPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", containerType)
 
 // handlerDatum implements the Datum interface and is used in the sink functions.
 type handlerDatum struct {

@@ -25,12 +25,14 @@ const (
 	EnvUDContainerType    = "NUMAFLOW_UD_CONTAINER_TYPE"
 )
 
-var errSideInputHandlerPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", func() string {
+var containerType = func() string {
 	if val, exists := os.LookupEnv(EnvUDContainerType); exists {
 		return val
 	}
 	return "unknown-container"
-}())
+}()
+
+var errSideInputHandlerPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", containerType)
 
 // Service implements the proto gen server interface and contains the retrieve operation handler
 type Service struct {
