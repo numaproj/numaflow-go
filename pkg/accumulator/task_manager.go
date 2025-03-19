@@ -89,6 +89,12 @@ func (atm *accumulatorTaskManager) CreateTask(request *v1.AccumulatorRequest) {
 						// send EOF response to the response channel
 						atm.responseCh <- &v1.AccumulatorResponse{
 							EOF: true,
+							Window: &v1.KeyedWindow{
+								Keys:  task.keys,
+								Slot:  "slot-0",
+								Start: timestamppb.New(time.UnixMilli(0)),
+								End:   timestamppb.New(task.latestWatermark),
+							},
 						}
 						return
 					}
