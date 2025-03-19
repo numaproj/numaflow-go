@@ -27,6 +27,10 @@ const (
 // AccumulatorClient is the client API for Accumulator service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// AccumulatorWindow describes a special kind of SessionWindow (similar to Global Window) where output should
+// always have monotonically increasing WM but it can be manipulated through event-time by reordering the messages.
+// NOTE: Quite powerful, should not be abused; it can cause stalling of pipelines and leaks
 type AccumulatorClient interface {
 	// AccumulateFn applies a accumulate function to a request stream.
 	AccumulateFn(ctx context.Context, opts ...grpc.CallOption) (Accumulator_AccumulateFnClient, error)
@@ -87,6 +91,10 @@ func (c *accumulatorClient) IsReady(ctx context.Context, in *emptypb.Empty, opts
 // AccumulatorServer is the server API for Accumulator service.
 // All implementations must embed UnimplementedAccumulatorServer
 // for forward compatibility
+//
+// AccumulatorWindow describes a special kind of SessionWindow (similar to Global Window) where output should
+// always have monotonically increasing WM but it can be manipulated through event-time by reordering the messages.
+// NOTE: Quite powerful, should not be abused; it can cause stalling of pipelines and leaks
 type AccumulatorServer interface {
 	// AccumulateFn applies a accumulate function to a request stream.
 	AccumulateFn(Accumulator_AccumulateFnServer) error

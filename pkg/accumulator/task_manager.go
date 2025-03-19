@@ -61,7 +61,7 @@ func (atm *accumulatorTaskManager) CreateTask(request *v1.AccumulatorRequest) {
 	defer atm.mu.Unlock()
 
 	task := &accumulateTask{
-		keys:            request.GetPayload().GetKeys(),
+		keys:            request.GetOperation().GetKeyedWindow().GetKeys(),
 		inputCh:         make(chan Datum, 500),
 		outputCh:        make(chan Message, 500),
 		latestWatermark: time.UnixMilli(-1),
@@ -110,12 +110,13 @@ func (atm *accumulatorTaskManager) CreateTask(request *v1.AccumulatorRequest) {
 							Headers:   output.headers,
 						},
 						// this a global window (hence ever expanding). the End timestamp is used for WAL GC.
-						Window: &v1.Window{
+						Window: &v1.KeyedWindow{
 							Start: timestamppb.New(time.UnixMilli(0)),
 							// window end time is considered the latest watermark, based on the window end time, the compaction happens
 							// on the client side.
 							End:  timestamppb.New(task.latestWatermark),
 							Slot: "slot-0",
+							Keys: task.keys,
 						},
 						Id:   output.id,
 						EOF:  false, // will be flipped when timeout happens.
@@ -143,11 +144,6 @@ func (atm *accumulatorTaskManager) CreateTask(request *v1.AccumulatorRequest) {
 		close(task.outputCh)
 
 		wg.Wait()
-
-		// remove the task from the task manager
-		atm.mu.Lock()
-		delete(atm.tasks, key)
-		atm.mu.Unlock()
 		return nil
 	})
 
@@ -162,8 +158,10 @@ func (atm *accumulatorTaskManager) CreateTask(request *v1.AccumulatorRequest) {
 // AppendToTask writes the message to the accumulate task.
 // If the task is not found, it creates a new task and starts the accumulate operation.
 func (atm *accumulatorTaskManager) AppendToTask(request *v1.AccumulatorRequest) {
+	kw := request.GetOperation().GetKeyedWindow()
+
 	atm.mu.RLock()
-	task, ok := atm.tasks[generateKey(request.GetPayload().GetKeys())]
+	task, ok := atm.tasks[generateKey(kw.GetKeys())]
 	atm.mu.RUnlock()
 
 	// shouldn't happen
@@ -181,16 +179,20 @@ func (atm *accumulatorTaskManager) AppendToTask(request *v1.AccumulatorRequest) 
 
 // CloseTask closes the accumulate task by closing the input channel.
 func (atm *accumulatorTaskManager) CloseTask(request *v1.AccumulatorRequest) {
+	kw := request.GetOperation().GetKeyedWindow()
+
 	atm.mu.Lock()
 	defer atm.mu.Unlock()
 
-	key := strings.Join(request.GetPayload().GetKeys(), delimiter)
+	key := strings.Join(kw.GetKeys(), delimiter)
 	task, ok := atm.tasks[key]
+
 	if !ok {
-		return
+		log.Panicf("task not found for key: %s", key)
 	}
 
 	close(task.inputCh)
+	delete(atm.tasks, task.uniqueKey())
 }
 
 // CloseAll closes all the accumulate tasks.
@@ -200,6 +202,7 @@ func (atm *accumulatorTaskManager) CloseAll() {
 
 	for _, task := range atm.tasks {
 		close(task.inputCh)
+		delete(atm.tasks, task.uniqueKey())
 	}
 }
 
