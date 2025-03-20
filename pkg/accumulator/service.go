@@ -3,8 +3,10 @@ package accumulator
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"log"
+	"os"
 	"sync"
 
 	"golang.org/x/sync/errgroup"
@@ -20,9 +22,17 @@ const (
 	defaultMaxMessageSize = 1024 * 1024 * 64
 	address               = "/var/run/numaflow/accumulator.sock"
 	serverInfoFilePath    = "/var/run/numaflow/accumulator-server-info"
+	EnvUDContainerType    = "NUMAFLOW_UD_CONTAINER_TYPE"
 )
 
-var errAccumulatorPanic = errors.New("UDF_EXECUTION_ERROR(accumulator)")
+var containerType = func() string {
+	if val, exists := os.LookupEnv(EnvUDContainerType); exists {
+		return val
+	}
+	return "unknown-container"
+}()
+
+var errAccumulatorPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", containerType)
 
 // Service implements the proto gen server interface and contains the accumulator operation handler.
 type Service struct {
@@ -66,6 +76,7 @@ func (fs *Service) AccumulateFn(stream accumulatorpb.Accumulator_AccumulateFnSer
 		}
 	})
 
+	var readErr error
 	for {
 		req, err := recvWithContext(groupCtx, stream)
 		if errors.Is(err, context.Canceled) {
@@ -83,7 +94,7 @@ func (fs *Service) AccumulateFn(stream accumulatorpb.Accumulator_AccumulateFnSer
 			// to signal the other goroutines to stop processing.
 			// this error is from inner stream wrapped in recvWithContext.
 			cancel()
-			// FIXME: propagate the error
+			readErr = err
 			break
 		}
 
@@ -104,6 +115,14 @@ func (fs *Service) AccumulateFn(stream accumulatorpb.Accumulator_AccumulateFnSer
 			fs.shutdownCh <- struct{}{}
 		})
 		return err
+	}
+
+	if readErr != nil {
+		fs.once.Do(func() {
+			log.Printf("Stopping the AccumulateFn because of error while reading requests, %s", readErr)
+			fs.shutdownCh <- struct{}{}
+		})
+		return readErr
 	}
 	return nil
 }
