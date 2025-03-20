@@ -25,7 +25,8 @@ message Payload {
   bytes value = 2;
   google.protobuf.Timestamp event_time = 3;
   google.protobuf.Timestamp watermark = 4;
-  map<string, string> headers = 5;
+  string id = 5;
+  map<string, string> headers = 6;
 }
 
 // AccumulatorRequest represents a request element.
@@ -43,8 +44,6 @@ message AccumulatorRequest {
   }
 
   Payload payload = 1;
-  // This ID is used to uniquely identify a map request
-  string id = 2;
   WindowOperation operation = 3;
   optional Handshake handshake = 4;
 }
@@ -61,8 +60,6 @@ message KeyedWindow {
 // AccumulatorResponse represents a response element.
 message AccumulatorResponse {
   Payload payload = 1;
-  // This ID is used to uniquely identify a map request
-  string id = 2;
   // window represents a window to which the result belongs.
   KeyedWindow window = 3;
   repeated string tags = 4;

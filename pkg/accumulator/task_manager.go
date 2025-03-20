@@ -114,6 +114,7 @@ func (atm *accumulatorTaskManager) CreateTask(request *v1.AccumulatorRequest) {
 							EventTime: timestamppb.New(output.eventTime),
 							Watermark: timestamppb.New(output.watermark),
 							Headers:   output.headers,
+							Id:        output.id,
 						},
 						// this a global window (hence ever expanding). the End timestamp is used for WAL GC.
 						Window: &v1.KeyedWindow{
@@ -124,7 +125,6 @@ func (atm *accumulatorTaskManager) CreateTask(request *v1.AccumulatorRequest) {
 							Slot: "slot-0",
 							Keys: task.keys,
 						},
-						Id:   output.id,
 						EOF:  false, // will be flipped when timeout happens.
 						Tags: output.tags,
 					}:
@@ -228,6 +228,6 @@ func buildDatum(request *v1.AccumulatorRequest) Datum {
 		watermark: request.GetPayload().GetWatermark().AsTime(),
 		keys:      request.GetPayload().GetKeys(),
 		headers:   request.GetPayload().GetHeaders(),
-		id:        request.GetId(),
+		id:        request.GetPayload().GetId(),
 	}
 }
