@@ -44,8 +44,8 @@ message AccumulatorRequest {
   }
 
   Payload payload = 1;
-  WindowOperation operation = 3;
-  optional Handshake handshake = 4;
+  WindowOperation operation = 2;
+  optional Handshake handshake = 3;
 }
 
 
@@ -61,15 +61,15 @@ message KeyedWindow {
 message AccumulatorResponse {
   Payload payload = 1;
   // window represents a window to which the result belongs.
-  KeyedWindow window = 3;
-  repeated string tags = 4;
-  optional Handshake handshake = 5;
+  KeyedWindow window = 2;
+  repeated string tags = 3;
+  optional Handshake handshake = 4;
   // EOF represents the end of the response for a window.
-  bool EOF = 6;
+  bool EOF = 5;
 }
 
 
- // ReadyResponse is the health check result.
+// ReadyResponse is the health check result.
 message ReadyResponse {
   bool ready = 1;
 }
