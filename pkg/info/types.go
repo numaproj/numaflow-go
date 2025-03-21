@@ -22,6 +22,7 @@ const (
 	Sourcetransformer ContainerType = "sourcetransformer"
 	Sinker            ContainerType = "sinker"
 	Mapper            ContainerType = "mapper"
+	Accumulator       ContainerType = "accumulator"
 	Reducer           ContainerType = "reducer"
 	Reducestreamer    ContainerType = "reducestreamer"
 	Sessionreducer    ContainerType = "sessionreducer"
@@ -50,6 +51,7 @@ var MinimumNumaflowVersion = map[ContainerType]string{
 	Sinker:            "1.4.0-z",
 	Mapper:            "1.4.0-z",
 	Reducestreamer:    "1.4.0-z",
+	Accumulator:       "1.5.0-z",
 	Reducer:           "1.4.0-z",
 	Sessionreducer:    "1.4.0-z",
 	Sideinput:         "1.4.0-z",

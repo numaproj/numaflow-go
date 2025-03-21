@@ -454,7 +454,6 @@ type SinkResponse_Result struct {
 	Status Status `protobuf:"varint,2,opt,name=status,proto3,enum=sink.v1.Status" json:"status,omitempty"`
 	// err_msg is the error message, set it if success is set to false.
 	ErrMsg        string `protobuf:"bytes,3,opt,name=err_msg,json=errMsg,proto3" json:"err_msg,omitempty"`
-
 	ServeResponse []byte `protobuf:"bytes,4,opt,name=serve_response,json=serveResponse,proto3,oneof" json:"serve_response,omitempty"`
 }
 

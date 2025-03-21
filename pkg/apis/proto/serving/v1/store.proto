@@ -19,7 +19,6 @@ syntax = "proto3";
 option go_package = "github.com/numaproj/numaflow-go/pkg/apis/proto/serving/v1";
 
 import "google/protobuf/empty.proto";
-import "google/protobuf/timestamp.proto";
 
 package serving.v1;
 
