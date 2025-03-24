@@ -26,7 +26,12 @@ func (s *streamSorter) Accumulate(ctx context.Context, input <-chan accumulator.
 		case <-ctx.Done():
 			log.Println("Exiting the Accumulator")
 			return
-		case datum := <-input:
+		case datum, ok := <-input:
+		// this case happens due to timeout
+			if !ok {
+				log.Println("Input channel closed")
+				return
+			}
 			log.Println("Received datum with event time: ", datum.EventTime().UnixMilli())
 			// watermark has moved, let's flush
 			if datum.Watermark().After(s.latestWm) {
