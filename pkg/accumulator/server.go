@@ -30,10 +30,12 @@ func NewServer(r AccumulatorCreator, inputOptions ...Option) numaflow.Server {
 	for _, inputOption := range inputOptions {
 		inputOption(opts)
 	}
+	shutdownCh := make(chan struct{})
+
 	s := new(server)
-	s.svc = new(Service)
-	s.svc.AccumulatorCreator = r
+	s.svc = NewService(r, shutdownCh)
 	s.opts = opts
+	s.shutdownCh = shutdownCh
 	return s
 }
 
