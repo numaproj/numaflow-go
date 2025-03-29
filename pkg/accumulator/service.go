@@ -42,6 +42,15 @@ type Service struct {
 	shutdownCh         chan<- struct{}
 }
 
+// NewService creates a new accumulator service.
+func NewService(r AccumulatorCreator, shutdownCh chan<- struct{}) *Service {
+	return &Service{
+		AccumulatorCreator: r,
+		shutdownCh:         shutdownCh,
+		once:               sync.Once{},
+	}
+}
+
 // IsReady returns true to indicate the gRPC connection is ready.
 func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*accumulatorpb.ReadyResponse, error) {
 	return &accumulatorpb.ReadyResponse{Ready: true}, nil
