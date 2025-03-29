@@ -15,6 +15,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	accumulatorpb "github.com/numaproj/numaflow-go/pkg/apis/proto/accumulator/v1"
+	"github.com/numaproj/numaflow-go/pkg/shared"
 )
 
 const (
@@ -22,11 +23,10 @@ const (
 	defaultMaxMessageSize = 1024 * 1024 * 64
 	address               = "/var/run/numaflow/accumulator.sock"
 	serverInfoFilePath    = "/var/run/numaflow/accumulator-server-info"
-	EnvUDContainerType    = "NUMAFLOW_UD_CONTAINER_TYPE"
 )
 
 var containerType = func() string {
-	if val, exists := os.LookupEnv(EnvUDContainerType); exists {
+	if val, exists := os.LookupEnv(shared.EnvUDContainerType); exists {
 		return val
 	}
 	return "unknown-container"

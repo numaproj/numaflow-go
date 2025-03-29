@@ -14,6 +14,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	sideinputpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sideinput/v1"
+	"github.com/numaproj/numaflow-go/pkg/shared"
 )
 
 const (
@@ -22,11 +23,10 @@ const (
 	DirPath               = "/var/numaflow/side-inputs"
 	defaultMaxMessageSize = 1024 * 1024 * 64 // 64MB
 	serverInfoFilePath    = "/var/run/numaflow/sideinput-server-info"
-	EnvUDContainerType    = "NUMAFLOW_UD_CONTAINER_TYPE"
 )
 
 var containerType = func() string {
-	if val, exists := os.LookupEnv(EnvUDContainerType); exists {
+	if val, exists := os.LookupEnv(shared.EnvUDContainerType); exists {
 		return val
 	}
 	return "unknown-container"
