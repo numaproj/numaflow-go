@@ -17,6 +17,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	mappb "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1"
+	"github.com/numaproj/numaflow-go/pkg/shared"
 )
 
 const (
@@ -24,11 +25,10 @@ const (
 	defaultMaxMessageSize = 1024 * 1024 * 64
 	address               = "/var/run/numaflow/mapstream.sock"
 	serverInfoFilePath    = "/var/run/numaflow/mapper-server-info"
-	EnvUDContainerType    = "NUMAFLOW_UD_CONTAINER_TYPE"
 )
 
 var errMapStreamHandlerPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", func() string {
-	if val, exists := os.LookupEnv(EnvUDContainerType); exists {
+	if val, exists := os.LookupEnv(shared.EnvUDContainerType); exists {
 		return val
 	}
 	return "unknown-container"

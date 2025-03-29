@@ -17,6 +17,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	mappb "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1"
+	"github.com/numaproj/numaflow-go/pkg/shared"
 )
 
 const (
@@ -24,11 +25,10 @@ const (
 	address               = "/var/run/numaflow/map.sock"
 	defaultMaxMessageSize = 1024 * 1024 * 64
 	serverInfoFilePath    = "/var/run/numaflow/mapper-server-info"
-	EnvUDContainerType    = "NUMAFLOW_UD_CONTAINER_TYPE"
 )
 
 var containerType = func() string {
-	if val, exists := os.LookupEnv(EnvUDContainerType); exists {
+	if val, exists := os.LookupEnv(shared.EnvUDContainerType); exists {
 		return val
 	}
 	return "unknown-container"

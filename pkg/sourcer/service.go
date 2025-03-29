@@ -19,6 +19,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	sourcepb "github.com/numaproj/numaflow-go/pkg/apis/proto/source/v1"
+	"github.com/numaproj/numaflow-go/pkg/shared"
 )
 
 const (
@@ -26,7 +27,6 @@ const (
 	defaultMaxMessageSize = 1024 * 1024 * 64 // 64MB
 	address               = "/var/run/numaflow/source.sock"
 	serverInfoFilePath    = "/var/run/numaflow/sourcer-server-info"
-	EnvUDContainerType    = "NUMAFLOW_UD_CONTAINER_TYPE"
 )
 
 // Service implements the proto gen server interface
@@ -38,7 +38,7 @@ type Service struct {
 }
 
 var containerType = func() string {
-	if val, exists := os.LookupEnv(EnvUDContainerType); exists {
+	if val, exists := os.LookupEnv(shared.EnvUDContainerType); exists {
 		return val
 	}
 	return "unknown-container"

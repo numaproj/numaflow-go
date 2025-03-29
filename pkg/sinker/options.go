@@ -1,6 +1,10 @@
 package sinker
 
-import "os"
+import (
+	"os"
+
+	"github.com/numaproj/numaflow-go/pkg/shared"
+)
 
 type options struct {
 	sockAddr           string
@@ -16,7 +20,7 @@ func defaultOptions() *options {
 	defaultAddress := address
 
 	// If the container type is fallback sink, then use the fallback sink address and path.
-	if os.Getenv(EnvUDContainerType) == UDContainerFallbackSink {
+	if os.Getenv(shared.EnvUDContainerType) == UDContainerFallbackSink {
 		defaultPath = fbServerInfoFilePath
 		defaultAddress = fbAddress
 	}
