@@ -3,27 +3,22 @@ package errors
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/numaproj/numaflow-go/pkg/shared"
 )
 
-const (
-	DEFAULT_RUNTIME_APPLICATION_ERRORS_PATH = "/var/numaflow/runtime/application-errors"
-	CURRENT_FILE                            = "current-udf.json"
-)
-
-var once sync.Once
-var containerType = func() string {
-	if val, exists := os.LookupEnv(shared.EnvUDContainerType); exists {
-		return val
-	}
-	return "unknown-container"
-}()
-
+// struct to ensure persist critical error fn is executed only once
+// and return error if it has already been executed
+type PersistErrorOnce struct {
+	done atomic.Bool
+	m    sync.Mutex
+}
 type RuntimeErrorEntry struct {
 	// The name of the container where the error occurred.
 	Container string `json:"container"`
@@ -37,28 +32,53 @@ type RuntimeErrorEntry struct {
 	Details string `json:"details"`
 }
 
+func NewPersistErrorOnce() *PersistErrorOnce {
+	return &PersistErrorOnce{}
+}
+
+const (
+	DEFAULT_RUNTIME_APPLICATION_ERRORS_PATH = "/var/numaflow/runtime/application-errors"
+	CURRENT_FILE                            = "current-udf.json"
+)
+
+var containerType = func() string {
+	if val, exists := os.LookupEnv(shared.EnvUDContainerType); exists {
+		return val
+	}
+	return "unknown-container"
+}()
+
+var persistError = NewPersistErrorOnce()
+
 // PersistCriticalError persists a critical error to an empty dir.
 // If the error directory does not exist, it creates it.
 // The function will only execute once, regardless of how many times it is called
 // Recommended to use this functionality for a critical error in your application
 func PersistCriticalError(errorCode, errorMessage, errorDetails string) error {
-	var persistErr error
-	once.Do(func() { persistCriticalErrorToFile(&persistErr, errorCode, errorMessage, errorDetails) })
-	return persistErr
+	if persistError.done.Load() {
+		return fmt.Errorf("persist critical error fn executed once already")
+	}
+	persistError.m.Lock()
+	defer persistError.m.Unlock()
+	if !persistError.done.Load() {
+		defer persistError.done.Store(true)
+		persistCriticalErrorToFile(errorCode, errorMessage, errorDetails)
+	}
+	return nil
 }
 
-func persistCriticalErrorToFile(err *error, errorCode, errorMessage, errorDetails string) {
+func persistCriticalErrorToFile(errorCode, errorMessage, errorDetails string) {
 	var dir = DEFAULT_RUNTIME_APPLICATION_ERRORS_PATH
 	// ModePerm - read/write/execute access permissions to owner, group, and other.
 	// Directory may need to be accessible by multiple containers in a containerized environment.
 	if dirErr := os.Mkdir(dir, os.ModePerm); dirErr != nil {
-		*err = fmt.Errorf("failed to create directory %q: %v", dir, dirErr)
+		slog.Error("creating directory", "dir", dir, "error", dirErr)
 		return
 	}
 	// Add container to file path
 	containerDir := filepath.Join(dir, containerType)
 	if dirErr := os.Mkdir(containerDir, os.ModePerm); dirErr != nil {
-		*err = fmt.Errorf("failed to create container directory %q: %v", containerDir, dirErr)
+		slog.Error("creating container directory", "container dir", containerDir, "error", dirErr)
 		return
 	}
 
@@ -66,7 +86,7 @@ func persistCriticalErrorToFile(err *error, errorCode, errorMessage, errorDetail
 	currentFilePath := filepath.Join(containerDir, CURRENT_FILE)
 	f, fileErr := os.Create(currentFilePath)
 	if fileErr != nil {
-		*err = fmt.Errorf("failed to create current error log file %q: %v", currentFilePath, fileErr)
+		slog.Error("creating current error log file", "current path", currentFilePath, "error", fileErr)
 		return
 	}
 	defer f.Close()
@@ -86,13 +106,13 @@ func persistCriticalErrorToFile(err *error, errorCode, errorMessage, errorDetail
 
 	bytesToBeWritten, marshalErr := json.Marshal(runtimeErrorEntry)
 	if marshalErr != nil {
-		*err = fmt.Errorf("failed to marshal error entry: %v", marshalErr)
+		slog.Error("marshalling runtime error entry", "error", marshalErr)
 		return
 	}
 	// Write the error message and details to the current file path
 	_, writeErr := f.Write(bytesToBeWritten)
 	if writeErr != nil {
-		*err = fmt.Errorf("failed to write to error log file %q: %v", currentFilePath, writeErr)
+		slog.Error("write error to file", "path", currentFilePath, "error", writeErr)
 		return
 	}
 
@@ -102,7 +122,7 @@ func persistCriticalErrorToFile(err *error, errorCode, errorMessage, errorDetail
 
 	// Rename the current file path to final path
 	if renameErr := os.Rename(currentFilePath, finalFilePath); renameErr != nil {
-		*err = fmt.Errorf("failed to rename current file path %q to final path %q:  %v", currentFilePath, finalFilePath, writeErr)
+		slog.Error("rename path", "current path", currentFilePath, "final path", finalFilePath, "error", renameErr)
 		return
 	}
 }
