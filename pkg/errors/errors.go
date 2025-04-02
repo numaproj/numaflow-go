@@ -39,6 +39,7 @@ func NewPersistErrorOnce() *PersistErrorOnce {
 const (
 	DEFAULT_RUNTIME_APPLICATION_ERRORS_PATH = "/var/numaflow/runtime/application-errors"
 	CURRENT_FILE                            = "current-udf.json"
+	INTERNAL_ERROR                          = "Internal error"
 )
 
 var containerType = func() string {
@@ -92,7 +93,7 @@ func persistCriticalErrorToFile(errorCode, errorMessage, errorDetails string) {
 	defer f.Close()
 
 	if errorCode == "" {
-		errorCode = "Internal error"
+		errorCode = INTERNAL_ERROR
 	}
 
 	currentTimestamp := time.Now()
