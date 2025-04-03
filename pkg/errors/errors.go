@@ -22,8 +22,8 @@ type PersistErrorOnce struct {
 type RuntimeErrorEntry struct {
 	// The name of the container where the error occurred.
 	Container string `json:"container"`
-	// The timestamp of the error in RFC 3339 format.
-	Timestamp string `json:"timestamp"`
+	// The timestamp of the error.
+	Timestamp int64 `json:"timestamp"`
 	// The error code.
 	Code string `json:"code"`
 	// The error message.
@@ -63,13 +63,12 @@ func PersistCriticalError(errorCode, errorMessage, errorDetails string) error {
 	defer persistError.m.Unlock()
 	if !persistError.done.Load() {
 		defer persistError.done.Store(true)
-		persistCriticalErrorToFile(errorCode, errorMessage, errorDetails)
+		persistCriticalErrorToFile(errorCode, errorMessage, errorDetails, DEFAULT_RUNTIME_APPLICATION_ERRORS_PATH)
 	}
 	return nil
 }
 
-func persistCriticalErrorToFile(errorCode, errorMessage, errorDetails string) {
-	var dir = DEFAULT_RUNTIME_APPLICATION_ERRORS_PATH
+func persistCriticalErrorToFile(errorCode, errorMessage, errorDetails, dir string) {
 	// ModePerm - read/write/execute access permissions to owner, group, and other.
 	// Directory may need to be accessible by multiple containers in a containerized environment.
 	if dirErr := os.Mkdir(dir, os.ModePerm); dirErr != nil {
@@ -96,10 +95,10 @@ func persistCriticalErrorToFile(errorCode, errorMessage, errorDetails string) {
 		errorCode = INTERNAL_ERROR
 	}
 
-	currentTimestamp := time.Now()
+	currentTimestamp := time.Now().Unix()
 	runtimeErrorEntry := RuntimeErrorEntry{
 		Container: containerType,
-		Timestamp: currentTimestamp.Format(time.RFC3339),
+		Timestamp: currentTimestamp,
 		Code:      errorCode,
 		Message:   errorMessage,
 		Details:   errorDetails,
@@ -118,7 +117,7 @@ func persistCriticalErrorToFile(errorCode, errorMessage, errorDetails string) {
 	}
 
 	// Create the final runtime error file path
-	fileName := fmt.Sprintf("%d-udf.json", currentTimestamp.Unix())
+	fileName := fmt.Sprintf("%d-udf.json", currentTimestamp)
 	finalFilePath := filepath.Join(containerDir, fileName)
 
 	// Rename the current file path to final path
