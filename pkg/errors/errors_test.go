@@ -19,7 +19,9 @@ func TestPersistCriticalErrorToFileWritesErrorDetails(t *testing.T) {
 	errorMessage := "testMessage"
 	errorDetails := "testDetails"
 
-	persistCriticalErrorToFile(errorCode, errorMessage, errorDetails, dir)
+	if err := persistCriticalErrorToFile(errorCode, errorMessage, errorDetails, dir); err != nil {
+		t.Fatalf("failed to persist error: %v", err)
+	}
 
 	containerDir := filepath.Join(dir, containerType)
 	files, err := os.ReadDir(containerDir)
@@ -46,7 +48,9 @@ func TestPersistCriticalErrorToFileUsesDefaultErrorCode(t *testing.T) {
 	dir := "testdir"
 	defer os.RemoveAll(dir)
 
-	persistCriticalErrorToFile("", "message", "details", dir)
+	if err := persistCriticalErrorToFile("", "message", "details", dir); err != nil {
+		t.Fatalf("failed to persist error: %v", err)
+	}
 
 	containerDir := filepath.Join(dir, containerType)
 	fileName := fmt.Sprintf("%d-udf.json", time.Now().Unix())

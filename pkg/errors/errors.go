@@ -63,31 +63,30 @@ func PersistCriticalError(errorCode, errorMessage, errorDetails string) error {
 	defer persistError.m.Unlock()
 	if !persistError.done.Load() {
 		defer persistError.done.Store(true)
-		persistCriticalErrorToFile(errorCode, errorMessage, errorDetails, DEFAULT_RUNTIME_APPLICATION_ERRORS_PATH)
+		if err := persistCriticalErrorToFile(errorCode, errorMessage, errorDetails, DEFAULT_RUNTIME_APPLICATION_ERRORS_PATH); err != nil {
+			slog.Error("persisting critical error to file", "error", err)
+		}
 	}
 	return nil
 }
 
-func persistCriticalErrorToFile(errorCode, errorMessage, errorDetails, dir string) {
+func persistCriticalErrorToFile(errorCode, errorMessage, errorDetails, dir string) error {
 	// ModePerm - read/write/execute access permissions to owner, group, and other.
 	// Directory may need to be accessible by multiple containers in a containerized environment.
 	if dirErr := os.Mkdir(dir, os.ModePerm); dirErr != nil {
-		slog.Error("creating directory", "dir", dir, "error", dirErr)
-		return
+		return fmt.Errorf("failed to create directory: %s, error: %w", dir, dirErr)
 	}
 	// Add container to file path
 	containerDir := filepath.Join(dir, containerType)
 	if dirErr := os.Mkdir(containerDir, os.ModePerm); dirErr != nil {
-		slog.Error("creating container directory", "container dir", containerDir, "error", dirErr)
-		return
+		return fmt.Errorf("failed to create container directory: %s, error: %w", containerDir, dirErr)
 	}
 
 	// Create a current file path
 	currentFilePath := filepath.Join(containerDir, CURRENT_FILE)
 	f, fileErr := os.Create(currentFilePath)
 	if fileErr != nil {
-		slog.Error("creating current error log file", "current path", currentFilePath, "error", fileErr)
-		return
+		return fmt.Errorf("failed to create current error log file: %s, error: %w", currentFilePath, fileErr)
 	}
 	defer f.Close()
 
@@ -106,14 +105,12 @@ func persistCriticalErrorToFile(errorCode, errorMessage, errorDetails, dir strin
 
 	bytesToBeWritten, marshalErr := json.Marshal(runtimeErrorEntry)
 	if marshalErr != nil {
-		slog.Error("marshalling runtime error entry", "error", marshalErr)
-		return
+		return fmt.Errorf("failed to marshal runtime error entry, error: %w", marshalErr)
 	}
 	// Write the error message and details to the current file path
 	_, writeErr := f.Write(bytesToBeWritten)
 	if writeErr != nil {
-		slog.Error("write error to file", "path", currentFilePath, "error", writeErr)
-		return
+		return fmt.Errorf("failed to write error to file: %s, error: %w", currentFilePath, writeErr)
 	}
 
 	// Create the final runtime error file path
@@ -122,7 +119,7 @@ func persistCriticalErrorToFile(errorCode, errorMessage, errorDetails, dir strin
 
 	// Rename the current file path to final path
 	if renameErr := os.Rename(currentFilePath, finalFilePath); renameErr != nil {
-		slog.Error("rename path", "current path", currentFilePath, "final path", finalFilePath, "error", renameErr)
-		return
+		return fmt.Errorf("failed to rename file from %s to %s, error: %w", currentFilePath, finalFilePath, renameErr)
 	}
+	return nil
 }
