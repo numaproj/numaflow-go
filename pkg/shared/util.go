@@ -13,7 +13,8 @@ import (
 )
 
 const (
-	uds = "unix"
+	uds                = "unix"
+	EnvUDContainerType = "NUMAFLOW_UD_CONTAINER_TYPE"
 )
 
 func PrepareServer(sockAddr string, infoFilePath string, serverInfo *info.ServerInfo) (net.Listener, error) {
