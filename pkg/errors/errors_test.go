@@ -67,13 +67,13 @@ func TestPersistCriticalErrorToFileUsesDefaultErrorCode(t *testing.T) {
 	}
 	defer f.Close()
 
-	var entry RuntimeErrorEntry
+	var entry runtimeErrorEntry
 	if err := json.NewDecoder(f).Decode(&entry); err != nil {
 		t.Fatalf("failed to decode JSON from file %s: %v", finalFilePath, err)
 	}
 
-	if entry.Code != INTERNAL_ERROR {
-		t.Errorf("expected error code to be %s, but got %s", INTERNAL_ERROR, entry.Code)
+	if entry.Code != internal_error {
+		t.Errorf("expected error code to be %s, but got %s", internal_error, entry.Code)
 	}
 }
 

@@ -3,7 +3,6 @@ package errors
 import (
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"sync"
@@ -15,11 +14,11 @@ import (
 
 // struct to ensure persist critical error fn is executed only once
 // and return error if it has already been executed
-type PersistErrorOnce struct {
+type persistErrorOnce struct {
 	done atomic.Bool
 	m    sync.Mutex
 }
-type RuntimeErrorEntry struct {
+type runtimeErrorEntry struct {
 	// The name of the container where the error occurred.
 	Container string `json:"container"`
 	// The timestamp of the error.
@@ -32,14 +31,14 @@ type RuntimeErrorEntry struct {
 	Details string `json:"details"`
 }
 
-func NewPersistErrorOnce() *PersistErrorOnce {
-	return &PersistErrorOnce{}
+func newPersistErrorOnce() *persistErrorOnce {
+	return &persistErrorOnce{}
 }
 
 const (
-	DEFAULT_RUNTIME_APPLICATION_ERRORS_PATH = "/var/numaflow/runtime/application-errors"
-	CURRENT_FILE                            = "current-udf.json"
-	INTERNAL_ERROR                          = "Internal error"
+	runtime_application_errors_path = "/var/numaflow/runtime/application-errors"
+	current_file                    = "current-udf.json"
+	internal_error                  = "Internal error"
 )
 
 var containerType = func() string {
@@ -49,7 +48,7 @@ var containerType = func() string {
 	return "unknown-container"
 }()
 
-var persistError = NewPersistErrorOnce()
+var persistError = newPersistErrorOnce()
 
 // PersistCriticalError persists a critical error to an empty dir.
 // If the error directory does not exist, it creates it.
@@ -63,8 +62,8 @@ func PersistCriticalError(errorCode, errorMessage, errorDetails string) error {
 	defer persistError.m.Unlock()
 	if !persistError.done.Load() {
 		defer persistError.done.Store(true)
-		if err := persistCriticalErrorToFile(errorCode, errorMessage, errorDetails, DEFAULT_RUNTIME_APPLICATION_ERRORS_PATH); err != nil {
-			slog.Error("persisting critical error to file", "error", err)
+		if err := persistCriticalErrorToFile(errorCode, errorMessage, errorDetails, runtime_application_errors_path); err != nil {
+			fmt.Println("error in persisting critical error: ", err)
 		}
 	}
 	return nil
@@ -83,7 +82,7 @@ func persistCriticalErrorToFile(errorCode, errorMessage, errorDetails, dir strin
 	}
 
 	// Create a current file path
-	currentFilePath := filepath.Join(containerDir, CURRENT_FILE)
+	currentFilePath := filepath.Join(containerDir, current_file)
 	f, fileErr := os.Create(currentFilePath)
 	if fileErr != nil {
 		return fmt.Errorf("failed to create current error log file: %s, error: %w", currentFilePath, fileErr)
@@ -91,11 +90,11 @@ func persistCriticalErrorToFile(errorCode, errorMessage, errorDetails, dir strin
 	defer f.Close()
 
 	if errorCode == "" {
-		errorCode = INTERNAL_ERROR
+		errorCode = internal_error
 	}
 
 	currentTimestamp := time.Now().Unix()
-	runtimeErrorEntry := RuntimeErrorEntry{
+	runtimeErrorEntry := runtimeErrorEntry{
 		Container: containerType,
 		Timestamp: currentTimestamp,
 		Code:      errorCode,
