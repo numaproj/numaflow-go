@@ -3,21 +3,19 @@ package errors
 import (
 	"encoding/json"
 	"fmt"
-
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
 
 func TestPersistCriticalErrorToFileWritesErrorDetails(t *testing.T) {
-	dir := "testdir"
+	dir := "testdirone"
 	defer os.RemoveAll(dir)
 
-	errorCode := "testCode"
-	errorMessage := "testMessage"
-	errorDetails := "testDetails"
+	errorCode, errorMessage, errorDetails := "testCode", "testMessage", "testDetails"
 
 	if err := persistCriticalErrorToFile(errorCode, errorMessage, errorDetails, dir); err != nil {
 		t.Fatalf("failed to persist error: %v", err)
@@ -45,7 +43,7 @@ func TestPersistCriticalErrorToFileWritesErrorDetails(t *testing.T) {
 }
 
 func TestPersistCriticalErrorToFileUsesDefaultErrorCode(t *testing.T) {
-	dir := "testdir"
+	dir := "testdirtwo"
 	defer os.RemoveAll(dir)
 
 	if err := persistCriticalErrorToFile("", "message", "details", dir); err != nil {
@@ -60,7 +58,6 @@ func TestPersistCriticalErrorToFileUsesDefaultErrorCode(t *testing.T) {
 		t.Errorf("expected file %s to be created, but it does not exist", finalFilePath)
 	}
 
-	// Additional check to ensure the default error code is used
 	f, err := os.Open(finalFilePath)
 	if err != nil {
 		t.Fatalf("failed to open file %s: %v", finalFilePath, err)
@@ -78,12 +75,45 @@ func TestPersistCriticalErrorToFileUsesDefaultErrorCode(t *testing.T) {
 }
 
 func TestPersistCriticalErrorToFileCreatesDirectory(t *testing.T) {
-	dir := "testdir"
+	dir := "testdirthree"
 	defer os.RemoveAll(dir)
 
 	persistCriticalErrorToFile("code", "message", "details", dir)
 
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		t.Errorf("expected directory %s to be created, but it does not exist", dir)
+	}
+}
+
+func TestPersistCriticalErrorAllReturnError(t *testing.T) {
+	errorCode, errorMessage, errorDetails := "testCode", "testMessage", "testDetails"
+
+	persistError.done.Store(true)
+	defer persistError.done.Store(false)
+
+	var wg sync.WaitGroup
+	numGoroutines := 10
+	errors := make(chan error, numGoroutines)
+
+	for i := 0; i < numGoroutines; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			errors <- PersistCriticalError(errorCode, errorMessage, errorDetails)
+		}()
+	}
+
+	wg.Wait()
+	close(errors)
+
+	failCount := 0
+	for err := range errors {
+		if err != nil && strings.Contains(err.Error(), "persist critical error fn executed once already") {
+			failCount++
+		}
+	}
+
+	if failCount != numGoroutines {
+		t.Errorf("expected all %d goroutines to fail, but only %d failed", numGoroutines, failCount)
 	}
 }
