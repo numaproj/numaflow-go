@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"runtime/debug"
 	"sync"
 
@@ -15,6 +14,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	servingpb "github.com/numaproj/numaflow-go/pkg/apis/proto/serving/v1"
+	"github.com/numaproj/numaflow-go/pkg/shared"
 )
 
 const (
@@ -22,7 +22,6 @@ const (
 	address               = "/var/run/numaflow/serving.sock"
 	defaultMaxMessageSize = 1024 * 1024 * 64 // 64MB
 	serverInfoFilePath    = "/var/run/numaflow/serving-server-info"
-	EnvUDContainerType    = "NUMAFLOW_UD_CONTAINER_TYPE"
 )
 
 // Service implements the proto gen server interface
@@ -33,14 +32,7 @@ type Service struct {
 	once         sync.Once
 }
 
-var containerType = func() string {
-	if val, exists := os.LookupEnv(EnvUDContainerType); exists {
-		return val
-	}
-	return "unknown-container"
-}()
-
-var errServingStorePanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", containerType)
+var errServingStorePanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", shared.ContainerType)
 
 // Put puts the payload into the Store.
 func (s *Service) Put(ctx context.Context, request *servingpb.PutRequest) (*servingpb.PutResponse, error) {

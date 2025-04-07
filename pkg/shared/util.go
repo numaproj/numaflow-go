@@ -13,8 +13,16 @@ import (
 )
 
 const (
-	uds = "unix"
+	uds                = "unix"
+	EnvUDContainerType = "NUMAFLOW_UD_CONTAINER_TYPE"
 )
+
+var ContainerType = func() string {
+	if val, exists := os.LookupEnv(EnvUDContainerType); exists {
+		return val
+	}
+	return "unknown-container"
+}()
 
 func PrepareServer(sockAddr string, infoFilePath string, serverInfo *info.ServerInfo) (net.Listener, error) {
 	// If serverInfo is not provided, then create a default server info instance.

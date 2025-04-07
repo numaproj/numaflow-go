@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"os"
 	"runtime/debug"
 	"sync"
 	"time"
@@ -18,6 +17,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
+	"github.com/numaproj/numaflow-go/pkg/shared"
 )
 
 const (
@@ -27,18 +27,10 @@ const (
 	fbAddress               = "/var/run/numaflow/fb-sink.sock"
 	serverInfoFilePath      = "/var/run/numaflow/sinker-server-info"
 	fbServerInfoFilePath    = "/var/run/numaflow/fb-sinker-server-info"
-	EnvUDContainerType      = "NUMAFLOW_UD_CONTAINER_TYPE"
 	UDContainerFallbackSink = "fb-udsink"
 )
 
-var containerType = func() string {
-	if val, exists := os.LookupEnv(EnvUDContainerType); exists {
-		return val
-	}
-	return "unknown-container"
-}()
-
-var errSinkHandlerPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", containerType)
+var errSinkHandlerPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", shared.ContainerType)
 
 // handlerDatum implements the Datum interface and is used in the sink functions.
 type handlerDatum struct {

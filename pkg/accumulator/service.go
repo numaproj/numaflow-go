@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"os"
 	"sync"
 
 	"golang.org/x/sync/errgroup"
@@ -15,6 +14,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	accumulatorpb "github.com/numaproj/numaflow-go/pkg/apis/proto/accumulator/v1"
+	"github.com/numaproj/numaflow-go/pkg/shared"
 )
 
 const (
@@ -22,17 +22,9 @@ const (
 	defaultMaxMessageSize = 1024 * 1024 * 64
 	address               = "/var/run/numaflow/accumulator.sock"
 	serverInfoFilePath    = "/var/run/numaflow/accumulator-server-info"
-	EnvUDContainerType    = "NUMAFLOW_UD_CONTAINER_TYPE"
 )
 
-var containerType = func() string {
-	if val, exists := os.LookupEnv(EnvUDContainerType); exists {
-		return val
-	}
-	return "unknown-container"
-}()
-
-var errAccumulatorPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", containerType)
+var errAccumulatorPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", shared.ContainerType)
 
 // Service implements the proto gen server interface and contains the accumulator operation handler.
 type Service struct {

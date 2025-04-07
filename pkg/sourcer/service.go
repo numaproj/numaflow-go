@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"os"
 	"runtime/debug"
 	"sync"
 	"time"
@@ -19,6 +18,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	sourcepb "github.com/numaproj/numaflow-go/pkg/apis/proto/source/v1"
+	"github.com/numaproj/numaflow-go/pkg/shared"
 )
 
 const (
@@ -26,7 +26,6 @@ const (
 	defaultMaxMessageSize = 1024 * 1024 * 64 // 64MB
 	address               = "/var/run/numaflow/source.sock"
 	serverInfoFilePath    = "/var/run/numaflow/sourcer-server-info"
-	EnvUDContainerType    = "NUMAFLOW_UD_CONTAINER_TYPE"
 )
 
 // Service implements the proto gen server interface
@@ -37,14 +36,7 @@ type Service struct {
 	once       sync.Once
 }
 
-var containerType = func() string {
-	if val, exists := os.LookupEnv(EnvUDContainerType); exists {
-		return val
-	}
-	return "unknown-container"
-}()
-
-var errSourceReadPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", containerType)
+var errSourceReadPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", shared.ContainerType)
 
 // ReadFn reads the data from the source.
 func (fs *Service) ReadFn(stream sourcepb.Source_ReadFnServer) error {

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"os"
 	"runtime/debug"
 	"sync"
 
@@ -19,6 +18,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/sourcetransform/v1"
+	"github.com/numaproj/numaflow-go/pkg/shared"
 )
 
 const (
@@ -26,7 +26,6 @@ const (
 	defaultMaxMessageSize = 1024 * 1024 * 64
 	address               = "/var/run/numaflow/sourcetransform.sock"
 	serverInfoFilePath    = "/var/run/numaflow/sourcetransformer-server-info"
-	EnvUDContainerType    = "NUMAFLOW_UD_CONTAINER_TYPE"
 )
 
 // Service implements the proto gen server interface and contains the transformer operation
@@ -43,14 +42,7 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*v1.ReadyResponse, 
 	return &v1.ReadyResponse{Ready: true}, nil
 }
 
-var containerType = func() string {
-	if val, exists := os.LookupEnv(EnvUDContainerType); exists {
-		return val
-	}
-	return "unknown-container"
-}()
-
-var errTransformerPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", containerType)
+var errTransformerPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", shared.ContainerType)
 
 // recvWithContext wraps stream.Recv() to respect context cancellation.
 func recvWithContext(ctx context.Context, stream v1.SourceTransform_SourceTransformFnServer) (*v1.SourceTransformRequest, error) {
