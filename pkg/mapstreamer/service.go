@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"os"
 	"runtime/debug"
 	"sync"
 
@@ -27,12 +26,7 @@ const (
 	serverInfoFilePath    = "/var/run/numaflow/mapper-server-info"
 )
 
-var errMapStreamHandlerPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", func() string {
-	if val, exists := os.LookupEnv(shared.EnvUDContainerType); exists {
-		return val
-	}
-	return "unknown-container"
-}())
+var errMapStreamHandlerPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", shared.ContainerType)
 
 // Service implements the proto gen server interface and contains the map
 // streaming function.

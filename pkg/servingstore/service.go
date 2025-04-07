@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"runtime/debug"
 	"sync"
 
@@ -33,14 +32,7 @@ type Service struct {
 	once         sync.Once
 }
 
-var containerType = func() string {
-	if val, exists := os.LookupEnv(shared.EnvUDContainerType); exists {
-		return val
-	}
-	return "unknown-container"
-}()
-
-var errServingStorePanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", containerType)
+var errServingStorePanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", shared.ContainerType)
 
 // Put puts the payload into the Store.
 func (s *Service) Put(ctx context.Context, request *servingpb.PutRequest) (*servingpb.PutResponse, error) {

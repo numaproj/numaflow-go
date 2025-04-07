@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"os"
 	"sync"
 
 	"golang.org/x/sync/errgroup"
@@ -25,14 +24,7 @@ const (
 	serverInfoFilePath    = "/var/run/numaflow/accumulator-server-info"
 )
 
-var containerType = func() string {
-	if val, exists := os.LookupEnv(shared.EnvUDContainerType); exists {
-		return val
-	}
-	return "unknown-container"
-}()
-
-var errAccumulatorPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", containerType)
+var errAccumulatorPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", shared.ContainerType)
 
 // Service implements the proto gen server interface and contains the accumulator operation handler.
 type Service struct {

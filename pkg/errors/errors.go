@@ -41,13 +41,6 @@ const (
 	internal_error                  = "Internal error"
 )
 
-var containerType = func() string {
-	if val, exists := os.LookupEnv(shared.EnvUDContainerType); exists {
-		return val
-	}
-	return "unknown-container"
-}()
-
 var persistError = newPersistErrorOnce()
 
 // PersistCriticalError persists a critical error to an empty dir.
@@ -76,7 +69,7 @@ func persistCriticalErrorToFile(errorCode, errorMessage, errorDetails, dir strin
 		return fmt.Errorf("failed to create directory: %s, error: %w", dir, dirErr)
 	}
 	// Add container to file path
-	containerDir := filepath.Join(dir, containerType)
+	containerDir := filepath.Join(dir, shared.ContainerType)
 	if dirErr := os.Mkdir(containerDir, os.ModePerm); dirErr != nil {
 		return fmt.Errorf("failed to create container directory: %s, error: %w", containerDir, dirErr)
 	}
@@ -95,7 +88,7 @@ func persistCriticalErrorToFile(errorCode, errorMessage, errorDetails, dir strin
 
 	currentTimestamp := time.Now().Unix()
 	runtimeErrorEntry := runtimeErrorEntry{
-		Container: containerType,
+		Container: shared.ContainerType,
 		Timestamp: currentTimestamp,
 		Code:      errorCode,
 		Message:   errorMessage,

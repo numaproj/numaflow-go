@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"runtime/debug"
 	"sync"
 
@@ -25,14 +24,7 @@ const (
 	serverInfoFilePath    = "/var/run/numaflow/sideinput-server-info"
 )
 
-var containerType = func() string {
-	if val, exists := os.LookupEnv(shared.EnvUDContainerType); exists {
-		return val
-	}
-	return "unknown-container"
-}()
-
-var errSideInputHandlerPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", containerType)
+var errSideInputHandlerPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", shared.ContainerType)
 
 // Service implements the proto gen server interface and contains the retrieve operation handler
 type Service struct {

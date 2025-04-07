@@ -9,6 +9,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/numaproj/numaflow-go/pkg/shared"
 )
 
 func TestPersistCriticalErrorToFileWritesErrorDetails(t *testing.T) {
@@ -21,7 +23,7 @@ func TestPersistCriticalErrorToFileWritesErrorDetails(t *testing.T) {
 		t.Fatalf("failed to persist error: %v", err)
 	}
 
-	containerDir := filepath.Join(dir, containerType)
+	containerDir := filepath.Join(dir, shared.ContainerType)
 	files, err := os.ReadDir(containerDir)
 	if err != nil {
 		t.Fatalf("failed to read container directory: %v", err)
@@ -50,7 +52,7 @@ func TestPersistCriticalErrorToFileUsesDefaultErrorCode(t *testing.T) {
 		t.Fatalf("failed to persist error: %v", err)
 	}
 
-	containerDir := filepath.Join(dir, containerType)
+	containerDir := filepath.Join(dir, shared.ContainerType)
 	fileName := fmt.Sprintf("%d-udf.json", time.Now().Unix())
 	finalFilePath := filepath.Join(containerDir, fileName)
 
