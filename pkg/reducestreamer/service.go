@@ -70,9 +70,7 @@ func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
 			return recvErr
 		}
 
-		// for Aligned, its just open or append operation
-		// close signal will be sent to all the reducers when grpc
-		// input stream gets EOF.
+		// Handle different operation types
 		switch d.Operation.Event {
 		case reducepb.ReduceRequest_WindowOperation_OPEN:
 			// create a new reduce task and start the reduce operation
@@ -84,6 +82,13 @@ func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
 		case reducepb.ReduceRequest_WindowOperation_APPEND:
 			// append the datum to the reduce task
 			err = taskManager.AppendToTask(ctx, d)
+			if err != nil {
+				statusErr := status.Errorf(codes.Internal, "%s", err.Error())
+				return statusErr
+			}
+		case reducepb.ReduceRequest_WindowOperation_CLOSE:
+			// close the reduce task
+			err = taskManager.CloseTask(d)
 			if err != nil {
 				statusErr := status.Errorf(codes.Internal, "%s", err.Error())
 				return statusErr

@@ -88,6 +88,13 @@ func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
 				statusErr := status.Errorf(codes.Internal, "%s", err.Error())
 				return statusErr
 			}
+		case reducepb.ReduceRequest_WindowOperation_CLOSE:
+			// close the reduce task
+			err = taskManager.CloseTask(d)
+			if err != nil {
+				statusErr := status.Errorf(codes.Internal, "%s", err.Error())
+				return statusErr
+			}
 		}
 	}
 

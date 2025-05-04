@@ -464,6 +464,134 @@ func TestService_ReduceFn(t *testing.T) {
 			},
 			expectedErr: false,
 		},
+		{
+			name: "reduce_fn_with_close_task",
+			handler: func(ctx context.Context, keys []string, rch <-chan Datum, md Metadata) Messages {
+				sum := 0
+				for val := range rch {
+					msgVal, _ := strconv.Atoi(string(val.Value()))
+					sum += msgVal
+				}
+				return MessagesBuilder().Append(NewMessage([]byte(strconv.Itoa(sum))).WithKeys([]string{keys[0] + "_test"}))
+			},
+			input: []*reducepb.ReduceRequest{
+				// First window - open
+				{
+					Payload: &reducepb.ReduceRequest_Payload{
+						Keys:      []string{"window1"},
+						Value:     []byte(strconv.Itoa(10)),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
+					},
+					Operation: &reducepb.ReduceRequest_WindowOperation{
+						Event: reducepb.ReduceRequest_WindowOperation_OPEN,
+						Windows: []*reducepb.Window{
+							{
+								Start: timestamppb.New(time.UnixMilli(60000)),
+								End:   timestamppb.New(time.UnixMilli(120000)),
+								Slot:  "slot-0",
+							},
+						},
+					},
+				},
+				// First window - append
+				{
+					Payload: &reducepb.ReduceRequest_Payload{
+						Keys:      []string{"window1"},
+						Value:     []byte(strconv.Itoa(20)),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
+					},
+					Operation: &reducepb.ReduceRequest_WindowOperation{
+						Event: reducepb.ReduceRequest_WindowOperation_APPEND,
+						Windows: []*reducepb.Window{
+							{
+								Start: timestamppb.New(time.UnixMilli(60000)),
+								End:   timestamppb.New(time.UnixMilli(120000)),
+								Slot:  "slot-0",
+							},
+						},
+					},
+				},
+				// Second window - open
+				{
+					Payload: &reducepb.ReduceRequest_Payload{
+						Keys:      []string{"window2"},
+						Value:     []byte(strconv.Itoa(30)),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
+					},
+					Operation: &reducepb.ReduceRequest_WindowOperation{
+						Event: reducepb.ReduceRequest_WindowOperation_OPEN,
+						Windows: []*reducepb.Window{
+							{
+								Start: timestamppb.New(time.UnixMilli(60000)),
+								End:   timestamppb.New(time.UnixMilli(120000)),
+								Slot:  "slot-1",
+							},
+						},
+					},
+				},
+				// Second window - append
+				{
+					Payload: &reducepb.ReduceRequest_Payload{
+						Keys:      []string{"window2"},
+						Value:     []byte(strconv.Itoa(40)),
+						EventTime: timestamppb.New(time.Time{}),
+						Watermark: timestamppb.New(time.Time{}),
+					},
+					Operation: &reducepb.ReduceRequest_WindowOperation{
+						Event: reducepb.ReduceRequest_WindowOperation_APPEND,
+						Windows: []*reducepb.Window{
+							{
+								Start: timestamppb.New(time.UnixMilli(60000)),
+								End:   timestamppb.New(time.UnixMilli(120000)),
+								Slot:  "slot-1",
+							},
+						},
+					},
+				},
+				{
+					Operation: &reducepb.ReduceRequest_WindowOperation{
+						Event: reducepb.ReduceRequest_WindowOperation_CLOSE,
+						Windows: []*reducepb.Window{
+							{
+								Start: timestamppb.New(time.UnixMilli(60000)),
+								End:   timestamppb.New(time.UnixMilli(120000)),
+								Slot:  "slot-0",
+							},
+						},
+					},
+				},
+			},
+			expected: []*reducepb.ReduceResponse{
+				{
+					Result: &reducepb.ReduceResponse_Result{
+						Keys:  []string{"window1_test"},
+						Value: []byte(strconv.Itoa(30)),
+					},
+					Window: &reducepb.Window{
+						Start: timestamppb.New(time.UnixMilli(60000)),
+						End:   timestamppb.New(time.UnixMilli(120000)),
+						Slot:  "slot-0",
+					},
+					EOF: false,
+				},
+				{
+					Result: &reducepb.ReduceResponse_Result{
+						Keys:  []string{"window2_test"},
+						Value: []byte(strconv.Itoa(70)),
+					},
+					Window: &reducepb.Window{
+						Start: timestamppb.New(time.UnixMilli(60000)),
+						End:   timestamppb.New(time.UnixMilli(120000)),
+						Slot:  "slot-1",
+					},
+					EOF: false,
+				},
+			},
+			expectedErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
