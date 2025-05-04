@@ -7,7 +7,7 @@ toolchain go1.23.1
 replace github.com/numaproj/numaflow-go => ../../../..
 
 require (
-	github.com/numaproj/numaflow-go v0.9.1-0.20250504055458-fd4e1b1ffdf3
+	github.com/numaproj/numaflow-go v0.9.1-0.20250504060120-63a030e29d7d
 	github.com/redis/go-redis/v9 v9.7.1
 )
 
