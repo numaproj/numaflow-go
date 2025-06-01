@@ -8,11 +8,11 @@ import (
 	sinksdk "github.com/numaproj/numaflow-go/pkg/sinker"
 )
 
-// retrySink is a sinker implementation that creates a failed response
-type retrySink struct {
+// failureSink is a sinker implementation that creates a failed response
+type failureSink struct {
 }
 
-func (l *retrySink) Sink(ctx context.Context, datumStreamCh <-chan sinksdk.Datum) sinksdk.Responses {
+func (l *failureSink) Sink(ctx context.Context, datumStreamCh <-chan sinksdk.Datum) sinksdk.Responses {
 	result := sinksdk.ResponsesBuilder()
 	for d := range datumStreamCh {
 		id := d.ID()
@@ -22,8 +22,8 @@ func (l *retrySink) Sink(ctx context.Context, datumStreamCh <-chan sinksdk.Datum
 }
 
 func main() {
-	err := sinksdk.NewServer(&retrySink{}).Start(context.Background())
+	err := sinksdk.NewServer(&failureSink{}).Start(context.Background())
 	if err != nil {
-		log.Panic("Failed to start sink function server: ", err)
+		log.Panic("Failed to start failure sink server: ", err)
 	}
 }

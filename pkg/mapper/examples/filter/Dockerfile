@@ -7,14 +7,14 @@ RUN apk update && apk upgrade && \
     apk add ca-certificates && \
     apk --no-cache add tzdata
 
-COPY dist/retry-e2e-${TARGETARCH} /bin/retry-e2e
-RUN chmod +x /bin/retry-e2e
+COPY dist/filter-example-${TARGETARCH} /bin/filter-example
+RUN chmod +x /bin/filter-example
 
 ####################################################################################################
-# retry-e2e
+# filter
 ####################################################################################################
-FROM scratch AS retry-e2e
+FROM scratch AS filter
 COPY --from=base /usr/share/zoneinfo /usr/share/zoneinfo
 COPY --from=base /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-COPY --from=base /bin/retry-e2e /bin/retry-e2e
-ENTRYPOINT [ "/bin/retry-e2e" ]
+COPY --from=base /bin/filter-example /bin/filter-example
+ENTRYPOINT [ "/bin/filter-example" ]
