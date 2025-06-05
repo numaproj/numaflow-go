@@ -19,7 +19,7 @@ type TimeExtractor struct {
 func (f TimeExtractor) Transform(_ context.Context, keys []string, d sourcetransformer.Datum) sourcetransformer.Messages {
 	resultMsg, err := f.apply(d.EventTime(), d.Value(), keys)
 	if err != nil {
-		log.Fatalf("Filter map function apply got an error: %v", err)
+		log.Fatalf("time extractor filter got an error: %v", err)
 	}
 	return sourcetransformer.MessagesBuilder().Append(resultMsg)
 }
