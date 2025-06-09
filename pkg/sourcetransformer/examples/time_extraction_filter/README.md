@@ -1,4 +1,4 @@
-# Time Extractor Filter 
+# Time Extraction Filter 
 
 
 It evaluates a message on a pipeline and if valid, extracts event time from the payload of the messsage.

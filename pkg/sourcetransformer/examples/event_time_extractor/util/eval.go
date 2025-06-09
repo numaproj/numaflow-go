@@ -30,22 +30,6 @@ func EvalStr(expression string, msg []byte) (string, error) {
 	return fmt.Sprintf("%v", result), nil
 }
 
-func EvalBool(expression string, msg []byte) (bool, error) {
-	msgMap := map[string]any{
-		root: string(msg),
-	}
-	env := getFuncMap(msgMap)
-	result, err := expr.Eval(expression, env)
-	if err != nil {
-		return false, fmt.Errorf("unable to evaluate expression '%s': %s", expression, err)
-	}
-	resultBool, ok := result.(bool)
-	if !ok {
-		return false, fmt.Errorf("unable to cast expression result '%s' to bool", result)
-	}
-	return resultBool, nil
-}
-
 func getFuncMap(m map[string]interface{}) map[string]interface{} {
 	env := Expand(m)
 	env["sprig"] = sprigFuncMap
