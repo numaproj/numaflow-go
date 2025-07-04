@@ -8,13 +8,18 @@ import (
 	"strings"
 
 	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/reduce/v1"
+	"github.com/numaproj/numaflow-go/pkg/shared"
+	epb "google.golang.org/genproto/googleapis/rpc/errdetails"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
+
+var errReduceHandlerPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", shared.ContainerType)
 
 // reduceTask represents a task for a performing reduceStream operation.
 type reduceTask struct {
 	keys    []string
 	window  *v1.Window
-	reducer Reducer
 	inputCh chan Datum
 	doneCh  chan struct{}
 }
@@ -57,6 +62,7 @@ type reduceTaskManager struct {
 	tasks                map[string]*reduceTask
 	responseCh           chan *v1.ReduceResponse
 	shutdownCh           chan<- struct{}
+	errorCh              chan error
 }
 
 func newReduceTaskManager(reducerCreatorHandle ReducerCreator, shutdownCh chan<- struct{}) *reduceTaskManager {
@@ -65,6 +71,7 @@ func newReduceTaskManager(reducerCreatorHandle ReducerCreator, shutdownCh chan<-
 		tasks:                make(map[string]*reduceTask),
 		responseCh:           make(chan *v1.ReduceResponse),
 		shutdownCh:           shutdownCh,
+		errorCh:              make(chan error, 1),
 	}
 }
 
@@ -92,7 +99,10 @@ func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.Reduce
 		defer func() {
 			if r := recover(); r != nil {
 				log.Printf("panic inside reduce handler: %v %v", r, string(debug.Stack()))
-				rtm.shutdownCh <- struct{}{}
+				st, _ := status.Newf(codes.Internal, "%s: %v", errReduceHandlerPanic, r).WithDetails(&epb.DebugInfo{
+					Detail: string(debug.Stack()),
+				})
+				rtm.errorCh <- st.Err()
 			}
 		}()
 		// invoke the reduce function
@@ -133,6 +143,11 @@ func (rtm *reduceTaskManager) AppendToTask(ctx context.Context, request *v1.Redu
 // OutputChannel returns the output channel for the reduce task manager to read the results.
 func (rtm *reduceTaskManager) OutputChannel() <-chan *v1.ReduceResponse {
 	return rtm.responseCh
+}
+
+// Method to get the error channel
+func (rtm *reduceTaskManager) ErrorChannel() <-chan error {
+	return rtm.errorCh
 }
 
 // WaitAll waits for all the reduce tasks to complete.
