@@ -55,45 +55,48 @@ func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
 		return nil
 	})
 
+	recvCh := make(chan *reducepb.ReduceRequest, 1)
+	recvErrCh := make(chan error, 1)
+
+	go func() {
+		for {
+			d, err := stream.Recv()
+			if err != nil {
+				recvErrCh <- err
+				return
+			}
+			recvCh <- d
+		}
+	}()
 	// read messages from the stream and write the messages to corresponding channels
 	// if the channel is not created, create the channel and invoke the reduceFn
+loop:
 	for {
 		select {
 		case errFromTask := <-taskManager.ErrorChannel():
 			fs.shutdownCh <- struct{}{}
 			return errFromTask
-		default:
-		}
-		d, recvErr := stream.Recv()
-		// if EOF, close all the channels
-		if recvErr == io.EOF {
-			taskManager.CloseAll()
-			break
-		}
-		if recvErr != nil {
-			// the error here is returned by stream.Recv()
-			// it's already a gRPC error
-			return recvErr
-		}
-
-		// for Aligned windows, its just open or append operation
-		// close signal will be sent to all the reducers when grpc
-		// input stream gets EOF.
-		switch d.Operation.Event {
-		case reducepb.ReduceRequest_WindowOperation_OPEN:
-			// create a new reduce task and start the reduce operation
-			err = taskManager.CreateTask(ctx, d)
-			if err != nil {
-				statusErr := status.Errorf(codes.Internal, "%s", err.Error())
-				return statusErr
+		case d := <-recvCh:
+			switch d.Operation.Event {
+			case reducepb.ReduceRequest_WindowOperation_OPEN:
+				err = taskManager.CreateTask(ctx, d)
+				if err != nil {
+					statusErr := status.Errorf(codes.Internal, "%s", err.Error())
+					return statusErr
+				}
+			case reducepb.ReduceRequest_WindowOperation_APPEND:
+				err = taskManager.AppendToTask(ctx, d)
+				if err != nil {
+					statusErr := status.Errorf(codes.Internal, "%s", err.Error())
+					return statusErr
+				}
 			}
-		case reducepb.ReduceRequest_WindowOperation_APPEND:
-			// append the datum to the reduce task
-			err = taskManager.AppendToTask(ctx, d)
-			if err != nil {
-				statusErr := status.Errorf(codes.Internal, "%s", err.Error())
-				return statusErr
+		case err := <-recvErrCh:
+			if err == io.EOF {
+				taskManager.CloseAll()
+				break loop
 			}
+			return err
 		}
 	}
 

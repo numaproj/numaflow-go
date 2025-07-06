@@ -102,7 +102,12 @@ func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.Reduce
 				st, _ := status.Newf(codes.Internal, "%s: %v", errReduceHandlerPanic, r).WithDetails(&epb.DebugInfo{
 					Detail: string(debug.Stack()),
 				})
-				rtm.errorCh <- st.Err()
+				select {
+				case rtm.errorCh <- st.Err():
+				default:
+					fmt.Println("error channel full")
+				}
+
 			}
 		}()
 		// invoke the reduce function
@@ -119,6 +124,7 @@ func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.Reduce
 
 	// write the first message to the input channel
 	task.inputCh <- buildDatum(request)
+	fmt.Println("returning nil")
 	return nil
 }
 
