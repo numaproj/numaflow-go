@@ -55,9 +55,10 @@ func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
 		return nil
 	})
 
+	// Start a goroutine to receive messages from the gRPC stream and forward them to recvCh.
+	// Any error encountered (including io.EOF) is sent to recvErrCh.
 	recvCh := make(chan *reducepb.ReduceRequest, 1)
 	recvErrCh := make(chan error, 1)
-
 	go func() {
 		for {
 			d, err := stream.Recv()
@@ -68,8 +69,12 @@ func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
 			recvCh <- d
 		}
 	}()
-	// read messages from the stream and write the messages to corresponding channels
-	// if the channel is not created, create the channel and invoke the reduceFn
+	// Main loop to process incoming requests and handle errors.
+	// Uses select to:
+	// - Process messages from the stream (via recvCh)
+	// - Handle errors from task goroutines (via taskManager.ErrorChannel())
+	// - Handle stream errors and EOF (via recvErrCh)
+	// This ensures the main loop remains responsive to both stream and task errors at all times.
 loop:
 	for {
 		select {

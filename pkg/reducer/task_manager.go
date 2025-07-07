@@ -102,6 +102,9 @@ func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.Reduce
 				st, _ := status.Newf(codes.Internal, "%s: %v", errReduceHandlerPanic, r).WithDetails(&epb.DebugInfo{
 					Detail: string(debug.Stack()),
 				})
+				// Select is used here because errorCh is buffered (length 1).
+				// If multiple panics occur before the error is read, only the first error will be sent;
+				// This prevents the goroutine from blocking indefinitely if the channel is not being read.
 				select {
 				case rtm.errorCh <- st.Err():
 				default:
@@ -124,7 +127,6 @@ func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.Reduce
 
 	// write the first message to the input channel
 	task.inputCh <- buildDatum(request)
-	fmt.Println("returning nil")
 	return nil
 }
 
