@@ -9,16 +9,21 @@ import (
 	"sync"
 
 	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/reduce/v1"
+	"github.com/numaproj/numaflow-go/pkg/shared"
+	epb "google.golang.org/genproto/googleapis/rpc/errdetails"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
+
+var errReduceStreamerHandlerPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", shared.ContainerType)
 
 // reduceStreamTask represents a task for a performing reduceStream operation.
 type reduceStreamTask struct {
-	keys           []string
-	window         *v1.Window
-	reduceStreamer ReduceStreamer
-	inputCh        chan Datum
-	outputCh       chan Message
-	doneCh         chan struct{}
+	keys     []string
+	window   *v1.Window
+	inputCh  chan Datum
+	outputCh chan Message
+	doneCh   chan struct{}
 }
 
 // buildReduceResponse builds the reduce response from the messages.
@@ -59,6 +64,7 @@ type reduceStreamTaskManager struct {
 	tasks         map[string]*reduceStreamTask
 	responseCh    chan *v1.ReduceResponse
 	shutdownCh    chan<- struct{}
+	errorCh       chan error
 }
 
 func newReduceTaskManager(reduceStreamerCreator ReduceStreamerCreator, shutdownCh chan<- struct{}) *reduceStreamTaskManager {
@@ -67,6 +73,7 @@ func newReduceTaskManager(reduceStreamerCreator ReduceStreamerCreator, shutdownC
 		tasks:         make(map[string]*reduceStreamTask),
 		responseCh:    make(chan *v1.ReduceResponse),
 		shutdownCh:    shutdownCh,
+		errorCh:       make(chan error, 1),
 	}
 }
 
@@ -105,7 +112,16 @@ func (rtm *reduceStreamTaskManager) CreateTask(ctx context.Context, request *v1.
 		defer func() {
 			if r := recover(); r != nil {
 				log.Printf("panic inside reduce handler: %v %v", r, string(debug.Stack()))
-				rtm.shutdownCh <- struct{}{}
+				st, _ := status.Newf(codes.Internal, "%s: %v", errReduceStreamerHandlerPanic, r).WithDetails(&epb.DebugInfo{
+					Detail: string(debug.Stack()),
+				})
+				// Select is used here because errorCh is buffered (length 1).
+				// This prevents the goroutine from blocking indefinitely if the channel is not being read.
+				select {
+				case rtm.errorCh <- st.Err():
+				default:
+					fmt.Println("error channel full")
+				}
 			}
 		}()
 
@@ -147,6 +163,11 @@ func (rtm *reduceStreamTaskManager) AppendToTask(ctx context.Context, request *v
 // OutputChannel returns the output channel for the reduceStream task manager to read the results.
 func (rtm *reduceStreamTaskManager) OutputChannel() <-chan *v1.ReduceResponse {
 	return rtm.responseCh
+}
+
+// Method to get the error channel
+func (rtm *reduceStreamTaskManager) ErrorChannel() <-chan error {
+	return rtm.errorCh
 }
 
 // WaitAll waits for all the reduceStream tasks to complete.
