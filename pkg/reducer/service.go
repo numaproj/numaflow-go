@@ -2,7 +2,11 @@ package reducer
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"io"
+	"log"
+	"sync"
 
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
@@ -27,6 +31,7 @@ type Service struct {
 	reducepb.UnimplementedReduceServer
 	reducerCreatorHandle ReducerCreator
 	shutdownCh           chan<- struct{}
+	once                 sync.Once
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
@@ -36,82 +41,103 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*reducepb.ReadyResp
 
 // ReduceFn applies a reduce function to a request stream and returns a list of results.
 func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
-	var (
-		err error
-		ctx = stream.Context()
-		g   errgroup.Group
-	)
 
-	taskManager := newReduceTaskManager(fs.reducerCreatorHandle, fs.shutdownCh)
+	ctx, cancel := context.WithCancel(stream.Context())
+	defer cancel()
 
-	// err group for the go routine which reads from the output channel and sends to the stream
+	g, groupCtx := errgroup.WithContext(ctx)
+	taskManager := newReduceTaskManager(fs.reducerCreatorHandle)
+
+	// Goroutine to send output to stream or return error if any.
 	g.Go(func() error {
-		for output := range taskManager.OutputChannel() {
-			sendErr := stream.Send(output)
-			if sendErr != nil {
-				return sendErr
+		for {
+			select {
+			case output := <-taskManager.OutputChannel():
+				sendErr := stream.Send(output)
+				if sendErr != nil {
+					return sendErr
+				}
+			case err := <-taskManager.ErrorChannel():
+				fmt.Println("we entered here thats why returned")
+				if err != nil {
+					fmt.Println("received error from goroutine:", err)
+				}
+				return err
+			case <-groupCtx.Done():
+				return groupCtx.Err()
 			}
 		}
-		return nil
 	})
 
-	// Start a goroutine to receive messages from the gRPC stream and forward them to recvCh.
-	// Any error encountered (including io.EOF) is sent to recvErrCh.
-	recvCh := make(chan *reducepb.ReduceRequest, 1)
-	recvErrCh := make(chan error, 1)
-	go func() {
-		for {
-			d, err := stream.Recv()
-			if err != nil {
-				recvErrCh <- err
-				return
-			}
-			recvCh <- d
-		}
-	}()
-	// Main loop to process incoming requests and handle errors.
-	// Uses select to:
-	// - Process messages from the stream (via recvCh)
-	// - Handle errors from task goroutines (via taskManager.ErrorChannel())
-	// - Handle stream errors and EOF (via recvErrCh)
-	// This ensures the main loop remains responsive to both stream and task errors at all times.
-loop:
+	var readErr error
+outer:
 	for {
-		select {
-		case errFromTask := <-taskManager.ErrorChannel():
-			fs.shutdownCh <- struct{}{}
-			return errFromTask
-		case d := <-recvCh:
-			switch d.Operation.Event {
+		req, err := recvWithContext(groupCtx, stream)
+		if errors.Is(err, context.Canceled) {
+			log.Printf("Context cancelled, stopping the ReduceFn")
+			break outer
+		}
+		if errors.Is(err, io.EOF) {
+			taskManager.CloseAll()
+			break outer
+		}
+		if err != nil {
+			readErr = err
+			cancel()
+			break outer
+		}
+
+		// Handle the request based on the operation type
+		g.Go(func() error {
+			switch req.Operation.Event {
 			case reducepb.ReduceRequest_WindowOperation_OPEN:
-				err = taskManager.CreateTask(ctx, d)
+				// create a new reduce task and start the reduce operation
+				err := taskManager.CreateTask(groupCtx, req)
 				if err != nil {
-					statusErr := status.Errorf(codes.Internal, "%s", err.Error())
-					return statusErr
+					return err
 				}
 			case reducepb.ReduceRequest_WindowOperation_APPEND:
-				err = taskManager.AppendToTask(ctx, d)
+				// append the datum to the reduce task
+				err := taskManager.AppendToTask(groupCtx, req)
 				if err != nil {
-					statusErr := status.Errorf(codes.Internal, "%s", err.Error())
-					return statusErr
+					return err
 				}
 			}
-		case err := <-recvErrCh:
-			if err == io.EOF {
-				taskManager.CloseAll()
-				break loop
-			}
-			return err
-		}
+			return nil
+		})
 	}
 
-	taskManager.WaitAll()
+	taskManager.WaitAll(groupCtx)
 	// wait for the go routine which reads from the output channel and sends to the stream to return
-	err = g.Wait()
-	if err != nil {
-		statusErr := status.Errorf(codes.Internal, "%s", err.Error())
-		return statusErr
+	if err := g.Wait(); err != nil {
+		fs.once.Do(func() {
+			log.Printf("Stopping the MapFn with err, %s", err)
+			fs.shutdownCh <- struct{}{}
+		})
+		return err
+	}
+
+	if readErr != nil {
+		return status.Errorf(codes.Internal, "%s", readErr.Error())
 	}
 
 	return nil
+}
+
+func recvWithContext(ctx context.Context, stream reducepb.Reduce_ReduceFnServer) (*reducepb.ReduceRequest, error) {
+	type recvResult struct {
+		req *reducepb.ReduceRequest
+		err error
+	}
+	resultCh := make(chan recvResult, 1)
+	go func() {
+		req, err := stream.Recv()
+		resultCh <- recvResult{req: req, err: err}
+	}()
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case result := <-resultCh:
+		return result.req, result.err
+	}
 }

@@ -61,16 +61,14 @@ type reduceTaskManager struct {
 	reducerCreatorHandle ReducerCreator
 	tasks                map[string]*reduceTask
 	responseCh           chan *v1.ReduceResponse
-	shutdownCh           chan<- struct{}
 	errorCh              chan error
 }
 
-func newReduceTaskManager(reducerCreatorHandle ReducerCreator, shutdownCh chan<- struct{}) *reduceTaskManager {
+func newReduceTaskManager(reducerCreatorHandle ReducerCreator) *reduceTaskManager {
 	return &reduceTaskManager{
 		reducerCreatorHandle: reducerCreatorHandle,
 		tasks:                make(map[string]*reduceTask),
 		responseCh:           make(chan *v1.ReduceResponse),
-		shutdownCh:           shutdownCh,
 		errorCh:              make(chan error, 1),
 	}
 }
@@ -126,7 +124,12 @@ func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.Reduce
 	}()
 
 	// write the first message to the input channel
-	task.inputCh <- buildDatum(request)
+	select {
+	case task.inputCh <- buildDatum(request):
+		// sent successfully
+	default:
+		// channel is closed or blocked
+	}
 	return nil
 }
 
@@ -144,7 +147,12 @@ func (rtm *reduceTaskManager) AppendToTask(ctx context.Context, request *v1.Redu
 		return rtm.CreateTask(ctx, request)
 	}
 
-	task.inputCh <- buildDatum(request)
+	select {
+	case task.inputCh <- buildDatum(request):
+		// sent successfully
+	default:
+		// channel is closed or blocked
+	}
 	return nil
 }
 
@@ -159,17 +167,26 @@ func (rtm *reduceTaskManager) ErrorChannel() <-chan error {
 }
 
 // WaitAll waits for all the reduce tasks to complete.
-func (rtm *reduceTaskManager) WaitAll() {
+func (rtm *reduceTaskManager) WaitAll(ctx context.Context) {
 	var eofResponse *v1.ReduceResponse
+	allDone := true
+loop:
 	for _, task := range rtm.tasks {
-		<-task.doneCh
-		if eofResponse == nil {
-			eofResponse = task.buildEOFResponse()
+		select {
+		case <-task.doneCh:
+			if eofResponse == nil {
+				eofResponse = task.buildEOFResponse()
+			}
+		case <-ctx.Done():
+			allDone = false
+			break loop
 		}
 	}
-	rtm.responseCh <- eofResponse
-	// after all the tasks are completed, close the output channel
+	if allDone {
+		rtm.responseCh <- eofResponse
+	}
 	close(rtm.responseCh)
+	close(rtm.errorCh)
 }
 
 // CloseAll closes all the reduce tasks.
