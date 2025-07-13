@@ -58,9 +58,8 @@ func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
 					return sendErr
 				}
 			case err := <-taskManager.ErrorChannel():
-				fmt.Println("we entered here thats why returned")
 				if err != nil {
-					fmt.Println("received error from goroutine:", err)
+					log.Printf("received err in ReduceFn: %v", err)
 				}
 				return err
 			case <-groupCtx.Done():
@@ -107,16 +106,17 @@ outer:
 		})
 	}
 
+	// wait for all tasks to complete
 	taskManager.WaitAll(groupCtx)
+
 	// wait for the go routine which reads from the output channel and sends to the stream to return
 	if err := g.Wait(); err != nil {
 		fs.once.Do(func() {
-			log.Printf("Stopping the MapFn with err, %s", err)
+			log.Printf("Stopping the ReduceFn with err, %s", err)
 			fs.shutdownCh <- struct{}{}
 		})
 		return err
 	}
-
 	if readErr != nil {
 		return status.Errorf(codes.Internal, "%s", readErr.Error())
 	}
@@ -138,6 +138,7 @@ func recvWithContext(ctx context.Context, stream reducepb.Reduce_ReduceFnServer)
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	case result := <-resultCh:
+		fmt.Println("received request:", result.req)
 		return result.req, result.err
 	}
 }

@@ -106,7 +106,7 @@ func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.Reduce
 				select {
 				case rtm.errorCh <- st.Err():
 				default:
-					fmt.Println("error channel full")
+					log.Printf("error channel full, shutting down")
 				}
 
 			}
@@ -115,7 +115,6 @@ func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.Reduce
 		// create a new reducer, since we got a new key
 		reducerHandle := rtm.reducerCreatorHandle.Create()
 		messages := reducerHandle.Reduce(ctx, request.GetPayload().GetKeys(), task.inputCh, md)
-
 		for _, message := range messages {
 			// write the output to the output channel, service will forward it to downstream
 			rtm.responseCh <- task.buildReduceResponse(message)
@@ -124,12 +123,7 @@ func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.Reduce
 	}()
 
 	// write the first message to the input channel
-	select {
-	case task.inputCh <- buildDatum(request):
-		// sent successfully
-	default:
-		// channel is closed or blocked
-	}
+	task.inputCh <- buildDatum(request)
 	return nil
 }
 
@@ -142,17 +136,12 @@ func (rtm *reduceTaskManager) AppendToTask(ctx context.Context, request *v1.Redu
 
 	task, ok := rtm.tasks[generateKey(request.Operation.Windows[0], request.Payload.Keys)]
 
-	// if the task is not found, create a new task
+	// If the task is not found, create a new task
 	if !ok {
 		return rtm.CreateTask(ctx, request)
 	}
 
-	select {
-	case task.inputCh <- buildDatum(request):
-		// sent successfully
-	default:
-		// channel is closed or blocked
-	}
+	task.inputCh <- buildDatum(request)
 	return nil
 }
 
@@ -167,6 +156,7 @@ func (rtm *reduceTaskManager) ErrorChannel() <-chan error {
 }
 
 // WaitAll waits for all the reduce tasks to complete.
+// If the context is done, it will stop waiting and return.
 func (rtm *reduceTaskManager) WaitAll(ctx context.Context) {
 	var eofResponse *v1.ReduceResponse
 	allDone := true
