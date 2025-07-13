@@ -3,7 +3,6 @@ package reducer
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"sync"
@@ -138,7 +137,6 @@ func recvWithContext(ctx context.Context, stream reducepb.Reduce_ReduceFnServer)
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	case result := <-resultCh:
-		fmt.Println("received request:", result.req)
 		return result.req, result.err
 	}
 }
