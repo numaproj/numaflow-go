@@ -8,7 +8,7 @@ replace github.com/numaproj/numaflow-go => ../../../../..
 
 require (
 	github.com/fsnotify/fsnotify v1.6.0
-	github.com/numaproj/numaflow-go v0.9.1-0.20250504060120-63a030e29d7d
+	github.com/numaproj/numaflow-go v0.10.0
 )
 
 require (
