@@ -27,7 +27,7 @@ func (s *streamSorter) Accumulate(ctx context.Context, input <-chan accumulator.
 			log.Println("Exiting the Accumulator")
 			return
 		case datum, ok := <-input:
-		// this case happens due to timeout
+			// this case happens due to timeout
 			if !ok {
 				log.Println("Input channel closed")
 				return
