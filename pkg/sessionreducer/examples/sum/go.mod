@@ -7,7 +7,7 @@ toolchain go1.23.1
 replace github.com/numaproj/numaflow-go => ../../../..
 
 require (
-	github.com/numaproj/numaflow-go v0.9.1-0.20250504060120-63a030e29d7d
+	github.com/numaproj/numaflow-go v0.10.0
 	go.uber.org/atomic v1.11.0
 )
 
