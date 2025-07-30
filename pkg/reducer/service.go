@@ -159,8 +159,7 @@ readLoop:
 }
 
 // recvWithContext wraps stream.Recv() to respect context cancellation. We achieve that by writing to another channel and
-// listening on the new channel also with ctx.Done so it can short-circuit if ctx is closed. Without this approach, it would
-// be blocking because nobody is listening on ctx.Done().
+// listening on the new channel also with ctx.Done so it can short-circuit if ctx is closed.
 func recvWithContext(ctx context.Context, stream reducepb.Reduce_ReduceFnServer) (*reducepb.ReduceRequest, error) {
 	type recvResult struct {
 		req *reducepb.ReduceRequest
