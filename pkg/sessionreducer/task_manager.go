@@ -9,9 +9,15 @@ import (
 	"sync"
 
 	"go.uber.org/atomic"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/sessionreduce/v1"
+	"github.com/numaproj/numaflow-go/pkg/shared"
 )
+
+var errSessionReducePanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", shared.ContainerType)
 
 // sessionReduceTask represents a task for a performing session reduce operation.
 type sessionReduceTask struct {
@@ -79,16 +85,18 @@ type sessionReduceTaskManager struct {
 	creatorHandle SessionReducerCreator
 	tasks         map[string]*sessionReduceTask
 	responseCh    chan *v1.SessionReduceResponse
+	errorCh       chan error
 	rw            sync.RWMutex
-	shutdownCh    chan<- struct{}
+	ctx           context.Context
 }
 
-func newReduceTaskManager(sessionReducerFactory SessionReducerCreator, shutdownCh chan<- struct{}) *sessionReduceTaskManager {
+func newReduceTaskManager(ctx context.Context, sessionReducerFactory SessionReducerCreator) *sessionReduceTaskManager {
 	return &sessionReduceTaskManager{
 		creatorHandle: sessionReducerFactory,
 		tasks:         make(map[string]*sessionReduceTask),
 		responseCh:    make(chan *v1.SessionReduceResponse),
-		shutdownCh:    shutdownCh,
+		errorCh:       make(chan error, 1),
+		ctx:           ctx,
 	}
 }
 
@@ -135,9 +143,20 @@ func (rtm *sessionReduceTaskManager) CreateTask(ctx context.Context, request *v1
 
 		// handle panic
 		defer func() {
+			close(task.doneCh)
 			if r := recover(); r != nil {
 				log.Printf("panic inside session reduce handler: %v %v", r, string(debug.Stack()))
-				rtm.shutdownCh <- struct{}{}
+				st, _ := status.Newf(codes.Internal, "%s: %v", errSessionReducePanic, r).WithDetails(&errdetails.DebugInfo{
+					Detail: string(debug.Stack()),
+				})
+				// Non-blocking send to error channel
+				select {
+				case rtm.errorCh <- st.Err():
+				case <-rtm.ctx.Done():
+					// Context is cancelled, don't try to send error
+				default:
+					// Channel is full, that's fine since we only need one panic to trigger shutdown
+				}
 			}
 		}()
 
@@ -145,8 +164,6 @@ func (rtm *sessionReduceTaskManager) CreateTask(ctx context.Context, request *v1
 		// close the output channel and wait for the response to be forwarded
 		close(task.outputCh)
 		wg.Wait()
-		// send a done signal
-		close(task.doneCh)
 		// delete the task from the tasks list
 		rtm.rw.Lock()
 		delete(rtm.tasks, task.uniqueKey())
@@ -155,7 +172,13 @@ func (rtm *sessionReduceTaskManager) CreateTask(ctx context.Context, request *v1
 
 	// send the datum to the task if the payload is not nil
 	if request.Payload != nil {
-		task.inputCh <- buildDatum(request.Payload)
+		select {
+		case task.inputCh <- buildDatum(request.Payload):
+			// Successfully sent
+		case <-rtm.ctx.Done():
+			// Context cancelled, don't send
+
+		}
 	}
 
 	return nil
@@ -181,7 +204,13 @@ func (rtm *sessionReduceTaskManager) AppendToTask(ctx context.Context, request *
 
 	// send the datum to the task if the payload is not nil
 	if request.Payload != nil {
-		task.inputCh <- buildDatum(request.Payload)
+		select {
+		case task.inputCh <- buildDatum(request.Payload):
+			// Successfully sent
+		case <-rtm.ctx.Done():
+			// Context cancelled, don't send
+
+		}
 	}
 	return nil
 }
@@ -211,7 +240,17 @@ func (rtm *sessionReduceTaskManager) MergeTasks(ctx context.Context, request *v1
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("panic inside session reduce handler: %v %v", r, string(debug.Stack()))
-			rtm.shutdownCh <- struct{}{}
+			st, _ := status.Newf(codes.Internal, "%s: %v", errSessionReducePanic, r).WithDetails(&errdetails.DebugInfo{
+				Detail: string(debug.Stack()),
+			})
+			// Non-blocking send to error channel
+			select {
+			case rtm.errorCh <- st.Err():
+			case <-rtm.ctx.Done():
+				// Context is cancelled, don't try to send error
+			default:
+				// Channel is full, that's fine since we only need one panic to trigger shutdown
+			}
 		}
 	}()
 
@@ -305,7 +344,13 @@ func (rtm *sessionReduceTaskManager) ExpandTask(request *v1.SessionReduceRequest
 
 	// send the datum to the task if the payload is not nil
 	if request.Payload != nil {
-		task.inputCh <- buildDatum(request.GetPayload())
+		select {
+		case task.inputCh <- buildDatum(request.GetPayload()):
+			// Successfully sent
+		case <-rtm.ctx.Done():
+			// Context cancelled, don't send
+
+		}
 	}
 
 	return nil
@@ -314,6 +359,17 @@ func (rtm *sessionReduceTaskManager) ExpandTask(request *v1.SessionReduceRequest
 // OutputChannel returns the output channel of the task manager to read the results.
 func (rtm *sessionReduceTaskManager) OutputChannel() <-chan *v1.SessionReduceResponse {
 	return rtm.responseCh
+}
+
+// ErrorChannel returns the error channel for the session reduce task manager to read the errors.
+func (rtm *sessionReduceTaskManager) ErrorChannel() <-chan error {
+	return rtm.errorCh
+}
+
+// CloseErrorChannel closes the error channel to signal no more errors will be sent.
+// This should be called after all tasks have completed.
+func (rtm *sessionReduceTaskManager) CloseErrorChannel() {
+	close(rtm.errorCh)
 }
 
 // WaitAll waits for all the pending reduce tasks to complete.

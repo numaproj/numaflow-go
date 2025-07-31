@@ -2,7 +2,10 @@ package sessionreducer
 
 import (
 	"context"
+	"errors"
 	"io"
+	"log"
+	"sync"
 
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
@@ -25,6 +28,7 @@ type Service struct {
 	sessionreducepb.UnimplementedSessionReduceServer
 	creatorHandle SessionReducerCreator
 	shutdownCh    chan<- struct{}
+	once          sync.Once
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
@@ -34,82 +38,141 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*sessionreducepb.Re
 
 // SessionReduceFn applies a session reduce function to a request stream and streams the results.
 func (fs *Service) SessionReduceFn(stream sessionreducepb.SessionReduce_SessionReduceFnServer) error {
+	g, groupCtx := errgroup.WithContext(stream.Context())
 
-	ctx := stream.Context()
-	taskManager := newReduceTaskManager(fs.creatorHandle, fs.shutdownCh)
-	// err group for the go routine which reads from the output channel and sends to the stream
-	var g errgroup.Group
+	taskManager := newReduceTaskManager(groupCtx, fs.creatorHandle)
 
+	// read from the response of the tasks and write to gRPC stream.
 	g.Go(func() error {
-		for output := range taskManager.OutputChannel() {
-			err := stream.Send(output)
-			if err != nil {
-				return err
+		for {
+			select {
+			case <-groupCtx.Done():
+				return nil
+			case response, ok := <-taskManager.OutputChannel():
+				if !ok {
+					return nil
+				}
+				if err := stream.Send(response); err != nil {
+					return status.Errorf(codes.Internal, "failed to send response: %v", err)
+				}
 			}
 		}
-		return nil
 	})
 
-	for {
-		d, recvErr := stream.Recv()
+	// monitor error channel and handle task errors
+	g.Go(func() error {
+		for {
+			select {
+			case <-groupCtx.Done():
+				return nil
+			case errFromTask, ok := <-taskManager.ErrorChannel():
+				if !ok {
+					return nil
+				}
+				// As multiple streams will be running in parallel, we need to ensure that the shutdownCh is called only once.
+				// Otherwise there could be a race condition where multiple streams try to send to the shutdownCh.
+				fs.once.Do(func() {
+					log.Printf("Stopping the SessionReduceFn with err, %s", errFromTask)
+					fs.shutdownCh <- struct{}{}
+				})
+				return errFromTask
+			}
+		}
+	})
 
-		// if the stream is closed, break and wait for the tasks to return
-		if recvErr == io.EOF {
+	var readErr error
+readLoop:
+	for {
+		req, err := recvWithContext(groupCtx, stream)
+		if errors.Is(err, context.Canceled) {
+			log.Printf("Context cancelled, stopping the SessionReduceFn")
 			break
 		}
-
-		if recvErr != nil {
-			statusErr := status.Errorf(codes.Internal, "%s", recvErr.Error())
-			return statusErr
+		if errors.Is(err, io.EOF) {
+			log.Printf("EOF received, stopping the SessionReduceFn")
+			taskManager.WaitAll()
+			taskManager.CloseErrorChannel()
+			break readLoop
+		}
+		if err != nil {
+			log.Printf("Failed to receive request: %v", err)
+			readErr = status.Errorf(codes.Internal, "failed to receive from stream: %v", err)
+			break readLoop
 		}
 
 		// invoke the appropriate task manager method based on the operation
-		switch d.Operation.Event {
+		switch req.Operation.Event {
 		case sessionreducepb.SessionReduceRequest_WindowOperation_OPEN:
 			// create a new task and start the session reduce operation
 			// also append the datum to the task
-			err := taskManager.CreateTask(ctx, d)
+			err := taskManager.CreateTask(groupCtx, req)
 			if err != nil {
-				statusErr := status.Errorf(codes.Internal, "%s", err.Error())
-				return statusErr
+				readErr = status.Errorf(codes.Internal, "%s", err.Error())
+				break readLoop
 			}
 		case sessionreducepb.SessionReduceRequest_WindowOperation_CLOSE:
 			// close the task
-			taskManager.CloseTask(d)
+			taskManager.CloseTask(req)
 		case sessionreducepb.SessionReduceRequest_WindowOperation_APPEND:
 			// append the datum to the task
-			err := taskManager.AppendToTask(ctx, d)
+			err := taskManager.AppendToTask(groupCtx, req)
 			if err != nil {
-				statusErr := status.Errorf(codes.Internal, "%s", err.Error())
-				return statusErr
+				readErr = status.Errorf(codes.Internal, "%s", err.Error())
+				break readLoop
 			}
 		case sessionreducepb.SessionReduceRequest_WindowOperation_MERGE:
 			// merge the tasks
-			err := taskManager.MergeTasks(ctx, d)
+			err := taskManager.MergeTasks(groupCtx, req)
 			if err != nil {
-				statusErr := status.Errorf(codes.Internal, "%s", err.Error())
-				return statusErr
+				readErr = status.Errorf(codes.Internal, "%s", err.Error())
+				break readLoop
 			}
 		case sessionreducepb.SessionReduceRequest_WindowOperation_EXPAND:
 			// expand the task
-			err := taskManager.ExpandTask(d)
+			err := taskManager.ExpandTask(req)
 			if err != nil {
-				statusErr := status.Errorf(codes.Internal, "%s", err.Error())
-				return statusErr
+				readErr = status.Errorf(codes.Internal, "%s", err.Error())
+				break readLoop
 			}
 		}
-
 	}
 
-	// wait for all the tasks to return
-	taskManager.WaitAll()
-
-	// wait for the go routine which reads from the output channel and sends to the stream to return
-	err := g.Wait()
-	if err != nil {
-		statusErr := status.Errorf(codes.Internal, "%s", err.Error())
-		return statusErr
+	// wait for all goroutines to finish
+	if err := g.Wait(); err != nil {
+		fs.once.Do(func() {
+			log.Printf("Stopping the SessionReduceFn with err, %s", err)
+			fs.shutdownCh <- struct{}{}
+		})
+		return err
 	}
 
+	if readErr != nil {
+		fs.once.Do(func() {
+			log.Printf("Stopping the SessionReduceFn because of error while reading requests, %s", readErr)
+			fs.shutdownCh <- struct{}{}
+		})
+		return readErr
+	}
 	return nil
+}
+
+// recvWithContext wraps stream.Recv() with context cancellation support
+func recvWithContext(ctx context.Context, stream sessionreducepb.SessionReduce_SessionReduceFnServer) (*sessionreducepb.SessionReduceRequest, error) {
+	type result struct {
+		req *sessionreducepb.SessionReduceRequest
+		err error
+	}
+
+	resultCh := make(chan result, 1)
+	go func() {
+		req, err := stream.Recv()
+		resultCh <- result{req: req, err: err}
+	}()
+
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case res := <-resultCh:
+		return res.req, res.err
+	}
 }
