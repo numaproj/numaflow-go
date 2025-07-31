@@ -116,11 +116,12 @@ func TestService_AccumulateFn(t *testing.T) {
 
 func TestService_AccumulateFn_Panic(t *testing.T) {
 	panicMssg := "accumulate failed"
+	shutdownCh := make(chan struct{}, 1)
 	svc := &Service{
 		AccumulatorCreator: SimpleCreatorWithAccumulateFn(func(ctx context.Context, input <-chan Datum, output chan<- Message) {
 			panic(panicMssg)
 		}),
-		shutdownCh: make(chan struct{}, 1),
+		shutdownCh: shutdownCh,
 	}
 	conn := newTestServer(t, func(server *grpc.Server) {
 		accumulatorpb.RegisterAccumulatorServer(server, svc)
@@ -139,6 +140,10 @@ func TestService_AccumulateFn_Panic(t *testing.T) {
 	err = stream.Send(req)
 	require.NoError(t, err, "Sending request")
 
+	// Give a small delay to ensure error propagation completes
+	time.Sleep(100 * time.Millisecond)
+
+	err = stream.CloseSend()
 	require.NoError(t, err, "Closing the send direction of the stream")
 
 	// Receive a response
@@ -150,4 +155,12 @@ func TestService_AccumulateFn_Panic(t *testing.T) {
 	expectedMessage := expectedStatus.Message()
 	require.Equal(t, expectedStatus.Code(), gotStatus.Code(), "Expected error codes to be equal")
 	require.True(t, gotMessage == expectedMessage, "Expected error message to match the expected message")
+
+	// Verify that shutdown channel was triggered
+	select {
+	case <-shutdownCh:
+		// Expected - shutdown was triggered
+	case <-time.After(100 * time.Millisecond):
+		t.Error("Expected shutdown channel to be triggered, but it wasn't")
+	}
 }

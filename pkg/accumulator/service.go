@@ -49,8 +49,6 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*accumulatorpb.Read
 }
 
 func (fs *Service) AccumulateFn(stream accumulatorpb.Accumulator_AccumulateFnServer) error {
-	ctx := stream.Context()
-
 	ctx, cancel := context.WithCancel(stream.Context())
 	defer cancel()
 

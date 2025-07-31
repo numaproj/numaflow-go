@@ -79,7 +79,7 @@ func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
 				// As multiple streams will be running in parallel, we need to ensure that the shutdownCh is called only once.
 				// Otherwise there could be a race condition where multiple streams try to call the shutdownCh.
 				fs.once.Do(func() {
-					log.Printf("Stopping the ReduceFn with err, %s", errFromTask)
+					log.Printf("Stopping the ReduceStreamFn with err, %s", errFromTask)
 					fs.shutdownCh <- struct{}{}
 				})
 				return errFromTask
@@ -92,11 +92,11 @@ readLoop:
 	for {
 		req, err := recvWithContext(groupCtx, stream)
 		if errors.Is(err, context.Canceled) {
-			log.Printf("Context cancelled, stopping the ReduceFn")
+			log.Printf("Context cancelled, stopping the ReduceStreamFn")
 			break
 		}
 		if errors.Is(err, io.EOF) {
-			log.Printf("EOF received, stopping the ReduceFn")
+			log.Printf("EOF received, stopping the ReduceStreamFn")
 			taskManager.CloseAll()
 			// wait for all tasks to complete and close output channel
 			taskManager.WaitAll()
@@ -142,7 +142,7 @@ readLoop:
 	// wait for all goroutines to finish
 	if err := g.Wait(); err != nil {
 		fs.once.Do(func() {
-			log.Printf("Stopping the ReduceFn with err, %s", err)
+			log.Printf("Stopping the ReduceStreamFn with err, %s", err)
 			fs.shutdownCh <- struct{}{}
 		})
 		return err
@@ -150,7 +150,7 @@ readLoop:
 
 	if readErr != nil {
 		fs.once.Do(func() {
-			log.Printf("Stopping the ReduceFn because of error while reading requests, %s", readErr)
+			log.Printf("Stopping the ReduceStreamFn because of error while reading requests, %s", readErr)
 			fs.shutdownCh <- struct{}{}
 		})
 		return readErr
