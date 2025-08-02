@@ -22,7 +22,6 @@ const delimiter = ":"
 // accumulateTask represents a task for performing accumulate operation.
 type accumulateTask struct {
 	keys            []string
-	accumulator     Accumulator
 	inputCh         chan Datum
 	outputCh        chan Message
 	latestWatermark time.Time
@@ -38,8 +37,6 @@ type accumulatorTaskManager struct {
 	accumulatorCreatorHandle AccumulatorCreator
 	tasks                    map[string]*accumulateTask
 	responseCh               chan *v1.AccumulatorResponse
-	shutdownCh               chan<- struct{}
-	mu                       sync.RWMutex
 	eg                       *errgroup.Group
 	ctx                      context.Context
 }
@@ -57,8 +54,6 @@ func newAccumulatorTaskManager(ctx context.Context, eg *errgroup.Group, accumula
 
 // CreateTask creates a new accumulate task and starts the accumulate operation.
 func (atm *accumulatorTaskManager) CreateTask(request *v1.AccumulatorRequest) {
-	atm.mu.Lock()
-	defer atm.mu.Unlock()
 
 	task := &accumulateTask{
 		keys:            request.GetOperation().GetKeyedWindow().GetKeys(),
@@ -165,11 +160,7 @@ func (atm *accumulatorTaskManager) CreateTask(request *v1.AccumulatorRequest) {
 // If the task is not found, it creates a new task and starts the accumulate operation.
 func (atm *accumulatorTaskManager) AppendToTask(request *v1.AccumulatorRequest) {
 	kw := request.GetOperation().GetKeyedWindow()
-
-	atm.mu.RLock()
 	task, ok := atm.tasks[generateKey(kw.GetKeys())]
-	atm.mu.RUnlock()
-
 	// shouldn't happen
 	if !ok {
 		atm.CreateTask(request)
@@ -187,9 +178,6 @@ func (atm *accumulatorTaskManager) AppendToTask(request *v1.AccumulatorRequest) 
 func (atm *accumulatorTaskManager) CloseTask(request *v1.AccumulatorRequest) {
 	kw := request.GetOperation().GetKeyedWindow()
 
-	atm.mu.Lock()
-	defer atm.mu.Unlock()
-
 	key := strings.Join(kw.GetKeys(), delimiter)
 	task, ok := atm.tasks[key]
 
@@ -203,9 +191,6 @@ func (atm *accumulatorTaskManager) CloseTask(request *v1.AccumulatorRequest) {
 
 // CloseAll closes all the accumulate tasks.
 func (atm *accumulatorTaskManager) CloseAll() {
-	atm.mu.Lock()
-	defer atm.mu.Unlock()
-
 	for _, task := range atm.tasks {
 		close(task.inputCh)
 		delete(atm.tasks, task.uniqueKey())

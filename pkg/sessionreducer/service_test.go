@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -1495,5 +1496,108 @@ func TestService_SessionReduceFn(t *testing.T) {
 				t.Errorf("SessionReduceFn() got = %v, want %v", result, tt.expected)
 			}
 		})
+	}
+}
+
+type SessionPanicReducer struct{}
+
+func (s *SessionPanicReducer) SessionReduce(ctx context.Context, keys []string, inputCh <-chan Datum, outputCh chan<- Message) {
+	panic("test panic in session reduce handler")
+}
+
+func (s *SessionPanicReducer) Accumulator(ctx context.Context) []byte {
+	return []byte("0")
+}
+
+func (s *SessionPanicReducer) MergeAccumulator(ctx context.Context, accumulator []byte) {
+	// no-op
+}
+
+type SessionPanicCreator struct{}
+
+func (s *SessionPanicCreator) Create() SessionReducer {
+	return &SessionPanicReducer{}
+}
+
+func TestService_SessionReduceFn_PanicHandling(t *testing.T) {
+	shutdownCh := make(chan struct{}, 1)
+
+	// Create a session reducer that panics
+	panicHandler := &SessionPanicCreator{}
+
+	fs := &Service{
+		creatorHandle: panicHandler,
+		shutdownCh:    shutdownCh,
+	}
+
+	ctx := context.Background()
+
+	inputCh := make(chan *sessionreducepb.SessionReduceRequest)
+	outputCh := make(chan *sessionreducepb.SessionReduceResponse, 10)
+
+	stream := NewReduceFnServerTest(ctx, inputCh, outputCh)
+
+	var wg sync.WaitGroup
+	var err error
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err = fs.SessionReduceFn(stream)
+		close(outputCh)
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		// Consume any messages from output channel
+		for range outputCh {
+			// Just drain the channel
+		}
+	}()
+
+	// Send a request that will trigger the panic
+	inputCh <- &sessionreducepb.SessionReduceRequest{
+		Payload: &sessionreducepb.SessionReduceRequest_Payload{
+			Keys:      []string{"test"},
+			Value:     []byte("test"),
+			EventTime: timestamppb.New(time.Now()),
+			Watermark: timestamppb.New(time.Now()),
+		},
+		Operation: &sessionreducepb.SessionReduceRequest_WindowOperation{
+			Event: sessionreducepb.SessionReduceRequest_WindowOperation_OPEN,
+			KeyedWindows: []*sessionreducepb.KeyedWindow{
+				{
+					Start: timestamppb.New(time.UnixMilli(60000)),
+					End:   timestamppb.New(time.UnixMilli(120000)),
+					Slot:  "slot-0",
+					Keys:  []string{"test"},
+				},
+			},
+		},
+	}
+
+	// Give some time for the panic to propagate before closing
+	time.Sleep(100 * time.Millisecond)
+	close(inputCh)
+	wg.Wait()
+
+	// Verify that an error was returned
+	if err == nil {
+		t.Error("Expected error due to panic, but got nil")
+		return
+	}
+
+	// Verify that the error contains panic information
+	if !strings.Contains(err.Error(), "UDF_EXECUTION_ERROR") {
+		t.Errorf("Expected error to contain 'UDF_EXECUTION_ERROR', got: %v", err)
+	}
+
+	// Verify shutdown channel was triggered
+	select {
+	case <-shutdownCh:
+		// Expected - shutdown was triggered
+	case <-time.After(100 * time.Millisecond):
+		t.Error("Expected shutdown channel to be triggered, but it wasn't")
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -521,5 +522,92 @@ func TestService_ReduceFn(t *testing.T) {
 				t.Errorf("ReduceFn() got = %v, want %v", result, tt.expected)
 			}
 		})
+	}
+}
+
+func TestService_ReduceFn_PanicHandling(t *testing.T) {
+	// Test handler that panics during reduce operation
+	panicHandler := func(ctx context.Context, keys []string, rch <-chan Datum, md Metadata) Messages {
+		// Read the first message, then panic
+		<-rch
+		panic("test panic in reduce handler")
+	}
+
+	shutdownCh := make(chan struct{}, 1)
+
+	fs := &Service{
+		reducerCreatorHandle: SimpleCreatorWithReduceFn(panicHandler),
+		shutdownCh:           shutdownCh,
+	}
+
+	ctx := grpcmd.NewIncomingContext(context.Background(), grpcmd.New(map[string]string{winStartTime: "60000", winEndTime: "120000"}))
+
+	inputCh := make(chan *reducepb.ReduceRequest)
+	outputCh := make(chan *reducepb.ReduceResponse)
+
+	udfReduceFnStream := NewReduceFnServerTest(ctx, inputCh, outputCh)
+
+	var wg sync.WaitGroup
+	var err error
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err = fs.ReduceFn(udfReduceFnStream)
+		close(outputCh)
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		// Consume any messages from output channel
+		for range outputCh {
+			// Just drain the channel
+		}
+	}()
+
+	// Send a request that will trigger the panic
+	inputCh <- &reducepb.ReduceRequest{
+		Payload: &reducepb.ReduceRequest_Payload{
+			Keys:      []string{"test-key"},
+			Value:     []byte("test-value"),
+			EventTime: timestamppb.New(time.Time{}),
+			Watermark: timestamppb.New(time.Time{}),
+		},
+		Operation: &reducepb.ReduceRequest_WindowOperation{
+			Event: reducepb.ReduceRequest_WindowOperation_OPEN,
+			Windows: []*reducepb.Window{
+				{
+					Start: timestamppb.New(time.UnixMilli(60000)),
+					End:   timestamppb.New(time.UnixMilli(120000)),
+					Slot:  "slot-0",
+				},
+			},
+		},
+	}
+
+	// Give a small delay to ensure error propagation completes
+	time.Sleep(100 * time.Millisecond)
+	// Close input to trigger EOF
+	close(inputCh)
+	wg.Wait()
+
+	// Verify that an error was returned
+	if err == nil {
+		t.Error("Expected error due to panic, but got nil")
+		return
+	}
+
+	// Verify that the error contains panic information
+	if !strings.Contains(err.Error(), "UDF_EXECUTION_ERROR") {
+		t.Errorf("Expected error to contain 'UDF_EXECUTION_ERROR', got: %v", err)
+	}
+
+	// Verify that shutdown channel was triggered
+	select {
+	case <-shutdownCh:
+		// Expected - shutdown was triggered
+	case <-time.After(100 * time.Millisecond):
+		t.Error("Expected shutdown channel to be triggered, but it wasn't")
 	}
 }

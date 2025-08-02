@@ -61,22 +61,22 @@ type reduceTaskManager struct {
 	reducerCreatorHandle ReducerCreator
 	tasks                map[string]*reduceTask
 	responseCh           chan *v1.ReduceResponse
-	shutdownCh           chan<- struct{}
 	errorCh              chan error
+	ctx                  context.Context
 }
 
-func newReduceTaskManager(reducerCreatorHandle ReducerCreator, shutdownCh chan<- struct{}) *reduceTaskManager {
+func newReduceTaskManager(ctx context.Context, reducerCreatorHandle ReducerCreator) *reduceTaskManager {
 	return &reduceTaskManager{
 		reducerCreatorHandle: reducerCreatorHandle,
 		tasks:                make(map[string]*reduceTask),
 		responseCh:           make(chan *v1.ReduceResponse),
-		shutdownCh:           shutdownCh,
-		errorCh:              make(chan error, 1),
+		errorCh:              make(chan error, 1), // buffered channel to avoid blocking
+		ctx:                  ctx,
 	}
 }
 
 // CreateTask creates a new reduce task and starts the reduce operation.
-func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.ReduceRequest) error {
+func (rtm *reduceTaskManager) CreateTask(request *v1.ReduceRequest) error {
 	if len(request.Operation.Windows) != 1 {
 		return fmt.Errorf("create operation error: invalid number of windows")
 	}
@@ -95,26 +95,35 @@ func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.Reduce
 	rtm.tasks[key] = task
 
 	go func() {
-		// handle panic
+		// handle panic and ensure doneCh is always closed
 		defer func() {
+			// Always close doneCh, even if panic occurs
+			close(task.doneCh)
+
 			if r := recover(); r != nil {
 				log.Printf("panic inside reduce handler: %v %v", r, string(debug.Stack()))
 				st, _ := status.Newf(codes.Internal, "%s: %v", errReduceHandlerPanic, r).WithDetails(&epb.DebugInfo{
 					Detail: string(debug.Stack()),
 				})
-				rtm.errorCh <- st.Err()
+				// Non-blocking send - if channel is full or closed, we don't care since one panic is enough to trigger shutdown
+				select {
+				case rtm.errorCh <- st.Err():
+				case <-rtm.ctx.Done():
+					// Context is cancelled, don't try to send error
+				default:
+					// Channel is full or closed, its fine since we only need one panic to trigger shutdown
+				}
 			}
 		}()
 		// invoke the reduce function
 		// create a new reducer, since we got a new key
 		reducerHandle := rtm.reducerCreatorHandle.Create()
-		messages := reducerHandle.Reduce(ctx, request.GetPayload().GetKeys(), task.inputCh, md)
+		messages := reducerHandle.Reduce(rtm.ctx, request.GetPayload().GetKeys(), task.inputCh, md)
 
 		for _, message := range messages {
 			// write the output to the output channel, service will forward it to downstream
 			rtm.responseCh <- task.buildReduceResponse(message)
 		}
-		close(task.doneCh)
 	}()
 
 	// write the first message to the input channel
@@ -124,7 +133,7 @@ func (rtm *reduceTaskManager) CreateTask(ctx context.Context, request *v1.Reduce
 
 // AppendToTask writes the message to the reduce task.
 // If the task is not found, it creates a new task and starts the reduce operation.
-func (rtm *reduceTaskManager) AppendToTask(ctx context.Context, request *v1.ReduceRequest) error {
+func (rtm *reduceTaskManager) AppendToTask(request *v1.ReduceRequest) error {
 	if len(request.Operation.Windows) != 1 {
 		return fmt.Errorf("append operation error: invalid number of windows")
 	}
@@ -133,7 +142,7 @@ func (rtm *reduceTaskManager) AppendToTask(ctx context.Context, request *v1.Redu
 
 	// if the task is not found, create a new task
 	if !ok {
-		return rtm.CreateTask(ctx, request)
+		return rtm.CreateTask(request)
 	}
 
 	task.inputCh <- buildDatum(request)
@@ -148,6 +157,12 @@ func (rtm *reduceTaskManager) OutputChannel() <-chan *v1.ReduceResponse {
 // Method to get the error channel
 func (rtm *reduceTaskManager) ErrorChannel() <-chan error {
 	return rtm.errorCh
+}
+
+// CloseErrorChannel closes the error channel to signal no more errors will be sent.
+// This should be called after all tasks have completed.
+func (rtm *reduceTaskManager) CloseErrorChannel() {
+	close(rtm.errorCh)
 }
 
 // WaitAll waits for all the reduce tasks to complete.
