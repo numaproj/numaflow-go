@@ -89,7 +89,6 @@ readLoop:
 			break
 		}
 		if errors.Is(err, io.EOF) {
-			log.Printf("EOF received, stopping the SessionReduceFn")
 			taskManager.WaitAll()
 			taskManager.CloseErrorChannel()
 			break readLoop
@@ -138,7 +137,7 @@ readLoop:
 	}
 
 	// wait for all goroutines to finish
-	if err := g.Wait(); err != nil {
+	if err := g.Wait(); err != nil && !errors.Is(err, context.Canceled) {
 		fs.once.Do(func() {
 			log.Printf("Stopping the SessionReduceFn with err, %s", err)
 			fs.shutdownCh <- struct{}{}

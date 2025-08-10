@@ -83,7 +83,6 @@ func (fs *Service) AccumulateFn(stream accumulatorpb.Accumulator_AccumulateFnSer
 			break
 		}
 		if errors.Is(err, io.EOF) {
-			log.Printf("EOF received, stopping the AccumulateFn")
 			taskManager.CloseAll()
 			return nil
 		}
@@ -108,7 +107,7 @@ func (fs *Service) AccumulateFn(stream accumulatorpb.Accumulator_AccumulateFnSer
 	}
 
 	// wait for all goroutines to finish
-	if err := g.Wait(); err != nil {
+	if err := g.Wait(); err != nil && !errors.Is(err, context.Canceled) {
 		fs.once.Do(func() {
 			log.Printf("Stopping the AccumulateFn with err, %s", err)
 			fs.shutdownCh <- struct{}{}
