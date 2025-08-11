@@ -63,7 +63,11 @@ func (fs *Service) MapFn(stream mappb.Map_MapFnServer) error {
 		})
 
 		// Wait for the goroutines to finish
-		if err := g.Wait(); err != nil && !errors.Is(err, context.Canceled) {
+		if err := g.Wait(); err != nil {
+			if errors.Is(err, context.Canceled) || errors.Is(err, io.EOF) {
+				return nil
+			}
+			
 			fs.once.Do(func() {
 				log.Printf("Stopping the BatchMapFn with err, %s", err)
 				fs.shutdownCh <- struct{}{}
@@ -129,7 +133,7 @@ func (fs *Service) receiveRequests(ctx context.Context, stream mappb.Map_MapFnSe
 			return err
 		}
 		if errors.Is(err, io.EOF) {
-			return nil
+			return err
 		}
 		if err != nil {
 			log.Printf("error receiving from batch map stream: %v", err)

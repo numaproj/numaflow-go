@@ -101,7 +101,11 @@ func (fs *Service) SinkFn(stream sinkpb.Sink_SinkFnServer) error {
 		})
 
 		// Wait for the goroutines to finish
-		if err := g.Wait(); err != nil && !errors.Is(err, context.Canceled) {
+		if err := g.Wait(); err != nil {
+			if errors.Is(err, context.Canceled) || errors.Is(err, io.EOF) {
+				return nil
+			}
+
 			fs.once.Do(func() {
 				log.Printf("Stopping the SinkFn with err, %s", err)
 				fs.shutdownCh <- struct{}{}
@@ -163,7 +167,7 @@ func (fs *Service) receiveRequests(ctx context.Context, stream sinkpb.Sink_SinkF
 	for {
 		req, err := recvWithContext(ctx, stream)
 		if err == io.EOF {
-			return nil
+			return err
 		}
 		if err != nil {
 			log.Printf("error receiving from sink stream: %v", err)
