@@ -49,7 +49,7 @@ func (fs *Service) ReadFn(stream sourcepb.Source_ReadFnServer) error {
 	for {
 		if err := fs.receiveReadRequests(ctx, stream); err != nil {
 			// If the error is EOF, it means the stream has been closed.
-			if errors.Is(err, io.EOF) {
+			if errors.Is(err, io.EOF) || errors.Is(err, context.Canceled) {
 				return nil
 			}
 			log.Printf("error processing read  requests: %v", err)
