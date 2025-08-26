@@ -16,19 +16,19 @@ jobs:
     strategy:
       matrix:
         dockerfile_paths: [
-          "pkg/mapper/examples/even_odd", "pkg/mapper/examples/flatmap", "pkg/mapper/examples/forward_message",
-          "pkg/mapper/examples/retry", "pkg/mapper/examples/slow_cat", "pkg/mapper/examples/tickgen", "pkg/mapstreamer/examples/flatmap_stream",
-          "pkg/reducer/examples/counter", "pkg/reducer/examples/sum", "pkg/reducestreamer/examples/counter",
-          "pkg/reducestreamer/examples/sum", "pkg/sessionreducer/examples/counter", "pkg/sessionreducer/examples/sum",
-          "pkg/sideinput/examples/simple_sideinput/udf", "pkg/sideinput/examples/simple_sideinput", "pkg/sinker/examples/log",
-          "pkg/sourcer/examples/simple_source", "pkg/sourcetransformer/examples/assign_event_time", "pkg/sourcetransformer/examples/event_time_filter",
-          "pkg/sinker/examples/fallback", "pkg/sideinput/examples/map_sideinput", "pkg/sideinput/examples/reduce_sideinput",
-          "pkg/sideinput/examples/sideinput_function", "pkg/sideinput/examples/simple_source_with_sideinput",
-          "pkg/sideinput/examples/sink_sideinput", "pkg/sinker/examples/redis_sink", "pkg/sideinput/examples/map_sideinput/udf",
-          "pkg/sideinput/examples/reduce_sideinput/udf", "pkg/batchmapper/examples/batchmap_flatmap",
-          "pkg/sinker/examples/serve", "pkg/servingstore/examples/redis-store", "pkg/accumulator/examples/streamsorter", "pkg/sinker/examples/failure_sink",
-          "pkg/mapper/examples/cat", "pkg/mapper/examples/filter", "pkg/sourcetransformer/examples/filter", "pkg/sourcetransformer/examples/time_extraction_filter",
-          "pkg/sourcetransformer/examples/event_time_extractor"
+          "examples/mapper/even_odd", "examples/mapper/flatmap", "examples/mapper/forward_message",
+          "examples/mapper/retry", "examples/mapper/slow_cat", "examples/mapper/tickgen", "examples/mapstreamer/flatmap_stream",
+          "examples/reducer/counter", "examples/reducer/sum", "examples/reducestreamer/counter",
+          "examples/reducestreamer/sum", "examples/sessionreducer/counter", "examples/sessionreducer/sum",
+          "examples/sideinput/simple_sideinput/udf", "examples/sideinput/simple_sideinput", "examples/sinker/log",
+          "examples/sourcer/simple_source", "examples/sourcetransformer/assign_event_time", "examples/sourcetransformer/event_time_filter",
+          "examples/sinker/fallback", "examples/sideinput/map_sideinput", "examples/sideinput/reduce_sideinput",
+          "examples/sideinput/sideinput_function", "examples/sideinput/simple_source_with_sideinput",
+          "examples/sideinput/sink_sideinput", "examples/sinker/redis_sink", "examples/sideinput/map_sideinput/udf",
+          "examples/sideinput/reduce_sideinput/udf", "examples/batchmapper/batchmap_flatmap",
+          "examples/sinker/serve", "examples/servingstore/redis-store", "examples/accumulator/streamsorter", "examples/sinker/failure_sink",
+          "examples/mapper/cat", "examples/mapper/filter", "examples/sourcetransformer/filter", "examples/sourcetransformer/time_extraction_filter",
+          "examples/sourcetransformer/event_time_extractor"
         ]
 
     steps:
