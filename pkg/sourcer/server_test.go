@@ -12,11 +12,9 @@ import (
 type TestNoopSource struct{}
 
 func (ts TestNoopSource) Read(ctx context.Context, readRequest ReadRequest, messageCh chan<- Message) {
-	return
 }
 
 func (ts TestNoopSource) Ack(ctx context.Context, request AckRequest) {
-	return
 }
 
 func (ts TestNoopSource) Pending(ctx context.Context) int64 {

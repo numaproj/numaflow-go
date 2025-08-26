@@ -31,7 +31,6 @@ func (ts TestSource) Read(_ context.Context, _ ReadRequest, messageCh chan<- Mes
 
 func (ts TestSource) Ack(_ context.Context, _ AckRequest) {
 	// Do nothing and return, to mimic a successful ack.
-	return
 }
 
 func (ts TestSource) Pending(_ context.Context) int64 {
@@ -46,7 +45,7 @@ func TestService_IsReady(t *testing.T) {
 	fs := &Service{
 		Source: nil,
 	}
-	got, err := fs.IsReady(nil, &emptypb.Empty{})
+	got, err := fs.IsReady(context.TODO(), &emptypb.Empty{})
 	assert.NoError(t, err)
 	assert.Equal(t, got, &sourcepb.ReadyResponse{
 		Ready: true,
