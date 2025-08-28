@@ -171,14 +171,15 @@ func (fs *Service) handleRequest(ctx context.Context, req *mappb.MapRequest, res
 	}()
 
 	request := req.GetRequest()
-	hd := NewHandlerDatum(request.GetValue(), request.GetEventTime().AsTime(), request.GetWatermark().AsTime(), request.GetHeaders())
+	hd := NewHandlerDatum(request.GetValue(), request.GetEventTime().AsTime(), request.GetWatermark().AsTime(), request.GetHeaders(), fromProto(request.GetMetadata()))
 	messages := fs.Mapper.Map(ctx, request.GetKeys(), hd)
 	var elements []*mappb.MapResponse_Result
 	for _, m := range messages.Items() {
 		elements = append(elements, &mappb.MapResponse_Result{
-			Keys:  m.Keys(),
-			Value: m.Value(),
-			Tags:  m.Tags(),
+			Keys:     m.Keys(),
+			Value:    m.Value(),
+			Tags:     m.Tags(),
+			Metadata: toProto(m.Metadata()),
 		})
 	}
 	resp := &mappb.MapResponse{

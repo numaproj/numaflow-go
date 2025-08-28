@@ -25,6 +25,7 @@ message MapRequest {
     google.protobuf.Timestamp event_time = 3;
     google.protobuf.Timestamp watermark = 4;
     map<string, string> headers = 5;
+    MessageMetadata metadata = 6;
   }
   Request request = 1;
   // This ID is used to uniquely identify a map request
@@ -56,12 +57,45 @@ message MapResponse {
     repeated string keys = 1;
     bytes value = 2;
     repeated string tags = 3;
+    MessageMetadata metadata = 4;
   }
   repeated Result results = 1;
   // This ID is used to refer the responses to the request it corresponds to.
   string id = 2;
   optional Handshake handshake = 3;
   optional TransmissionStatus status = 4;
+}
+
+/**
+ * MessageMetadata represents the metadata of a message.
+ */
+message MessageMetadata {
+  // PreviousVertex is the name of the previous vertex
+  string previous_vertex = 1;
+  // SystemMetadata is the system metadata of the message
+  map<string, KeyValueGroup> sys_metadata = 2;
+  // UserMetadata is the user metadata of the message  
+  map<string, KeyValueGroup> user_metadata = 3;
+}
+
+/**
+ * KeyValueGroup is a group of key-value pairs.
+ * Instead of map<string,KeyValye> we could just have map<string,[]byte>
+ * Currently in sync with numaflow
+ */
+message KeyValueGroup {
+  // KeyValue is a key-value pair
+  map<string, KeyValue> key_value = 1;
+}
+
+/**
+ * KeyValue is a key-value pair.
+ */
+message KeyValue {
+  // Key is the key of the key-value pair
+  string key = 1;
+  // Value is the value of the key-value pair
+  bytes value = 2;
 }
 
 /**

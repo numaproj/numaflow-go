@@ -1,6 +1,11 @@
 package mapper
 
-import "fmt"
+import (
+	"fmt"
+
+	mappb "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1"
+	"github.com/numaproj/numaflow-go/pkg/metadata"
+)
 
 var (
 	DROP = fmt.Sprintf("%U__DROP__", '\\') // U+005C__DROP__
@@ -8,9 +13,10 @@ var (
 
 // Message is used to wrap the data return by Map functions
 type Message struct {
-	value []byte
-	keys  []string
-	tags  []string
+	value    []byte
+	keys     []string
+	tags     []string
+	metadata *metadata.Metadata
 }
 
 // NewMessage creates a Message with value
@@ -49,6 +55,34 @@ func (m Message) Value() []byte {
 // Tags returns message tags
 func (m Message) Tags() []string {
 	return m.tags
+}
+
+// WithMetadata is used to assign the metadata to the message
+func (m Message) WithMetadata(metadata *metadata.Metadata) Message {
+	m.metadata = metadata
+	return m
+}
+
+// Metadata returns message metadata
+func (m Message) Metadata() *metadata.Metadata {
+	return m.metadata
+}
+
+// toProto converts metadata.Metadata to protobuf MessageMetadata
+func toProto(m *metadata.Metadata) *mappb.MessageMetadata {
+	if m == nil {
+		return nil
+	}
+	return m.MessageMetadata
+}
+
+// fromProto creates metadata.Metadata from protobuf MessageMetadata
+
+func fromProto(proto *mappb.MessageMetadata) *metadata.Metadata {
+	if proto == nil {
+		return nil
+	}
+	return &metadata.Metadata{MessageMetadata: proto}
 }
 
 type Messages []Message
