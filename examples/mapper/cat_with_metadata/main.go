@@ -1,5 +1,3 @@
-// Package main demonstrates the complete metadata API functionality
-// This example shows how to use all public methods: Set, Get, Append, GetGroup, and GetSys
 package main
 
 import (
