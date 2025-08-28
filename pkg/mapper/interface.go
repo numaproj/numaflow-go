@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/numaproj/numaflow-go/pkg/metadata"
+	md "github.com/numaproj/numaflow-go/pkg/metadata"
 )
 
 // Datum contains methods to get the payload information.
@@ -18,7 +18,7 @@ type Datum interface {
 	// Headers returns the headers of the message.
 	Headers() map[string]string
 	// Metadata returns the metadata of the message.
-	Metadata() *metadata.Metadata
+	Metadata() *md.Metadata
 }
 
 // Mapper is the interface of map function implementation.

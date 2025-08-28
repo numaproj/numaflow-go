@@ -3,7 +3,7 @@ package mapper
 import (
 	"time"
 
-	"github.com/numaproj/numaflow-go/pkg/metadata"
+	md "github.com/numaproj/numaflow-go/pkg/metadata"
 )
 
 // handlerDatum implements the Datum interface and is used in the map functions.
@@ -12,10 +12,10 @@ type handlerDatum struct {
 	eventTime time.Time
 	watermark time.Time
 	headers   map[string]string
-	metadata  *metadata.Metadata
+	metadata  *md.Metadata
 }
 
-func NewHandlerDatum(value []byte, eventTime time.Time, watermark time.Time, headers map[string]string, metadata *metadata.Metadata) Datum {
+func NewHandlerDatum(value []byte, eventTime time.Time, watermark time.Time, headers map[string]string, metadata *md.Metadata) Datum {
 	return &handlerDatum{
 		value:     value,
 		eventTime: eventTime,
@@ -41,6 +41,6 @@ func (h *handlerDatum) Headers() map[string]string {
 	return h.headers
 }
 
-func (h *handlerDatum) Metadata() *metadata.Metadata {
+func (h *handlerDatum) Metadata() *md.Metadata {
 	return h.metadata
 }

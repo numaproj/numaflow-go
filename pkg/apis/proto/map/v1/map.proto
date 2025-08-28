@@ -80,8 +80,8 @@ message MessageMetadata {
 
 /**
  * KeyValueGroup is a group of key-value pairs.
- * Instead of map<string,KeyValye> we could just have map<string,[]byte>
- * Currently in sync with numaflow
+ * Instead of map<string,KeyValue> we could just have map<string,[]byte>
+ * Currently in sync with Numaflow
  */
 message KeyValueGroup {
   // KeyValue is a key-value pair

@@ -60,7 +60,6 @@ func (m *Metadata) Get(group, key string) ([]byte, bool) {
 		return nil, false
 	}
 
-	// Convert to lowercase for consistency
 	groupLower := strings.ToLower(group)
 	keyLower := strings.ToLower(key)
 
@@ -79,7 +78,6 @@ func (m *Metadata) GetGroup(group string) map[string][]byte {
 		return nil
 	}
 
-	// Convert to lowercase for consistency
 	groupLower := strings.ToLower(group)
 
 	if groupData, exists := m.UserMetadata[groupLower]; exists && groupData != nil {
@@ -101,7 +99,6 @@ func (m *Metadata) GetSys(group, key string) ([]byte, bool) {
 		return nil, false
 	}
 
-	// Convert to lowercase for consistency
 	groupLower := strings.ToLower(group)
 	keyLower := strings.ToLower(key)
 

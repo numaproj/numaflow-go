@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	mappb "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1"
-	"github.com/numaproj/numaflow-go/pkg/metadata"
+	md "github.com/numaproj/numaflow-go/pkg/metadata"
 )
 
 var (
@@ -16,7 +16,7 @@ type Message struct {
 	value    []byte
 	keys     []string
 	tags     []string
-	metadata *metadata.Metadata
+	metadata *md.Metadata
 }
 
 // NewMessage creates a Message with value
@@ -58,31 +58,31 @@ func (m Message) Tags() []string {
 }
 
 // WithMetadata is used to assign the metadata to the message
-func (m Message) WithMetadata(metadata *metadata.Metadata) Message {
+func (m Message) WithMetadata(metadata *md.Metadata) Message {
 	m.metadata = metadata
 	return m
 }
 
 // Metadata returns message metadata
-func (m Message) Metadata() *metadata.Metadata {
+func (m Message) Metadata() *md.Metadata {
 	return m.metadata
 }
 
-// toProto converts metadata.Metadata to protobuf MessageMetadata
-func toProto(m *metadata.Metadata) *mappb.MessageMetadata {
+// toProto converts md.Metadata to protobuf MessageMetadata
+func toProto(m *md.Metadata) *mappb.MessageMetadata {
 	if m == nil {
 		return nil
 	}
 	return m.MessageMetadata
 }
 
-// fromProto creates metadata.Metadata from protobuf MessageMetadata
+// fromProto creates mdpb.Metadata from protobuf MessageMetadata
 
-func fromProto(proto *mappb.MessageMetadata) *metadata.Metadata {
+func fromProto(proto *mappb.MessageMetadata) *md.Metadata {
 	if proto == nil {
 		return nil
 	}
-	return &metadata.Metadata{MessageMetadata: proto}
+	return &md.Metadata{MessageMetadata: proto}
 }
 
 type Messages []Message
