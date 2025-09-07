@@ -14,6 +14,8 @@ type Response struct {
 	Serve bool `json:"serve,omitempty"`
 	// ServeResponse is the response that will be sent to the serving store.
 	ServeResponse []byte `json:"serve_reponse,omitempty"`
+	// Metadata is the metadata of the message
+	Metadata Metadata `json:"metadata,omitempty"`
 }
 
 type Responses []Response
@@ -56,4 +58,9 @@ func ResponseFallback(id string) Response {
 // This indicates that the message should be sent to the serving store.
 func ResponseServe(id string, result []byte) Response {
 	return Response{ID: id, Serve: true, ServeResponse: result}
+}
+
+func (r Response) WithMetadata(metadata Metadata) Response {
+	r.Metadata = metadata
+	return r
 }

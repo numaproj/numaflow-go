@@ -16,6 +16,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"github.com/numaproj/numaflow-go/pkg/apis/proto/common"
 	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
 	"github.com/numaproj/numaflow-go/pkg/shared"
 )
@@ -40,6 +41,7 @@ type handlerDatum struct {
 	eventTime time.Time
 	watermark time.Time
 	headers   map[string]string
+	metadata  Metadata
 }
 
 func (h *handlerDatum) Keys() []string {
@@ -64,6 +66,10 @@ func (h *handlerDatum) Watermark() time.Time {
 
 func (h *handlerDatum) Headers() map[string]string {
 	return h.headers
+}
+
+func (h *handlerDatum) Metadata() Metadata {
+	return h.metadata
 }
 
 // Service implements the proto gen server interface and contains the sinkfn operation handler.
@@ -185,6 +191,7 @@ func (fs *Service) receiveRequests(ctx context.Context, stream sinkpb.Sink_SinkF
 			eventTime: req.GetRequest().GetEventTime().AsTime(),
 			watermark: req.GetRequest().GetWatermark().AsTime(),
 			headers:   req.GetRequest().GetHeaders(),
+			metadata:  fromProto(req.GetRequest().GetMetadata()),
 		}
 
 		select {
@@ -213,26 +220,30 @@ func (fs *Service) processData(ctx context.Context, stream sinkpb.Sink_SinkFnSer
 	for _, msg := range responses {
 		if msg.Fallback {
 			resultList = append(resultList, &sinkpb.SinkResponse_Result{
-				Id:     msg.ID,
-				Status: sinkpb.Status_FALLBACK,
+				Id:       msg.ID,
+				Status:   sinkpb.Status_FALLBACK,
+				Metadata: toProto(msg.Metadata),
 			})
 		} else if msg.Success {
 			resultList = append(resultList, &sinkpb.SinkResponse_Result{
 				Id:            msg.ID,
 				Status:        sinkpb.Status_SUCCESS,
 				ServeResponse: msg.ServeResponse,
+				Metadata:      toProto(msg.Metadata),
 			})
 		} else if msg.Serve {
 			resultList = append(resultList, &sinkpb.SinkResponse_Result{
 				Id:            msg.ID,
 				Status:        sinkpb.Status_SERVE,
 				ServeResponse: msg.ServeResponse,
+				Metadata:      toProto(msg.Metadata),
 			})
 		} else {
 			resultList = append(resultList, &sinkpb.SinkResponse_Result{
-				Id:     msg.ID,
-				Status: sinkpb.Status_FAILURE,
-				ErrMsg: msg.Err,
+				Id:       msg.ID,
+				Status:   sinkpb.Status_FAILURE,
+				ErrMsg:   msg.Err,
+				Metadata: toProto(msg.Metadata),
 			})
 		}
 	}
@@ -257,4 +268,60 @@ func (fs *Service) processData(ctx context.Context, stream sinkpb.Sink_SinkFnSer
 		return err
 	}
 	return nil
+}
+
+func fromProto(proto *common.Metadata) Metadata {
+	if proto == nil {
+		return Metadata{}
+	}
+
+	sys := make(SystemMetadata)
+	for group, kvGroup := range proto.GetSysMetadata() {
+		if kvGroup != nil {
+			sys[group] = kvGroup.GetKeyValue()
+		} else {
+			sys[group] = make(map[string][]byte)
+		}
+	}
+
+	user := make(UserMetadata)
+	for group, kvGroup := range proto.GetUserMetadata() {
+		if kvGroup != nil {
+			user[group] = kvGroup.GetKeyValue()
+		} else {
+			user[group] = make(map[string][]byte)
+		}
+	}
+
+	return Metadata{
+		previousVertex: proto.GetPreviousVertex(),
+		systemMetadata: sys,
+		userMetadata:   user,
+	}
+}
+
+func toProto(metadata Metadata) *common.Metadata {
+	sys := make(map[string]*common.KeyValueGroup)
+	for group, kv := range metadata.SystemMetadata() {
+		if kv != nil {
+			sys[group] = &common.KeyValueGroup{KeyValue: kv}
+		} else {
+			sys[group] = &common.KeyValueGroup{KeyValue: map[string][]byte{}}
+		}
+	}
+
+	user := make(map[string]*common.KeyValueGroup)
+	for group, kv := range metadata.UserMetadata() {
+		if kv != nil {
+			user[group] = &common.KeyValueGroup{KeyValue: kv}
+		} else {
+			user[group] = &common.KeyValueGroup{KeyValue: map[string][]byte{}}
+		}
+	}
+
+	return &common.Metadata{
+		PreviousVertex: metadata.PreviousVertex(),
+		SysMetadata:    sys,
+		UserMetadata:   user,
+	}
 }

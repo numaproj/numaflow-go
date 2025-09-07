@@ -17,6 +17,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/numaproj/numaflow-go/pkg/apis/proto/common"
 	sourcepb "github.com/numaproj/numaflow-go/pkg/apis/proto/source/v1"
 	"github.com/numaproj/numaflow-go/pkg/shared"
 )
@@ -140,8 +141,9 @@ func (fs *Service) receiveReadRequests(ctx context.Context, stream sourcepb.Sour
 			close(messageCh)
 		}()
 		request := readRequest{
-			count:   req.Request.GetNumRecords(),
-			timeout: time.Duration(req.Request.GetTimeoutInMs()) * time.Millisecond,
+			count:    req.Request.GetNumRecords(),
+			timeout:  time.Duration(req.Request.GetTimeoutInMs()) * time.Millisecond,
+			metadata: fromProto(req.Request.GetMetadata()),
 		}
 		fs.Source.Read(ctx, &request, messageCh)
 		return nil
@@ -180,6 +182,7 @@ readLoop:
 					EventTime: timestamppb.New(msg.EventTime()),
 					Keys:      msg.Keys(),
 					Headers:   msg.Headers(),
+					Metadata:  toProto(msg.Metadata()),
 				},
 				Status: &sourcepb.ReadResponse_Status{
 					Eot:  false,
@@ -349,8 +352,9 @@ func (fs *Service) PendingFn(ctx context.Context, _ *emptypb.Empty) (*sourcepb.P
 
 // readRequest implements the ReadRequest interface and is used in the read handler.
 type readRequest struct {
-	count   uint64
-	timeout time.Duration
+	count    uint64
+	timeout  time.Duration
+	metadata Metadata
 }
 
 func (r *readRequest) TimeOut() time.Duration {
@@ -359,6 +363,10 @@ func (r *readRequest) TimeOut() time.Duration {
 
 func (r *readRequest) Count() uint64 {
 	return r.count
+}
+
+func (r *readRequest) Metadata() Metadata {
+	return r.metadata
 }
 
 func (fs *Service) PartitionsFn(ctx context.Context, _ *emptypb.Empty) (*sourcepb.PartitionsResponse, error) {
@@ -376,4 +384,53 @@ func (fs *Service) PartitionsFn(ctx context.Context, _ *emptypb.Empty) (*sourcep
 			Partitions: partitions,
 		},
 	}, nil
+}
+
+// fromProto converts the proto metadata to the Metadata.
+func fromProto(proto *common.Metadata) Metadata {
+	if proto == nil {
+		return Metadata{}
+	}
+
+	sys := make(SystemMetadata)
+	for group, kvGroup := range proto.GetSysMetadata() {
+		if kvGroup != nil {
+			sys[group] = kvGroup.GetKeyValue()
+		} else {
+			sys[group] = make(map[string][]byte)
+		}
+	}
+
+	// user metadata is not there for source, so we return an empty map
+	user := make(UserMetadata)
+
+	return Metadata{
+		systemMetadata: sys,
+		userMetadata:   user,
+	}
+}
+
+// toProto converts the Metadata to the proto metadata.
+func toProto(metadata Metadata) *common.Metadata {
+	sys := make(map[string]*common.KeyValueGroup)
+	for group, kv := range metadata.SystemMetadata() {
+		if kv != nil {
+			sys[group] = &common.KeyValueGroup{KeyValue: kv}
+		} else {
+			sys[group] = &common.KeyValueGroup{KeyValue: map[string][]byte{}}
+		}
+	}
+	user := make(map[string]*common.KeyValueGroup)
+	for group, kv := range metadata.UserMetadata() {
+		if kv != nil {
+			user[group] = &common.KeyValueGroup{KeyValue: kv}
+		} else {
+			user[group] = &common.KeyValueGroup{KeyValue: map[string][]byte{}}
+		}
+	}
+
+	return &common.Metadata{
+		SysMetadata:  sys,
+		UserMetadata: user,
+	}
 }

@@ -14,6 +14,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/numaproj/numaflow-go/pkg/apis/proto/common"
 	sourcepb "github.com/numaproj/numaflow-go/pkg/apis/proto/source/v1"
 )
 
@@ -190,6 +191,10 @@ func TestService_ReadFn(t *testing.T) {
 						EventTime: timestamppb.New(testEventTime),
 						Keys:      []string{testKey},
 						Headers:   map[string]string{"x-txn-id": "test-txn-id"},
+						Metadata: &common.Metadata{
+							SysMetadata:  map[string]*common.KeyValueGroup{},
+							UserMetadata: map[string]*common.KeyValueGroup{},
+						},
 					},
 					Status: &sourcepb.ReadResponse_Status{
 						Eot:  false,

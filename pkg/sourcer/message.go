@@ -16,6 +16,7 @@ type Message struct {
 	eventTime time.Time
 	keys      []string
 	headers   map[string]string
+	metadata  Metadata
 }
 
 // NewMessage creates a Message with value
@@ -35,6 +36,12 @@ func (m Message) WithHeaders(headers map[string]string) Message {
 	return m
 }
 
+// WithMetadata is used to assign the metadata to the message
+func (m Message) WithMetadata(metadata Metadata) Message {
+	m.metadata = metadata
+	return m
+}
+
 // Keys returns message keys
 func (m Message) Keys() []string {
 	return m.keys
@@ -43,6 +50,11 @@ func (m Message) Keys() []string {
 // Headers returns message headers
 func (m Message) Headers() map[string]string {
 	return m.headers
+}
+
+// Metadata returns message metadata
+func (m Message) Metadata() Metadata {
+	return m.metadata
 }
 
 // Value returns message value

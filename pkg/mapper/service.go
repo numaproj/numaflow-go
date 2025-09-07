@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"github.com/numaproj/numaflow-go/pkg/apis/proto/common"
 	mappb "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1"
 	"github.com/numaproj/numaflow-go/pkg/shared"
 )
@@ -171,14 +172,15 @@ func (fs *Service) handleRequest(ctx context.Context, req *mappb.MapRequest, res
 	}()
 
 	request := req.GetRequest()
-	hd := NewHandlerDatum(request.GetValue(), request.GetEventTime().AsTime(), request.GetWatermark().AsTime(), request.GetHeaders())
+	hd := NewHandlerDatum(request.GetValue(), request.GetEventTime().AsTime(), request.GetWatermark().AsTime(), request.GetHeaders(), fromProto(request.GetMetadata()))
 	messages := fs.Mapper.Map(ctx, request.GetKeys(), hd)
 	var elements []*mappb.MapResponse_Result
 	for _, m := range messages.Items() {
 		elements = append(elements, &mappb.MapResponse_Result{
-			Keys:  m.Keys(),
-			Value: m.Value(),
-			Tags:  m.Tags(),
+			Keys:     m.Keys(),
+			Value:    m.Value(),
+			Tags:     m.Tags(),
+			Metadata: toProto(m.Metadata()),
 		})
 	}
 	resp := &mappb.MapResponse{
@@ -191,4 +193,60 @@ func (fs *Service) handleRequest(ctx context.Context, req *mappb.MapRequest, res
 		return ctx.Err()
 	}
 	return nil
+}
+
+func fromProto(proto *common.Metadata) Metadata {
+	if proto == nil {
+		return Metadata{}
+	}
+
+	sys := make(SystemMetadata)
+	for group, kvGroup := range proto.GetSysMetadata() {
+		if kvGroup != nil {
+			sys[group] = kvGroup.GetKeyValue()
+		} else {
+			sys[group] = make(map[string][]byte)
+		}
+	}
+
+	user := make(UserMetadata)
+	for group, kvGroup := range proto.GetUserMetadata() {
+		if kvGroup != nil {
+			user[group] = kvGroup.GetKeyValue()
+		} else {
+			user[group] = make(map[string][]byte)
+		}
+	}
+
+	return Metadata{
+		previousVertex: proto.GetPreviousVertex(),
+		systemMetadata: sys,
+		userMetadata:   user,
+	}
+}
+
+func toProto(metadata Metadata) *common.Metadata {
+	sys := make(map[string]*common.KeyValueGroup)
+	for group, kv := range metadata.SystemMetadata() {
+		if kv != nil {
+			sys[group] = &common.KeyValueGroup{KeyValue: kv}
+		} else {
+			sys[group] = &common.KeyValueGroup{KeyValue: map[string][]byte{}}
+		}
+	}
+
+	user := make(map[string]*common.KeyValueGroup)
+	for group, kv := range metadata.UserMetadata() {
+		if kv != nil {
+			user[group] = &common.KeyValueGroup{KeyValue: kv}
+		} else {
+			user[group] = &common.KeyValueGroup{KeyValue: map[string][]byte{}}
+		}
+	}
+
+	return &common.Metadata{
+		PreviousVertex: metadata.PreviousVertex(),
+		SysMetadata:    sys,
+		UserMetadata:   user,
+	}
 }

@@ -8,14 +8,16 @@ type handlerDatum struct {
 	eventTime time.Time
 	watermark time.Time
 	headers   map[string]string
+	metadata  Metadata
 }
 
-func NewHandlerDatum(value []byte, eventTime time.Time, watermark time.Time, headers map[string]string) Datum {
+func NewHandlerDatum(value []byte, eventTime time.Time, watermark time.Time, headers map[string]string, metadata Metadata) Datum {
 	return &handlerDatum{
 		value:     value,
 		eventTime: eventTime,
 		watermark: watermark,
 		headers:   headers,
+		metadata:  metadata,
 	}
 }
 
@@ -33,4 +35,8 @@ func (h *handlerDatum) Watermark() time.Time {
 
 func (h *handlerDatum) Headers() map[string]string {
 	return h.headers
+}
+
+func (h *handlerDatum) Metadata() Metadata {
+	return h.metadata
 }
