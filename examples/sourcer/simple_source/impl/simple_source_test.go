@@ -1,6 +1,7 @@
 package impl
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -13,8 +14,9 @@ import (
 // These test cases should be applicable to all data sources, not just SimpleSource.
 
 type TestReadRequest struct {
-	count   uint64
-	timeout time.Duration
+	count    uint64
+	timeout  time.Duration
+	metadata sourcer.Metadata
 }
 
 func (rr TestReadRequest) Count() uint64 {
@@ -23,6 +25,10 @@ func (rr TestReadRequest) Count() uint64 {
 
 func (rr TestReadRequest) TimeOut() time.Duration {
 	return rr.timeout
+}
+
+func (rr TestReadRequest) Metadata() sourcer.Metadata {
+	return rr.metadata
 }
 
 type TestAckRequest struct {
@@ -39,7 +45,7 @@ func Test_SimpleSource(t *testing.T) {
 	messageCh := make(chan sourcer.Message, 20)
 
 	// Read 2 messages
-	underTest.Read(nil, TestReadRequest{
+	underTest.Read(context.TODO(), TestReadRequest{
 		count:   2,
 		timeout: time.Second,
 	}, messageCh)
@@ -48,7 +54,7 @@ func Test_SimpleSource(t *testing.T) {
 	// Try reading 4 more messages
 	// Since the previous batch didn't get acked, the data source shouldn't allow us to read more messages
 	// We should get 0 messages, meaning the channel only holds the previous 2 messages
-	underTest.Read(nil, TestReadRequest{
+	underTest.Read(context.TODO(), TestReadRequest{
 		count:   4,
 		timeout: time.Second,
 	}, messageCh)
@@ -57,14 +63,14 @@ func Test_SimpleSource(t *testing.T) {
 	// Ack the first batch
 	msg1 := <-messageCh
 	msg2 := <-messageCh
-	underTest.Ack(nil, TestAckRequest{
+	underTest.Ack(context.TODO(), TestAckRequest{
 		offsets: []sourcer.Offset{msg1.Offset(), msg2.Offset()},
 	})
 
 	// Try reading 6 more messages
 	// Since the previous batch got acked, the data source should allow us to read more messages
 	// We should get 6 messages
-	underTest.Read(nil, TestReadRequest{
+	underTest.Read(context.TODO(), TestReadRequest{
 		count:   6,
 		timeout: time.Second,
 	}, messageCh)
@@ -78,7 +84,7 @@ func Test_SimpleSource(t *testing.T) {
 	msg7 := <-messageCh
 	msg8 := <-messageCh
 	assert.Equal(t, 0, len(messageCh))
-	underTest.Ack(nil, TestAckRequest{
+	underTest.Ack(context.TODO(), TestAckRequest{
 		offsets: []sourcer.Offset{
 			msg3.Offset(), msg4.Offset(),
 			msg5.Offset(), msg6.Offset(),

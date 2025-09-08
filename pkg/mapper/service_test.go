@@ -17,6 +17,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
 
+	"github.com/numaproj/numaflow-go/pkg/apis/proto/common"
 	proto "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -100,8 +101,9 @@ func TestService_mapFn(t *testing.T) {
 			want: &proto.MapResponse{
 				Results: []*proto.MapResponse_Result{
 					{
-						Keys:  []string{"client_test"},
-						Value: []byte(`test`),
+						Keys:     []string{"client_test"},
+						Value:    []byte(`test`),
+						Metadata: &common.Metadata{},
 					},
 				},
 			},
@@ -126,7 +128,8 @@ func TestService_mapFn(t *testing.T) {
 			want: &proto.MapResponse{
 				Results: []*proto.MapResponse_Result{
 					{
-						Value: []byte(`test`),
+						Value:    []byte(`test`),
+						Metadata: &common.Metadata{},
 					},
 				},
 			},
@@ -150,8 +153,9 @@ func TestService_mapFn(t *testing.T) {
 			want: &proto.MapResponse{
 				Results: []*proto.MapResponse_Result{
 					{
-						Tags:  []string{DROP},
-						Value: nil,
+						Tags:     []string{DROP},
+						Value:    nil,
+						Metadata: &common.Metadata{},
 					},
 				},
 			},
@@ -239,8 +243,9 @@ func TestService_MapFn_Multiple_Messages(t *testing.T) {
 	for i := 0; i < msgCount; i++ {
 		expectedResults[i] = []*proto.MapResponse_Result{
 			{
-				Keys:  []string{"client_test"},
-				Value: []byte(fmt.Sprintf("test_%d", i)),
+				Keys:     []string{"client_test"},
+				Value:    []byte(fmt.Sprintf("test_%d", i)),
+				Metadata: &common.Metadata{},
 			},
 		}
 	}
