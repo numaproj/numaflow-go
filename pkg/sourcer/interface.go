@@ -32,8 +32,6 @@ type ReadRequest interface {
 	Count() uint64
 	// TimeOut returns the timeout of the read request.
 	TimeOut() time.Duration
-	// Metadata returns the metadata of the read request.
-	Metadata() Metadata
 }
 
 // AckRequest is the interface of ack request.

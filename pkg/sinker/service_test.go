@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/numaproj/numaflow-go/pkg/apis/proto/common"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -109,22 +108,19 @@ func TestService_SinkFn(t *testing.T) {
 				{
 					Results: []*sinkpb.SinkResponse_Result{
 						{
-							Status:   sinkpb.Status_SUCCESS,
-							Id:       "one-processed",
-							ErrMsg:   "",
-							Metadata: &common.Metadata{SysMetadata: map[string]*common.KeyValueGroup{}, UserMetadata: map[string]*common.KeyValueGroup{}},
+							Status: sinkpb.Status_SUCCESS,
+							Id:     "one-processed",
+							ErrMsg: "",
 						},
 						{
-							Status:   sinkpb.Status_SUCCESS,
-							Id:       "two-processed",
-							ErrMsg:   "",
-							Metadata: &common.Metadata{SysMetadata: map[string]*common.KeyValueGroup{}, UserMetadata: map[string]*common.KeyValueGroup{}},
+							Status: sinkpb.Status_SUCCESS,
+							Id:     "two-processed",
+							ErrMsg: "",
 						},
 						{
-							Status:   sinkpb.Status_SUCCESS,
-							Id:       "three-processed",
-							ErrMsg:   "",
-							Metadata: &common.Metadata{SysMetadata: map[string]*common.KeyValueGroup{}, UserMetadata: map[string]*common.KeyValueGroup{}},
+							Status: sinkpb.Status_SUCCESS,
+							Id:     "three-processed",
+							ErrMsg: "",
 						},
 					},
 				},
@@ -191,22 +187,19 @@ func TestService_SinkFn(t *testing.T) {
 				{
 					Results: []*sinkpb.SinkResponse_Result{
 						{
-							Status:   sinkpb.Status_FAILURE,
-							Id:       "one-processed",
-							ErrMsg:   "unknown error",
-							Metadata: &common.Metadata{SysMetadata: map[string]*common.KeyValueGroup{}, UserMetadata: map[string]*common.KeyValueGroup{}},
+							Status: sinkpb.Status_FAILURE,
+							Id:     "one-processed",
+							ErrMsg: "unknown error",
 						},
 						{
-							Status:   sinkpb.Status_FAILURE,
-							Id:       "two-processed",
-							ErrMsg:   "unknown error",
-							Metadata: &common.Metadata{SysMetadata: map[string]*common.KeyValueGroup{}, UserMetadata: map[string]*common.KeyValueGroup{}},
+							Status: sinkpb.Status_FAILURE,
+							Id:     "two-processed",
+							ErrMsg: "unknown error",
 						},
 						{
-							Status:   sinkpb.Status_FAILURE,
-							Id:       "three-processed",
-							ErrMsg:   "unknown error",
-							Metadata: &common.Metadata{SysMetadata: map[string]*common.KeyValueGroup{}, UserMetadata: map[string]*common.KeyValueGroup{}},
+							Status: sinkpb.Status_FAILURE,
+							Id:     "three-processed",
+							ErrMsg: "unknown error",
 						},
 					},
 				},

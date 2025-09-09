@@ -141,9 +141,8 @@ func (fs *Service) receiveReadRequests(ctx context.Context, stream sourcepb.Sour
 			close(messageCh)
 		}()
 		request := readRequest{
-			count:    req.Request.GetNumRecords(),
-			timeout:  time.Duration(req.Request.GetTimeoutInMs()) * time.Millisecond,
-			metadata: fromProto(req.Request.GetMetadata()),
+			count:   req.Request.GetNumRecords(),
+			timeout: time.Duration(req.Request.GetTimeoutInMs()) * time.Millisecond,
 		}
 		fs.Source.Read(ctx, &request, messageCh)
 		return nil
@@ -352,9 +351,8 @@ func (fs *Service) PendingFn(ctx context.Context, _ *emptypb.Empty) (*sourcepb.P
 
 // readRequest implements the ReadRequest interface and is used in the read handler.
 type readRequest struct {
-	count    uint64
-	timeout  time.Duration
-	metadata Metadata
+	count   uint64
+	timeout time.Duration
 }
 
 func (r *readRequest) TimeOut() time.Duration {
@@ -363,10 +361,6 @@ func (r *readRequest) TimeOut() time.Duration {
 
 func (r *readRequest) Count() uint64 {
 	return r.count
-}
-
-func (r *readRequest) Metadata() Metadata {
-	return r.metadata
 }
 
 func (fs *Service) PartitionsFn(ctx context.Context, _ *emptypb.Empty) (*sourcepb.PartitionsResponse, error) {
@@ -386,33 +380,12 @@ func (fs *Service) PartitionsFn(ctx context.Context, _ *emptypb.Empty) (*sourcep
 	}, nil
 }
 
-// fromProto converts the proto metadata to the Metadata.
-func fromProto(proto *common.Metadata) Metadata {
-	if proto == nil {
-		return Metadata{}
-	}
-
-	sys := make(SystemMetadata)
-	for group, kvGroup := range proto.GetSysMetadata() {
-		if kvGroup != nil {
-			sys[group] = kvGroup.GetKeyValue()
-		} else {
-			sys[group] = make(map[string][]byte)
-		}
-	}
-
-	// user metadata is not there for source, so we return an empty map
-	user := make(UserMetadata)
-
-	return Metadata{
-		systemMetadata: sys,
-		userMetadata:   user,
-	}
-}
-
 // toProto converts the Metadata to the proto metadata.
+// If metadata is empty, it returns an empty common.Metadata where
+// SysMetadata and UserMetadata are empty maps.
 func toProto(metadata Metadata) *common.Metadata {
 	sys := make(map[string]*common.KeyValueGroup)
+	// FIXME: This will always be empty since system metadata is not yet set for source.
 	for group, kv := range metadata.SystemMetadata() {
 		if kv != nil {
 			sys[group] = &common.KeyValueGroup{KeyValue: kv}

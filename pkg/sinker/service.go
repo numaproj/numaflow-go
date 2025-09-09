@@ -220,30 +220,26 @@ func (fs *Service) processData(ctx context.Context, stream sinkpb.Sink_SinkFnSer
 	for _, msg := range responses {
 		if msg.Fallback {
 			resultList = append(resultList, &sinkpb.SinkResponse_Result{
-				Id:       msg.ID,
-				Status:   sinkpb.Status_FALLBACK,
-				Metadata: toProto(msg.Metadata),
+				Id:     msg.ID,
+				Status: sinkpb.Status_FALLBACK,
 			})
 		} else if msg.Success {
 			resultList = append(resultList, &sinkpb.SinkResponse_Result{
 				Id:            msg.ID,
 				Status:        sinkpb.Status_SUCCESS,
 				ServeResponse: msg.ServeResponse,
-				Metadata:      toProto(msg.Metadata),
 			})
 		} else if msg.Serve {
 			resultList = append(resultList, &sinkpb.SinkResponse_Result{
 				Id:            msg.ID,
 				Status:        sinkpb.Status_SERVE,
 				ServeResponse: msg.ServeResponse,
-				Metadata:      toProto(msg.Metadata),
 			})
 		} else {
 			resultList = append(resultList, &sinkpb.SinkResponse_Result{
-				Id:       msg.ID,
-				Status:   sinkpb.Status_FAILURE,
-				ErrMsg:   msg.Err,
-				Metadata: toProto(msg.Metadata),
+				Id:     msg.ID,
+				Status: sinkpb.Status_FAILURE,
+				ErrMsg: msg.Err,
 			})
 		}
 	}
@@ -297,31 +293,5 @@ func fromProto(proto *common.Metadata) Metadata {
 		previousVertex: proto.GetPreviousVertex(),
 		systemMetadata: sys,
 		userMetadata:   user,
-	}
-}
-
-func toProto(metadata Metadata) *common.Metadata {
-	sys := make(map[string]*common.KeyValueGroup)
-	for group, kv := range metadata.SystemMetadata() {
-		if kv != nil {
-			sys[group] = &common.KeyValueGroup{KeyValue: kv}
-		} else {
-			sys[group] = &common.KeyValueGroup{KeyValue: map[string][]byte{}}
-		}
-	}
-
-	user := make(map[string]*common.KeyValueGroup)
-	for group, kv := range metadata.UserMetadata() {
-		if kv != nil {
-			user[group] = &common.KeyValueGroup{KeyValue: kv}
-		} else {
-			user[group] = &common.KeyValueGroup{KeyValue: map[string][]byte{}}
-		}
-	}
-
-	return &common.Metadata{
-		PreviousVertex: metadata.PreviousVertex(),
-		SysMetadata:    sys,
-		UserMetadata:   user,
 	}
 }
