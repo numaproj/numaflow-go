@@ -14,9 +14,8 @@ import (
 // These test cases should be applicable to all data sources, not just SimpleSource.
 
 type TestReadRequest struct {
-	count    uint64
-	timeout  time.Duration
-	metadata sourcer.Metadata
+	count   uint64
+	timeout time.Duration
 }
 
 func (rr TestReadRequest) Count() uint64 {
@@ -25,10 +24,6 @@ func (rr TestReadRequest) Count() uint64 {
 
 func (rr TestReadRequest) TimeOut() time.Duration {
 	return rr.timeout
-}
-
-func (rr TestReadRequest) Metadata() sourcer.Metadata {
-	return rr.metadata
 }
 
 type TestAckRequest struct {
