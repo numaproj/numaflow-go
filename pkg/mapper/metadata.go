@@ -63,3 +63,23 @@ func (md *Metadata) AppendKeyValueInt(group, key string, value int) {
 	}
 	md.userMetadata[group][key] = []byte(strconv.Itoa(value))
 }
+
+// RemoveKeyFromGroup removes a key from a group in the user metadata.
+// TODO: Re-consider if we should allow this.
+func (md *Metadata) RemoveKeyFromGroup(group, key string) {
+	// Ideally md should never be nil
+	if md == nil {
+		return
+	}
+	delete(md.userMetadata[group], key)
+}
+
+// RemoveGroup removes a group from the user metadata.
+// TODO: Re-consider if we should allow this.
+func (md *Metadata) RemoveGroup(group string) {
+	// Ideally md should never be nil
+	if md == nil {
+		return
+	}
+	delete(md.userMetadata, group)
+}
