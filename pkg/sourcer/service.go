@@ -325,6 +325,33 @@ func (fs *Service) receiveAckRequests(ctx context.Context, stream sourcepb.Sourc
 	return nil
 }
 
+func (fs *Service) NackFn(ctx context.Context, req *sourcepb.NackRequest) (*sourcepb.NackResponse, error) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("panic inside sourcer handler: %v %v", r, string(debug.Stack()))
+			fs.once.Do(func() {
+				fs.shutdownCh <- struct{}{}
+			})
+		}
+	}()
+
+	offsets := make([]Offset, len(req.Request.GetOffsets()))
+	for i, offset := range req.Request.GetOffsets() {
+		offsets[i] = NewOffset(offset.GetOffset(), offset.GetPartitionId())
+	}
+
+	nackRequest := nackRequest{
+		offsets: offsets,
+	}
+	fs.Source.Nack(ctx, &nackRequest)
+
+	return &sourcepb.NackResponse{
+		Result: &sourcepb.NackResponse_Result{
+			Success: &emptypb.Empty{},
+		},
+	}, nil
+}
+
 // IsReady returns true to indicate the gRPC connection is ready.
 func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*sourcepb.ReadyResponse, error) {
 	return &sourcepb.ReadyResponse{Ready: true}, nil
@@ -359,6 +386,14 @@ func (r *readRequest) TimeOut() time.Duration {
 
 func (r *readRequest) Count() uint64 {
 	return r.count
+}
+
+type nackRequest struct {
+	offsets []Offset
+}
+
+func (n *nackRequest) Offsets() []Offset {
+	return n.offsets
 }
 
 func (fs *Service) PartitionsFn(ctx context.Context, _ *emptypb.Empty) (*sourcepb.PartitionsResponse, error) {
