@@ -24,6 +24,7 @@ func NewSimpleSource() *SimpleSource {
 		readIdx:  0,
 		toAckSet: make(map[int64]struct{}),
 		lock:     new(sync.Mutex),
+		nackSet:  make(map[int64]struct{}),
 	}
 }
 
