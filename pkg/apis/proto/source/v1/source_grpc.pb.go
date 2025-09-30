@@ -22,6 +22,7 @@ const _ = grpc.SupportPackageIsVersion8
 const (
 	Source_ReadFn_FullMethodName       = "/source.v1.Source/ReadFn"
 	Source_AckFn_FullMethodName        = "/source.v1.Source/AckFn"
+	Source_NackFn_FullMethodName       = "/source.v1.Source/NackFn"
 	Source_PendingFn_FullMethodName    = "/source.v1.Source/PendingFn"
 	Source_PartitionsFn_FullMethodName = "/source.v1.Source/PartitionsFn"
 	Source_IsReady_FullMethodName      = "/source.v1.Source/IsReady"
@@ -44,6 +45,9 @@ type SourceClient interface {
 	// then it is best to crash because there are no other retry mechanisms possible.
 	// Clients sends n requests and expects n responses.
 	AckFn(ctx context.Context, opts ...grpc.CallOption) (Source_AckFnClient, error)
+	// NackFn negatively acknowledges a batch of offsets. Invoked during a critical error in the mono vertex or pipeline.
+	// Unlike AckFn its not a streaming rpc because this is only invoked when there is a critical error (error path).
+	NackFn(ctx context.Context, in *NackRequest, opts ...grpc.CallOption) (*NackResponse, error)
 	// PendingFn returns the number of pending records at the user defined source.
 	PendingFn(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PendingResponse, error)
 	// PartitionsFn returns the list of partitions for the user defined source.
@@ -124,6 +128,16 @@ func (x *sourceAckFnClient) Recv() (*AckResponse, error) {
 	return m, nil
 }
 
+func (c *sourceClient) NackFn(ctx context.Context, in *NackRequest, opts ...grpc.CallOption) (*NackResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NackResponse)
+	err := c.cc.Invoke(ctx, Source_NackFn_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *sourceClient) PendingFn(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PendingResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PendingResponse)
@@ -171,6 +185,9 @@ type SourceServer interface {
 	// then it is best to crash because there are no other retry mechanisms possible.
 	// Clients sends n requests and expects n responses.
 	AckFn(Source_AckFnServer) error
+	// NackFn negatively acknowledges a batch of offsets. Invoked during a critical error in the mono vertex or pipeline.
+	// Unlike AckFn its not a streaming rpc because this is only invoked when there is a critical error (error path).
+	NackFn(context.Context, *NackRequest) (*NackResponse, error)
 	// PendingFn returns the number of pending records at the user defined source.
 	PendingFn(context.Context, *emptypb.Empty) (*PendingResponse, error)
 	// PartitionsFn returns the list of partitions for the user defined source.
@@ -189,6 +206,9 @@ func (UnimplementedSourceServer) ReadFn(Source_ReadFnServer) error {
 }
 func (UnimplementedSourceServer) AckFn(Source_AckFnServer) error {
 	return status.Errorf(codes.Unimplemented, "method AckFn not implemented")
+}
+func (UnimplementedSourceServer) NackFn(context.Context, *NackRequest) (*NackResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NackFn not implemented")
 }
 func (UnimplementedSourceServer) PendingFn(context.Context, *emptypb.Empty) (*PendingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PendingFn not implemented")
@@ -264,6 +284,24 @@ func (x *sourceAckFnServer) Recv() (*AckRequest, error) {
 	return m, nil
 }
 
+func _Source_NackFn_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NackRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SourceServer).NackFn(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Source_NackFn_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SourceServer).NackFn(ctx, req.(*NackRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Source_PendingFn_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -325,6 +363,10 @@ var Source_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "source.v1.Source",
 	HandlerType: (*SourceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "NackFn",
+			Handler:    _Source_NackFn_Handler,
+		},
 		{
 			MethodName: "PendingFn",
 			Handler:    _Source_PendingFn_Handler,

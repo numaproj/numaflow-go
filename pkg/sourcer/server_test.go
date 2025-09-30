@@ -17,6 +17,8 @@ func (ts TestNoopSource) Read(ctx context.Context, readRequest ReadRequest, mess
 func (ts TestNoopSource) Ack(ctx context.Context, request AckRequest) {
 }
 
+func (ts TestNoopSource) Nack(ctx context.Context, request NackRequest) {}
+
 func (ts TestNoopSource) Pending(ctx context.Context) int64 {
 	return 0
 }
