@@ -14,6 +14,8 @@ type Sourcer interface {
 	Read(ctx context.Context, readRequest ReadRequest, messageCh chan<- Message)
 	// Ack acknowledges the data from the source.
 	Ack(ctx context.Context, request AckRequest)
+	// Nack negatively acknowledges the offsets from the source.
+	Nack(ctx context.Context, request NackRequest)
 	// Pending returns the number of pending messages.
 	// When the return value is negative, it indicates the pending information is not available.
 	// With pending information being not available, the Numaflow platform doesn't auto-scale the source.
@@ -37,5 +39,11 @@ type ReadRequest interface {
 // AckRequest is the interface of ack request.
 type AckRequest interface {
 	// Offsets returns the offsets to be acknowledged.
+	Offsets() []Offset
+}
+
+// NackRequest is the interface of nack request.
+type NackRequest interface {
+	// Offsets returns the offsets to be negatively acknowledged.
 	Offsets() []Offset
 }

@@ -80,6 +80,9 @@ func (s *SimpleSource) Ack(_ context.Context, request sourcesdk.AckRequest) {
 	}
 }
 
+func (s *SimpleSource) Nack(_ context.Context, _ sourcesdk.NackRequest) {
+}
+
 func (s *SimpleSource) Partitions(_ context.Context) []int32 {
 	return sourcesdk.DefaultPartitions()
 }

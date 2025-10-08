@@ -30,6 +30,8 @@ func (ts TestSource) Read(_ context.Context, _ ReadRequest, messageCh chan<- Mes
 	messageCh <- msg.WithKeys([]string{testKey})
 }
 
+func (ts TestSource) Nack(_ context.Context, _ NackRequest) {}
+
 func (ts TestSource) Ack(_ context.Context, _ AckRequest) {
 	// Do nothing and return, to mimic a successful ack.
 }
@@ -326,6 +328,28 @@ func TestService_PartitionsFn(t *testing.T) {
 	assert.EqualValues(t, got, &sourcepb.PartitionsResponse{
 		Result: &sourcepb.PartitionsResponse_Result{
 			Partitions: testPartitions,
+		},
+	})
+	assert.NoError(t, err)
+}
+
+func TestService_NackFn(t *testing.T) {
+	fs := &Service{Source: TestSource{}}
+	ctx := context.Background()
+	offsets := []*sourcepb.Offset{
+		{
+			PartitionId: 0,
+			Offset:      []byte("test"),
+		},
+	}
+	got, err := fs.NackFn(ctx, &sourcepb.NackRequest{
+		Request: &sourcepb.NackRequest_Request{
+			Offsets: offsets,
+		},
+	})
+	assert.Equal(t, got, &sourcepb.NackResponse{
+		Result: &sourcepb.NackResponse_Result{
+			Success: &emptypb.Empty{},
 		},
 	})
 	assert.NoError(t, err)

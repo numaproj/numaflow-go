@@ -15,6 +15,7 @@ import (
 type SimpleSource struct {
 	readIdx  int64
 	toAckSet map[int64]struct{}
+	nackSet  map[int64]struct{}
 	lock     *sync.Mutex
 }
 
@@ -23,6 +24,7 @@ func NewSimpleSource() *SimpleSource {
 		readIdx:  0,
 		toAckSet: make(map[int64]struct{}),
 		lock:     new(sync.Mutex),
+		nackSet:  make(map[int64]struct{}),
 	}
 }
 
@@ -37,6 +39,19 @@ func (s *SimpleSource) Read(_ context.Context, readRequest sourcesdk.ReadRequest
 	// Handle the timeout specification in the read request.
 	ctx, cancel := context.WithTimeout(context.Background(), readRequest.TimeOut())
 	defer cancel()
+
+	// return nacked messages first
+	if len(s.nackSet) > 0 {
+		for idx := range s.nackSet {
+			delete(s.nackSet, idx)
+			messageCh <- sourcesdk.NewMessage(
+				[]byte(strconv.FormatInt(idx, 10)),
+				sourcesdk.NewOffsetWithDefaultPartitionId(serializeOffset(idx)),
+				time.Now())
+			s.toAckSet[idx] = struct{}{}
+			s.readIdx++
+		}
+	}
 
 	// If we have un-acked data, we return without reading any new data.
 	// TODO - we should have a better way to handle this.
@@ -78,6 +93,16 @@ func (s *SimpleSource) Ack(_ context.Context, request sourcesdk.AckRequest) {
 	defer s.lock.Unlock()
 	for _, offset := range request.Offsets() {
 		delete(s.toAckSet, deserializeOffset(offset.Value()))
+	}
+}
+
+func (s *SimpleSource) Nack(_ context.Context, request sourcesdk.NackRequest) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	for _, offset := range request.Offsets() {
+		delete(s.toAckSet, deserializeOffset(offset.Value()))
+		s.nackSet[deserializeOffset(offset.Value())] = struct{}{}
+		s.readIdx--
 	}
 }
 

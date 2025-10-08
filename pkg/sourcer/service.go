@@ -37,7 +37,7 @@ type Service struct {
 	once       sync.Once
 }
 
-var errSourceReadPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", shared.ContainerType)
+var errSourcePanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", shared.ContainerType)
 
 // ReadFn reads the data from the source.
 func (fs *Service) ReadFn(stream sourcepb.Source_ReadFnServer) error {
@@ -131,8 +131,8 @@ func (fs *Service) receiveReadRequests(ctx context.Context, stream sourcepb.Sour
 		// handle panic
 		defer func() {
 			if r := recover(); r != nil {
-				log.Printf("panic inside source handler: %v %v", r, string(debug.Stack()))
-				st, _ := status.Newf(codes.Internal, "%s: %v", errSourceReadPanic, r).WithDetails(&epb.DebugInfo{
+				log.Printf("panic inside source read handler: %v %v", r, string(debug.Stack()))
+				st, _ := status.Newf(codes.Internal, "%s: %v", errSourcePanic, r).WithDetails(&epb.DebugInfo{
 					Detail: string(debug.Stack()),
 				})
 				err = st.Err()
@@ -287,11 +287,14 @@ func recvWithContextAck(ctx context.Context, stream sourcepb.Source_AckFnServer)
 func (fs *Service) receiveAckRequests(ctx context.Context, stream sourcepb.Source_AckFnServer) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("panic inside source handler: %v %v", r, string(debug.Stack()))
+			log.Printf("panic inside source ack handler: %v %v", r, string(debug.Stack()))
 			fs.once.Do(func() {
 				fs.shutdownCh <- struct{}{}
 			})
-			err = fmt.Errorf("panic inside source handler: %v", r)
+			st, _ := status.Newf(codes.Internal, "%s: %v", errSourcePanic, r).WithDetails(&epb.DebugInfo{
+				Detail: string(debug.Stack()),
+			})
+			err = st.Err()
 		}
 	}()
 
@@ -325,6 +328,38 @@ func (fs *Service) receiveAckRequests(ctx context.Context, stream sourcepb.Sourc
 		return err
 	}
 	return nil
+}
+
+func (fs *Service) NackFn(ctx context.Context, req *sourcepb.NackRequest) (response *sourcepb.NackResponse, err error) {
+	response = nil
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("panic inside source nack handler: %v %v", r, string(debug.Stack()))
+			fs.once.Do(func() {
+				fs.shutdownCh <- struct{}{}
+			})
+			st, _ := status.Newf(codes.Internal, "%s: %v", errSourcePanic, r).WithDetails(&epb.DebugInfo{
+				Detail: string(debug.Stack()),
+			})
+			err = st.Err()
+		}
+	}()
+
+	offsets := make([]Offset, len(req.Request.GetOffsets()))
+	for i, offset := range req.Request.GetOffsets() {
+		offsets[i] = NewOffset(offset.GetOffset(), offset.GetPartitionId())
+	}
+
+	nackRequest := nackRequest{
+		offsets: offsets,
+	}
+	fs.Source.Nack(ctx, &nackRequest)
+
+	return &sourcepb.NackResponse{
+		Result: &sourcepb.NackResponse_Result{
+			Success: &emptypb.Empty{},
+		},
+	}, nil
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
@@ -361,6 +396,14 @@ func (r *readRequest) TimeOut() time.Duration {
 
 func (r *readRequest) Count() uint64 {
 	return r.count
+}
+
+type nackRequest struct {
+	offsets []Offset
+}
+
+func (n *nackRequest) Offsets() []Offset {
+	return n.offsets
 }
 
 func (fs *Service) PartitionsFn(ctx context.Context, _ *emptypb.Empty) (*sourcepb.PartitionsResponse, error) {
