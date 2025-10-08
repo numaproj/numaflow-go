@@ -266,6 +266,7 @@ func (fs *Service) processData(ctx context.Context, stream sinkpb.Sink_SinkFnSer
 	return nil
 }
 
+// fromProto converts the incoming proto metadata to the internal Metadata.
 func fromProto(proto *common.Metadata) Metadata {
 	if proto == nil {
 		return Metadata{}
