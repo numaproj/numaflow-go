@@ -6,6 +6,7 @@ import "strconv"
 type SystemMetadata map[string]map[string][]byte
 type UserMetadata map[string]map[string][]byte
 
+// TODO: add document
 type Metadata struct {
 	previousVertex string
 	systemMetadata SystemMetadata

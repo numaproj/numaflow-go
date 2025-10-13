@@ -1,9 +1,12 @@
 package sourcer
 
 type SystemMetadata map[string]map[string][]byte
+
+// TODO: document so that users know what a group is etc.
 type UserMetadata map[string]map[string][]byte
 
 type Metadata struct {
+	// TODO: we only need user metadata
 	systemMetadata SystemMetadata
 	userMetadata   UserMetadata
 }
