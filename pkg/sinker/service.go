@@ -272,12 +272,12 @@ func fromProto(proto *common.Metadata) Metadata {
 		return Metadata{}
 	}
 
-	sys := make(SystemMetadata)
+	sysMap := make(map[string]map[string][]byte)
 	for group, kvGroup := range proto.GetSysMetadata() {
 		if kvGroup != nil {
-			sys[group] = kvGroup.GetKeyValue()
+			sysMap[group] = kvGroup.GetKeyValue()
 		} else {
-			sys[group] = make(map[string][]byte)
+			sysMap[group] = make(map[string][]byte)
 		}
 	}
 
@@ -291,7 +291,7 @@ func fromProto(proto *common.Metadata) Metadata {
 	}
 
 	return Metadata{
-		systemMetadata: sys,
-		userMetadata:   userMap,
+		systemMetadata: newSystemMetadata(sysMap),
+		userMetadata:   newUserMetadata(userMap),
 	}
 }
