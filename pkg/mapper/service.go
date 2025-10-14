@@ -200,7 +200,6 @@ func fromProto(proto *common.Metadata) Metadata {
 	if proto == nil {
 		return Metadata{}
 	}
-
 	sys := make(SystemMetadata)
 	for group, kvGroup := range proto.GetSysMetadata() {
 		if kvGroup != nil {
@@ -210,50 +209,35 @@ func fromProto(proto *common.Metadata) Metadata {
 		}
 	}
 
-	user := make(UserMetadata)
+	userMap := make(map[string]map[string][]byte)
 	for group, kvGroup := range proto.GetUserMetadata() {
 		if kvGroup != nil {
-			user[group] = kvGroup.GetKeyValue()
+			userMap[group] = kvGroup.GetKeyValue()
 		} else {
-			user[group] = make(map[string][]byte)
+			userMap[group] = make(map[string][]byte)
 		}
 	}
 
 	return Metadata{
-		previousVertex: proto.GetPreviousVertex(),
 		systemMetadata: sys,
-		userMetadata:   user,
+		userMetadata:   NewUserMetadataWithData(userMap),
 	}
 }
 
 // toProto converts the Metadata to the proto metadata.
 // SDKs should always return non-nil metadata.
 // If metadata is empty, it returns a non-nil proto metadata where
-// SysMetadata and UserMetadata are empty proto key-value groups.
+// UserMetadata is empty map[string]*common.KeyValueGroup.
 func toProto(metadata Metadata) *common.Metadata {
-	sys := make(map[string]*common.KeyValueGroup)
-	// Build system metadata from the read-only view.
-	view := metadata.SystemMetadataView()
-	for _, group := range view.Groups() {
-		kv := make(map[string][]byte)
-		for _, key := range view.Keys(group) {
-			kv[key] = view.Get(group, key)
-		}
-		sys[group] = &common.KeyValueGroup{KeyValue: kv}
-	}
-
 	user := make(map[string]*common.KeyValueGroup)
-	for group, kv := range metadata.UserMetadata() {
+	for group, kv := range metadata.UserMetadata().Data() {
 		if kv != nil {
 			user[group] = &common.KeyValueGroup{KeyValue: kv}
 		} else {
 			user[group] = &common.KeyValueGroup{KeyValue: map[string][]byte{}}
 		}
 	}
-
 	return &common.Metadata{
-		PreviousVertex: metadata.PreviousVertex(),
-		SysMetadata:    sys,
-		UserMetadata:   user,
+		UserMetadata: user,
 	}
 }

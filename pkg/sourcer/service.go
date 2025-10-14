@@ -426,30 +426,18 @@ func (fs *Service) PartitionsFn(ctx context.Context, _ *emptypb.Empty) (*sourcep
 // toProto converts the Metadata to the proto metadata.
 // SDKs should always return non-nil metadata.
 // If metadata is empty, it returns a non-nil proto metadata where
-// SysMetadata and UserMetadata are empty proto key-value groups.
+// UserMetadata is empty proto key-value groups.
 
 func toProto(metadata Metadata) *common.Metadata {
-	sys := make(map[string]*common.KeyValueGroup)
-	// Build system metadata from the read-only view.
-	view := metadata.SystemMetadataView()
-	for _, group := range view.Groups() {
-		kv := make(map[string][]byte)
-		for _, key := range view.Keys(group) {
-			kv[key] = view.Get(group, key)
-		}
-		sys[group] = &common.KeyValueGroup{KeyValue: kv}
-	}
 	user := make(map[string]*common.KeyValueGroup)
-	for group, kv := range metadata.UserMetadata() {
+	for group, kv := range metadata.UserMetadata().Data() {
 		if kv != nil {
 			user[group] = &common.KeyValueGroup{KeyValue: kv}
 		} else {
 			user[group] = &common.KeyValueGroup{KeyValue: map[string][]byte{}}
 		}
 	}
-
 	return &common.Metadata{
-		SysMetadata:  sys,
 		UserMetadata: user,
 	}
 }

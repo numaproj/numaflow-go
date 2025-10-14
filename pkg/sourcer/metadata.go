@@ -1,84 +1,60 @@
 package sourcer
 
-type SystemMetadata map[string]map[string][]byte
+// Metadata provides per-message metadata passed between vertices.
+// Source is the origin or the first vertex in the pipeline.
+// Here, first time the user metadata can be set by the user.
+// A vertex could create one or more set of key-value pairs per group-name.
 
-// TODO: document so that users know what a group is etc.
-type UserMetadata map[string]map[string][]byte
+// User metadata format: map[groupName]map[key][]byte,
+// where per group name, there can be multiple key-value pairs.
 
+// Metadata wraps user metadata at the source. Only user metadata is set here.
 type Metadata struct {
-	// TODO: we only need user metadata
-	systemMetadata SystemMetadata
-	userMetadata   UserMetadata
+	userMetadata UserMetadata
 }
 
-// SystemMetadataView is a read-only interface for inspecting system metadata.
-type SystemMetadataView interface {
-	// Get returns the value of the given group and key of the system metadata.
-	Get(group, key string) []byte
-	// Keys returns the keys of the given group of the system metadata.
-	Keys(group string) []string
-	// Groups returns the groups of the system metadata.
-	Groups() []string
+// UserMetadata wraps user-defined metadata groups per message.
+type UserMetadata struct {
+	data map[string]map[string][]byte
 }
 
-// systemMetadataView wraps the underlying system metadata.
-type systemMetadataView struct {
-	data SystemMetadata
+// NewUserMetadata creates an empty UserMetadata.
+func NewUserMetadata() UserMetadata {
+	return UserMetadata{data: make(map[string]map[string][]byte)}
 }
 
-// SystemMetadataView returns a read-only view over the system metadata.
-func (md Metadata) SystemMetadataView() SystemMetadataView {
-	return systemMetadataView{data: md.systemMetadata}
-}
-
-// Get returns the value of the given group and key of the system metadata.
-// Example: view := md.SysMetadataView()
-// view.Get(group, key)
-func (v systemMetadataView) Get(group, key string) []byte {
-	return v.data[group][key]
-}
-
-// Keys returns the keys of the given group of the system metadata.
-// Example: view := md.SystemMetadataView()
-// view.Keys(group)
-func (v systemMetadataView) Keys(group string) []string {
-	if v.data[group] == nil {
-		return nil
+// NewUserMetadataWithData wraps an existing map into UserMetadata.
+// If d is nil, an empty map is created.
+func NewUserMetadataWithData(d map[string]map[string][]byte) UserMetadata {
+	if d == nil {
+		d = make(map[string]map[string][]byte)
 	}
-	keys := make([]string, 0, len(v.data[group]))
-	for key := range v.data[group] {
-		keys = append(keys, key)
-	}
-	return keys
+	return UserMetadata{data: d}
 }
 
-// Groups returns the groups of the system metadata.
-// Example: view := md.SystemMetadataView()
-// view.Groups()
-func (v systemMetadataView) Groups() []string {
-	groups := make([]string, 0, len(v.data))
-	for group := range v.data {
-		groups = append(groups, group)
-	}
-	return groups
+// Data returns the underlying groups map for iteration.
+func (md UserMetadata) Data() map[string]map[string][]byte {
+	return md.data
 }
 
-// NewMetadata creates a new Metadata with user metadata initialized at origin (source).
-// Only user metadata is meant to be set by the user.
-// Example: userMetadata := make(UserMetadata{"group1": {"key1": "value1", "key2": "value2"}})
-// md := NewMetadata(userMetadata)
-// sourcer.NewMessage(value, offset, eventTime).WithMetadata(md)
+// NewMetadata creates a new source Metadata with provided user metadata.
+// If nil is passed, an empty user metadata map is created.
+// Example:
+//
+//	user := make(UserMetadata)
+//	user["kafka-headers"] = map[string][]byte{"k1": []byte("v1")}
+//	sourcer.NewMessage(value, offset, eventTime).WithMetadata(sourcer.NewMetadata(user))
 func NewMetadata(userMetadata UserMetadata) Metadata {
-	if userMetadata == nil {
-		userMetadata = make(UserMetadata)
+	if userMetadata.data == nil {
+		userMetadata = NewUserMetadata()
 	}
 	return Metadata{
-		systemMetadata: make(SystemMetadata),
-		userMetadata:   userMetadata,
+		userMetadata: userMetadata,
 	}
 }
 
-// UserMetadata returns the user metadata.
+// UserMetadata returns the user metadata map.
+// Each group is a key->[]byte map.
 // Example: md.UserMetadata()
 func (md Metadata) UserMetadata() UserMetadata {
 	return md.userMetadata

@@ -281,18 +281,17 @@ func fromProto(proto *common.Metadata) Metadata {
 		}
 	}
 
-	user := make(UserMetadata)
+	userMap := make(map[string]map[string][]byte)
 	for group, kvGroup := range proto.GetUserMetadata() {
 		if kvGroup != nil {
-			user[group] = kvGroup.GetKeyValue()
+			userMap[group] = kvGroup.GetKeyValue()
 		} else {
-			user[group] = make(map[string][]byte)
+			userMap[group] = make(map[string][]byte)
 		}
 	}
 
 	return Metadata{
-		previousVertex: proto.GetPreviousVertex(),
 		systemMetadata: sys,
-		userMetadata:   user,
+		userMetadata:   userMap,
 	}
 }
