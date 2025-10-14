@@ -429,6 +429,7 @@ func (fs *Service) PartitionsFn(ctx context.Context, _ *emptypb.Empty) (*sourcep
 // UserMetadata is empty proto key-value groups.
 
 func toProto(metadata Metadata) *common.Metadata {
+	sys := make(map[string]*common.KeyValueGroup)
 	user := make(map[string]*common.KeyValueGroup)
 	for group, kv := range metadata.UserMetadata().Data() {
 		if kv != nil {
@@ -438,6 +439,7 @@ func toProto(metadata Metadata) *common.Metadata {
 		}
 	}
 	return &common.Metadata{
+		SysMetadata:  sys,
 		UserMetadata: user,
 	}
 }

@@ -229,6 +229,7 @@ func fromProto(proto *common.Metadata) Metadata {
 // If metadata is empty, it returns a non-nil proto metadata where
 // UserMetadata is empty map[string]*common.KeyValueGroup.
 func toProto(metadata Metadata) *common.Metadata {
+	sys := make(map[string]*common.KeyValueGroup)
 	user := make(map[string]*common.KeyValueGroup)
 	for group, kv := range metadata.UserMetadata().Data() {
 		if kv != nil {
@@ -238,6 +239,7 @@ func toProto(metadata Metadata) *common.Metadata {
 		}
 	}
 	return &common.Metadata{
+		SysMetadata:  sys,
 		UserMetadata: user,
 	}
 }
