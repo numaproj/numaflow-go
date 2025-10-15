@@ -35,13 +35,14 @@ var errSinkHandlerPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", shared.Container
 
 // handlerDatum implements the Datum interface and is used in the sink functions.
 type handlerDatum struct {
-	id        string
-	keys      []string
-	value     []byte
-	eventTime time.Time
-	watermark time.Time
-	headers   map[string]string
-	metadata  Metadata
+	id             string
+	keys           []string
+	value          []byte
+	eventTime      time.Time
+	watermark      time.Time
+	headers        map[string]string
+	userMetadata   UserMetadata
+	systemMetadata SystemMetadata
 }
 
 func (h *handlerDatum) Keys() []string {
@@ -68,8 +69,12 @@ func (h *handlerDatum) Headers() map[string]string {
 	return h.headers
 }
 
-func (h *handlerDatum) Metadata() Metadata {
-	return h.metadata
+func (h *handlerDatum) UserMetadata() UserMetadata {
+	return h.userMetadata
+}
+
+func (h *handlerDatum) SystemMetadata() SystemMetadata {
+	return h.systemMetadata
 }
 
 // Service implements the proto gen server interface and contains the sinkfn operation handler.
@@ -185,13 +190,14 @@ func (fs *Service) receiveRequests(ctx context.Context, stream sinkpb.Sink_SinkF
 		}
 
 		datum := &handlerDatum{
-			id:        req.GetRequest().GetId(),
-			value:     req.GetRequest().GetValue(),
-			keys:      req.GetRequest().GetKeys(),
-			eventTime: req.GetRequest().GetEventTime().AsTime(),
-			watermark: req.GetRequest().GetWatermark().AsTime(),
-			headers:   req.GetRequest().GetHeaders(),
-			metadata:  fromProto(req.GetRequest().GetMetadata()),
+			id:             req.GetRequest().GetId(),
+			value:          req.GetRequest().GetValue(),
+			keys:           req.GetRequest().GetKeys(),
+			eventTime:      req.GetRequest().GetEventTime().AsTime(),
+			watermark:      req.GetRequest().GetWatermark().AsTime(),
+			headers:        req.GetRequest().GetHeaders(),
+			userMetadata:   userMetadataFromProto(req.GetRequest().GetMetadata()),
+			systemMetadata: systemMetadataFromProto(req.GetRequest().GetMetadata()),
 		}
 
 		select {
@@ -266,21 +272,13 @@ func (fs *Service) processData(ctx context.Context, stream sinkpb.Sink_SinkFnSer
 	return nil
 }
 
-// fromProto converts the incoming proto metadata to the internal Metadata.
-func fromProto(proto *common.Metadata) Metadata {
+// userMetadataFromProto converts the incoming proto metadata to the internal UserMetadata.
+func userMetadataFromProto(proto *common.Metadata) UserMetadata {
 	if proto == nil {
-		return Metadata{}
-	}
-
-	sysMap := make(map[string]map[string][]byte)
-	for group, kvGroup := range proto.GetSysMetadata() {
-		if kvGroup != nil {
-			sysMap[group] = kvGroup.GetKeyValue()
-		} else {
-			sysMap[group] = make(map[string][]byte)
+		return UserMetadata{
+			data: make(map[string]map[string][]byte),
 		}
 	}
-
 	userMap := make(map[string]map[string][]byte)
 	for group, kvGroup := range proto.GetUserMetadata() {
 		if kvGroup != nil {
@@ -289,9 +287,23 @@ func fromProto(proto *common.Metadata) Metadata {
 			userMap[group] = make(map[string][]byte)
 		}
 	}
+	return NewUserMetadata(userMap)
+}
 
-	return Metadata{
-		systemMetadata: newSystemMetadata(sysMap),
-		userMetadata:   newUserMetadata(userMap),
+// systemMetadataFromProto converts the incoming proto metadata to the internal SystemMetadata.
+func systemMetadataFromProto(proto *common.Metadata) SystemMetadata {
+	if proto == nil {
+		return SystemMetadata{
+			data: make(map[string]map[string][]byte),
+		}
 	}
+	sysMap := make(map[string]map[string][]byte)
+	for group, kvGroup := range proto.GetSysMetadata() {
+		if kvGroup != nil {
+			sysMap[group] = kvGroup.GetKeyValue()
+		} else {
+			sysMap[group] = make(map[string][]byte)
+		}
+	}
+	return NewSystemMetadata(sysMap)
 }

@@ -25,12 +25,6 @@ import "strconv"
 //	|
 //
 
-// Metadata bundles system and user metadata for a message.
-type Metadata struct {
-	systemMetadata SystemMetadata
-	userMetadata   UserMetadata
-}
-
 // SystemMetadata is mapping of group name to key-value pairs
 // SystemMetadata wraps system-generated metadata groups per message.
 // It is read-only to UDFs
@@ -38,19 +32,45 @@ type SystemMetadata struct {
 	data map[string]map[string][]byte
 }
 
-// newSystemMetadata wraps an existing map into SystemMetadata
-// This is for internal use only.
-func newSystemMetadata(d map[string]map[string][]byte) SystemMetadata {
+// NewSystemMetadata wraps an existing map into SystemMetadata
+// This is for internal and testing purposes only.
+func NewSystemMetadata(d map[string]map[string][]byte) SystemMetadata {
 	if d == nil {
 		d = make(map[string]map[string][]byte)
 	}
 	return SystemMetadata{data: d}
 }
 
-// SystemMetadata returns the system metadata.
-// Any changes to the system metadata will be ignored.
-func (md Metadata) SystemMetadata() SystemMetadata {
-	return md.systemMetadata
+// Groups returns the groups of the system metadata.
+// If there are no groups, it returns an empty slice.
+// Usage example: systemMetadata := datum.SystemMetadata()
+// groups := systemMetadata.Groups()
+func (md SystemMetadata) Groups() []string {
+	groups := make([]string, 0, len(md.data))
+	for group := range md.data {
+		groups = append(groups, group)
+	}
+	return groups
+}
+
+// Keys returns the keys of the system metadata for the given group.
+// If the group is not present, it returns an empty slice.
+// Usage example: systemMetadata := datum.SystemMetadata()
+// keys := systemMetadata.Keys("group-name")
+func (md SystemMetadata) Keys(group string) []string {
+	keys := make([]string, 0, len(md.data[group]))
+	for key := range md.data[group] {
+		keys = append(keys, key)
+	}
+	return keys
+}
+
+// Value returns the value of the system metadata for the given group and key.
+// If the group or key is not present, it returns an empty slice.
+// Usage example: systemMetadata := datum.SystemMetadata()
+// value := systemMetadata.Value("group-name", "key")
+func (md SystemMetadata) Value(group, key string) []byte {
+	return md.data[group][key]
 }
 
 // UserMetadata wraps user-defined metadata groups per message.
@@ -58,43 +78,45 @@ type UserMetadata struct {
 	data map[string]map[string][]byte
 }
 
-// NewUserMetadata creates an empty UserMetadata.
-func NewUserMetadata() UserMetadata {
-	return UserMetadata{data: make(map[string]map[string][]byte)}
-}
-
-// NewUserMetadataWithData wraps an existing map into UserMetadata.
+// NewUserMetadata wraps an existing map into UserMetadata.
 // If d is nil, an empty map is created.
-func NewUserMetadataWithData(d map[string]map[string][]byte) UserMetadata {
+func NewUserMetadata(d map[string]map[string][]byte) UserMetadata {
 	if d == nil {
 		d = make(map[string]map[string][]byte)
 	}
 	return UserMetadata{data: d}
 }
 
-// UserMetadata returns the user metadata map.
-// The map contains groups, each being a key->[]byte map.
-// Usage example: md := datum.Metadata()
-// userMetadata := md.UserMetadata()
-func (md Metadata) UserMetadata() UserMetadata {
-	return md.userMetadata
+// Groups returns the groups of the user metadata.
+// If there are no groups, it returns an empty slice.
+// Usage example: userMetadata := datum.UserMetadata()
+// groups := userMetadata.Groups()
+func (md UserMetadata) Groups() []string {
+	groups := make([]string, 0, len(md.data))
+	for group := range md.data {
+		groups = append(groups, group)
+	}
+	return groups
 }
 
-// NewMetadata creates a metadata object initialized with the provided user
-// metadata. If nil is passed, an empty user metadata map is created. System
-// metadata is populated by the platform and is not set here.
-func NewMetadata(userMetadata UserMetadata) Metadata {
-	if userMetadata.data == nil {
-		userMetadata = NewUserMetadata()
+// Keys returns the keys of the user metadata for the given group.
+// If the group is not present, it returns an empty slice.
+// Usage example: userMetadata := datum.UserMetadata()
+// keys := userMetadata.Keys("group-name")
+func (md UserMetadata) Keys(group string) []string {
+	keys := make([]string, 0, len(md.data[group]))
+	for key := range md.data[group] {
+		keys = append(keys, key)
 	}
-	return Metadata{
-		userMetadata: userMetadata,
-	}
+	return keys
 }
 
-// Data returns the underlying groups map for iteration.
-func (md UserMetadata) Data() map[string]map[string][]byte {
-	return md.data
+// Value returns the value of the user metadata for the given group and key.
+// If the group or key is not present, it returns an empty slice.
+// Usage example: userMetadata := datum.UserMetadata()
+// value := userMetadata.Value("group-name", "key")
+func (md UserMetadata) Value(group, key string) []byte {
+	return md.data[group][key]
 }
 
 // SetKVGroup sets a group of key-value pairs under the provided group name.

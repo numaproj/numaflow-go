@@ -181,7 +181,7 @@ readLoop:
 					EventTime: timestamppb.New(msg.EventTime()),
 					Keys:      msg.Keys(),
 					Headers:   msg.Headers(),
-					Metadata:  toProto(msg.Metadata()),
+					Metadata:  toProto(msg.UserMetadata()),
 				},
 				Status: &sourcepb.ReadResponse_Status{
 					Eot:  false,
@@ -423,20 +423,20 @@ func (fs *Service) PartitionsFn(ctx context.Context, _ *emptypb.Empty) (*sourcep
 	}, nil
 }
 
-// toProto converts the Metadata to the proto metadata.
+// toProto converts the UserMetadata to the proto metadata.
 // SDKs should always return non-nil metadata.
-// If metadata is empty, it returns a non-nil proto metadata where
-// UserMetadata is empty proto key-value groups.
+// If UserMetadata is empty, it returns a non-nil proto metadata where
+// UserMetadata and SystemMetadata are empty proto key-value groups.
 
-func toProto(metadata Metadata) *common.Metadata {
+func toProto(userMetadata UserMetadata) *common.Metadata {
 	sys := make(map[string]*common.KeyValueGroup)
 	user := make(map[string]*common.KeyValueGroup)
-	for group, kv := range metadata.UserMetadata().Data() {
-		if kv != nil {
-			user[group] = &common.KeyValueGroup{KeyValue: kv}
-		} else {
-			user[group] = &common.KeyValueGroup{KeyValue: map[string][]byte{}}
+	for _, group := range userMetadata.Groups() {
+		kv := make(map[string][]byte)
+		for _, key := range userMetadata.Keys(group) {
+			kv[key] = userMetadata.Value(group, key)
 		}
+		user[group] = &common.KeyValueGroup{KeyValue: kv}
 	}
 	return &common.Metadata{
 		SysMetadata:  sys,

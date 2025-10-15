@@ -19,8 +19,10 @@ type Datum interface {
 	ID() string
 	// Headers returns the headers of the message.
 	Headers() map[string]string
-	// Metadata returns the metadata of the message.
-	Metadata() Metadata
+	// UserMetadata returns the user metadata of the message.
+	UserMetadata() UserMetadata
+	// SystemMetadata returns the system metadata of the message.
+	SystemMetadata() SystemMetadata
 }
 
 // Sinker is the interface of sink function implementation.
