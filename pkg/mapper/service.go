@@ -202,9 +202,9 @@ func (fs *Service) handleRequest(ctx context.Context, req *mappb.MapRequest, res
 }
 
 // userMetadataFromProto converts the incoming proto metadata to the internal UserMetadata.
-func userMetadataFromProto(proto *common.Metadata) UserMetadata {
+func userMetadataFromProto(proto *common.Metadata) *UserMetadata {
 	if proto == nil {
-		return UserMetadata{
+		return &UserMetadata{
 			data: make(map[string]map[string][]byte),
 		}
 	}
@@ -221,9 +221,9 @@ func userMetadataFromProto(proto *common.Metadata) UserMetadata {
 }
 
 // systemMetadataFromProto converts the incoming proto metadata to the internal SystemMetadata.
-func systemMetadataFromProto(proto *common.Metadata) SystemMetadata {
+func systemMetadataFromProto(proto *common.Metadata) *SystemMetadata {
 	if proto == nil {
-		return SystemMetadata{
+		return &SystemMetadata{
 			data: make(map[string]map[string][]byte),
 		}
 	}
@@ -243,15 +243,17 @@ func systemMetadataFromProto(proto *common.Metadata) SystemMetadata {
 // SDKs should always return non-nil metadata.
 // If user metadata is empty, it returns a non-nil proto metadata where
 // UserMetadata is empty map[string]*common.KeyValueGroup.
-func toProto(userMetadata UserMetadata) *common.Metadata {
+func toProto(userMetadata *UserMetadata) *common.Metadata {
 	sys := make(map[string]*common.KeyValueGroup)
 	user := make(map[string]*common.KeyValueGroup)
-	for _, group := range userMetadata.Groups() {
-		kv := make(map[string][]byte)
-		for _, key := range userMetadata.Keys(group) {
-			kv[key] = userMetadata.Value(group, key)
+	if userMetadata != nil {
+		for _, group := range userMetadata.Groups() {
+			kv := make(map[string][]byte)
+			for _, key := range userMetadata.Keys(group) {
+				kv[key] = userMetadata.Value(group, key)
+			}
+			user[group] = &common.KeyValueGroup{KeyValue: kv}
 		}
-		user[group] = &common.KeyValueGroup{KeyValue: kv}
 	}
 	return &common.Metadata{
 		SysMetadata:  sys,

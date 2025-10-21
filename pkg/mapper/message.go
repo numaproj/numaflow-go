@@ -11,7 +11,7 @@ type Message struct {
 	value        []byte
 	keys         []string
 	tags         []string
-	userMetadata UserMetadata
+	userMetadata *UserMetadata
 }
 
 // NewMessage creates a Message with value
@@ -38,7 +38,7 @@ func (m Message) WithTags(tags []string) Message {
 }
 
 // WithUserMetadata is used to assign the user metadata to the message
-func (m Message) WithUserMetadata(userMetadata UserMetadata) Message {
+func (m Message) WithUserMetadata(userMetadata *UserMetadata) Message {
 	m.userMetadata = userMetadata
 	return m
 }
@@ -59,7 +59,7 @@ func (m Message) Tags() []string {
 }
 
 // UserMetadata returns message user metadata
-func (m Message) UserMetadata() UserMetadata {
+func (m Message) UserMetadata() *UserMetadata {
 	return m.userMetadata
 }
 

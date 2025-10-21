@@ -34,18 +34,18 @@ type SystemMetadata struct {
 
 // NewSystemMetadata wraps an existing map into SystemMetadata
 // This is for internal and testing purposes only.
-func NewSystemMetadata(d map[string]map[string][]byte) SystemMetadata {
+func NewSystemMetadata(d map[string]map[string][]byte) *SystemMetadata {
 	if d == nil {
 		d = make(map[string]map[string][]byte)
 	}
-	return SystemMetadata{data: d}
+	return &SystemMetadata{data: d}
 }
 
 // Groups returns the groups of the system metadata.
 // If there are no groups, it returns an empty slice.
 // Usage example: systemMetadata := datum.SystemMetadata()
 // groups := systemMetadata.Groups()
-func (md SystemMetadata) Groups() []string {
+func (md *SystemMetadata) Groups() []string {
 	groups := make([]string, 0, len(md.data))
 	for group := range md.data {
 		groups = append(groups, group)
@@ -57,7 +57,7 @@ func (md SystemMetadata) Groups() []string {
 // If the group is not present, it returns an empty slice.
 // Usage example: systemMetadata := datum.SystemMetadata()
 // keys := systemMetadata.Keys("group-name")
-func (md SystemMetadata) Keys(group string) []string {
+func (md *SystemMetadata) Keys(group string) []string {
 	keys := make([]string, 0, len(md.data[group]))
 	for key := range md.data[group] {
 		keys = append(keys, key)
@@ -69,7 +69,7 @@ func (md SystemMetadata) Keys(group string) []string {
 // If the group or key is not present, it returns an empty slice.
 // Usage example: systemMetadata := datum.SystemMetadata()
 // value := systemMetadata.Value("group-name", "key")
-func (md SystemMetadata) Value(group, key string) []byte {
+func (md *SystemMetadata) Value(group, key string) []byte {
 	return md.data[group][key]
 }
 
@@ -80,18 +80,18 @@ type UserMetadata struct {
 
 // NewUserMetadata wraps an existing map into UserMetadata.
 // If d is nil, an empty map is created.
-func NewUserMetadata(d map[string]map[string][]byte) UserMetadata {
+func NewUserMetadata(d map[string]map[string][]byte) *UserMetadata {
 	if d == nil {
 		d = make(map[string]map[string][]byte)
 	}
-	return UserMetadata{data: d}
+	return &UserMetadata{data: d}
 }
 
 // Groups returns the groups of the user metadata.
 // If there are no groups, it returns an empty slice.
 // Usage example: userMetadata := datum.UserMetadata()
 // groups := userMetadata.Groups()
-func (md UserMetadata) Groups() []string {
+func (md *UserMetadata) Groups() []string {
 	groups := make([]string, 0, len(md.data))
 	for group := range md.data {
 		groups = append(groups, group)
@@ -103,7 +103,7 @@ func (md UserMetadata) Groups() []string {
 // If the group is not present, it returns an empty slice.
 // Usage example: userMetadata := datum.UserMetadata()
 // keys := userMetadata.Keys("group-name")
-func (md UserMetadata) Keys(group string) []string {
+func (md *UserMetadata) Keys(group string) []string {
 	keys := make([]string, 0, len(md.data[group]))
 	for key := range md.data[group] {
 		keys = append(keys, key)
@@ -115,14 +115,20 @@ func (md UserMetadata) Keys(group string) []string {
 // If the group or key is not present, it returns an empty slice.
 // Usage example: userMetadata := datum.UserMetadata()
 // value := userMetadata.Value("group-name", "key")
-func (md UserMetadata) Value(group, key string) []byte {
+func (md *UserMetadata) Value(group, key string) []byte {
 	return md.data[group][key]
 }
 
 // SetKVGroup sets a group of key-value pairs under the provided group name.
 // Usage example: userMetadata := NewUserMetadata()
 // userMetadata.SetKVGroup("group-name", map[string][]byte{"key": []byte("value")})
-func (md UserMetadata) SetKVGroup(group string, kv map[string][]byte) {
+func (md *UserMetadata) SetKVGroup(group string, kv map[string][]byte) {
+	if md == nil {
+		return
+	}
+	if md.data == nil {
+		md.data = make(map[string]map[string][]byte)
+	}
 	if md.data[group] == nil {
 		md.data[group] = make(map[string][]byte)
 	}
@@ -132,7 +138,13 @@ func (md UserMetadata) SetKVGroup(group string, kv map[string][]byte) {
 // AppendKV appends a key-value pair to the user metadata.
 // Usage example: userMetadata := NewUserMetadata()
 // userMetadata.AppendKV("group-name", "key", []byte("value"))
-func (md UserMetadata) AppendKV(group, key string, value []byte) {
+func (md *UserMetadata) AppendKV(group, key string, value []byte) {
+	if md == nil {
+		return
+	}
+	if md.data == nil {
+		md.data = make(map[string]map[string][]byte)
+	}
 	if md.data[group] == nil {
 		md.data[group] = make(map[string][]byte)
 	}
@@ -142,7 +154,13 @@ func (md UserMetadata) AppendKV(group, key string, value []byte) {
 // AppendKVString appends a key-value pair with value of string type to the user metadata.
 // Usage example: userMetadata := NewUserMetadata()
 // userMetadata.AppendKVString("group-name", "key", "value")
-func (md UserMetadata) AppendKVString(group, key, value string) {
+func (md *UserMetadata) AppendKVString(group, key, value string) {
+	if md == nil {
+		return
+	}
+	if md.data == nil {
+		md.data = make(map[string]map[string][]byte)
+	}
 	if md.data[group] == nil {
 		md.data[group] = make(map[string][]byte)
 	}
@@ -152,7 +170,13 @@ func (md UserMetadata) AppendKVString(group, key, value string) {
 // AppendKVInt appends a key-value pair with value of int type to the user metadata
 // Usage example: userMetadata := NewUserMetadata()
 // userMetadata.AppendKVInt("group-name", "key", 123)
-func (md UserMetadata) AppendKVInt(group, key string, value int) {
+func (md *UserMetadata) AppendKVInt(group, key string, value int) {
+	if md == nil {
+		return
+	}
+	if md.data == nil {
+		md.data = make(map[string]map[string][]byte)
+	}
 	if md.data[group] == nil {
 		md.data[group] = make(map[string][]byte)
 	}
@@ -164,7 +188,10 @@ func (md UserMetadata) AppendKVInt(group, key string, value int) {
 // Usage example: md := datum.Metadata()
 // userMetadata := md.UserMetadata()
 // userMetadata.RemoveKey("group-name", "key")
-func (md UserMetadata) RemoveKey(group, key string) {
+func (md *UserMetadata) RemoveKey(group, key string) {
+	if md == nil || md.data == nil {
+		return
+	}
 	delete(md.data[group], key)
 }
 
@@ -173,6 +200,9 @@ func (md UserMetadata) RemoveKey(group, key string) {
 // Usage example: md := datum.Metadata()
 // userMetadata := md.UserMetadata()
 // userMetadata.RemoveGroup("group-name")
-func (md UserMetadata) RemoveGroup(group string) {
+func (md *UserMetadata) RemoveGroup(group string) {
+	if md == nil || md.data == nil {
+		return
+	}
 	delete(md.data, group)
 }

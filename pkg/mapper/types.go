@@ -8,11 +8,11 @@ type handlerDatum struct {
 	eventTime      time.Time
 	watermark      time.Time
 	headers        map[string]string
-	userMetadata   UserMetadata
-	systemMetadata SystemMetadata
+	userMetadata   *UserMetadata
+	systemMetadata *SystemMetadata
 }
 
-func NewHandlerDatum(value []byte, eventTime time.Time, watermark time.Time, headers map[string]string, userMetadata UserMetadata, systemMetadata SystemMetadata) Datum {
+func NewHandlerDatum(value []byte, eventTime time.Time, watermark time.Time, headers map[string]string, userMetadata *UserMetadata, systemMetadata *SystemMetadata) Datum {
 	return &handlerDatum{
 		value:          value,
 		eventTime:      eventTime,
@@ -39,10 +39,10 @@ func (h *handlerDatum) Headers() map[string]string {
 	return h.headers
 }
 
-func (h *handlerDatum) UserMetadata() UserMetadata {
+func (h *handlerDatum) UserMetadata() *UserMetadata {
 	return h.userMetadata
 }
 
-func (h *handlerDatum) SystemMetadata() SystemMetadata {
+func (h *handlerDatum) SystemMetadata() *SystemMetadata {
 	return h.systemMetadata
 }

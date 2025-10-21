@@ -41,8 +41,8 @@ type handlerDatum struct {
 	eventTime      time.Time
 	watermark      time.Time
 	headers        map[string]string
-	userMetadata   UserMetadata
-	systemMetadata SystemMetadata
+	userMetadata   *UserMetadata
+	systemMetadata *SystemMetadata
 }
 
 func (h *handlerDatum) Keys() []string {
@@ -69,11 +69,11 @@ func (h *handlerDatum) Headers() map[string]string {
 	return h.headers
 }
 
-func (h *handlerDatum) UserMetadata() UserMetadata {
+func (h *handlerDatum) UserMetadata() *UserMetadata {
 	return h.userMetadata
 }
 
-func (h *handlerDatum) SystemMetadata() SystemMetadata {
+func (h *handlerDatum) SystemMetadata() *SystemMetadata {
 	return h.systemMetadata
 }
 
@@ -273,11 +273,9 @@ func (fs *Service) processData(ctx context.Context, stream sinkpb.Sink_SinkFnSer
 }
 
 // userMetadataFromProto converts the incoming proto metadata to the internal UserMetadata.
-func userMetadataFromProto(proto *common.Metadata) UserMetadata {
+func userMetadataFromProto(proto *common.Metadata) *UserMetadata {
 	if proto == nil {
-		return UserMetadata{
-			data: make(map[string]map[string][]byte),
-		}
+		return NewUserMetadata(make(map[string]map[string][]byte))
 	}
 	userMap := make(map[string]map[string][]byte)
 	for group, kvGroup := range proto.GetUserMetadata() {
@@ -291,11 +289,9 @@ func userMetadataFromProto(proto *common.Metadata) UserMetadata {
 }
 
 // systemMetadataFromProto converts the incoming proto metadata to the internal SystemMetadata.
-func systemMetadataFromProto(proto *common.Metadata) SystemMetadata {
+func systemMetadataFromProto(proto *common.Metadata) *SystemMetadata {
 	if proto == nil {
-		return SystemMetadata{
-			data: make(map[string]map[string][]byte),
-		}
+		return NewSystemMetadata(make(map[string]map[string][]byte))
 	}
 	sysMap := make(map[string]map[string][]byte)
 	for group, kvGroup := range proto.GetSysMetadata() {

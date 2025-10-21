@@ -428,15 +428,17 @@ func (fs *Service) PartitionsFn(ctx context.Context, _ *emptypb.Empty) (*sourcep
 // If UserMetadata is empty, it returns a non-nil proto metadata where
 // UserMetadata and SystemMetadata are empty proto key-value groups.
 
-func toProto(userMetadata UserMetadata) *common.Metadata {
+func toProto(userMetadata *UserMetadata) *common.Metadata {
 	sys := make(map[string]*common.KeyValueGroup)
 	user := make(map[string]*common.KeyValueGroup)
-	for _, group := range userMetadata.Groups() {
-		kv := make(map[string][]byte)
-		for _, key := range userMetadata.Keys(group) {
-			kv[key] = userMetadata.Value(group, key)
+	if userMetadata != nil {
+		for _, group := range userMetadata.Groups() {
+			kv := make(map[string][]byte)
+			for _, key := range userMetadata.Keys(group) {
+				kv[key] = userMetadata.Value(group, key)
+			}
+			user[group] = &common.KeyValueGroup{KeyValue: kv}
 		}
-		user[group] = &common.KeyValueGroup{KeyValue: kv}
 	}
 	return &common.Metadata{
 		SysMetadata:  sys,
