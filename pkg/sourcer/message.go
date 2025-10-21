@@ -11,11 +11,12 @@ var defaultPartitionId, _ = strconv.Atoi(os.Getenv("NUMAFLOW_REPLICA"))
 
 // Message is used to wrap the data return by UDSource
 type Message struct {
-	value     []byte
-	offset    Offset
-	eventTime time.Time
-	keys      []string
-	headers   map[string]string
+	value        []byte
+	offset       Offset
+	eventTime    time.Time
+	keys         []string
+	headers      map[string]string
+	userMetadata *UserMetadata
 }
 
 // NewMessage creates a Message with value
@@ -35,6 +36,12 @@ func (m Message) WithHeaders(headers map[string]string) Message {
 	return m
 }
 
+// WithMetadata is used to assign the metadata to the message
+func (m Message) WithUserMetadata(userMetadata *UserMetadata) Message {
+	m.userMetadata = userMetadata
+	return m
+}
+
 // Keys returns message keys
 func (m Message) Keys() []string {
 	return m.keys
@@ -43,6 +50,11 @@ func (m Message) Keys() []string {
 // Headers returns message headers
 func (m Message) Headers() map[string]string {
 	return m.headers
+}
+
+// Metadata returns message metadata
+func (m Message) UserMetadata() *UserMetadata {
+	return m.userMetadata
 }
 
 // Value returns message value

@@ -17,6 +17,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/numaproj/numaflow-go/pkg/apis/proto/common"
 	sourcepb "github.com/numaproj/numaflow-go/pkg/apis/proto/source/v1"
 	"github.com/numaproj/numaflow-go/pkg/shared"
 )
@@ -180,6 +181,7 @@ readLoop:
 					EventTime: timestamppb.New(msg.EventTime()),
 					Keys:      msg.Keys(),
 					Headers:   msg.Headers(),
+					Metadata:  toProto(msg.UserMetadata()),
 				},
 				Status: &sourcepb.ReadResponse_Status{
 					Eot:  false,
@@ -419,4 +421,27 @@ func (fs *Service) PartitionsFn(ctx context.Context, _ *emptypb.Empty) (*sourcep
 			Partitions: partitions,
 		},
 	}, nil
+}
+
+// toProto converts the UserMetadata to the proto metadata.
+// SDKs should always return non-nil metadata.
+// If UserMetadata is empty, it returns a non-nil proto metadata where
+// UserMetadata and SystemMetadata are empty proto key-value groups.
+
+func toProto(userMetadata *UserMetadata) *common.Metadata {
+	sys := make(map[string]*common.KeyValueGroup)
+	user := make(map[string]*common.KeyValueGroup)
+	if userMetadata != nil {
+		for _, group := range userMetadata.Groups() {
+			kv := make(map[string][]byte)
+			for _, key := range userMetadata.Keys(group) {
+				kv[key] = userMetadata.Value(group, key)
+			}
+			user[group] = &common.KeyValueGroup{KeyValue: kv}
+		}
+	}
+	return &common.Metadata{
+		SysMetadata:  sys,
+		UserMetadata: user,
+	}
 }

@@ -15,6 +15,10 @@ type Datum interface {
 	Watermark() time.Time
 	// Headers returns the headers of the message.
 	Headers() map[string]string
+	// UserMetadata returns the user metadata of the message.
+	UserMetadata() *UserMetadata
+	// SystemMetadata returns the system metadata of the message.
+	SystemMetadata() *SystemMetadata
 }
 
 // Mapper is the interface of map function implementation.

@@ -4,6 +4,7 @@ option go_package = "github.com/numaproj/numaflow-go/pkg/apis/proto/source/v1";
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
+import "pkg/apis/proto/common/metadata.proto";
 
 package source.v1;
 
@@ -82,6 +83,8 @@ message ReadResponse {
     // Headers are the metadata associated with the datum.
     // e.g. Kafka and Redis Stream message usually include information about the headers.
     map<string, string> headers = 5;
+    // Metadata is the metadata of the message
+    common.Metadata metadata = 6;
   }
   message Status {
     // Code to indicate the status of the response.

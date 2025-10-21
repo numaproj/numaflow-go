@@ -8,9 +8,10 @@ var (
 
 // Message is used to wrap the data return by Map functions
 type Message struct {
-	value []byte
-	keys  []string
-	tags  []string
+	value        []byte
+	keys         []string
+	tags         []string
+	userMetadata *UserMetadata
 }
 
 // NewMessage creates a Message with value
@@ -36,6 +37,12 @@ func (m Message) WithTags(tags []string) Message {
 	return m
 }
 
+// WithUserMetadata is used to assign the user metadata to the message
+func (m Message) WithUserMetadata(userMetadata *UserMetadata) Message {
+	m.userMetadata = userMetadata
+	return m
+}
+
 // Keys returns message keys
 func (m Message) Keys() []string {
 	return m.keys
@@ -49,6 +56,11 @@ func (m Message) Value() []byte {
 // Tags returns message tags
 func (m Message) Tags() []string {
 	return m.tags
+}
+
+// UserMetadata returns message user metadata
+func (m Message) UserMetadata() *UserMetadata {
+	return m.userMetadata
 }
 
 type Messages []Message

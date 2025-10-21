@@ -4,6 +4,7 @@ option go_package = "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1";
 
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
+import "pkg/apis/proto/common/metadata.proto";
 
 
 package sink.v1;
@@ -27,6 +28,8 @@ message SinkRequest {
     google.protobuf.Timestamp watermark = 4;
     string id = 5;
     map<string, string> headers = 6;
+    // Metadata is the metadata of the message
+    common.Metadata metadata = 7;
   }
   // Required field indicating the request.
   Request request = 1;
