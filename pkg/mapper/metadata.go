@@ -51,6 +51,9 @@ func NewSystemMetadata(d map[string]map[string][]byte) *SystemMetadata {
 //	groups := systemMetadata.Groups()
 //	```
 func (md *SystemMetadata) Groups() []string {
+	if md == nil || md.data == nil {
+		return []string{}
+	}
 	groups := make([]string, 0, len(md.data))
 	for group := range md.data {
 		groups = append(groups, group)
@@ -68,6 +71,9 @@ func (md *SystemMetadata) Groups() []string {
 //	keys := systemMetadata.Keys("group-name")
 //	```
 func (md *SystemMetadata) Keys(group string) []string {
+	if md == nil || md.data == nil {
+		return []string{}
+	}
 	keys := make([]string, 0, len(md.data[group]))
 	for key := range md.data[group] {
 		keys = append(keys, key)
@@ -85,6 +91,9 @@ func (md *SystemMetadata) Keys(group string) []string {
 //	value := systemMetadata.Value("group-name", "key")
 //	```
 func (md *SystemMetadata) Value(group, key string) []byte {
+	if md == nil || md.data == nil {
+		return []byte{}
+	}
 	return md.data[group][key]
 }
 
@@ -112,6 +121,9 @@ func NewUserMetadata(d map[string]map[string][]byte) *UserMetadata {
 //	groups := userMetadata.Groups()
 //	```
 func (md *UserMetadata) Groups() []string {
+	if md == nil || md.data == nil {
+		return []string{}
+	}
 	groups := make([]string, 0, len(md.data))
 	for group := range md.data {
 		groups = append(groups, group)
@@ -129,6 +141,9 @@ func (md *UserMetadata) Groups() []string {
 //	keys := userMetadata.Keys("group-name")
 //	```
 func (md *UserMetadata) Keys(group string) []string {
+	if md == nil || md.data == nil {
+		return []string{}
+	}
 	keys := make([]string, 0, len(md.data[group]))
 	for key := range md.data[group] {
 		keys = append(keys, key)
@@ -146,6 +161,9 @@ func (md *UserMetadata) Keys(group string) []string {
 //	value := userMetadata.Value("group-name", "key")
 //	```
 func (md *UserMetadata) Value(group, key string) []byte {
+	if md == nil || md.data == nil {
+		return []byte{}
+	}
 	return md.data[group][key]
 }
 
