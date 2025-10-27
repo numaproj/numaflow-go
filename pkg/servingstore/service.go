@@ -65,7 +65,7 @@ func (s *Service) Put(ctx context.Context, request *servingpb.PutRequest) (*serv
 			case s.shutdownCh <- struct{}{}:
 				// signal enqueued
 			default:
-				log.Printf("shutdown signal already enqueued or watcher exited; skipping shutdown send")
+				log.Println("Shutdown signal already enqueued or watcher exited; skipping shutdown send")
 			}
 		})
 	}

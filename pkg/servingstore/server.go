@@ -78,7 +78,7 @@ func NewServer(
 	for _, inputOption := range inputOptions {
 		inputOption(opts)
 	}
-	shutdownCh := make(chan struct{}, 1)
+	shutdownCh := make(chan struct{})
 
 	// create a new service and server
 	svc := &Service{

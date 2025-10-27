@@ -147,7 +147,7 @@ readLoop:
 			case fs.shutdownCh <- struct{}{}:
 				// signal enqueued
 			default:
-				log.Printf("shutdown signal already enqueued or watcher exited; skipping shutdown send")
+				log.Println("Shutdown signal already enqueued or watcher exited; skipping shutdown send")
 			}
 		})
 		return err
@@ -160,7 +160,7 @@ readLoop:
 			case fs.shutdownCh <- struct{}{}:
 				// signal enqueued
 			default:
-				log.Printf("shutdown signal already enqueued or watcher exited; skipping shutdown send")
+				log.Printf("Shutdown signal already enqueued or watcher exited; skipping shutdown send")
 			}
 		})
 		return readErr
