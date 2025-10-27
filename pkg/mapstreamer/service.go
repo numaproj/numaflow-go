@@ -117,7 +117,12 @@ outer:
 	if err := g.Wait(); err != nil {
 		fs.once.Do(func() {
 			log.Printf("Stopping the MapFn with err, %s", err)
-			fs.shutdownCh <- struct{}{}
+			select {
+			case fs.shutdownCh <- struct{}{}:
+				// signal enqueued
+			default:
+				log.Printf("shutdown signal already enqueued or watcher exited; skipping shutdown send")
+			}
 		})
 		return err
 	}

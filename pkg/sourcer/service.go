@@ -54,7 +54,12 @@ func (fs *Service) ReadFn(stream sourcepb.Source_ReadFnServer) error {
 			}
 			log.Printf("error processing read  requests: %v", err)
 			fs.once.Do(func() {
-				fs.shutdownCh <- struct{}{}
+				select {
+				case fs.shutdownCh <- struct{}{}:
+					// signal enqueued
+				default:
+					log.Printf("shutdown signal already enqueued or watcher exited; skipping shutdown send")
+				}
 			})
 			return err
 		}
@@ -286,7 +291,12 @@ func (fs *Service) receiveAckRequests(ctx context.Context, stream sourcepb.Sourc
 		if r := recover(); r != nil {
 			log.Printf("panic inside source handler: %v %v", r, string(debug.Stack()))
 			fs.once.Do(func() {
-				fs.shutdownCh <- struct{}{}
+				select {
+				case fs.shutdownCh <- struct{}{}:
+					// signal enqueued
+				default:
+					log.Printf("shutdown signal already enqueued or watcher exited; skipping shutdown send")
+				}
 			})
 			err = fmt.Errorf("panic inside source handler: %v", r)
 		}
@@ -336,7 +346,12 @@ func (fs *Service) PendingFn(ctx context.Context, _ *emptypb.Empty) (*sourcepb.P
 		if r := recover(); r != nil {
 			log.Printf("panic inside sourcer handler: %v %v", r, string(debug.Stack()))
 			fs.once.Do(func() {
-				fs.shutdownCh <- struct{}{}
+				select {
+				case fs.shutdownCh <- struct{}{}:
+					// signal enqueued
+				default:
+					log.Printf("shutdown signal already enqueued or watcher exited; skipping shutdown send")
+				}
 			})
 		}
 	}()

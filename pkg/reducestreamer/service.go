@@ -80,7 +80,12 @@ func (fs *Service) ReduceFn(stream reducepb.Reduce_ReduceFnServer) error {
 				// Otherwise there could be a race condition where multiple streams try to call the shutdownCh.
 				fs.once.Do(func() {
 					log.Printf("Stopping the ReduceStreamFn with err, %s", errFromTask)
-					fs.shutdownCh <- struct{}{}
+					select {
+					case fs.shutdownCh <- struct{}{}:
+						// signal enqueued
+					default:
+						log.Printf("shutdown signal already enqueued or watcher exited; skipping shutdown send")
+					}
 				})
 				return errFromTask
 			}
@@ -143,7 +148,12 @@ readLoop:
 	if err := g.Wait(); err != nil {
 		fs.once.Do(func() {
 			log.Printf("Stopping the ReduceStreamFn with err, %s", err)
-			fs.shutdownCh <- struct{}{}
+			select {
+			case fs.shutdownCh <- struct{}{}:
+				// signal enqueued
+			default:
+				log.Printf("shutdown signal already enqueued or watcher exited; skipping shutdown send")
+			}
 		})
 		return err
 	}
@@ -151,7 +161,12 @@ readLoop:
 	if readErr != nil {
 		fs.once.Do(func() {
 			log.Printf("Stopping the ReduceStreamFn because of error while reading requests, %s", readErr)
-			fs.shutdownCh <- struct{}{}
+			select {
+			case fs.shutdownCh <- struct{}{}:
+				// signal enqueued
+			default:
+				log.Printf("shutdown signal already enqueued or watcher exited; skipping shutdown send")
+			}
 		})
 		return readErr
 	}
