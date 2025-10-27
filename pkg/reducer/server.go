@@ -30,7 +30,7 @@ func NewServer(r ReducerCreator, inputOptions ...Option) numaflow.Server {
 	for _, inputOption := range inputOptions {
 		inputOption(opts)
 	}
-	shutdownCh := make(chan struct{})
+	shutdownCh := make(chan struct{}, 1)
 
 	// create a new service and server
 	svc := &Service{

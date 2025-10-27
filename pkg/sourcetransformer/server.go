@@ -10,7 +10,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/numaproj/numaflow-go/pkg"
+	numaflow "github.com/numaproj/numaflow-go/pkg"
 	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/sourcetransform/v1"
 	"github.com/numaproj/numaflow-go/pkg/info"
 	"github.com/numaproj/numaflow-go/pkg/shared"
@@ -29,7 +29,7 @@ func NewServer(m SourceTransformer, inputOptions ...Option) numaflow.Server {
 	for _, inputOption := range inputOptions {
 		inputOption(opts)
 	}
-	shutdownCh := make(chan struct{})
+	shutdownCh := make(chan struct{}, 1)
 
 	// create a new service and server
 	svc := &Service{

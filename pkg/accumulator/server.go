@@ -10,7 +10,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/numaproj/numaflow-go/pkg"
+	numaflow "github.com/numaproj/numaflow-go/pkg"
 	accumulatorpb "github.com/numaproj/numaflow-go/pkg/apis/proto/accumulator/v1"
 	"github.com/numaproj/numaflow-go/pkg/info"
 	"github.com/numaproj/numaflow-go/pkg/shared"
@@ -30,7 +30,7 @@ func NewServer(r AccumulatorCreator, inputOptions ...Option) numaflow.Server {
 	for _, inputOption := range inputOptions {
 		inputOption(opts)
 	}
-	shutdownCh := make(chan struct{})
+	shutdownCh := make(chan struct{}, 1)
 
 	s := new(server)
 	s.svc = NewService(r, shutdownCh)

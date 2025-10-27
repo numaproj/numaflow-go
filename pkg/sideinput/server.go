@@ -10,7 +10,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/numaproj/numaflow-go/pkg"
+	numaflow "github.com/numaproj/numaflow-go/pkg"
 	sideinputpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sideinput/v1"
 	"github.com/numaproj/numaflow-go/pkg/info"
 	"github.com/numaproj/numaflow-go/pkg/shared"
@@ -30,7 +30,7 @@ func NewSideInputServer(r SideInputRetriever, inputOptions ...Option) numaflow.S
 	for _, inputOption := range inputOptions {
 		inputOption(opts)
 	}
-	shutdownCh := make(chan struct{})
+	shutdownCh := make(chan struct{}, 1)
 
 	// create a new service and server
 	svc := &Service{

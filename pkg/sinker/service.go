@@ -108,11 +108,7 @@ func (fs *Service) SinkFn(stream sinkpb.Sink_SinkFnServer) error {
 			}
 			fs.once.Do(func() {
 				log.Printf("Stopping the SinkFn with err, %s", err)
-				select {
-				case fs.shutdownCh <- struct{}{}:
-				default:
-					log.Printf("Shutdown channel is already closed, skipping shutdown")
-				}
+				fs.shutdownCh <- struct{}{}
 			})
 			return err
 		}
