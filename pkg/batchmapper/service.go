@@ -64,10 +64,10 @@ func (fs *Service) MapFn(stream mappb.Map_MapFnServer) error {
 
 		// Wait for the goroutines to finish
 		if err := g.Wait(); err != nil {
-			if errors.Is(err, io.EOF) {
-				log.Printf("Stopping the BatchMapFn")
+			if errors.Is(err, context.Canceled) || errors.Is(err, io.EOF) {
 				return nil
 			}
+			
 			fs.once.Do(func() {
 				log.Printf("Stopping the BatchMapFn with err, %s", err)
 				select {
@@ -138,7 +138,6 @@ func (fs *Service) receiveRequests(ctx context.Context, stream mappb.Map_MapFnSe
 			return err
 		}
 		if errors.Is(err, io.EOF) {
-			log.Printf("EOF received, stopping the MapBatchFn")
 			return err
 		}
 		if err != nil {

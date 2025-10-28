@@ -86,7 +86,6 @@ outer:
 			break outer
 		}
 		if errors.Is(err, io.EOF) {
-			log.Printf("EOF received, stopping the MapFn")
 			break outer
 		}
 		if err != nil {
@@ -100,21 +99,18 @@ outer:
 		g.Go(func() error {
 			messageCh := make(chan Message)
 			workerGroup, innerCtx := errgroup.WithContext(groupCtx)
-
 			workerGroup.Go(func() error {
 				return fs.invokeHandler(innerCtx, req, messageCh)
 			})
-
 			workerGroup.Go(func() error {
 				return fs.writeResponseToClient(innerCtx, stream, req.GetId(), messageCh)
 			})
-
 			return workerGroup.Wait()
 		})
 	}
 
 	// wait for all goroutines to finish
-	if err := g.Wait(); err != nil {
+	if err := g.Wait(); err != nil && !errors.Is(err, context.Canceled) {
 		fs.once.Do(func() {
 			log.Printf("Stopping the MapFn with err, %s", err)
 			select {

@@ -107,7 +107,6 @@ outer:
 			break outer
 		}
 		if errors.Is(err, io.EOF) {
-			log.Printf("EOF received, stopping the SourceTransformFn")
 			break outer
 		}
 		if err != nil {
@@ -124,7 +123,7 @@ outer:
 	}
 
 	// wait for all the goroutines to finish, if any of the goroutines return an error, wait will return that error immediately.
-	if err := grp.Wait(); err != nil {
+	if err := grp.Wait(); err != nil && !errors.Is(err, context.Canceled) {
 		fs.once.Do(func() {
 			log.Printf("Stopping the SourceTransformFn with err, %s", err)
 			select {

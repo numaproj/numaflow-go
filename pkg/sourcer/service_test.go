@@ -14,6 +14,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/numaproj/numaflow-go/pkg/apis/proto/common"
 	sourcepb "github.com/numaproj/numaflow-go/pkg/apis/proto/source/v1"
 )
 
@@ -29,9 +30,10 @@ func (ts TestSource) Read(_ context.Context, _ ReadRequest, messageCh chan<- Mes
 	messageCh <- msg.WithKeys([]string{testKey})
 }
 
+func (ts TestSource) Nack(_ context.Context, _ NackRequest) {}
+
 func (ts TestSource) Ack(_ context.Context, _ AckRequest) {
 	// Do nothing and return, to mimic a successful ack.
-	return
 }
 
 func (ts TestSource) Pending(_ context.Context) int64 {
@@ -46,7 +48,7 @@ func TestService_IsReady(t *testing.T) {
 	fs := &Service{
 		Source: nil,
 	}
-	got, err := fs.IsReady(nil, &emptypb.Empty{})
+	got, err := fs.IsReady(context.TODO(), &emptypb.Empty{})
 	assert.NoError(t, err)
 	assert.Equal(t, got, &sourcepb.ReadyResponse{
 		Ready: true,
@@ -191,6 +193,10 @@ func TestService_ReadFn(t *testing.T) {
 						EventTime: timestamppb.New(testEventTime),
 						Keys:      []string{testKey},
 						Headers:   map[string]string{"x-txn-id": "test-txn-id"},
+						Metadata: &common.Metadata{
+							SysMetadata:  map[string]*common.KeyValueGroup{},
+							UserMetadata: map[string]*common.KeyValueGroup{},
+						},
 					},
 					Status: &sourcepb.ReadResponse_Status{
 						Eot:  false,
@@ -322,6 +328,28 @@ func TestService_PartitionsFn(t *testing.T) {
 	assert.EqualValues(t, got, &sourcepb.PartitionsResponse{
 		Result: &sourcepb.PartitionsResponse_Result{
 			Partitions: testPartitions,
+		},
+	})
+	assert.NoError(t, err)
+}
+
+func TestService_NackFn(t *testing.T) {
+	fs := &Service{Source: TestSource{}}
+	ctx := context.Background()
+	offsets := []*sourcepb.Offset{
+		{
+			PartitionId: 0,
+			Offset:      []byte("test"),
+		},
+	}
+	got, err := fs.NackFn(ctx, &sourcepb.NackRequest{
+		Request: &sourcepb.NackRequest_Request{
+			Offsets: offsets,
+		},
+	})
+	assert.Equal(t, got, &sourcepb.NackResponse{
+		Result: &sourcepb.NackResponse_Result{
+			Success: &emptypb.Empty{},
 		},
 	})
 	assert.NoError(t, err)

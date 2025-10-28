@@ -2,6 +2,7 @@ package servingstore
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"runtime/debug"
@@ -59,7 +60,7 @@ func (s *Service) Put(ctx context.Context, request *servingpb.PutRequest) (*serv
 	})
 
 	err := g.Wait()
-	if err != nil {
+	if err != nil && !errors.Is(err, context.Canceled) {
 		s.once.Do(func() {
 			select {
 			case s.shutdownCh <- struct{}{}:
@@ -101,7 +102,7 @@ func (s *Service) Get(ctx context.Context, request *servingpb.GetRequest) (*serv
 	})
 
 	err := g.Wait()
-	if err != nil {
+	if err != nil && !errors.Is(err, context.Canceled) {
 		s.once.Do(func() {
 			s.shutdownCh <- struct{}{}
 		})

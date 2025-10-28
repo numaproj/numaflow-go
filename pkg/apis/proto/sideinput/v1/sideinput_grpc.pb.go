@@ -33,9 +33,11 @@ const (
 // which allows access to slow updated data or configuration without needing to retrieve
 // it during each message processing.
 // Through this service we should should be able to:-
-//  1. Invoke retrieval request for a single Side Input parameter, which in turn should
-//     check for updates and return its latest value.
-//  2. Provide a health check endpoint to indicate whether the service is ready to be used.
+// (1) Invoke retrieval request for a single Side Input parameter, which in turn should
+//
+//	check for updates and return its latest value.
+//
+// (2) Provide a health check endpoint to indicate whether the service is ready to be used.
 type SideInputClient interface {
 	// RetrieveSideInput is the endpoint to retrieve the latest value of a given Side Input.
 	RetrieveSideInput(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SideInputResponse, error)
@@ -80,9 +82,11 @@ func (c *sideInputClient) IsReady(ctx context.Context, in *emptypb.Empty, opts .
 // which allows access to slow updated data or configuration without needing to retrieve
 // it during each message processing.
 // Through this service we should should be able to:-
-//  1. Invoke retrieval request for a single Side Input parameter, which in turn should
-//     check for updates and return its latest value.
-//  2. Provide a health check endpoint to indicate whether the service is ready to be used.
+// (1) Invoke retrieval request for a single Side Input parameter, which in turn should
+//
+//	check for updates and return its latest value.
+//
+// (2) Provide a health check endpoint to indicate whether the service is ready to be used.
 type SideInputServer interface {
 	// RetrieveSideInput is the endpoint to retrieve the latest value of a given Side Input.
 	RetrieveSideInput(context.Context, *emptypb.Empty) (*SideInputResponse, error)

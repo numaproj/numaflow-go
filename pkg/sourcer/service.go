@@ -17,6 +17,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/numaproj/numaflow-go/pkg/apis/proto/common"
 	sourcepb "github.com/numaproj/numaflow-go/pkg/apis/proto/source/v1"
 	"github.com/numaproj/numaflow-go/pkg/shared"
 )
@@ -36,7 +37,7 @@ type Service struct {
 	once       sync.Once
 }
 
-var errSourceReadPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", shared.ContainerType)
+var errSourcePanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", shared.ContainerType)
 
 // ReadFn reads the data from the source.
 func (fs *Service) ReadFn(stream sourcepb.Source_ReadFnServer) error {
@@ -49,7 +50,8 @@ func (fs *Service) ReadFn(stream sourcepb.Source_ReadFnServer) error {
 	for {
 		if err := fs.receiveReadRequests(ctx, stream); err != nil {
 			// If the error is EOF, it means the stream has been closed.
-			if errors.Is(err, io.EOF) {
+			// Ignore client side cancellation.
+			if errors.Is(err, io.EOF) || errors.Is(err, context.Canceled) {
 				return nil
 			}
 			log.Printf("error processing read  requests: %v", err)
@@ -134,8 +136,8 @@ func (fs *Service) receiveReadRequests(ctx context.Context, stream sourcepb.Sour
 		// handle panic
 		defer func() {
 			if r := recover(); r != nil {
-				log.Printf("panic inside source handler: %v %v", r, string(debug.Stack()))
-				st, _ := status.Newf(codes.Internal, "%s: %v", errSourceReadPanic, r).WithDetails(&epb.DebugInfo{
+				log.Printf("panic inside source read handler: %v %v", r, string(debug.Stack()))
+				st, _ := status.Newf(codes.Internal, "%s: %v", errSourcePanic, r).WithDetails(&epb.DebugInfo{
 					Detail: string(debug.Stack()),
 				})
 				err = st.Err()
@@ -184,6 +186,7 @@ readLoop:
 					EventTime: timestamppb.New(msg.EventTime()),
 					Keys:      msg.Keys(),
 					Headers:   msg.Headers(),
+					Metadata:  toProto(msg.UserMetadata()),
 				},
 				Status: &sourcepb.ReadResponse_Status{
 					Eot:  false,
@@ -289,7 +292,7 @@ func recvWithContextAck(ctx context.Context, stream sourcepb.Source_AckFnServer)
 func (fs *Service) receiveAckRequests(ctx context.Context, stream sourcepb.Source_AckFnServer) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("panic inside source handler: %v %v", r, string(debug.Stack()))
+			log.Printf("panic inside source ack handler: %v %v", r, string(debug.Stack()))
 			fs.once.Do(func() {
 				select {
 				case fs.shutdownCh <- struct{}{}:
@@ -298,7 +301,10 @@ func (fs *Service) receiveAckRequests(ctx context.Context, stream sourcepb.Sourc
 					log.Println("Shutdown signal already enqueued or watcher exited; skipping shutdown send")
 				}
 			})
-			err = fmt.Errorf("panic inside source handler: %v", r)
+			st, _ := status.Newf(codes.Internal, "%s: %v", errSourcePanic, r).WithDetails(&epb.DebugInfo{
+				Detail: string(debug.Stack()),
+			})
+			err = st.Err()
 		}
 	}()
 
@@ -332,6 +338,38 @@ func (fs *Service) receiveAckRequests(ctx context.Context, stream sourcepb.Sourc
 		return err
 	}
 	return nil
+}
+
+func (fs *Service) NackFn(ctx context.Context, req *sourcepb.NackRequest) (response *sourcepb.NackResponse, err error) {
+	response = nil
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("panic inside source nack handler: %v %v", r, string(debug.Stack()))
+			fs.once.Do(func() {
+				fs.shutdownCh <- struct{}{}
+			})
+			st, _ := status.Newf(codes.Internal, "%s: %v", errSourcePanic, r).WithDetails(&epb.DebugInfo{
+				Detail: string(debug.Stack()),
+			})
+			err = st.Err()
+		}
+	}()
+
+	offsets := make([]Offset, len(req.Request.GetOffsets()))
+	for i, offset := range req.Request.GetOffsets() {
+		offsets[i] = NewOffset(offset.GetOffset(), offset.GetPartitionId())
+	}
+
+	nackRequest := nackRequest{
+		offsets: offsets,
+	}
+	fs.Source.Nack(ctx, &nackRequest)
+
+	return &sourcepb.NackResponse{
+		Result: &sourcepb.NackResponse_Result{
+			Success: &emptypb.Empty{},
+		},
+	}, nil
 }
 
 // IsReady returns true to indicate the gRPC connection is ready.
@@ -375,6 +413,14 @@ func (r *readRequest) Count() uint64 {
 	return r.count
 }
 
+type nackRequest struct {
+	offsets []Offset
+}
+
+func (n *nackRequest) Offsets() []Offset {
+	return n.offsets
+}
+
 func (fs *Service) PartitionsFn(ctx context.Context, _ *emptypb.Empty) (*sourcepb.PartitionsResponse, error) {
 	// handle panic
 	defer func() {
@@ -390,4 +436,27 @@ func (fs *Service) PartitionsFn(ctx context.Context, _ *emptypb.Empty) (*sourcep
 			Partitions: partitions,
 		},
 	}, nil
+}
+
+// toProto converts the UserMetadata to the proto metadata.
+// SDKs should always return non-nil metadata.
+// If UserMetadata is empty, it returns a non-nil proto metadata where
+// UserMetadata and SystemMetadata are empty proto key-value groups.
+
+func toProto(userMetadata *UserMetadata) *common.Metadata {
+	sys := make(map[string]*common.KeyValueGroup)
+	user := make(map[string]*common.KeyValueGroup)
+	if userMetadata != nil {
+		for _, group := range userMetadata.Groups() {
+			kv := make(map[string][]byte)
+			for _, key := range userMetadata.Keys(group) {
+				kv[key] = userMetadata.Value(group, key)
+			}
+			user[group] = &common.KeyValueGroup{KeyValue: kv}
+		}
+	}
+	return &common.Metadata{
+		SysMetadata:  sys,
+		UserMetadata: user,
+	}
 }

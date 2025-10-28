@@ -101,7 +101,6 @@ readLoop:
 			break
 		}
 		if errors.Is(err, io.EOF) {
-			log.Printf("EOF received, stopping the ReduceStreamFn")
 			taskManager.CloseAll()
 			// wait for all tasks to complete and close output channel
 			taskManager.WaitAll()
@@ -145,7 +144,7 @@ readLoop:
 	}
 
 	// wait for all goroutines to finish
-	if err := g.Wait(); err != nil {
+	if err := g.Wait(); err != nil && !errors.Is(err, context.Canceled) {
 		fs.once.Do(func() {
 			log.Printf("Stopping the ReduceStreamFn with err, %s", err)
 			select {
