@@ -11,10 +11,11 @@ var DROP = fmt.Sprintf("%U__DROP__", '\\') // U+005C__DROP__
 // Compared with Message of other UDFs, source transformer Message contains one more field,
 // the event time, usually extracted from the payload.
 type Message struct {
-	value     []byte
-	eventTime time.Time
-	keys      []string
-	tags      []string
+	value        []byte
+	eventTime    time.Time
+	keys         []string
+	tags         []string
+	userMetadata *UserMetadata
 }
 
 // NewMessage creates a Message with eventTime and value
@@ -32,6 +33,12 @@ func (m Message) WithKeys(keys []string) Message {
 // tags will be used for conditional forwarding
 func (m Message) WithTags(tags []string) Message {
 	m.tags = tags
+	return m
+}
+
+// WithUserMetadata is used to assign the user metadata to the message
+func (m Message) WithUserMetadata(userMetadata *UserMetadata) Message {
+	m.userMetadata = userMetadata
 	return m
 }
 
@@ -78,4 +85,9 @@ func (m Messages) Append(msg Message) Messages {
 // Items returns the Message list
 func (m Messages) Items() []Message {
 	return m
+}
+
+// UserMetadata returns message user metadata
+func (m Message) UserMetadata() *UserMetadata {
+	return m.userMetadata
 }
