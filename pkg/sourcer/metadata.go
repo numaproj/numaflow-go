@@ -1,7 +1,5 @@
 package sourcer
 
-import "strconv"
-
 // Metadata provides per-message metadata passed between vertices.
 // Source is the origin or the first vertex in the pipeline.
 // Here, first time the user metadata can be set by the user.
@@ -15,12 +13,9 @@ type UserMetadata struct {
 	data map[string]map[string][]byte
 }
 
-// NewUserMetadata wraps an existing map into UserMetadata.
-// If d is nil, an empty map is created.
-func NewUserMetadata(d map[string]map[string][]byte) *UserMetadata {
-	if d == nil {
-		d = make(map[string]map[string][]byte)
-	}
+// NewUserMetadata creates a new UserMetadata.
+func NewUserMetadata() *UserMetadata {
+	d := make(map[string]map[string][]byte)
 	return &UserMetadata{data: d}
 }
 
@@ -30,7 +25,8 @@ func NewUserMetadata(d map[string]map[string][]byte) *UserMetadata {
 // Usage example:
 //
 //	```go
-//	userMetadata := NewUserMetadata(map[string]map[string][]byte{"group-name": {"key": []byte("value")}})
+//	userMetadata := NewUserMetadata()
+//	userMetadata.CreateGroup("group-name")
 //	groups := userMetadata.Groups()
 //	```
 func (md *UserMetadata) Groups() []string {
@@ -50,7 +46,9 @@ func (md *UserMetadata) Groups() []string {
 // Usage example:
 //
 //	```go
-//	userMetadata := NewUserMetadata(map[string]map[string][]byte{"group-name": {"key": []byte("value"), "key2": []byte("value2")}})
+//	userMetadata := NewUserMetadata()
+//	userMetadata.CreateGroup("group-name")
+//	userMetadata.AddKV("group-name", "key", []byte("value"))
 //	keys := userMetadata.Keys("group-name")
 //	```
 func (md *UserMetadata) Keys(group string) []string {
@@ -70,7 +68,9 @@ func (md *UserMetadata) Keys(group string) []string {
 // Usage example:
 //
 //	```go
-//	userMetadata := NewUserMetadata(map[string]map[string][]byte{"group-name": {"key": []byte("value")}})
+//	userMetadata := NewUserMetadata()
+//	userMetadata.CreateGroup("group-name")
+//	userMetadata.AddKV("group-name", "key", []byte("value"))
 //	value := userMetadata.Value("group-name", "key")
 //	```
 func (md *UserMetadata) Value(group, key string) []byte {
@@ -80,30 +80,34 @@ func (md *UserMetadata) Value(group, key string) []byte {
 	return md.data[group][key]
 }
 
-// SetKVGroup sets a group of key-value pairs under the provided group name.
+// CreateGroup creates a new group in the user metadata.
 //
 // Usage example:
 //
 //	```go
-//	userMetadata := NewUserMetadata(nil)
-//	userMetadata.SetKVGroup("group-name", map[string][]byte{"key": []byte("value")})
+//	userMetadata := NewUserMetadata()
+//	userMetadata.CreateGroup("group-name")
 //	```
-func (md *UserMetadata) SetKVGroup(group string, kv map[string][]byte) {
+func (md *UserMetadata) CreateGroup(group string) {
 	if md == nil {
 		return
 	}
 	if md.data == nil {
 		md.data = make(map[string]map[string][]byte)
 	}
-	md.data[group] = kv
+	if md.data[group] == nil {
+		md.data[group] = make(map[string][]byte)
+	}
 }
 
-// AddKV adds a key-value pair to the user metadata.
+// AddKV adds a key-value pair under the given group name to the user metadata.
+// If the group is not present, it creates a new group.
+// If the key is already present, it overwrites the value.
 //
 // Usage example:
 //
 //	```go
-//	userMetadata := NewUserMetadata(nil)
+//	userMetadata := NewUserMetadata()
 //	userMetadata.AddKV("group-name", "key", []byte("value"))
 //	```
 func (md *UserMetadata) AddKV(group, key string, value []byte) {
@@ -119,55 +123,15 @@ func (md *UserMetadata) AddKV(group, key string, value []byte) {
 	md.data[group][key] = value
 }
 
-// AddKVString adds a key-value pair with value of string type to the user metadata.
-//
-// Usage example:
-//
-//	```go
-//	userMetadata := NewUserMetadata(nil)
-//	userMetadata.AddKVString("group-name", "key", "value")
-//	```
-func (md *UserMetadata) AddKVString(group, key, value string) {
-	if md == nil {
-		return
-	}
-	if md.data == nil {
-		md.data = make(map[string]map[string][]byte)
-	}
-	if md.data[group] == nil {
-		md.data[group] = make(map[string][]byte)
-	}
-	md.data[group][key] = []byte(value)
-}
-
-// AddKVInt adds a key-value pair with value of int type to the user metadata
-//
-// Usage example:
-//
-//	```go
-//	userMetadata := NewUserMetadata(nil)
-//	userMetadata.AddKVInt("group-name", "key", 123)
-//	```
-func (md *UserMetadata) AddKVInt(group, key string, value int) {
-	if md == nil {
-		return
-	}
-	if md.data == nil {
-		md.data = make(map[string]map[string][]byte)
-	}
-	if md.data[group] == nil {
-		md.data[group] = make(map[string][]byte)
-	}
-	md.data[group][key] = []byte(strconv.Itoa(value))
-}
-
 // RemoveKey removes a key from a group in the user metadata.
 // If the key or group is not present, it's a no-op.
 //
 // Usage example:
 //
 //	```go
-//	userMetadata := NewUserMetadata(map[string]map[string][]byte{"group-name": {"key": []byte("value")}})
+//	userMetadata := NewUserMetadata()
+//	userMetadata.CreateGroup("group-name")
+//	userMetadata.AddKV("group-name", "key", []byte("value"))
 //	userMetadata.RemoveKey("group-name", "key")
 //	```
 func (md *UserMetadata) RemoveKey(group, key string) {
@@ -183,7 +147,8 @@ func (md *UserMetadata) RemoveKey(group, key string) {
 // Usage example:
 //
 //	```go
-//	userMetadata := NewUserMetadata(map[string]map[string][]byte{"group-name": {"key": []byte("value")}})
+//	userMetadata := NewUserMetadata()
+//	userMetadata.CreateGroup("group-name")
 //	userMetadata.RemoveGroup("group-name")
 //	```
 func (md *UserMetadata) RemoveGroup(group string) {
