@@ -23,6 +23,9 @@ func defaultOptions() *options {
 	if os.Getenv(shared.EnvUDContainerType) == UDContainerFallbackSink {
 		defaultPath = fbServerInfoFilePath
 		defaultAddress = fbAddress
+	} else if os.Getenv(shared.EnvUDContainerType) == UDContainerOnSuccessSink {
+		defaultPath = onSuccessServerInfoFilePath
+		defaultAddress = onSuccessAddress
 	}
 
 	return &options{

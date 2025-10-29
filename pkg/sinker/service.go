@@ -22,13 +22,16 @@ import (
 )
 
 const (
-	uds                     = "unix"
-	defaultMaxMessageSize   = 1024 * 1024 * 64 // 64MB
-	address                 = "/var/run/numaflow/sink.sock"
-	fbAddress               = "/var/run/numaflow/fb-sink.sock"
-	serverInfoFilePath      = "/var/run/numaflow/sinker-server-info"
-	fbServerInfoFilePath    = "/var/run/numaflow/fb-sinker-server-info"
-	UDContainerFallbackSink = "fb-udsink"
+	uds                         = "unix"
+	defaultMaxMessageSize       = 1024 * 1024 * 64 // 64MB
+	address                     = "/var/run/numaflow/sink.sock"
+	fbAddress                   = "/var/run/numaflow/fb-sink.sock"
+	onSuccessAddress            = "/var/run/numaflow/on-success-sink.sock"
+	serverInfoFilePath          = "/var/run/numaflow/sinker-server-info"
+	fbServerInfoFilePath        = "/var/run/numaflow/fb-sinker-server-info"
+	onSuccessServerInfoFilePath = "/var/run/numaflow/on-success-sinker-server-info"
+	UDContainerFallbackSink     = "fb-udsink"
+	UDContainerOnSuccessSink    = "on-success-udsink"
 )
 
 var errSinkHandlerPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", shared.ContainerType)
@@ -240,6 +243,11 @@ func (fs *Service) processData(ctx context.Context, stream sinkpb.Sink_SinkFnSer
 				Id:            msg.ID,
 				Status:        sinkpb.Status_SERVE,
 				ServeResponse: msg.ServeResponse,
+			})
+		} else if msg.OnSuccess {
+			resultList = append(resultList, &sinkpb.SinkResponse_Result{
+				Id:     msg.ID,
+				Status: sinkpb.Status_ON_SUCCESS,
 			})
 		} else {
 			resultList = append(resultList, &sinkpb.SinkResponse_Result{
