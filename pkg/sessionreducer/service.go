@@ -73,7 +73,12 @@ func (fs *Service) SessionReduceFn(stream sessionreducepb.SessionReduce_SessionR
 				// Otherwise there could be a race condition where multiple streams try to send to the shutdownCh.
 				fs.once.Do(func() {
 					log.Printf("Stopping the SessionReduceFn with err, %s", errFromTask)
-					fs.shutdownCh <- struct{}{}
+					select {
+					case fs.shutdownCh <- struct{}{}:
+						// signal enqueued
+					default:
+						log.Println("Shutdown signal already enqueued or watcher exited; skipping shutdown send")
+					}
 				})
 				return errFromTask
 			}
@@ -140,7 +145,12 @@ readLoop:
 	if err := g.Wait(); err != nil && !errors.Is(err, context.Canceled) {
 		fs.once.Do(func() {
 			log.Printf("Stopping the SessionReduceFn with err, %s", err)
-			fs.shutdownCh <- struct{}{}
+			select {
+			case fs.shutdownCh <- struct{}{}:
+				// signal enqueued
+			default:
+				log.Println("Shutdown signal already enqueued or watcher exited; skipping shutdown send")
+			}
 		})
 		return err
 	}
@@ -148,7 +158,12 @@ readLoop:
 	if readErr != nil {
 		fs.once.Do(func() {
 			log.Printf("Stopping the SessionReduceFn because of error while reading requests, %s", readErr)
-			fs.shutdownCh <- struct{}{}
+			select {
+			case fs.shutdownCh <- struct{}{}:
+				// signal enqueued
+			default:
+				log.Println("Shutdown signal already enqueued or watcher exited; skipping shutdown send")
+			}
 		})
 		return readErr
 	}
