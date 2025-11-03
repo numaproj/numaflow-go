@@ -16,6 +16,8 @@ type Response struct {
 	Serve bool `json:"serve,omitempty"`
 	// ServeResponse is the response that will be sent to the serving store.
 	ServeResponse []byte `json:"serve_reponse,omitempty"`
+	// Message is the message to be sent to the onSuccess sink.
+	Message Message `json:"message,omitempty"`
 }
 
 type Responses []Response
@@ -56,8 +58,8 @@ func ResponseFallback(id string) Response {
 
 // ResponseOnSuccess creates a Response with the OnSuccess field set to true.
 // This indicates that the message should be sent to the onSuccess sink.
-func ResponseOnSuccess(id string) Response {
-	return Response{ID: id, OnSuccess: true}
+func ResponseOnSuccess(id string, message Message) Response {
+	return Response{ID: id, OnSuccess: true, Message: message}
 }
 
 // ResponseServe creates a Response with the Serve field set to true.
