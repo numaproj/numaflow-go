@@ -17,6 +17,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
 
+	"github.com/numaproj/numaflow-go/pkg/apis/proto/common"
 	proto "github.com/numaproj/numaflow-go/pkg/apis/proto/sourcetransform/v1"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -104,6 +105,10 @@ func TestService_sourceTransformFn(t *testing.T) {
 						EventTime: timestamppb.New(testTime),
 						Keys:      []string{"client_test"},
 						Value:     []byte(`test`),
+						Metadata: &common.Metadata{
+							SysMetadata:  nil,
+							UserMetadata: nil,
+						},
 					},
 				},
 			},
@@ -130,6 +135,10 @@ func TestService_sourceTransformFn(t *testing.T) {
 					{
 						EventTime: timestamppb.New(testTime),
 						Value:     []byte(`test`),
+						Metadata: &common.Metadata{
+							SysMetadata:  nil,
+							UserMetadata: nil,
+						},
 					},
 				},
 			},
@@ -156,6 +165,10 @@ func TestService_sourceTransformFn(t *testing.T) {
 						EventTime: timestamppb.New(testTime),
 						Tags:      []string{DROP},
 						Value:     nil,
+						Metadata: &common.Metadata{
+							SysMetadata:  nil,
+							UserMetadata: nil,
+						},
 					},
 				},
 			},
@@ -246,6 +259,10 @@ func TestService_SourceTransformFn_Multiple_Messages(t *testing.T) {
 				EventTime: timestamppb.New(testTime),
 				Keys:      []string{"client_test"},
 				Value:     []byte(fmt.Sprintf("test_%d", i)),
+				Metadata: &common.Metadata{
+					SysMetadata:  nil,
+					UserMetadata: nil,
+				},
 			},
 		}
 	}

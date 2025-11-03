@@ -279,32 +279,32 @@ func (fs *Service) processData(ctx context.Context, stream sinkpb.Sink_SinkFnSer
 
 // userMetadataFromProto converts the incoming proto metadata to the internal UserMetadata.
 func userMetadataFromProto(proto *common.Metadata) *UserMetadata {
+	md := NewUserMetadata()
 	if proto == nil {
-		return NewUserMetadata(make(map[string]map[string][]byte))
+		return md
 	}
-	userMap := make(map[string]map[string][]byte)
 	for group, kvGroup := range proto.GetUserMetadata() {
 		if kvGroup != nil {
-			userMap[group] = kvGroup.GetKeyValue()
+			md.data[group] = kvGroup.GetKeyValue()
 		} else {
-			userMap[group] = make(map[string][]byte)
+			md.data[group] = make(map[string][]byte)
 		}
 	}
-	return NewUserMetadata(userMap)
+	return md
 }
 
 // systemMetadataFromProto converts the incoming proto metadata to the internal SystemMetadata.
 func systemMetadataFromProto(proto *common.Metadata) *SystemMetadata {
+	md := NewSystemMetadata()
 	if proto == nil {
-		return NewSystemMetadata(make(map[string]map[string][]byte))
+		return md
 	}
-	sysMap := make(map[string]map[string][]byte)
 	for group, kvGroup := range proto.GetSysMetadata() {
 		if kvGroup != nil {
-			sysMap[group] = kvGroup.GetKeyValue()
+			md.data[group] = kvGroup.GetKeyValue()
 		} else {
-			sysMap[group] = make(map[string][]byte)
+			md.data[group] = make(map[string][]byte)
 		}
 	}
-	return NewSystemMetadata(sysMap)
+	return md
 }
