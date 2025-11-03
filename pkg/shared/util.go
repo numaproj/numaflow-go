@@ -68,7 +68,7 @@ func StopGRPCServer(grpcServer *grpc.Server) {
 		close(stopped)
 	}()
 
-	t := time.NewTimer(30 * time.Second)
+	t := time.NewTimer(15 * time.Second)
 	select {
 	case <-t.C:
 		log.Printf("forcefully stopping grpc server")

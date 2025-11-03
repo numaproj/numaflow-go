@@ -126,7 +126,12 @@ outer:
 	if err := grp.Wait(); err != nil && !errors.Is(err, context.Canceled) {
 		fs.once.Do(func() {
 			log.Printf("Stopping the SourceTransformFn with err, %s", err)
-			fs.shutdownCh <- struct{}{}
+			select {
+			case fs.shutdownCh <- struct{}{}:
+				// signal enqueued
+			default:
+				log.Println("Shutdown signal already enqueued or watcher exited; skipping shutdown send")
+			}
 		})
 		return err
 	}

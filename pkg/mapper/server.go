@@ -10,7 +10,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/numaproj/numaflow-go/pkg"
+	numaflow "github.com/numaproj/numaflow-go/pkg"
 	mappb "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1"
 	"github.com/numaproj/numaflow-go/pkg/info"
 	"github.com/numaproj/numaflow-go/pkg/shared"

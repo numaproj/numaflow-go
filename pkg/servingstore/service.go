@@ -62,7 +62,12 @@ func (s *Service) Put(ctx context.Context, request *servingpb.PutRequest) (*serv
 	err := g.Wait()
 	if err != nil && !errors.Is(err, context.Canceled) {
 		s.once.Do(func() {
-			s.shutdownCh <- struct{}{}
+			select {
+			case s.shutdownCh <- struct{}{}:
+				// signal enqueued
+			default:
+				log.Println("Shutdown signal already enqueued or watcher exited; skipping shutdown send")
+			}
 		})
 	}
 	return &servingpb.PutResponse{Success: err == nil}, err
