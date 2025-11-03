@@ -46,7 +46,12 @@ func (fs *Service) RetrieveSideInput(ctx context.Context, _ *emptypb.Empty) (res
 		if r := recover(); r != nil {
 			log.Printf("panic inside sideinput handler: %v %v", r, string(debug.Stack()))
 			fs.once.Do(func() {
-				fs.shutdownCh <- struct{}{}
+				select {
+				case fs.shutdownCh <- struct{}{}:
+					// signal enqueued
+				default:
+					log.Println("Shutdown signal already enqueued or watcher exited; skipping shutdown send")
+				}
 			})
 			st, _ := status.Newf(codes.Internal, "%s: %v", errSideInputHandlerPanic, r).WithDetails(&epb.DebugInfo{
 				Detail: string(debug.Stack()),
