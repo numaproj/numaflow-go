@@ -146,9 +146,6 @@ func (md *UserMetadata) Value(group, key string) []byte {
 //	userMetadata.CreateGroup("group-name")
 //	```
 func (md *UserMetadata) CreateGroup(group string) {
-	if md == nil {
-		return
-	}
 	if md.data == nil {
 		md.data = make(map[string]map[string][]byte)
 	}
@@ -168,9 +165,6 @@ func (md *UserMetadata) CreateGroup(group string) {
 //	userMetadata.AddKV("group-name", "key", []byte("value"))
 //	```
 func (md *UserMetadata) AddKV(group, key string, value []byte) {
-	if md == nil {
-		return
-	}
 	if md.data == nil {
 		md.data = make(map[string]map[string][]byte)
 	}
