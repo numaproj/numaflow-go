@@ -8,12 +8,10 @@ type SystemMetadata struct {
 	data map[string]map[string][]byte
 }
 
-// NewSystemMetadata wraps an existing map into SystemMetadata
+// NewSystemMetadata creates a new SystemMetadata.
 // This is for internal and testing purposes only.
-func NewSystemMetadata(d map[string]map[string][]byte) *SystemMetadata {
-	if d == nil {
-		d = make(map[string]map[string][]byte)
-	}
+func NewSystemMetadata() *SystemMetadata {
+	d := make(map[string]map[string][]byte)
 	return &SystemMetadata{data: d}
 }
 
@@ -78,12 +76,9 @@ type UserMetadata struct {
 	data map[string]map[string][]byte
 }
 
-// NewUserMetadata wraps an existing map into UserMetadata
-// This is for internal and testing purposes only.
-func NewUserMetadata(d map[string]map[string][]byte) *UserMetadata {
-	if d == nil {
-		d = make(map[string]map[string][]byte)
-	}
+// NewUserMetadata creates a new UserMetadata.
+func NewUserMetadata() *UserMetadata {
+	d := make(map[string]map[string][]byte)
 	return &UserMetadata{data: d}
 }
 

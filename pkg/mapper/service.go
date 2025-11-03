@@ -208,40 +208,36 @@ func (fs *Service) handleRequest(ctx context.Context, req *mappb.MapRequest, res
 
 // userMetadataFromProto converts the incoming proto metadata to the internal UserMetadata.
 func userMetadataFromProto(proto *common.Metadata) *UserMetadata {
+	md := NewUserMetadata()
 	if proto == nil {
-		return &UserMetadata{
-			data: make(map[string]map[string][]byte),
-		}
+		return md
 	}
 
-	data := make(map[string]map[string][]byte)
 	for group, kvGroup := range proto.GetUserMetadata() {
 		if kvGroup != nil {
-			data[group] = kvGroup.GetKeyValue()
+			md.data[group] = kvGroup.GetKeyValue()
 		} else {
-			data[group] = make(map[string][]byte)
+			md.data[group] = make(map[string][]byte)
 		}
 	}
-	return NewUserMetadata(data)
+	return md
 }
 
 // systemMetadataFromProto converts the incoming proto metadata to the internal SystemMetadata.
 func systemMetadataFromProto(proto *common.Metadata) *SystemMetadata {
+	md := NewSystemMetadata()
 	if proto == nil {
-		return &SystemMetadata{
-			data: make(map[string]map[string][]byte),
-		}
+		return md
 	}
 
-	data := make(map[string]map[string][]byte)
 	for group, kvGroup := range proto.GetSysMetadata() {
 		if kvGroup != nil {
-			data[group] = kvGroup.GetKeyValue()
+			md.data[group] = kvGroup.GetKeyValue()
 		} else {
-			data[group] = make(map[string][]byte)
+			md.data[group] = make(map[string][]byte)
 		}
 	}
-	return NewSystemMetadata(data)
+	return md
 }
 
 // toProto converts the User Metadata to the proto metadata.
