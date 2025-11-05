@@ -254,9 +254,9 @@ func (fs *Service) processData(ctx context.Context, stream sinkpb.Sink_SinkFnSer
 				Id:     msg.ID,
 				Status: sinkpb.Status_ON_SUCCESS,
 				OnSuccessMsg: &sinkpb.SinkResponse_Result_Message{
-					Value:    msg.Message.Value(),
-					Keys:     msg.Message.Keys(),
-					Metadata: userMetadataToProto(msg.Message.UserMetadata()),
+					Value:    msg.OnSuccessMessage.Value(),
+					Keys:     msg.OnSuccessMessage.Keys(),
+					Metadata: userMetadataToProto(msg.OnSuccessMessage.UserMetadata()),
 				},
 			})
 		} else {
