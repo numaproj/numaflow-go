@@ -22,13 +22,16 @@ import (
 )
 
 const (
-	uds                     = "unix"
-	defaultMaxMessageSize   = 1024 * 1024 * 64 // 64MB
-	address                 = "/var/run/numaflow/sink.sock"
-	fbAddress               = "/var/run/numaflow/fb-sink.sock"
-	serverInfoFilePath      = "/var/run/numaflow/sinker-server-info"
-	fbServerInfoFilePath    = "/var/run/numaflow/fb-sinker-server-info"
-	UDContainerFallbackSink = "fb-udsink"
+	uds                         = "unix"
+	defaultMaxMessageSize       = 1024 * 1024 * 64 // 64MB
+	address                     = "/var/run/numaflow/sink.sock"
+	fbAddress                   = "/var/run/numaflow/fb-sink.sock"
+	onSuccessAddress            = "/var/run/numaflow/ons-sink.sock"
+	serverInfoFilePath          = "/var/run/numaflow/sinker-server-info"
+	fbServerInfoFilePath        = "/var/run/numaflow/fb-sinker-server-info"
+	onSuccessServerInfoFilePath = "/var/run/numaflow/ons-sinker-server-info"
+	UDContainerFallbackSink     = "fb-udsink"
+	UDContainerOnSuccessSink    = "ons-udsink"
 )
 
 var errSinkHandlerPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", shared.ContainerType)
@@ -246,6 +249,16 @@ func (fs *Service) processData(ctx context.Context, stream sinkpb.Sink_SinkFnSer
 				Status:        sinkpb.Status_SERVE,
 				ServeResponse: msg.ServeResponse,
 			})
+		} else if msg.OnSuccess {
+			resultList = append(resultList, &sinkpb.SinkResponse_Result{
+				Id:     msg.ID,
+				Status: sinkpb.Status_ON_SUCCESS,
+				OnSuccessMsg: &sinkpb.SinkResponse_Result_Message{
+					Value:    msg.OnSuccessMessage.Value(),
+					Keys:     msg.OnSuccessMessage.Keys(),
+					Metadata: userMetadataToProto(msg.OnSuccessMessage.UserMetadata()),
+				},
+			})
 		} else {
 			resultList = append(resultList, &sinkpb.SinkResponse_Result{
 				Id:     msg.ID,
@@ -291,6 +304,22 @@ func userMetadataFromProto(proto *common.Metadata) *UserMetadata {
 		}
 	}
 	return md
+}
+
+// userMetadataToProto converts the internal UserMetadata to the outgoing proto metadata.
+func userMetadataToProto(userMetadata *UserMetadata) *common.Metadata {
+	if userMetadata == nil {
+		return nil
+	}
+	userMap := make(map[string]*common.KeyValueGroup)
+	for group, kvGroup := range userMetadata.data {
+		userMap[group] = &common.KeyValueGroup{
+			KeyValue: kvGroup,
+		}
+	}
+	return &common.Metadata{
+		UserMetadata: userMap,
+	}
 }
 
 // systemMetadataFromProto converts the incoming proto metadata to the internal SystemMetadata.
