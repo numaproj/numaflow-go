@@ -36,7 +36,7 @@ func (m Message) WithHeaders(headers map[string]string) Message {
 	return m
 }
 
-// WithMetadata is used to assign the metadata to the message
+// WithUserMetadata is used to assign the user metadata to the message
 func (m Message) WithUserMetadata(userMetadata *UserMetadata) Message {
 	m.userMetadata = userMetadata
 	return m
@@ -52,7 +52,7 @@ func (m Message) Headers() map[string]string {
 	return m.headers
 }
 
-// Metadata returns message metadata
+// UserMetadata returns message user metadata
 func (m Message) UserMetadata() *UserMetadata {
 	return m.userMetadata
 }
