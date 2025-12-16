@@ -49,7 +49,6 @@ func (s *SimpleSource) Read(_ context.Context, readRequest sourcesdk.ReadRequest
 				sourcesdk.NewOffsetWithDefaultPartitionId(serializeOffset(idx)),
 				time.Now())
 			s.toAckSet[idx] = struct{}{}
-			s.readIdx++
 		}
 	}
 
@@ -63,8 +62,17 @@ func (s *SimpleSource) Read(_ context.Context, readRequest sourcesdk.ReadRequest
 		return
 	}
 
+	// Stop producing new messages after 100 messages
+	if s.readIdx >= 100 {
+		return
+	}
+
 	// Read the data from the source and send the data to the message channel.
 	for i := 0; uint64(i) < readRequest.Count(); i++ {
+		// Stop if we've reached the limit
+		if s.readIdx >= 100 {
+			return
+		}
 		select {
 		case <-ctx.Done():
 			// If the context is done, the read request is timed out.
@@ -74,12 +82,15 @@ func (s *SimpleSource) Read(_ context.Context, readRequest sourcesdk.ReadRequest
 			headers := map[string]string{
 				"x-txn-id": uuid.NewString(),
 			}
+			umd := sourcesdk.NewUserMetadata()
+			umd.CreateGroup("simple-source")
+			umd.AddKV("simple-source", "txn-id", []byte(uuid.NewString()))
 			// Otherwise, we read the data from the source and send the data to the message channel.
 			offsetValue := serializeOffset(s.readIdx)
 			messageCh <- sourcesdk.NewMessage(
 				[]byte(strconv.FormatInt(s.readIdx, 10)),
 				sourcesdk.NewOffsetWithDefaultPartitionId(offsetValue),
-				time.Now()).WithHeaders(headers)
+				time.Now()).WithHeaders(headers).WithUserMetadata(umd)
 			// Mark the offset as to be acked, and increment the read index.
 			s.toAckSet[s.readIdx] = struct{}{}
 			s.readIdx++
