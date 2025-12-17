@@ -1,4 +1,4 @@
-# Cat Metadata
+# Forward Metadata
 
 This example demonstrates a User Defined Map Function that simply forwards the message payload (like `cat`) but adds metadata.
 
