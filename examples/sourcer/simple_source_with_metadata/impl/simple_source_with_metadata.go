@@ -1,0 +1,133 @@
+package impl
+
+import (
+	"context"
+	"strconv"
+	"sync"
+	"time"
+
+	"github.com/google/uuid"
+
+	sourcesdk "github.com/numaproj/numaflow-go/pkg/sourcer"
+)
+
+// SimpleSource is a simple source implementation.
+type SimpleSourceWithMetadata struct {
+	readIdx  int64
+	toAckSet map[int64]struct{}
+	nackSet  map[int64]struct{}
+	lock     *sync.Mutex
+}
+
+func NewSimpleSourceWithMetadata() *SimpleSourceWithMetadata {
+	return &SimpleSourceWithMetadata{
+		readIdx:  0,
+		toAckSet: make(map[int64]struct{}),
+		lock:     new(sync.Mutex),
+		nackSet:  make(map[int64]struct{}),
+	}
+}
+
+func (s *SimpleSourceWithMetadata) Pending(_ context.Context) int64 {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	// The simple source always returns zero to indicate there is no pending record.
+	return int64(len(s.toAckSet))
+}
+
+func (s *SimpleSourceWithMetadata) Read(_ context.Context, readRequest sourcesdk.ReadRequest, messageCh chan<- sourcesdk.Message) {
+	// Handle the timeout specification in the read request.
+	ctx, cancel := context.WithTimeout(context.Background(), readRequest.TimeOut())
+	defer cancel()
+
+	// return nacked messages first
+	if len(s.nackSet) > 0 {
+		for idx := range s.nackSet {
+			delete(s.nackSet, idx)
+			messageCh <- sourcesdk.NewMessage(
+				[]byte(strconv.FormatInt(idx, 10)),
+				sourcesdk.NewOffsetWithDefaultPartitionId(serializeOffset(idx)),
+				time.Now())
+			s.toAckSet[idx] = struct{}{}
+		}
+	}
+
+	// If we have un-acked data, we return without reading any new data.
+	// TODO - we should have a better way to handle this.
+	// In real world, there can be the case when the numa container restarted before acknowledging a batch,
+	// leaving the toAckSet not empty on the UDSource container side.
+	// In this case, for the next batch read, we should read the data from the last acked offset instead of returning.
+	// Our built-in Kafka source follows this logic.
+	if len(s.toAckSet) > 0 {
+		return
+	}
+
+	// Stop producing new messages after 100 messages
+	if s.readIdx >= 100 {
+		return
+	}
+
+	// Read the data from the source and send the data to the message channel.
+	for i := 0; uint64(i) < readRequest.Count(); i++ {
+		// Stop if we've reached the limit
+		if s.readIdx >= 100 {
+			return
+		}
+		select {
+		case <-ctx.Done():
+			// If the context is done, the read request is timed out.
+			return
+		default:
+			s.lock.Lock()
+			headers := map[string]string{
+				"x-txn-id": uuid.NewString(),
+			}
+			umd := sourcesdk.NewUserMetadata()
+			// Create a metadata group called "simple-source"
+			umd.CreateGroup("simple-source")
+			// Add a key-value pair to the metadata group called "simple-source" with the key "txn-id" and the value "uuid.NewString()"
+			umd.AddKV("simple-source", "txn-id", []byte(uuid.NewString()))
+			// Otherwise, we read the data from the source and send the data to the message channel.
+			offsetValue := serializeOffset(s.readIdx)
+			messageCh <- sourcesdk.NewMessage(
+				[]byte(strconv.FormatInt(s.readIdx, 10)),
+				sourcesdk.NewOffsetWithDefaultPartitionId(offsetValue),
+				time.Now()).WithHeaders(headers).WithUserMetadata(umd)
+			// Mark the offset as to be acked, and increment the read index.
+			s.toAckSet[s.readIdx] = struct{}{}
+			s.readIdx++
+			s.lock.Unlock()
+		}
+	}
+}
+
+func (s *SimpleSourceWithMetadata) Ack(_ context.Context, request sourcesdk.AckRequest) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	for _, offset := range request.Offsets() {
+		delete(s.toAckSet, deserializeOffset(offset.Value()))
+	}
+}
+
+func (s *SimpleSourceWithMetadata) Nack(_ context.Context, request sourcesdk.NackRequest) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	for _, offset := range request.Offsets() {
+		delete(s.toAckSet, deserializeOffset(offset.Value()))
+		s.nackSet[deserializeOffset(offset.Value())] = struct{}{}
+		s.readIdx--
+	}
+}
+
+func (s *SimpleSourceWithMetadata) Partitions(_ context.Context) []int32 {
+	return sourcesdk.DefaultPartitions()
+}
+
+func serializeOffset(idx int64) []byte {
+	return []byte(strconv.FormatInt(idx, 10))
+}
+
+func deserializeOffset(offset []byte) int64 {
+	idx, _ := strconv.ParseInt(string(offset), 10, 64)
+	return idx
+}
