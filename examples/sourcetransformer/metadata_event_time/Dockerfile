@@ -7,14 +7,14 @@ RUN apk update && apk upgrade && \
     apk add ca-certificates && \
     apk --no-cache add tzdata
 
-COPY dist/cat-example-${TARGETARCH} /bin/cat-example
-RUN chmod +x /bin/cat-example
+COPY dist/metadata-event-time-example-${TARGETARCH} /bin/metadata-event-time-example
+RUN chmod +x /bin/metadata-event-time-example
 
 ####################################################################################################
-# cat
+# metadata-event-time
 ####################################################################################################
-FROM scratch AS cat
+FROM scratch AS metadata-event-time
 COPY --from=base /usr/share/zoneinfo /usr/share/zoneinfo
 COPY --from=base /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-COPY --from=base /bin/cat-example /bin/cat-example
-ENTRYPOINT [ "/bin/cat-example" ]
+COPY --from=base /bin/metadata-event-time-example /bin/metadata-event-time-example
+ENTRYPOINT [ "/bin/metadata-event-time-example" ]

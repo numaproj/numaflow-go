@@ -23,6 +23,6 @@ func (a *AssignEventTime) Transform(ctx context.Context, keys []string, d source
 func main() {
 	err := sourcetransformer.NewServer(&AssignEventTime{}).Start(context.Background())
 	if err != nil {
-		log.Panic("Failed to start map function server: ", err)
+		log.Panic("Failed to start assign event time server: ", err)
 	}
 }
