@@ -1,5 +1,10 @@
-# CatMetadata
+# Cat Metadata
 
-An example User Defined Function that prints user metadata and does the following 
-- creates group "map-group"
-- adds key/value pair to the group with key "map-key" and value "map-value"
+This example demonstrates a User Defined Map Function that simply forwards the message payload (like `cat`) but adds metadata.
+
+## Metadata Details
+
+The function adds the following user metadata to each message:
+- Group: `map-group`
+- Key: `map-key`
+- Value: `map-value`

@@ -1,6 +1,6 @@
 TAG ?= stable
 PUSH ?= false
-IMAGE_REGISTRY = quay.io/numaio/numaflow-go/transformer-metadata-event-time:${TAG}
+IMAGE_REGISTRY = quay.io/numaio/numaflow-go/transformer-metadata:${TAG}
 ARCHITECTURES = amd64 arm64
 
 .PHONY: build
