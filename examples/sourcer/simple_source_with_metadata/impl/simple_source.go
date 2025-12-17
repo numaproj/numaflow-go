@@ -12,15 +12,15 @@ import (
 )
 
 // SimpleSource is a simple source implementation.
-type SimpleSource struct {
+type SimpleSourceWithMetadata struct {
 	readIdx  int64
 	toAckSet map[int64]struct{}
 	nackSet  map[int64]struct{}
 	lock     *sync.Mutex
 }
 
-func NewSimpleSource() *SimpleSource {
-	return &SimpleSource{
+func NewSimpleSourceWithMetadata() *SimpleSourceWithMetadata {
+	return &SimpleSourceWithMetadata{
 		readIdx:  0,
 		toAckSet: make(map[int64]struct{}),
 		lock:     new(sync.Mutex),
@@ -28,14 +28,14 @@ func NewSimpleSource() *SimpleSource {
 	}
 }
 
-func (s *SimpleSource) Pending(_ context.Context) int64 {
+func (s *SimpleSourceWithMetadata) Pending(_ context.Context) int64 {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	// The simple source always returns zero to indicate there is no pending record.
 	return int64(len(s.toAckSet))
 }
 
-func (s *SimpleSource) Read(_ context.Context, readRequest sourcesdk.ReadRequest, messageCh chan<- sourcesdk.Message) {
+func (s *SimpleSourceWithMetadata) Read(_ context.Context, readRequest sourcesdk.ReadRequest, messageCh chan<- sourcesdk.Message) {
 	// Handle the timeout specification in the read request.
 	ctx, cancel := context.WithTimeout(context.Background(), readRequest.TimeOut())
 	defer cancel()
@@ -49,7 +49,6 @@ func (s *SimpleSource) Read(_ context.Context, readRequest sourcesdk.ReadRequest
 				sourcesdk.NewOffsetWithDefaultPartitionId(serializeOffset(idx)),
 				time.Now())
 			s.toAckSet[idx] = struct{}{}
-			s.readIdx++
 		}
 	}
 
@@ -63,8 +62,17 @@ func (s *SimpleSource) Read(_ context.Context, readRequest sourcesdk.ReadRequest
 		return
 	}
 
+	// Stop producing new messages after 100 messages
+	if s.readIdx >= 100 {
+		return
+	}
+
 	// Read the data from the source and send the data to the message channel.
 	for i := 0; uint64(i) < readRequest.Count(); i++ {
+		// Stop if we've reached the limit
+		if s.readIdx >= 100 {
+			return
+		}
 		select {
 		case <-ctx.Done():
 			// If the context is done, the read request is timed out.
@@ -74,12 +82,17 @@ func (s *SimpleSource) Read(_ context.Context, readRequest sourcesdk.ReadRequest
 			headers := map[string]string{
 				"x-txn-id": uuid.NewString(),
 			}
+			umd := sourcesdk.NewUserMetadata()
+			// Create a metadata group called "simple-source"
+			umd.CreateGroup("simple-source")
+			// Add a key-value pair to the metadata group called "simple-source" with the key "txn-id" and the value "uuid.NewString()"
+			umd.AddKV("simple-source", "txn-id", []byte(uuid.NewString()))
 			// Otherwise, we read the data from the source and send the data to the message channel.
 			offsetValue := serializeOffset(s.readIdx)
 			messageCh <- sourcesdk.NewMessage(
 				[]byte(strconv.FormatInt(s.readIdx, 10)),
 				sourcesdk.NewOffsetWithDefaultPartitionId(offsetValue),
-				time.Now()).WithHeaders(headers)
+				time.Now()).WithHeaders(headers).WithUserMetadata(umd)
 			// Mark the offset as to be acked, and increment the read index.
 			s.toAckSet[s.readIdx] = struct{}{}
 			s.readIdx++
@@ -88,7 +101,7 @@ func (s *SimpleSource) Read(_ context.Context, readRequest sourcesdk.ReadRequest
 	}
 }
 
-func (s *SimpleSource) Ack(_ context.Context, request sourcesdk.AckRequest) {
+func (s *SimpleSourceWithMetadata) Ack(_ context.Context, request sourcesdk.AckRequest) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	for _, offset := range request.Offsets() {
@@ -96,7 +109,7 @@ func (s *SimpleSource) Ack(_ context.Context, request sourcesdk.AckRequest) {
 	}
 }
 
-func (s *SimpleSource) Nack(_ context.Context, request sourcesdk.NackRequest) {
+func (s *SimpleSourceWithMetadata) Nack(_ context.Context, request sourcesdk.NackRequest) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	for _, offset := range request.Offsets() {
@@ -106,7 +119,7 @@ func (s *SimpleSource) Nack(_ context.Context, request sourcesdk.NackRequest) {
 	}
 }
 
-func (s *SimpleSource) Partitions(_ context.Context) []int32 {
+func (s *SimpleSourceWithMetadata) Partitions(_ context.Context) []int32 {
 	return sourcesdk.DefaultPartitions()
 }
 
