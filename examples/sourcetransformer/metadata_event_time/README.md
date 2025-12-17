@@ -1,4 +1,4 @@
-# Metadata Event Time
+# Event Time Metadata
 
 This example demonstrates a Source Transformer that updates the event time of each message to the current time. It also adds this new timestamp to the message's metadata.
 
