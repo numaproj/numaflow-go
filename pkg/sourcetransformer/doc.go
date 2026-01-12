@@ -5,7 +5,6 @@
 // Although the input datum already contains EventTime and Watermark, it's up to the Transform implementor to
 // decide on whether to use them for generating new EventTime.
 // Transform can be used only at source vertex by source data transformer.
-
+//
 // Examples: https://github.com/numaproj/numaflow-go/tree/main/examples/sourcetransformer/
-
 package sourcetransformer

@@ -19,10 +19,8 @@ func NewSystemMetadata() *SystemMetadata {
 //
 // Usage example:
 //
-//	```go
 //	systemMetadata := datum.SystemMetadata()
 //	groups := systemMetadata.Groups()
-//	```
 func (md *SystemMetadata) Groups() []string {
 	if md == nil || md.data == nil {
 		return []string{}
@@ -39,10 +37,8 @@ func (md *SystemMetadata) Groups() []string {
 //
 // Usage example:
 //
-//	```go
 //	systemMetadata := datum.SystemMetadata()
 //	keys := systemMetadata.Keys("group-name")
-//	```
 func (md *SystemMetadata) Keys(group string) []string {
 	if md == nil || md.data == nil {
 		return []string{}
@@ -59,10 +55,8 @@ func (md *SystemMetadata) Keys(group string) []string {
 //
 // Usage example:
 //
-//	```go
 //	systemMetadata := datum.SystemMetadata()
 //	value := systemMetadata.Value("group-name", "key")
-//	```
 func (md *SystemMetadata) Value(group, key string) []byte {
 	if md == nil || md.data == nil {
 		return []byte{}
@@ -86,10 +80,8 @@ func NewUserMetadata() *UserMetadata {
 //
 // Usage example:
 //
-//	```go
 //	userMetadata := datum.UserMetadata()
 //	groups := userMetadata.Groups()
-//	```
 func (md *UserMetadata) Groups() []string {
 	if md == nil || md.data == nil {
 		return []string{}
@@ -106,10 +98,8 @@ func (md *UserMetadata) Groups() []string {
 //
 // Usage example:
 //
-//	```go
 //	userMetadata := datum.UserMetadata()
 //	keys := userMetadata.Keys("group-name")
-//	```
 func (md *UserMetadata) Keys(group string) []string {
 	if md == nil || md.data == nil {
 		return []string{}
@@ -126,10 +116,8 @@ func (md *UserMetadata) Keys(group string) []string {
 //
 // Usage example:
 //
-//	```go
 //	userMetadata := datum.UserMetadata()
 //	value := userMetadata.Value("group-name", "key")
-//	```
 func (md *UserMetadata) Value(group, key string) []byte {
 	if md == nil || md.data == nil {
 		return []byte{}
@@ -141,10 +129,8 @@ func (md *UserMetadata) Value(group, key string) []byte {
 //
 // Usage example:
 //
-//	```go
 //	userMetadata := NewUserMetadata()
 //	userMetadata.CreateGroup("group-name")
-//	```
 func (md *UserMetadata) CreateGroup(group string) {
 	if md.data == nil {
 		md.data = make(map[string]map[string][]byte)
@@ -160,10 +146,8 @@ func (md *UserMetadata) CreateGroup(group string) {
 //
 // Usage example:
 //
-//	```go
 //	userMetadata := NewUserMetadata()
 //	userMetadata.AddKV("group-name", "key", []byte("value"))
-//	```
 func (md *UserMetadata) AddKV(group, key string, value []byte) {
 	if md.data == nil {
 		md.data = make(map[string]map[string][]byte)
@@ -179,11 +163,9 @@ func (md *UserMetadata) AddKV(group, key string, value []byte) {
 //
 // Usage example:
 //
-//	```go
 //	md := datum.Metadata()
 //	userMetadata := md.UserMetadata()
 //	userMetadata.RemoveKey("group-name", "key")
-//	```
 func (md *UserMetadata) RemoveKey(group, key string) {
 	if md == nil || md.data == nil {
 		return
@@ -196,11 +178,9 @@ func (md *UserMetadata) RemoveKey(group, key string) {
 //
 // Usage example:
 //
-//	```go
 //	md := datum.Metadata()
 //	userMetadata := md.UserMetadata()
 //	userMetadata.RemoveGroup("group-name")
-//	```
 func (md *UserMetadata) RemoveGroup(group string) {
 	if md == nil || md.data == nil {
 		return
