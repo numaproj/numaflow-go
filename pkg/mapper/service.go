@@ -17,7 +17,7 @@ import (
 
 	"github.com/numaproj/numaflow-go/pkg/apis/proto/common"
 	mappb "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1"
-	"github.com/numaproj/numaflow-go/pkg/shared"
+	"github.com/numaproj/numaflow-go/pkg/internal/shared"
 )
 
 const (

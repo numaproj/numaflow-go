@@ -13,7 +13,7 @@ import (
 	numaflow "github.com/numaproj/numaflow-go/pkg"
 	reducepb "github.com/numaproj/numaflow-go/pkg/apis/proto/reduce/v1"
 	"github.com/numaproj/numaflow-go/pkg/info"
-	"github.com/numaproj/numaflow-go/pkg/shared"
+	"github.com/numaproj/numaflow-go/pkg/internal/shared"
 )
 
 // server is a reduceStream gRPC server.

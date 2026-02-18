@@ -13,7 +13,7 @@ import (
 	numaflow "github.com/numaproj/numaflow-go/pkg"
 	sessionreducepb "github.com/numaproj/numaflow-go/pkg/apis/proto/sessionreduce/v1"
 	"github.com/numaproj/numaflow-go/pkg/info"
-	"github.com/numaproj/numaflow-go/pkg/shared"
+	"github.com/numaproj/numaflow-go/pkg/internal/shared"
 )
 
 // server is a session reduce gRPC server.

@@ -13,7 +13,7 @@ import (
 	numaflow "github.com/numaproj/numaflow-go/pkg"
 	mappb "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1"
 	"github.com/numaproj/numaflow-go/pkg/info"
-	"github.com/numaproj/numaflow-go/pkg/shared"
+	"github.com/numaproj/numaflow-go/pkg/internal/shared"
 )
 
 // server is a map streaming gRPC server.
