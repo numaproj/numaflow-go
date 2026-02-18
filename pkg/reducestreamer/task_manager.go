@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/reduce/v1"
-	"github.com/numaproj/numaflow-go/pkg/shared"
+	"github.com/numaproj/numaflow-go/internal/shared"
 	epb "google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

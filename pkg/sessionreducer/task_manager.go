@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/sessionreduce/v1"
-	"github.com/numaproj/numaflow-go/pkg/shared"
+	"github.com/numaproj/numaflow-go/internal/shared"
 )
 
 var errSessionReducePanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", shared.ContainerType)
