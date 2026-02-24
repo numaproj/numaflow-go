@@ -13,7 +13,7 @@ import (
 	numaflow "github.com/numaproj/numaflow-go/pkg"
 	accumulatorpb "github.com/numaproj/numaflow-go/pkg/apis/proto/accumulator/v1"
 	"github.com/numaproj/numaflow-go/pkg/info"
-	"github.com/numaproj/numaflow-go/pkg/shared"
+	"github.com/numaproj/numaflow-go/internal/shared"
 )
 
 // server is a accumulator gRPC server.

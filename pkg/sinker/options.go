@@ -3,7 +3,7 @@ package sinker
 import (
 	"os"
 
-	"github.com/numaproj/numaflow-go/pkg/shared"
+	"github.com/numaproj/numaflow-go/internal/shared"
 )
 
 type options struct {

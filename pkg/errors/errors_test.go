@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/numaproj/numaflow-go/pkg/shared"
+	"github.com/numaproj/numaflow-go/internal/shared"
 )
 
 func TestPersistCriticalErrorToFileWritesErrorDetails(t *testing.T) {

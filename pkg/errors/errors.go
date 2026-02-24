@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/numaproj/numaflow-go/pkg/shared"
+	"github.com/numaproj/numaflow-go/internal/shared"
 )
 
 // struct to ensure persist critical error fn is executed only once

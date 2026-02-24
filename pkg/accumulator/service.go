@@ -14,7 +14,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	accumulatorpb "github.com/numaproj/numaflow-go/pkg/apis/proto/accumulator/v1"
-	"github.com/numaproj/numaflow-go/pkg/shared"
+	"github.com/numaproj/numaflow-go/internal/shared"
 )
 
 const (
