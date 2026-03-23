@@ -15,9 +15,9 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/numaproj/numaflow-go/pkg/apis/proto/common"
-	mappb "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1"
+	"github.com/numaproj/numaflow-go/internal/metadata"
 	"github.com/numaproj/numaflow-go/internal/shared"
+	mappb "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1"
 )
 
 const (
@@ -181,8 +181,8 @@ func (fs *Service) handleRequest(ctx context.Context, req *mappb.MapRequest, res
 		request.GetEventTime().AsTime(),
 		request.GetWatermark().AsTime(),
 		request.GetHeaders(),
-		userMetadataFromProto(request.GetMetadata()),
-		systemMetadataFromProto(request.GetMetadata()),
+		metadata.UserMetadataFromProto(request.GetMetadata()),
+		metadata.SystemMetadataFromProto(request.GetMetadata()),
 	)
 	messages := fs.Mapper.Map(ctx, request.GetKeys(), hd)
 	var elements []*mappb.MapResponse_Result
@@ -191,7 +191,7 @@ func (fs *Service) handleRequest(ctx context.Context, req *mappb.MapRequest, res
 			Keys:     m.Keys(),
 			Value:    m.Value(),
 			Tags:     m.Tags(),
-			Metadata: toProto(m.UserMetadata()),
+			Metadata: metadata.UserMetadataToProto(m.UserMetadata()),
 		})
 	}
 	resp := &mappb.MapResponse{
@@ -206,58 +206,3 @@ func (fs *Service) handleRequest(ctx context.Context, req *mappb.MapRequest, res
 	return nil
 }
 
-// userMetadataFromProto converts the incoming proto metadata to the internal UserMetadata.
-func userMetadataFromProto(proto *common.Metadata) *UserMetadata {
-	md := NewUserMetadata()
-	if proto == nil {
-		return md
-	}
-
-	for group, kvGroup := range proto.GetUserMetadata() {
-		if kvGroup != nil {
-			md.data[group] = kvGroup.GetKeyValue()
-		} else {
-			md.data[group] = make(map[string][]byte)
-		}
-	}
-	return md
-}
-
-// systemMetadataFromProto converts the incoming proto metadata to the internal SystemMetadata.
-func systemMetadataFromProto(proto *common.Metadata) *SystemMetadata {
-	md := NewSystemMetadata()
-	if proto == nil {
-		return md
-	}
-
-	for group, kvGroup := range proto.GetSysMetadata() {
-		if kvGroup != nil {
-			md.data[group] = kvGroup.GetKeyValue()
-		} else {
-			md.data[group] = make(map[string][]byte)
-		}
-	}
-	return md
-}
-
-// toProto converts the User Metadata to the proto metadata.
-// SDKs should always return non-nil metadata.
-// If user metadata is empty, it returns a non-nil proto metadata where
-// UserMetadata is empty map[string]*common.KeyValueGroup.
-func toProto(userMetadata *UserMetadata) *common.Metadata {
-	sys := make(map[string]*common.KeyValueGroup)
-	user := make(map[string]*common.KeyValueGroup)
-	if userMetadata != nil {
-		for _, group := range userMetadata.Groups() {
-			kv := make(map[string][]byte)
-			for _, key := range userMetadata.Keys(group) {
-				kv[key] = userMetadata.Value(group, key)
-			}
-			user[group] = &common.KeyValueGroup{KeyValue: kv}
-		}
-	}
-	return &common.Metadata{
-		SysMetadata:  sys,
-		UserMetadata: user,
-	}
-}
