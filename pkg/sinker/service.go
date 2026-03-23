@@ -16,9 +16,10 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/numaproj/numaflow-go/pkg/apis/proto/common"
-	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
+	"github.com/numaproj/numaflow-go/internal/metadata"
 	"github.com/numaproj/numaflow-go/internal/shared"
+	commonpb "github.com/numaproj/numaflow-go/pkg/apis/proto/common"
+	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
 )
 
 const (
@@ -204,8 +205,8 @@ func (fs *Service) receiveRequests(ctx context.Context, stream sinkpb.Sink_SinkF
 			eventTime:      req.GetRequest().GetEventTime().AsTime(),
 			watermark:      req.GetRequest().GetWatermark().AsTime(),
 			headers:        req.GetRequest().GetHeaders(),
-			userMetadata:   userMetadataFromProto(req.GetRequest().GetMetadata()),
-			systemMetadata: systemMetadataFromProto(req.GetRequest().GetMetadata()),
+			userMetadata:   metadata.UserMetadataFromProto(req.GetRequest().GetMetadata()),
+			systemMetadata: metadata.SystemMetadataFromProto(req.GetRequest().GetMetadata()),
 		}
 
 		select {
@@ -256,7 +257,7 @@ func (fs *Service) processData(ctx context.Context, stream sinkpb.Sink_SinkFnSer
 				OnSuccessMsg: &sinkpb.SinkResponse_Result_Message{
 					Value:    msg.OnSuccessMessage.Value(),
 					Keys:     msg.OnSuccessMessage.Keys(),
-					Metadata: userMetadataToProto(msg.OnSuccessMessage.UserMetadata()),
+					Metadata: sinkUserMetadataToProto(msg.OnSuccessMessage.UserMetadata()),
 				},
 			})
 		} else {
@@ -290,50 +291,11 @@ func (fs *Service) processData(ctx context.Context, stream sinkpb.Sink_SinkFnSer
 	return nil
 }
 
-// userMetadataFromProto converts the incoming proto metadata to the internal UserMetadata.
-func userMetadataFromProto(proto *common.Metadata) *UserMetadata {
-	md := NewUserMetadata()
-	if proto == nil {
-		return md
-	}
-	for group, kvGroup := range proto.GetUserMetadata() {
-		if kvGroup != nil {
-			md.data[group] = kvGroup.GetKeyValue()
-		} else {
-			md.data[group] = make(map[string][]byte)
-		}
-	}
-	return md
-}
-
-// userMetadataToProto converts the internal UserMetadata to the outgoing proto metadata.
-func userMetadataToProto(userMetadata *UserMetadata) *common.Metadata {
+// sinkUserMetadataToProto converts the internal UserMetadata to the outgoing proto metadata.
+// Returns nil if userMetadata is nil (sink-specific behavior for on-success messages).
+func sinkUserMetadataToProto(userMetadata *UserMetadata) *commonpb.Metadata {
 	if userMetadata == nil {
 		return nil
 	}
-	userMap := make(map[string]*common.KeyValueGroup)
-	for group, kvGroup := range userMetadata.data {
-		userMap[group] = &common.KeyValueGroup{
-			KeyValue: kvGroup,
-		}
-	}
-	return &common.Metadata{
-		UserMetadata: userMap,
-	}
-}
-
-// systemMetadataFromProto converts the incoming proto metadata to the internal SystemMetadata.
-func systemMetadataFromProto(proto *common.Metadata) *SystemMetadata {
-	md := NewSystemMetadata()
-	if proto == nil {
-		return md
-	}
-	for group, kvGroup := range proto.GetSysMetadata() {
-		if kvGroup != nil {
-			md.data[group] = kvGroup.GetKeyValue()
-		} else {
-			md.data[group] = make(map[string][]byte)
-		}
-	}
-	return md
+	return metadata.UserMetadataToProto(userMetadata)
 }
