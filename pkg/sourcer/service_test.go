@@ -40,8 +40,12 @@ func (ts TestSource) Pending(_ context.Context) int64 {
 	return testPendingNumber
 }
 
-func (ts TestSource) Partitions(_ context.Context) []int32 {
+func (ts TestSource) ActivePartitions(_ context.Context) []int32 {
 	return testPartitions
+}
+
+func (ts TestSource) TotalPartitions(_ context.Context) *int32 {
+	return nil
 }
 
 func TestService_IsReady(t *testing.T) {
@@ -331,6 +335,34 @@ func TestService_PartitionsFn(t *testing.T) {
 		},
 	})
 	assert.NoError(t, err)
+}
+
+func TestService_PartitionsFn_DefaultTotalPartitionsIsNil(t *testing.T) {
+	// TestSource returns nil from TotalPartitions
+	fs := &Service{Source: TestSource{}}
+	ctx := context.Background()
+	got, err := fs.PartitionsFn(ctx, &emptypb.Empty{})
+	assert.NoError(t, err)
+	assert.Equal(t, testPartitions, got.Result.Partitions)
+	assert.Nil(t, got.Result.TotalPartitions)
+}
+
+type TestSourceWithTotalPartitions struct {
+	TestSource
+}
+
+func (ts TestSourceWithTotalPartitions) TotalPartitions(_ context.Context) *int32 {
+	tp := int32(10)
+	return &tp
+}
+
+func TestService_PartitionsFn_TotalPartitions(t *testing.T) {
+	fs := &Service{Source: TestSourceWithTotalPartitions{}}
+	ctx := context.Background()
+	got, err := fs.PartitionsFn(ctx, &emptypb.Empty{})
+	assert.NoError(t, err)
+	assert.Equal(t, testPartitions, got.Result.Partitions)
+	assert.Equal(t, int32(10), *got.Result.TotalPartitions)
 }
 
 func TestService_NackFn(t *testing.T) {

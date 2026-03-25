@@ -23,8 +23,12 @@ func (ts TestNoopSource) Pending(ctx context.Context) int64 {
 	return 0
 }
 
-func (ts TestNoopSource) Partitions(ctx context.Context) []int32 {
+func (ts TestNoopSource) ActivePartitions(ctx context.Context) []int32 {
 	return []int32{0}
+}
+
+func (ts TestNoopSource) TotalPartitions(ctx context.Context) *int32 {
+	return nil
 }
 
 func TestServer_Start(t *testing.T) {
