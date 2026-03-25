@@ -106,8 +106,12 @@ func (s *SimpleSource) Nack(_ context.Context, request sourcesdk.NackRequest) {
 	}
 }
 
-func (s *SimpleSource) Partitions(_ context.Context) []int32 {
+func (s *SimpleSource) ActivePartitions(_ context.Context) []int32 {
 	return sourcesdk.DefaultPartitions()
+}
+
+func (s *SimpleSource) TotalPartitions(_ context.Context) *int32 {
+	return nil
 }
 
 func serializeOffset(idx int64) []byte {

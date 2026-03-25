@@ -20,18 +20,12 @@ type Sourcer interface {
 	// When the return value is negative, it indicates the pending information is not available.
 	// With pending information being not available, the Numaflow platform doesn't auto-scale the source.
 	Pending(ctx context.Context) int64
-	// Partitions returns the active partitions associated with the source, will be used by the platform to determine
+	// ActivePartitions returns the active partitions associated with the source, will be used by the platform to determine
 	// the partitions to which the watermark should be published. If the source doesn't have partitions,
 	// DefaultPartitions() can be used to return the default partitions.
-	// In most cases, the DefaultPartitions() should be enough; the cases where we need to implement custom Partitions()
+	// In most cases, the DefaultPartitions() should be enough; the cases where we need to implement custom ActivePartitions()
 	// is in a case like Kafka, where a reader can read from multiple Kafka partitions.
-	Partitions(ctx context.Context) []int32
-}
-
-// SourcerWithTotalPartitions is an optional interface that sources can implement
-// to report the total number of partitions. This is used by the platform for
-// watermark progression to know when all partitions for a source have reported in.
-type SourcerWithTotalPartitions interface {
+	ActivePartitions(ctx context.Context) []int32
 	// TotalPartitions returns the total number of partitions in the source.
 	// Return nil if the source does not support reporting total partitions.
 	TotalPartitions(ctx context.Context) *int32

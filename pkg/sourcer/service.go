@@ -17,9 +17,9 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/numaproj/numaflow-go/internal/shared"
 	"github.com/numaproj/numaflow-go/pkg/apis/proto/common"
 	sourcepb "github.com/numaproj/numaflow-go/pkg/apis/proto/source/v1"
-	"github.com/numaproj/numaflow-go/internal/shared"
 )
 
 const (
@@ -430,19 +430,11 @@ func (fs *Service) PartitionsFn(ctx context.Context, _ *emptypb.Empty) (*sourcep
 		}
 	}()
 
-	partitions := fs.Source.Partitions(ctx)
-
-	result := &sourcepb.PartitionsResponse_Result{
-		Partitions: partitions,
-	}
-
-	// Include total_partitions if the source implements it.
-	if tp, ok := fs.Source.(SourcerWithTotalPartitions); ok {
-		result.TotalPartitions = tp.TotalPartitions(ctx)
-	}
-
 	return &sourcepb.PartitionsResponse{
-		Result: result,
+		Result: &sourcepb.PartitionsResponse_Result{
+			Partitions:      fs.Source.ActivePartitions(ctx),
+			TotalPartitions: fs.Source.TotalPartitions(ctx),
+		},
 	}, nil
 }
 
