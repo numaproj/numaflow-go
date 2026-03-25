@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/numaproj/numaflow-go/internal/metadata"
 	"golang.org/x/sync/errgroup"
 	epb "google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
@@ -18,6 +17,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/numaproj/numaflow-go/internal/metadata"
 	"github.com/numaproj/numaflow-go/internal/shared"
 	sourcepb "github.com/numaproj/numaflow-go/pkg/apis/proto/source/v1"
 )
