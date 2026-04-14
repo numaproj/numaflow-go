@@ -101,6 +101,8 @@ func TestService_AccumulateFn(t *testing.T) {
 			Event: accumulatorpb.AccumulatorRequest_WindowOperation_APPEND,
 		},
 	}
+	assert.Nil(t, req.Payload, "Expected nil payload in the request")
+
 	err = stream.Send(req)
 	require.NoError(t, err, "Sending request")
 
@@ -109,6 +111,8 @@ func TestService_AccumulateFn(t *testing.T) {
 	require.NoError(t, err, "Receiving response")
 	assert.NotNil(t, resp, "Expected a non-nil response")
 
+	watermark := resp.Payload.Watermark
+	assert.NotNil(t, watermark, "Expected a non-nil watermark in the response")
 	// Close the stream
 	err = stream.CloseSend()
 	require.NoError(t, err, "Closing the send direction of the stream")
