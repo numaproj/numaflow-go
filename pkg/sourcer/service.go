@@ -430,11 +430,10 @@ func (fs *Service) PartitionsFn(ctx context.Context, _ *emptypb.Empty) (*sourcep
 		}
 	}()
 
-	partitions := fs.Source.Partitions(ctx)
 	return &sourcepb.PartitionsResponse{
 		Result: &sourcepb.PartitionsResponse_Result{
-			Partitions: partitions,
+			Partitions:      fs.Source.ActivePartitions(ctx),
+			TotalPartitions: fs.Source.TotalPartitions(ctx),
 		},
 	}, nil
 }
-
