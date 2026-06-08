@@ -1,7 +1,12 @@
 package accumulator
 
 import (
+	"fmt"
 	"time"
+)
+
+var (
+	DROP = fmt.Sprintf("%U__DROP__", '\\') // U+005C__DROP__
 )
 
 // Message is used to wrap the data return by Map functions
@@ -25,6 +30,22 @@ func MessageFromDatum(datum Datum) Message {
 		id:        datum.ID(),
 		keys:      datum.Keys(),
 		headers:   datum.Headers(),
+	}
+}
+
+// MessageToDrop creates a Message from the given Datum with drop tags set, so the message is not forwarded to the
+// next vertex but still allows the accumulator to advance the watermark and release the tracked state. It's advised
+// to use the same input datum for creating the message, only use a custom implementation of the Datum if you know
+// what you are doing.
+func MessageToDrop(datum Datum) Message {
+	return Message{
+		value:     []byte{},
+		eventTime: datum.EventTime(),
+		watermark: datum.Watermark(),
+		id:        datum.ID(),
+		keys:      datum.Keys(),
+		headers:   datum.Headers(),
+		tags:      []string{DROP},
 	}
 }
 
