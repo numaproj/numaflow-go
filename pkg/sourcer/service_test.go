@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -385,4 +386,48 @@ func TestService_NackFn(t *testing.T) {
 		},
 	})
 	assert.NoError(t, err)
+}
+
+type nackCaptureSource struct {
+	got NackRequest
+}
+
+func (s *nackCaptureSource) Read(context.Context, ReadRequest, chan<- Message) {}
+func (s *nackCaptureSource) Ack(context.Context, AckRequest)                   {}
+func (s *nackCaptureSource) Nack(_ context.Context, req NackRequest)           { s.got = req }
+func (s *nackCaptureSource) Pending(context.Context) int64                     { return 0 }
+func (s *nackCaptureSource) ActivePartitions(context.Context) []int32          { return nil }
+func (s *nackCaptureSource) TotalPartitions(context.Context) *int32            { return nil }
+
+func TestService_NackFn_WithOptions(t *testing.T) {
+	src := &nackCaptureSource{}
+	fs := &Service{Source: src}
+	delay := uint64(500)
+	maxDel := uint32(3)
+	reason := "retry"
+	_, err := fs.NackFn(context.Background(), &sourcepb.NackRequest{
+		Request: &sourcepb.NackRequest_Request{
+			Offsets:     []*sourcepb.Offset{{PartitionId: 0, Offset: []byte("test")}},
+			NackOptions: &common.NackOptions{Reason: &reason, MaxDeliveries: &maxDel, Delay: &delay},
+		},
+	})
+	assert.NoError(t, err)
+	opts := src.got.NackOptions()
+	require.NotNil(t, opts)
+	assert.Equal(t, uint64(500), *opts.Delay)
+	assert.Equal(t, uint32(3), *opts.MaxDeliveries)
+	assert.Equal(t, "retry", *opts.Reason)
+	assert.Equal(t, []byte("test"), src.got.Offsets()[0].Value())
+}
+
+func TestService_NackFn_NilOptions(t *testing.T) {
+	src := &nackCaptureSource{}
+	fs := &Service{Source: src}
+	_, err := fs.NackFn(context.Background(), &sourcepb.NackRequest{
+		Request: &sourcepb.NackRequest_Request{
+			Offsets: []*sourcepb.Offset{{PartitionId: 0, Offset: []byte("test")}},
+		},
+	})
+	assert.NoError(t, err)
+	assert.Nil(t, src.got.NackOptions())
 }

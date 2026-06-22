@@ -18,6 +18,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/numaproj/numaflow-go/internal/metadata"
+	"github.com/numaproj/numaflow-go/internal/nackoptions"
 	"github.com/numaproj/numaflow-go/internal/shared"
 	sourcepb "github.com/numaproj/numaflow-go/pkg/apis/proto/source/v1"
 )
@@ -361,7 +362,8 @@ func (fs *Service) NackFn(ctx context.Context, req *sourcepb.NackRequest) (respo
 	}
 
 	nackRequest := nackRequest{
-		offsets: offsets,
+		offsets:     offsets,
+		nackOptions: nackoptions.FromProto(req.Request.GetNackOptions()),
 	}
 	fs.Source.Nack(ctx, &nackRequest)
 
@@ -414,11 +416,16 @@ func (r *readRequest) Count() uint64 {
 }
 
 type nackRequest struct {
-	offsets []Offset
+	offsets     []Offset
+	nackOptions *NackOptions
 }
 
 func (n *nackRequest) Offsets() []Offset {
 	return n.offsets
+}
+
+func (n *nackRequest) NackOptions() *NackOptions {
+	return n.nackOptions
 }
 
 func (fs *Service) PartitionsFn(ctx context.Context, _ *emptypb.Empty) (*sourcepb.PartitionsResponse, error) {
