@@ -15,9 +15,9 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	mappb "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1"
 	"github.com/numaproj/numaflow-go/internal/nackoptions"
 	"github.com/numaproj/numaflow-go/internal/shared"
+	mappb "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1"
 )
 
 const (
@@ -68,7 +68,7 @@ func (fs *Service) MapFn(stream mappb.Map_MapFnServer) error {
 			if errors.Is(err, context.Canceled) || errors.Is(err, io.EOF) {
 				return nil
 			}
-			
+
 			fs.once.Do(func() {
 				log.Printf("Stopping the BatchMapFn with err, %s", err)
 				select {

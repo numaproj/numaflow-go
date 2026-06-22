@@ -207,4 +207,3 @@ func (fs *Service) handleRequest(ctx context.Context, req *mappb.MapRequest, res
 	}
 	return nil
 }
-
