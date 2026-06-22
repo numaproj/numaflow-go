@@ -18,6 +18,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/numaproj/numaflow-go/internal/metadata"
+	"github.com/numaproj/numaflow-go/internal/nackoptions"
 	"github.com/numaproj/numaflow-go/internal/shared"
 	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/sourcetransform/v1"
 )
@@ -189,11 +190,12 @@ func (fs *Service) handleRequest(ctx context.Context, req *v1.SourceTransformReq
 	var elements []*v1.SourceTransformResponse_Result
 	for _, m := range messages.Items() {
 		elements = append(elements, &v1.SourceTransformResponse_Result{
-			Keys:      m.Keys(),
-			Value:     m.Value(),
-			Tags:      m.Tags(),
-			EventTime: timestamppb.New(m.EventTime()),
-			Metadata:  metadata.UserMetadataToProto(m.UserMetadata()),
+			Keys:        m.Keys(),
+			Value:       m.Value(),
+			Tags:        m.Tags(),
+			EventTime:   timestamppb.New(m.EventTime()),
+			Metadata:    metadata.UserMetadataToProto(m.UserMetadata()),
+			NackOptions: nackoptions.ToProto(m.NackOptions()),
 		})
 	}
 	resp := &v1.SourceTransformResponse{
