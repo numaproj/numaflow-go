@@ -16,6 +16,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	mappb "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1"
+	"github.com/numaproj/numaflow-go/internal/nackoptions"
 	"github.com/numaproj/numaflow-go/internal/shared"
 )
 
@@ -184,9 +185,10 @@ func (fs *Service) processData(ctx context.Context, stream mappb.Map_MapFnServer
 		var elements []*mappb.MapResponse_Result
 		for _, resp := range batchResp.Items() {
 			elements = append(elements, &mappb.MapResponse_Result{
-				Keys:  resp.Keys(),
-				Value: resp.Value(),
-				Tags:  resp.Tags(),
+				Keys:        resp.Keys(),
+				Value:       resp.Value(),
+				Tags:        resp.Tags(),
+				NackOptions: nackoptions.ToProto(resp.NackOptions()),
 			})
 		}
 		singleRequestResp := &mappb.MapResponse{

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -295,4 +296,52 @@ func TestService_BatchMapFn(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestService_BatchMapFn_Nack(t *testing.T) {
+	delay := uint64(500)
+	reason := "retry"
+	fs := &Service{
+		BatchMapper: BatchMapperFunc(func(ctx context.Context, datums <-chan Datum) BatchResponses {
+			br := BatchResponsesBuilder()
+			for d := range datums {
+				r := NewBatchResponse(d.Id())
+				r = r.Append(MessageToNack(&NackOptions{Delay: &delay, Reason: &reason}))
+				br = br.Append(r)
+			}
+			return br
+		}),
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	defer cancel()
+	inputCh := make(chan *mappb.MapRequest, 3)
+	outputCh := make(chan *mappb.MapResponse)
+	result := make([]*mappb.MapResponse, 0)
+	stream := NewBatchBatchMapStreamFnServerTest(ctx, inputCh, outputCh)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() { defer wg.Done(); _ = fs.MapFn(stream); close(outputCh) }()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for msg := range outputCh {
+			result = append(result, msg)
+		}
+	}()
+	for _, val := range []*mappb.MapRequest{
+		{Handshake: &mappb.Handshake{Sot: true}},
+		{Request: &mappb.MapRequest_Request{Keys: []string{"k"}, Value: []byte("test")}, Id: "test1"},
+		{Request: &mappb.MapRequest_Request{}, Status: &mappb.TransmissionStatus{Eot: true}},
+	} {
+		inputCh <- val
+	}
+	close(inputCh)
+	wg.Wait()
+
+	// result[0] = handshake, result[1] = the nacked message, result[2] = eot
+	require.Len(t, result[1].Results, 1)
+	assert.Equal(t, []string{NACK}, result[1].Results[0].Tags)
+	assert.Equal(t, uint64(500), result[1].Results[0].GetNackOptions().GetDelay())
+	assert.Equal(t, "retry", result[1].Results[0].GetNackOptions().GetReason())
 }
