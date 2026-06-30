@@ -356,14 +356,20 @@ func (fs *Service) NackFn(ctx context.Context, req *sourcepb.NackRequest) (respo
 		}
 	}()
 
-	offsets := make([]Offset, len(req.Request.GetOffsets()))
-	for i, offset := range req.Request.GetOffsets() {
-		offsets[i] = NewOffset(offset.GetOffset(), offset.GetPartitionId())
+	var nackOffsets []NackOffset
+	for _, nackOffset := range req.Request {
+		for _, offset := range nackOffset.Offsets {
+			nackOffsets = append(nackOffsets,
+				NackOffset{
+					NewOffset(offset.GetOffset(), offset.GetPartitionId()),
+					nackoptions.FromProto(nackOffset.NackOptions),
+				},
+			)
+		}
 	}
 
 	nackRequest := nackRequest{
-		offsets:     offsets,
-		nackOptions: nackoptions.FromProto(req.Request.GetNackOptions()),
+		offsets: nackOffsets,
 	}
 	fs.Source.Nack(ctx, &nackRequest)
 
@@ -416,16 +422,11 @@ func (r *readRequest) Count() uint64 {
 }
 
 type nackRequest struct {
-	offsets     []Offset
-	nackOptions *NackOptions
+	offsets []NackOffset
 }
 
-func (n *nackRequest) Offsets() []Offset {
+func (n *nackRequest) Offsets() []NackOffset {
 	return n.offsets
-}
-
-func (n *nackRequest) NackOptions() *NackOptions {
-	return n.nackOptions
 }
 
 func (fs *Service) PartitionsFn(ctx context.Context, _ *emptypb.Empty) (*sourcepb.PartitionsResponse, error) {

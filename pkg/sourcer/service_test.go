@@ -376,8 +376,10 @@ func TestService_NackFn(t *testing.T) {
 		},
 	}
 	got, err := fs.NackFn(ctx, &sourcepb.NackRequest{
-		Request: &sourcepb.NackRequest_Request{
-			Offsets: offsets,
+		Request: []*sourcepb.NackRequest_Request{
+			{
+				Offsets: offsets,
+			},
 		},
 	})
 	assert.Equal(t, got, &sourcepb.NackResponse{
@@ -406,28 +408,36 @@ func TestService_NackFn_WithOptions(t *testing.T) {
 	maxDel := uint32(3)
 	reason := "retry"
 	_, err := fs.NackFn(context.Background(), &sourcepb.NackRequest{
-		Request: &sourcepb.NackRequest_Request{
-			Offsets:     []*sourcepb.Offset{{PartitionId: 0, Offset: []byte("test")}},
-			NackOptions: &common.NackOptions{Reason: &reason, MaxDeliveries: &maxDel, Delay: &delay},
+		Request: []*sourcepb.NackRequest_Request{
+			{
+				Offsets:     []*sourcepb.Offset{{PartitionId: 0, Offset: []byte("test")}},
+				NackOptions: &common.NackOptions{Reason: &reason, MaxDeliveries: &maxDel, Delay: &delay},
+			},
 		},
 	})
 	assert.NoError(t, err)
-	opts := src.got.NackOptions()
+	nackOffsets := src.got.Offsets()
+	require.Len(t, nackOffsets, 1)
+	opts := nackOffsets[0].NackOptions
 	require.NotNil(t, opts)
 	assert.Equal(t, uint64(500), *opts.Delay)
 	assert.Equal(t, uint32(3), *opts.MaxDeliveries)
 	assert.Equal(t, "retry", *opts.Reason)
-	assert.Equal(t, []byte("test"), src.got.Offsets()[0].Value())
+	assert.Equal(t, []byte("test"), nackOffsets[0].Offset.Value())
 }
 
 func TestService_NackFn_NilOptions(t *testing.T) {
 	src := &nackCaptureSource{}
 	fs := &Service{Source: src}
 	_, err := fs.NackFn(context.Background(), &sourcepb.NackRequest{
-		Request: &sourcepb.NackRequest_Request{
-			Offsets: []*sourcepb.Offset{{PartitionId: 0, Offset: []byte("test")}},
+		Request: []*sourcepb.NackRequest_Request{
+			{
+				Offsets: []*sourcepb.Offset{{PartitionId: 0, Offset: []byte("test")}},
+			},
 		},
 	})
 	assert.NoError(t, err)
-	assert.Nil(t, src.got.NackOptions())
+	nackOffsets := src.got.Offsets()
+	require.Len(t, nackOffsets, 1)
+	assert.Nil(t, nackOffsets[0].NackOptions)
 }
