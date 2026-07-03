@@ -14,6 +14,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/numaproj/numaflow-go/pkg/apis/proto/common"
 	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
 )
 
@@ -241,6 +242,50 @@ func TestService_SinkFn(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestService_SinkFn_Nack(t *testing.T) {
+	delay := uint64(500)
+	maxDel := uint32(3)
+	reason := "retry"
+	ss := Service{
+		Sinker: SinkerFunc(func(ctx context.Context, rch <-chan Datum) Responses {
+			result := ResponsesBuilder()
+			for d := range rch {
+				result = result.Append(ResponseNack(d.ID(), &NackOptions{
+					Delay:         &delay,
+					MaxDeliveries: &maxDel,
+					Reason:        &reason,
+				}))
+			}
+			return result
+		}),
+	}
+	input := []*sinkpb.SinkRequest{
+		{Handshake: &sinkpb.Handshake{Sot: true}},
+		{Request: &sinkpb.SinkRequest_Request{Id: "nack-1", Value: []byte("x")}},
+		{Status: &sinkpb.TransmissionStatus{Eot: true}},
+	}
+	ich := make(chan *sinkpb.SinkRequest)
+	stream := &SinkFnServerTest{ctx: context.Background(), inputCh: ich}
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		assert.NoError(t, ss.SinkFn(stream))
+	}()
+	for _, val := range input {
+		ich <- val
+	}
+	close(ich)
+	wg.Wait()
+
+	// stream.rl[0] = handshake resp, [1] = results, [2] = eot
+	got := stream.rl[1].Results[0]
+	assert.Equal(t, "nack-1", got.Id)
+	assert.Equal(t, sinkpb.Status_NACK, got.Status)
+	assert.Equal(t, &common.NackOptions{Reason: &reason, MaxDeliveries: &maxDel, Delay: &delay}, got.NackOptions)
 }
 
 func TestService_IsReady(t *testing.T) {
