@@ -25,10 +25,9 @@ type accumulateTask struct {
 	inputCh         chan Datum
 	outputCh        chan Message
 	latestWatermark time.Time
-	// closeWindow is the KeyedWindow carried by the CLOSE request. CloseTask stashes it
-	// before closing inputCh; it is echoed back in the EOF response so numaflow-core can
-	// GC the WAL for the closed window (by its keys and end time). It is nil on the
-	// shutdown path (CloseAll), where the EOF falls back to a synthesized window.
+	// closeWindow is the KeyedWindow carried by the CLOSE request.
+	// It is nil on the shutdown path (CloseAll), where the EOF
+	// falls back to a synthesized window.
 	closeWindow *v1.KeyedWindow
 }
 
@@ -197,8 +196,7 @@ func (atm *accumulatorTaskManager) CloseTask(request *v1.AccumulatorRequest) {
 		log.Panicf("task not found for key: %s", key)
 	}
 
-	// stash the CLOSE window so the EOF response echoes it back, allowing numaflow-core
-	// to GC the WAL for the closed window (by its keys and end time).
+	// stash the CLOSE window so the EOF response echoes it back
 	task.closeWindow = kw
 	close(task.inputCh)
 	delete(atm.tasks, task.uniqueKey())
