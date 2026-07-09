@@ -3,6 +3,7 @@ package accumulator
 import (
 	"context"
 	"errors"
+	"io"
 	"net"
 	"testing"
 	"time"
@@ -16,6 +17,7 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	accumulatorpb "github.com/numaproj/numaflow-go/pkg/apis/proto/accumulator/v1"
 )
@@ -163,4 +165,169 @@ func TestService_AccumulateFn_Panic(t *testing.T) {
 	case <-time.After(100 * time.Millisecond):
 		t.Error("Expected shutdown channel to be triggered, but it wasn't")
 	}
+}
+
+func TestService_AccumulateFn_EOFEchoesCloseWindow(t *testing.T) {
+	svc := &Service{
+		AccumulatorCreator: SimpleCreatorWithAccumulateFn(func(ctx context.Context, input <-chan Datum, output chan<- Message) {
+			for datum := range input {
+				output <- MessageFromDatum(datum)
+			}
+		}),
+		shutdownCh: make(chan struct{}, 1),
+	}
+	conn := newTestServer(t, func(server *grpc.Server) {
+		accumulatorpb.RegisterAccumulatorServer(server, svc)
+	})
+
+	client := accumulatorpb.NewAccumulatorClient(conn)
+	stream, err := client.AccumulateFn(context.Background())
+	require.NoError(t, err, "Creating stream")
+
+	keys := []string{"k1"}
+	openWindow := &accumulatorpb.KeyedWindow{
+		Start: timestamppb.New(time.UnixMilli(0)),
+		End:   timestamppb.New(time.UnixMilli(60000)),
+		Slot:  "slot-0",
+		Keys:  keys,
+	}
+
+	// OPEN
+	require.NoError(t, stream.Send(&accumulatorpb.AccumulatorRequest{
+		Payload: &accumulatorpb.Payload{
+			Keys:      keys,
+			Value:     []byte("v1"),
+			EventTime: timestamppb.New(time.UnixMilli(1000)),
+			Watermark: timestamppb.New(time.UnixMilli(1000)),
+		},
+		Operation: &accumulatorpb.AccumulatorRequest_WindowOperation{
+			Event:       accumulatorpb.AccumulatorRequest_WindowOperation_OPEN,
+			KeyedWindow: openWindow,
+		},
+	}), "Sending OPEN")
+
+	// APPEND
+	require.NoError(t, stream.Send(&accumulatorpb.AccumulatorRequest{
+		Payload: &accumulatorpb.Payload{
+			Keys:      keys,
+			Value:     []byte("v2"),
+			EventTime: timestamppb.New(time.UnixMilli(2000)),
+			Watermark: timestamppb.New(time.UnixMilli(2000)),
+		},
+		Operation: &accumulatorpb.AccumulatorRequest_WindowOperation{
+			Event:       accumulatorpb.AccumulatorRequest_WindowOperation_APPEND,
+			KeyedWindow: openWindow,
+		},
+	}), "Sending APPEND")
+
+	// CLOSE with a distinct window that must be echoed in the EOF response.
+	closeWindow := &accumulatorpb.KeyedWindow{
+		Start: timestamppb.New(time.UnixMilli(1000000)),
+		End:   timestamppb.New(time.UnixMilli(2000000)),
+		Slot:  "slot-7",
+		Keys:  keys,
+	}
+	require.NoError(t, stream.Send(&accumulatorpb.AccumulatorRequest{
+		Operation: &accumulatorpb.AccumulatorRequest_WindowOperation{
+			Event:       accumulatorpb.AccumulatorRequest_WindowOperation_CLOSE,
+			KeyedWindow: closeWindow,
+		},
+	}), "Sending CLOSE")
+
+	// Read responses on the still-open stream until we get the EOF response, mirroring how
+	// numaflow-core reads the per-window EOF while the bidi stream stays open. Assert it
+	// echoes the CLOSE window.
+	var eof *accumulatorpb.AccumulatorResponse
+	for {
+		resp, err := stream.Recv()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		require.NoError(t, err, "Receiving response")
+		if resp.GetEOF() {
+			eof = resp
+			break
+		}
+	}
+
+	require.NoError(t, stream.CloseSend(), "CloseSend")
+
+	require.NotNil(t, eof, "Expected an EOF response")
+	w := eof.GetWindow()
+	require.NotNil(t, w, "EOF response must carry a window")
+	assert.Equal(t, closeWindow.GetStart().GetSeconds(), w.GetStart().GetSeconds(), "EOF window start")
+	assert.Equal(t, closeWindow.GetEnd().GetSeconds(), w.GetEnd().GetSeconds(), "EOF window end")
+	assert.Equal(t, "slot-7", w.GetSlot(), "EOF window slot")
+	assert.Equal(t, keys, w.GetKeys(), "EOF window keys")
+}
+
+// TestService_AccumulateFn_EOFEchoesCloseWindow_NoOutput exercises the WAL-leak scenario:
+// an accumulator that emits nothing must still echo the CLOSE window's end in its EOF
+// response (rather than the never-advanced latest watermark) so core can GC the WAL.
+func TestService_AccumulateFn_EOFEchoesCloseWindow_NoOutput(t *testing.T) {
+	svc := &Service{
+		AccumulatorCreator: SimpleCreatorWithAccumulateFn(func(ctx context.Context, input <-chan Datum, output chan<- Message) {
+			for range input {
+				// intentionally emit nothing
+			}
+		}),
+		shutdownCh: make(chan struct{}, 1),
+	}
+	conn := newTestServer(t, func(server *grpc.Server) {
+		accumulatorpb.RegisterAccumulatorServer(server, svc)
+	})
+
+	client := accumulatorpb.NewAccumulatorClient(conn)
+	stream, err := client.AccumulateFn(context.Background())
+	require.NoError(t, err, "Creating stream")
+
+	keys := []string{"k1"}
+	openWindow := &accumulatorpb.KeyedWindow{
+		Start: timestamppb.New(time.UnixMilli(0)),
+		End:   timestamppb.New(time.UnixMilli(60000)),
+		Slot:  "slot-0",
+		Keys:  keys,
+	}
+
+	// OPEN with a payload (no output will be produced).
+	require.NoError(t, stream.Send(&accumulatorpb.AccumulatorRequest{
+		Payload: &accumulatorpb.Payload{
+			Keys:      keys,
+			Value:     []byte("v1"),
+			EventTime: timestamppb.New(time.UnixMilli(1000)),
+			Watermark: timestamppb.New(time.UnixMilli(1000)),
+		},
+		Operation: &accumulatorpb.AccumulatorRequest_WindowOperation{
+			Event:       accumulatorpb.AccumulatorRequest_WindowOperation_OPEN,
+			KeyedWindow: openWindow,
+		},
+	}), "Sending OPEN")
+
+	closeWindow := &accumulatorpb.KeyedWindow{
+		Start: timestamppb.New(time.UnixMilli(1000000)),
+		End:   timestamppb.New(time.UnixMilli(2000000)),
+		Slot:  "slot-7",
+		Keys:  keys,
+	}
+	require.NoError(t, stream.Send(&accumulatorpb.AccumulatorRequest{
+		Operation: &accumulatorpb.AccumulatorRequest_WindowOperation{
+			Event:       accumulatorpb.AccumulatorRequest_WindowOperation_CLOSE,
+			KeyedWindow: closeWindow,
+		},
+	}), "Sending CLOSE")
+
+	// With no output, the very first (and only) response must be the EOF echoing the
+	// CLOSE window.
+	resp, err := stream.Recv()
+	require.NoError(t, err, "Receiving response")
+	require.True(t, resp.GetEOF(), "Expected the first response to be EOF (no output produced)")
+
+	require.NoError(t, stream.CloseSend(), "CloseSend")
+
+	w := resp.GetWindow()
+	require.NotNil(t, w, "EOF response must carry a window")
+	assert.Equal(t, closeWindow.GetEnd().GetSeconds(), w.GetEnd().GetSeconds(), "EOF window end must be the CLOSE window end, not the latest watermark")
+	assert.Equal(t, closeWindow.GetStart().GetSeconds(), w.GetStart().GetSeconds(), "EOF window start")
+	assert.Equal(t, "slot-7", w.GetSlot(), "EOF window slot")
+	assert.Equal(t, keys, w.GetKeys(), "EOF window keys")
 }
