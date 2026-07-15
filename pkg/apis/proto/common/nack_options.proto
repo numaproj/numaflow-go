@@ -12,4 +12,6 @@ message NackOptions {
   optional uint32 max_deliveries = 2;
   // delay is the redelivery delay in milliseconds.
   optional uint64 delay = 3;
+  // a generic map of values
+  map<string, string> nack_map = 4;
 }

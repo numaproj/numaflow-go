@@ -14,6 +14,7 @@ func ToProto(n *NackOptions) *common.NackOptions {
 		Reason:        n.Reason,
 		MaxDeliveries: n.MaxDeliveries,
 		Delay:         n.Delay,
+		NackMap:       n.NackMap,
 	}
 }
 
@@ -27,5 +28,6 @@ func FromProto(p *common.NackOptions) *NackOptions {
 		Delay:         p.Delay,
 		MaxDeliveries: p.MaxDeliveries,
 		Reason:        p.Reason,
+		NackMap:       p.NackMap,
 	}
 }

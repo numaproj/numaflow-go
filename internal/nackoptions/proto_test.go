@@ -21,11 +21,13 @@ func TestRoundTrip_AllFields(t *testing.T) {
 		Delay:         ptr(uint64(500)),
 		MaxDeliveries: ptr(uint32(3)),
 		Reason:        ptr("retry"),
+		NackMap:       map[string]string{"foo": "bar"},
 	}
 	p := ToProto(in)
 	assert.Equal(t, uint64(500), p.GetDelay())
 	assert.Equal(t, uint32(3), p.GetMaxDeliveries())
 	assert.Equal(t, "retry", p.GetReason())
+	assert.Equal(t, map[string]string{"foo": "bar"}, p.GetNackMap())
 
 	back := FromProto(p)
 	assert.Equal(t, in, back)
