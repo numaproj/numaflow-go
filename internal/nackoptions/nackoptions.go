@@ -9,4 +9,6 @@ type NackOptions struct {
 	MaxDeliveries *uint32
 	// Reason is a human-readable reason for the nack.
 	Reason *string
+	// Generic values passed as nack options
+	NackMap map[string]string
 }
