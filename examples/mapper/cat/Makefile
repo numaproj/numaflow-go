@@ -1,7 +1,8 @@
-TAG ?= stable
+TAG ?= stable3
 PUSH ?= false
-IMAGE_REGISTRY = quay.io/numaio/numaflow-go/map-cat:${TAG}
-ARCHITECTURES = amd64 arm64
+# IMAGE_REGISTRY = quay.io/numaio/numaflow-go/map-cat:${TAG}
+IMAGE_REGISTRY = test-cat:${TAG}
+ARCHITECTURES = arm64
 
 .PHONY: build
 build:

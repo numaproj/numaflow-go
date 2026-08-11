@@ -1,0 +1,29 @@
+apiVersion: numaflow.numaproj.io/v1alpha1
+kind: MonoVertex
+metadata:
+  name: simple-mono-vertex
+spec:
+  source:
+  # HTTP source accepts POST requests at /vertices/{vertexName}.
+  # For local testing, port-forward the pod and send data using:
+  # kubectl port-forward pod ${pod-name} ${port}
+  # curl -kq -X POST -d "<data>" https://localhost:8443/vertices/${vertex-name}
+    http: {}
+    # transformer is an optional container to do any transformation
+    transformer:
+      container:
+        image: quay.io/numaio/numaflow-rs/source-transformer-now:stable
+  # map is an optional container to do any map operations (available from Numaflow Version 1.7)
+  udf:
+    container:
+      image: test-cat:stable3
+      imagePullPolicy: IfNotPresent     
+  sink:
+    udsink:
+      container:
+        image: quay.io/numaio/numaflow-rs/sink-log:stable
+    # fallback is an optional container for sink to fallback to incase the primary sink has failures
+    fallback:
+      udsink:
+        container:
+          image: quay.io/numaio/numaflow-go/fb-sink-log:stable
