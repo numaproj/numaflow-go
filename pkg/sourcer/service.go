@@ -18,6 +18,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/numaproj/numaflow-go/internal/metadata"
+	"github.com/numaproj/numaflow-go/internal/nackoptions"
 	"github.com/numaproj/numaflow-go/internal/shared"
 	sourcepb "github.com/numaproj/numaflow-go/pkg/apis/proto/source/v1"
 )
@@ -355,13 +356,20 @@ func (fs *Service) NackFn(ctx context.Context, req *sourcepb.NackRequest) (respo
 		}
 	}()
 
-	offsets := make([]Offset, len(req.Request.GetOffsets()))
-	for i, offset := range req.Request.GetOffsets() {
-		offsets[i] = NewOffset(offset.GetOffset(), offset.GetPartitionId())
+	var nackOffsets []NackOffset
+	for _, nackOffset := range req.Request {
+		for _, offset := range nackOffset.Offsets {
+			nackOffsets = append(nackOffsets,
+				NackOffset{
+					NewOffset(offset.GetOffset(), offset.GetPartitionId()),
+					nackoptions.FromProto(nackOffset.NackOptions),
+				},
+			)
+		}
 	}
 
 	nackRequest := nackRequest{
-		offsets: offsets,
+		offsets: nackOffsets,
 	}
 	fs.Source.Nack(ctx, &nackRequest)
 
@@ -414,10 +422,10 @@ func (r *readRequest) Count() uint64 {
 }
 
 type nackRequest struct {
-	offsets []Offset
+	offsets []NackOffset
 }
 
-func (n *nackRequest) Offsets() []Offset {
+func (n *nackRequest) Offsets() []NackOffset {
 	return n.offsets
 }
 

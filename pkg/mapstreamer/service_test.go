@@ -326,6 +326,34 @@ func TestService_MapFn_Multiple_Messages(t *testing.T) {
 	require.ElementsMatch(t, results, expectedResults)
 }
 
+func TestService_MapFn_Nack(t *testing.T) {
+	delay := uint64(500)
+	reason := "retry"
+	svc := &Service{
+		MapperStream: MapStreamerFunc(func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
+			defer close(messageCh)
+			messageCh <- MessageToNack(&NackOptions{Delay: &delay, Reason: &reason})
+		}),
+	}
+	conn := newTestServer(t, func(server *grpc.Server) {
+		proto.RegisterMapServer(server, svc)
+	})
+	client := proto.NewMapClient(conn)
+	stream, err := client.MapFn(context.Background())
+	require.NoError(t, err)
+	doHandshake(t, stream)
+	require.NoError(t, stream.Send(&proto.MapRequest{
+		Request: &proto.MapRequest_Request{Keys: []string{"k"}, Value: []byte("test"),
+			EventTime: timestamppb.New(time.Time{}), Watermark: timestamppb.New(time.Time{})},
+	}))
+	got, err := stream.Recv()
+	require.NoError(t, err)
+	require.Len(t, got.Results, 1)
+	assert.Equal(t, []string{NACK}, got.Results[0].Tags)
+	assert.Equal(t, uint64(500), got.Results[0].GetNackOptions().GetDelay())
+	assert.Equal(t, "retry", got.Results[0].GetNackOptions().GetReason())
+}
+
 func TestService_MapFn_Panic(t *testing.T) {
 	panicMssg := "map failed"
 	svc := &Service{

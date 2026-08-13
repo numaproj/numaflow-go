@@ -15,8 +15,9 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	mappb "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1"
+	"github.com/numaproj/numaflow-go/internal/nackoptions"
 	"github.com/numaproj/numaflow-go/internal/shared"
+	mappb "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1"
 )
 
 const (
@@ -168,9 +169,10 @@ func (fs *Service) writeResponseToClient(ctx context.Context, stream mappb.Map_M
 			element := &mappb.MapResponse{
 				Results: []*mappb.MapResponse_Result{
 					{
-						Keys:  message.Keys(),
-						Value: message.Value(),
-						Tags:  message.Tags(),
+						Keys:        message.Keys(),
+						Value:       message.Value(),
+						Tags:        message.Tags(),
+						NackOptions: nackoptions.ToProto(message.NackOptions()),
 					},
 				},
 				Id: reqID,

@@ -25,6 +25,10 @@ type accumulateTask struct {
 	inputCh         chan Datum
 	outputCh        chan Message
 	latestWatermark time.Time
+	// closeWindow is the KeyedWindow carried by the CLOSE request.
+	// It is nil on the shutdown path (CloseAll), where the EOF
+	// falls back to a synthesized window.
+	closeWindow *v1.KeyedWindow
 }
 
 // uniqueKey returns the unique key for the accumulate task to be used in the task manager to identify the task.
@@ -81,15 +85,22 @@ func (atm *accumulatorTaskManager) CreateTask(request *v1.AccumulatorRequest) {
 					return
 				case output, ok := <-task.outputCh:
 					if !ok {
-						// send EOF response to the response channel
-						atm.responseCh <- &v1.AccumulatorResponse{
-							EOF: true,
-							Window: &v1.KeyedWindow{
+						// Echo the CLOSE request's window in the EOF response.
+						// On the shutdown path (CloseAll, no CLOSE received), fall
+						// back to a synthesized window built from the latest watermark.
+						eofWindow := task.closeWindow
+						if eofWindow == nil {
+							eofWindow = &v1.KeyedWindow{
 								Keys:  task.keys,
 								Slot:  "slot-0",
 								Start: timestamppb.New(time.UnixMilli(0)),
 								End:   timestamppb.New(task.latestWatermark),
-							},
+							}
+						}
+						// send EOF response to the response channel
+						atm.responseCh <- &v1.AccumulatorResponse{
+							EOF:    true,
+							Window: eofWindow,
 						}
 						return
 					}
@@ -185,6 +196,8 @@ func (atm *accumulatorTaskManager) CloseTask(request *v1.AccumulatorRequest) {
 		log.Panicf("task not found for key: %s", key)
 	}
 
+	// stash the CLOSE window so the EOF response echoes it back
+	task.closeWindow = kw
 	close(task.inputCh)
 	delete(atm.tasks, task.uniqueKey())
 }

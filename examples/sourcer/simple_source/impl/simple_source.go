@@ -100,8 +100,8 @@ func (s *SimpleSource) Nack(_ context.Context, request sourcesdk.NackRequest) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	for _, offset := range request.Offsets() {
-		delete(s.toAckSet, deserializeOffset(offset.Value()))
-		s.nackSet[deserializeOffset(offset.Value())] = struct{}{}
+		delete(s.toAckSet, deserializeOffset(offset.Offset.Value()))
+		s.nackSet[deserializeOffset(offset.Offset.Value())] = struct{}{}
 		s.readIdx--
 	}
 }

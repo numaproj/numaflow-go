@@ -17,6 +17,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/numaproj/numaflow-go/internal/metadata"
+	"github.com/numaproj/numaflow-go/internal/nackoptions"
 	"github.com/numaproj/numaflow-go/internal/shared"
 	commonpb "github.com/numaproj/numaflow-go/pkg/apis/proto/common"
 	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
@@ -259,6 +260,12 @@ func (fs *Service) processData(ctx context.Context, stream sinkpb.Sink_SinkFnSer
 					Keys:     msg.OnSuccessMessage.Keys(),
 					Metadata: sinkUserMetadataToProto(msg.OnSuccessMessage.UserMetadata()),
 				},
+			})
+		} else if msg.Nack {
+			resultList = append(resultList, &sinkpb.SinkResponse_Result{
+				Id:          msg.ID,
+				Status:      sinkpb.Status_NACK,
+				NackOptions: nackoptions.ToProto(msg.NackOptions),
 			})
 		} else {
 			resultList = append(resultList, &sinkpb.SinkResponse_Result{

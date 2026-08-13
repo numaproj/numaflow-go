@@ -4,13 +4,15 @@ import "fmt"
 
 var (
 	DROP = fmt.Sprintf("%U__DROP__", '\\') // U+005C__DROP__
+	NACK = fmt.Sprintf("%U__NACK__", '\\') // U+005C__NACK__
 )
 
 // Message is used to wrap the data return by MapStream functions
 type Message struct {
-	value []byte
-	keys  []string
-	tags  []string
+	value       []byte
+	keys        []string
+	tags        []string
+	nackOptions *NackOptions
 }
 
 // NewMessage creates a Message with value
@@ -21,6 +23,12 @@ func NewMessage(value []byte) Message {
 // MessageToDrop creates a Message to be dropped
 func MessageToDrop() Message {
 	return Message{value: []byte{}, tags: []string{DROP}}
+}
+
+// MessageToNack creates a Message that negatively acknowledges the input message,
+// requesting redelivery. opts may be nil; when set it carries redelivery options.
+func MessageToNack(opts *NackOptions) Message {
+	return Message{value: []byte{}, tags: []string{NACK}, nackOptions: opts}
 }
 
 // WithKeys is used to assign the keys to the message
@@ -49,6 +57,11 @@ func (m Message) Value() []byte {
 // Tags returns message tags
 func (m Message) Tags() []string {
 	return m.tags
+}
+
+// NackOptions returns the message's nack options (nil if not a nack message).
+func (m Message) NackOptions() *NackOptions {
+	return m.nackOptions
 }
 
 type Messages []Message

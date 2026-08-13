@@ -18,6 +18,10 @@ type Response struct {
 	ServeResponse []byte `json:"serve_reponse,omitempty"`
 	// OnSuccessMessage is the message to be sent to the onSuccess sink.
 	OnSuccessMessage Message `json:"on_success_message,omitempty"`
+	// Nack is true if the message should be negatively acknowledged (redelivered).
+	Nack bool `json:"nack,omitempty"`
+	// NackOptions carries optional redelivery options when Nack is true.
+	NackOptions *NackOptions `json:"nack_options,omitempty"`
 }
 
 type Responses []Response
@@ -66,4 +70,11 @@ func ResponseOnSuccess(id string, onSuccessMessage Message) Response {
 // This indicates that the message should be sent to the serving store.
 func ResponseServe(id string, result []byte) Response {
 	return Response{ID: id, Serve: true, ServeResponse: result}
+}
+
+// ResponseNack creates a Response with the Nack field set to true.
+// This indicates the message should be negatively acknowledged and redelivered.
+// opts may be nil; when set it carries redelivery options.
+func ResponseNack(id string, opts *NackOptions) Response {
+	return Response{ID: id, Nack: true, NackOptions: opts}
 }

@@ -6,6 +6,7 @@ import (
 )
 
 var DROP = fmt.Sprintf("%U__DROP__", '\\') // U+005C__DROP__
+var NACK = fmt.Sprintf("%U__NACK__", '\\') // U+005C__NACK__
 
 // Message is used to wrap the data return by SourceTransformer functions.
 // Compared with Message of other UDFs, source transformer Message contains one more field,
@@ -16,6 +17,7 @@ type Message struct {
 	keys         []string
 	tags         []string
 	userMetadata *UserMetadata
+	nackOptions  *NackOptions
 }
 
 // NewMessage creates a Message with eventTime and value
@@ -67,6 +69,18 @@ func (m Message) Tags() []string {
 // hence the watermark should be updated accordingly using the provided event time.
 func MessageToDrop(eventTime time.Time) Message {
 	return Message{eventTime: eventTime, value: []byte{}, tags: []string{DROP}}
+}
+
+// MessageToNack creates a Message that negatively acknowledges the input message,
+// requesting redelivery. eventTime is required (the watermark still advances).
+// opts may be nil; when set it carries redelivery options.
+func MessageToNack(eventTime time.Time, opts *NackOptions) Message {
+	return Message{eventTime: eventTime, value: []byte{}, tags: []string{NACK}, nackOptions: opts}
+}
+
+// NackOptions returns the message's nack options (nil if not a nack message).
+func (m Message) NackOptions() *NackOptions {
+	return m.nackOptions
 }
 
 type Messages []Message

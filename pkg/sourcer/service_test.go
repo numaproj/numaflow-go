@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -375,8 +376,10 @@ func TestService_NackFn(t *testing.T) {
 		},
 	}
 	got, err := fs.NackFn(ctx, &sourcepb.NackRequest{
-		Request: &sourcepb.NackRequest_Request{
-			Offsets: offsets,
+		Request: []*sourcepb.NackRequest_Request{
+			{
+				Offsets: offsets,
+			},
 		},
 	})
 	assert.Equal(t, got, &sourcepb.NackResponse{
@@ -385,4 +388,56 @@ func TestService_NackFn(t *testing.T) {
 		},
 	})
 	assert.NoError(t, err)
+}
+
+type nackCaptureSource struct {
+	got NackRequest
+}
+
+func (s *nackCaptureSource) Read(context.Context, ReadRequest, chan<- Message) {}
+func (s *nackCaptureSource) Ack(context.Context, AckRequest)                   {}
+func (s *nackCaptureSource) Nack(_ context.Context, req NackRequest)           { s.got = req }
+func (s *nackCaptureSource) Pending(context.Context) int64                     { return 0 }
+func (s *nackCaptureSource) ActivePartitions(context.Context) []int32          { return nil }
+func (s *nackCaptureSource) TotalPartitions(context.Context) *int32            { return nil }
+
+func TestService_NackFn_WithOptions(t *testing.T) {
+	src := &nackCaptureSource{}
+	fs := &Service{Source: src}
+	delay := uint64(500)
+	maxDel := uint32(3)
+	reason := "retry"
+	_, err := fs.NackFn(context.Background(), &sourcepb.NackRequest{
+		Request: []*sourcepb.NackRequest_Request{
+			{
+				Offsets:     []*sourcepb.Offset{{PartitionId: 0, Offset: []byte("test")}},
+				NackOptions: &common.NackOptions{Reason: &reason, MaxDeliveries: &maxDel, Delay: &delay},
+			},
+		},
+	})
+	assert.NoError(t, err)
+	nackOffsets := src.got.Offsets()
+	require.Len(t, nackOffsets, 1)
+	opts := nackOffsets[0].NackOptions
+	require.NotNil(t, opts)
+	assert.Equal(t, uint64(500), *opts.Delay)
+	assert.Equal(t, uint32(3), *opts.MaxDeliveries)
+	assert.Equal(t, "retry", *opts.Reason)
+	assert.Equal(t, []byte("test"), nackOffsets[0].Offset.Value())
+}
+
+func TestService_NackFn_NilOptions(t *testing.T) {
+	src := &nackCaptureSource{}
+	fs := &Service{Source: src}
+	_, err := fs.NackFn(context.Background(), &sourcepb.NackRequest{
+		Request: []*sourcepb.NackRequest_Request{
+			{
+				Offsets: []*sourcepb.Offset{{PartitionId: 0, Offset: []byte("test")}},
+			},
+		},
+	})
+	assert.NoError(t, err)
+	nackOffsets := src.got.Offsets()
+	require.Len(t, nackOffsets, 1)
+	assert.Nil(t, nackOffsets[0].NackOptions)
 }
