@@ -304,6 +304,30 @@ func TestService_sourceTransformFn_Nack(t *testing.T) {
 	assert.Equal(t, "retry", got.Results[0].GetNackOptions().GetReason())
 }
 
+func TestService_sourceTransformFn_Fail(t *testing.T) {
+	svc := &Service{
+		Transformer: SourceTransformFunc(func(ctx context.Context, keys []string, datum Datum) Messages {
+			return MessagesBuilder().Append(MessageToFail(testTime))
+		}),
+	}
+	conn := newTestServer(t, func(server *grpc.Server) {
+		proto.RegisterSourceTransformServer(server, svc)
+	})
+	client := proto.NewSourceTransformClient(conn)
+	stream, err := client.SourceTransformFn(context.Background())
+	require.NoError(t, err)
+	doHandshake(t, stream)
+	require.NoError(t, stream.Send(&proto.SourceTransformRequest{
+		Request: &proto.SourceTransformRequest_Request{Keys: []string{"k"}, Value: []byte("test"),
+			EventTime: timestamppb.New(time.Time{}), Watermark: timestamppb.New(time.Time{})},
+	}))
+	got, err := stream.Recv()
+	require.NoError(t, err)
+	require.Len(t, got.Results, 1)
+	assert.Equal(t, []string{FAIL}, got.Results[0].Tags)
+	assert.Equal(t, timestamppb.New(testTime), got.Results[0].EventTime)
+}
+
 func TestService_SourceTransformFn_Panic(t *testing.T) {
 	panicMssg := "transformer panicked"
 	svc := &Service{
