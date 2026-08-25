@@ -286,6 +286,29 @@ func TestService_mapFn_Nack(t *testing.T) {
 	assert.Equal(t, "retry", got.Results[0].GetNackOptions().GetReason())
 }
 
+func TestService_mapFn_Fail(t *testing.T) {
+	svc := &Service{
+		Mapper: MapperFunc(func(ctx context.Context, keys []string, datum Datum) Messages {
+			return MessagesBuilder().Append(MessageToFail())
+		}),
+	}
+	conn := newTestServer(t, func(server *grpc.Server) {
+		proto.RegisterMapServer(server, svc)
+	})
+	client := proto.NewMapClient(conn)
+	stream, err := client.MapFn(context.Background())
+	require.NoError(t, err)
+	doHandshake(t, stream)
+	require.NoError(t, stream.Send(&proto.MapRequest{
+		Request: &proto.MapRequest_Request{Keys: []string{"k"}, Value: []byte("test"),
+			EventTime: timestamppb.New(time.Time{}), Watermark: timestamppb.New(time.Time{})},
+	}))
+	got, err := stream.Recv()
+	require.NoError(t, err)
+	require.Len(t, got.Results, 1)
+	assert.Equal(t, []string{FAIL}, got.Results[0].Tags)
+}
+
 func TestService_MapFn_Panic(t *testing.T) {
 	panicMssg := "map failed"
 	svc := &Service{

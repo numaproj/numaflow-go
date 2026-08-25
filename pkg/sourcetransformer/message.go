@@ -7,6 +7,7 @@ import (
 
 var DROP = fmt.Sprintf("%U__DROP__", '\\') // U+005C__DROP__
 var NACK = fmt.Sprintf("%U__NACK__", '\\') // U+005C__NACK__
+var FAIL = fmt.Sprintf("%U__FAIL__", '\\') // U+005C__FAIL__
 
 // Message is used to wrap the data return by SourceTransformer functions.
 // Compared with Message of other UDFs, source transformer Message contains one more field,
@@ -76,6 +77,12 @@ func MessageToDrop(eventTime time.Time) Message {
 // opts may be nil; when set it carries redelivery options.
 func MessageToNack(eventTime time.Time, opts *NackOptions) Message {
 	return Message{eventTime: eventTime, value: []byte{}, tags: []string{NACK}, nackOptions: opts}
+}
+
+// MessageToFail creates a Message that marks the input message as failed,
+// causing numaflow-core to retry it. eventTime is required (the watermark still advances).
+func MessageToFail(eventTime time.Time) Message {
+	return Message{eventTime: eventTime, value: []byte{}, tags: []string{FAIL}}
 }
 
 // NackOptions returns the message's nack options (nil if not a nack message).

@@ -5,6 +5,7 @@ import "fmt"
 var (
 	DROP = fmt.Sprintf("%U__DROP__", '\\') // U+005C__DROP__
 	NACK = fmt.Sprintf("%U__NACK__", '\\') // U+005C__NACK__
+	FAIL = fmt.Sprintf("%U__FAIL__", '\\') // U+005C__FAIL__
 )
 
 // Message is used to wrap the data return by Batch Map functions
@@ -29,6 +30,12 @@ func MessageToDrop() Message {
 // requesting redelivery. opts may be nil; when set it carries redelivery options.
 func MessageToNack(opts *NackOptions) Message {
 	return Message{value: []byte{}, tags: []string{NACK}, nackOptions: opts}
+}
+
+// MessageToFail creates a Message that marks the input message as failed,
+// causing numaflow-core to retry it.
+func MessageToFail() Message {
+	return Message{value: []byte{}, tags: []string{FAIL}}
 }
 
 // NackOptions returns the message's nack options (nil if not a nack message).
