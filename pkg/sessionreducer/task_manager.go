@@ -13,13 +13,13 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/sessionreduce/v1"
 	"github.com/numaproj/numaflow-go/internal/shared"
+	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/sessionreduce/v1"
 )
 
 var errSessionReducePanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", shared.ContainerType)
 
-// sessionReduceTask represents a task for a performing session reduce operation.
+// sessionReduceTask represents a task for performing a session reduce operation.
 type sessionReduceTask struct {
 	keyedWindow    *v1.KeyedWindow
 	sessionReducer SessionReducer
@@ -145,9 +145,11 @@ func (rtm *sessionReduceTaskManager) CreateTask(ctx context.Context, request *v1
 		defer func() {
 			close(task.doneCh)
 			if r := recover(); r != nil {
-				log.Printf("panic inside session reduce handler: %v %v", r, string(debug.Stack()))
+				stack := string(debug.Stack())
+
+				log.Printf("panic inside session reduce handler: %v %v", r, stack)
 				st, _ := status.Newf(codes.Internal, "%s: %v", errSessionReducePanic, r).WithDetails(&errdetails.DebugInfo{
-					Detail: string(debug.Stack()),
+					Detail: stack,
 				})
 				// Non-blocking send to error channel
 				select {
@@ -239,9 +241,11 @@ func (rtm *sessionReduceTaskManager) MergeTasks(ctx context.Context, request *v1
 	// handle panic
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("panic inside session reduce handler: %v %v", r, string(debug.Stack()))
+			stack := string(debug.Stack())
+
+			log.Printf("panic inside session reduce handler: %v %v", r, stack)
 			st, _ := status.Newf(codes.Internal, "%s: %v", errSessionReducePanic, r).WithDetails(&errdetails.DebugInfo{
-				Detail: string(debug.Stack()),
+				Detail: stack,
 			})
 			// Non-blocking send to error channel
 			select {

@@ -12,8 +12,8 @@ import (
 	"github.com/numaproj/numaflow-go/internal/shared"
 )
 
-// struct to ensure persist critical error fn is executed only once
-// and return error if it has already been executed
+// persistErrorOnce ensures the persist-critical-error function executes only once
+// and returns an error if it has already executed.
 type persistErrorOnce struct {
 	done atomic.Bool
 	m    sync.Mutex
@@ -43,10 +43,10 @@ const (
 
 var persistError = newPersistErrorOnce()
 
-// PersistCriticalError persists a critical error to an empty dir.
+// PersistCriticalError persists a critical error to a directory.
 // If the error directory does not exist, it creates it.
-// The function will only execute once, regardless of how many times it is called
-// Recommended to use this functionality for a critical error in your application
+// The function will only execute once, regardless of how many times it is called.
+// It is recommended to use this for critical errors in your application.
 func PersistCriticalError(errorCode, errorMessage, errorDetails string) error {
 	if persistError.done.Load() {
 		return fmt.Errorf("persist critical error fn executed once already")

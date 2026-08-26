@@ -1,4 +1,4 @@
-module retry-e2e
+module failure_sink
 
 go 1.24.1
 

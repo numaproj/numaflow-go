@@ -5,13 +5,18 @@ import (
 	"time"
 )
 
-var DROP = fmt.Sprintf("%U__DROP__", '\\') // U+005C__DROP__
-var NACK = fmt.Sprintf("%U__NACK__", '\\') // U+005C__NACK__
-var FAIL = fmt.Sprintf("%U__FAIL__", '\\') // U+005C__FAIL__
+var (
+	// DROP is the tag value indicating a dropped message.
+	DROP = fmt.Sprintf("%U__DROP__", '\\') // U+005C__DROP__
+	// NACK is the tag value indicating a negatively acknowledged message.
+	NACK = fmt.Sprintf("%U__NACK__", '\\') // U+005C__NACK__
+	// FAIL is the tag value indicating a failed message.
+	FAIL = fmt.Sprintf("%U__FAIL__", '\\') // U+005C__FAIL__
+)
 
-// Message is used to wrap the data return by SourceTransformer functions.
-// Compared with Message of other UDFs, source transformer Message contains one more field,
-// the event time, usually extracted from the payload.
+// Message is used to wrap the data returned by source transformer functions.
+// Unlike the Message type in other UDFs, the source transformer Message contains one more field:
+// event time, usually extracted from the payload.
 type Message struct {
 	value        []byte
 	eventTime    time.Time
@@ -90,6 +95,7 @@ func (m Message) NackOptions() *NackOptions {
 	return m.nackOptions
 }
 
+// Messages is a list of Message values returned from source transformer handlers.
 type Messages []Message
 
 // MessagesBuilder returns an empty instance of Messages

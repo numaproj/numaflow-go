@@ -3,12 +3,15 @@ package batchmapper
 import "fmt"
 
 var (
+	// DROP is the tag value indicating a dropped message.
 	DROP = fmt.Sprintf("%U__DROP__", '\\') // U+005C__DROP__
+	// NACK is the tag value indicating a negatively acknowledged message.
 	NACK = fmt.Sprintf("%U__NACK__", '\\') // U+005C__NACK__
+	// FAIL is the tag value indicating a failed message.
 	FAIL = fmt.Sprintf("%U__FAIL__", '\\') // U+005C__FAIL__
 )
 
-// Message is used to wrap the data return by Batch Map functions
+// Message is used to wrap the data returned by batch map functions.
 type Message struct {
 	value       []byte
 	keys        []string
@@ -71,9 +74,10 @@ func (m Message) Tags() []string {
 	return m.tags
 }
 
+// Messages is a list of Message values returned from batch map handlers.
 type Messages []Message
 
-// batchResponse is used to wrap the data return by batch map function along
+// batchResponse is used to wrap the data returned by the batch map function along
 // with the ID of the corresponding request
 type batchResponse struct {
 	id       string
@@ -110,6 +114,8 @@ func NewBatchResponse(id string) batchResponse {
 		messages: Messages{},
 	}
 }
+
+// BatchResponsesBuilder returns an empty instance of BatchResponses.
 func BatchResponsesBuilder() BatchResponses {
 	return BatchResponses{}
 }

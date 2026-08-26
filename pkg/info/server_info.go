@@ -1,6 +1,7 @@
 package info
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"time"
 )
 
+// END is the sentinel suffix appended to the server info file when it is ready to read.
 var END = fmt.Sprintf("%U__END__", '\\') // U+005C__END__
 
 func getSDKVersion() string {
@@ -70,12 +72,10 @@ func WaitUntilReady(ctx context.Context, opts ...Option) error {
 		default:
 			if fileInfo, err := os.Stat(options.svrInfoFilePath); err != nil {
 				log.Printf("Server info file %s is not ready...", options.svrInfoFilePath)
-				time.Sleep(1 * time.Second)
+				time.Sleep(time.Second)
 				continue
-			} else {
-				if fileInfo.Size() > 0 {
-					return nil
-				}
+			} else if fileInfo.Size() > 0 {
+				return nil
 			}
 		}
 	}
@@ -91,7 +91,7 @@ func Read(opts ...Option) (*ServerInfo, error) {
 	// TODO: use a better way to wait for the file to be ready
 	retry := 0
 	b, err := os.ReadFile(options.svrInfoFilePath)
-	for !strings.HasSuffix(string(b), END) && err == nil && retry < 10 {
+	for !bytes.HasSuffix(b, []byte(END)) && err == nil && retry < 10 {
 		time.Sleep(100 * time.Millisecond)
 		b, err = os.ReadFile(options.svrInfoFilePath)
 		retry++
@@ -99,10 +99,10 @@ func Read(opts ...Option) (*ServerInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	if !strings.HasSuffix(string(b), END) {
+	if !bytes.HasSuffix(b, []byte(END)) {
 		return nil, fmt.Errorf("server info file is not ready")
 	}
-	b = b[:len(b)-len([]byte(END))]
+	b = b[:len(b)-len(END)]
 	info := &ServerInfo{}
 	if err := json.Unmarshal(b, info); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal server info: %w", err)
@@ -110,7 +110,7 @@ func Read(opts ...Option) (*ServerInfo, error) {
 	return info, nil
 }
 
-// GetDefaultServerInfo returns a ServerInfo object with the default fields populated for Go-SDK
+// GetDefaultServerInfo returns a ServerInfo object with the default fields populated for the Go SDK.
 func GetDefaultServerInfo() *ServerInfo {
 	return &ServerInfo{
 		Protocol: UDS,

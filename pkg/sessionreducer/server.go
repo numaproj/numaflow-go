@@ -10,10 +10,10 @@ import (
 
 	"google.golang.org/grpc"
 
+	"github.com/numaproj/numaflow-go/internal/shared"
 	numaflow "github.com/numaproj/numaflow-go/pkg"
 	sessionreducepb "github.com/numaproj/numaflow-go/pkg/apis/proto/sessionreduce/v1"
 	"github.com/numaproj/numaflow-go/pkg/info"
-	"github.com/numaproj/numaflow-go/internal/shared"
 )
 
 // server is a session reduce gRPC server.

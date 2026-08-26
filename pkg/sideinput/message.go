@@ -1,7 +1,7 @@
 package sideinput
 
-// Message is used to wrap the data return by UserSideInput function.
-// It contains the data value for the given side input parameter requested.
+// Message is used to wrap the data returned by the side input function.
+// It contains the data value for the requested side input parameter.
 type Message struct {
 	value       []byte
 	noBroadcast bool

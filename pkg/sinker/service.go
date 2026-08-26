@@ -95,7 +95,7 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*sinkpb.ReadyRespon
 	return &sinkpb.ReadyResponse{Ready: true}, nil
 }
 
-// SinkFn applies a sink function to a every element.
+// SinkFn applies a sink function to every element.
 func (fs *Service) SinkFn(stream sinkpb.Sink_SinkFnServer) error {
 	ctx := stream.Context()
 
@@ -223,9 +223,11 @@ func (fs *Service) receiveRequests(ctx context.Context, stream sinkpb.Sink_SinkF
 func (fs *Service) processData(ctx context.Context, stream sinkpb.Sink_SinkFnServer, datumStreamCh chan Datum) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("panic inside sink handler: %v %v", r, string(debug.Stack()))
+			stack := string(debug.Stack())
+
+			log.Printf("panic inside sink handler: %v %v", r, stack)
 			st, _ := status.Newf(codes.Internal, "%s: %v", errSinkHandlerPanic, r).WithDetails(&epb.DebugInfo{
-				Detail: string(debug.Stack()),
+				Detail: stack,
 			})
 			err = st.Err()
 		}

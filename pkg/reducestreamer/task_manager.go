@@ -8,14 +8,14 @@ import (
 	"strings"
 	"sync"
 
-	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/reduce/v1"
 	"github.com/numaproj/numaflow-go/internal/shared"
+	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/reduce/v1"
 	epb "google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-// reduceStreamTask represents a task for a performing reduceStream operation.
+// reduceStreamTask represents a task for performing a reduce stream operation.
 type reduceStreamTask struct {
 	keys     []string
 	window   *v1.Window
@@ -114,9 +114,11 @@ func (rtm *reduceStreamTaskManager) CreateTask(request *v1.ReduceRequest) error 
 			close(task.doneCh)
 
 			if r := recover(); r != nil {
-				log.Printf("panic inside reduce streamer handler: %v %v", r, string(debug.Stack()))
+				stack := string(debug.Stack())
+
+				log.Printf("panic inside reduce streamer handler: %v %v", r, stack)
 				st, _ := status.Newf(codes.Internal, "%s: %v", errReduceStreamHandlerPanic, r).WithDetails(&epb.DebugInfo{
-					Detail: string(debug.Stack()),
+					Detail: stack,
 				})
 				// Non-blocking send - if channel is full or closed, we don't care since one panic is enough to trigger shutdown
 				select {
@@ -124,7 +126,7 @@ func (rtm *reduceStreamTaskManager) CreateTask(request *v1.ReduceRequest) error 
 				case <-rtm.ctx.Done():
 					// Context is cancelled, don't try to send error
 				default:
-					// Channel is full or closed, its fine since we only need one panic to trigger shutdown
+					// Channel is full or closed, it's fine since we only need one panic to trigger shutdown
 				}
 			}
 		}()

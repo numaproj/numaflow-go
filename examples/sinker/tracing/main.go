@@ -4,16 +4,16 @@
 // `sys_metadata["tracing_udf"]` (W3C traceparent + optional tracestate) before
 // calling the sink UDF. This example shows how to:
 //
-//   1. Initialise an OTLP gRPC tracer in the sink process so it can export spans.
-//   2. Extract the platform parent context per incoming message.
-//   3. Create a child span (`user.persist`) under the platform's
-//      `numaflow.{topology}.sink.write` span — typical place to span an
-//      external DB write, HTTP POST, or other persistence call.
+//  1. Initialise an OTLP gRPC tracer in the sink process so it can export spans.
+//  2. Extract the platform parent context per incoming message.
+//  3. Create a child span (`user.persist`) under the platform's
+//     `numaflow.{topology}.sink.write` span — typical place to span an
+//     external DB write, HTTP POST, or other persistence call.
 //
 // Required environment variables (set by the Pipeline/MonoVertex containerTemplate):
 //
-//   OTEL_EXPORTER_OTLP_TRACES_ENDPOINT  (or the generic OTEL_EXPORTER_OTLP_ENDPOINT)
-//   OTEL_SERVICE_NAME                   (optional; defaults to "numaflow-udf")
+//	OTEL_EXPORTER_OTLP_TRACES_ENDPOINT  (or the generic OTEL_EXPORTER_OTLP_ENDPOINT)
+//	OTEL_SERVICE_NAME                   (optional; defaults to "numaflow-udf")
 //
 // When neither endpoint variable is set the tracer init is a no-op and the
 // example continues to function as a plain log sink.

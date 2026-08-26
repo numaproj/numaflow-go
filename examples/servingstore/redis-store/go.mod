@@ -1,4 +1,4 @@
-module memory_store
+module redis_store
 
 go 1.22
 

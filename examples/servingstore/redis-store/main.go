@@ -13,8 +13,10 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-const DEFAULT_REDIS_URL = "redis:6379"
-const DEFAULT_REDIS_TTL_SECONDS = 7200 // 2 hours
+const (
+	DefaultRedisURL        = "redis:6379"
+	DefaultRedisTTLSeconds = 7200 // 2 hours
+)
 
 type RedisStore struct {
 	client *redis.Client
@@ -100,11 +102,11 @@ func NewRedisStore(addr string, ttl time.Duration) *RedisStore {
 }
 
 func main() {
-	redisURL := DEFAULT_REDIS_URL
+	redisURL := DefaultRedisURL
 	if addr, exists := os.LookupEnv("REDIS_ADDR"); exists {
 		redisURL = addr
 	}
-	redisTTL := DEFAULT_REDIS_TTL_SECONDS * time.Second
+	redisTTL := DefaultRedisTTLSeconds * time.Second
 	if ttl, exists := os.LookupEnv("REDIS_TTL_SECONDS"); exists {
 		ttlSecs, err := strconv.ParseInt(ttl, 10, 64)
 		if err != nil {

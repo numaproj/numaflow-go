@@ -1,16 +1,16 @@
 package info
 
 import (
+	"context"
 	"errors"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/net/context"
 )
 
-func Test_getSDKVersion(t *testing.T) {
+func TestGetSDKVersion(t *testing.T) {
 	tests := []struct {
 		name string
 		want string
@@ -29,7 +29,7 @@ func Test_getSDKVersion(t *testing.T) {
 	}
 }
 
-func Test_WaitUntilReady(t *testing.T) {
+func TestWaitUntilReady(t *testing.T) {
 	serverInfoFile, err := os.CreateTemp("/tmp", "server-info")
 	assert.NoError(t, err)
 	defer os.Remove(serverInfoFile.Name())
@@ -51,7 +51,7 @@ func Test_WaitUntilReady(t *testing.T) {
 	})
 }
 
-func Test_Read_Write(t *testing.T) {
+func TestReadWrite(t *testing.T) {
 	filepath := os.TempDir() + "/server-info"
 	defer os.Remove(filepath)
 	info := &ServerInfo{

@@ -11,7 +11,7 @@ type UserMetadata = metadata.UserMetadata
 
 // NewSystemMetadata creates a new SystemMetadata.
 // This is for internal and testing purposes only.
-var NewSystemMetadata = metadata.NewSystemMetadata
-
-// NewUserMetadata creates a new UserMetadata.
-var NewUserMetadata = metadata.NewUserMetadata
+var (
+	NewSystemMetadata = metadata.NewSystemMetadata
+	NewUserMetadata   = metadata.NewUserMetadata
+)

@@ -19,10 +19,12 @@ import (
 	sourcepb "github.com/numaproj/numaflow-go/pkg/apis/proto/source/v1"
 )
 
-var testEventTime = time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
-var testKey = "test-key"
-var testPendingNumber int64 = 123
-var testPartitions = []int32{1, 3, 5}
+var (
+	testEventTime           = time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
+	testKey                 = "test-key"
+	testPendingNumber int64 = 123
+	testPartitions          = []int32{1, 3, 5}
+)
 
 type TestSource struct{}
 
@@ -53,7 +55,7 @@ func TestService_IsReady(t *testing.T) {
 	fs := &Service{
 		Source: nil,
 	}
-	got, err := fs.IsReady(context.TODO(), &emptypb.Empty{})
+	got, err := fs.IsReady(context.Background(), &emptypb.Empty{})
 	assert.NoError(t, err)
 	assert.Equal(t, got, &sourcepb.ReadyResponse{
 		Ready: true,
