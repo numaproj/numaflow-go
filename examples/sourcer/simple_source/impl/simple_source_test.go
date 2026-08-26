@@ -34,7 +34,7 @@ func (ar TestAckRequest) Offsets() []sourcer.Offset {
 	return ar.offsets
 }
 
-func Test_SimpleSource(t *testing.T) {
+func TestSimpleSource(t *testing.T) {
 	underTest := NewSimpleSource()
 	// Prepare a channel to receive messages
 	messageCh := make(chan sourcer.Message, 20)

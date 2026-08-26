@@ -2,11 +2,10 @@ package sessionreducer
 
 import "fmt"
 
-var (
-	DROP = fmt.Sprintf("%U__DROP__", '\\') // U+005C__DROP__
-)
+// DROP is the tag value indicating a dropped message.
+var DROP = fmt.Sprintf("%U__DROP__", '\\') // U+005C__DROP__
 
-// Message is used to wrap the data return by SessionReduce functions
+// Message is used to wrap the data returned by session reduce functions.
 type Message struct {
 	value []byte
 	keys  []string

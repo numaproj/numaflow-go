@@ -170,9 +170,11 @@ func (fs *Service) performHandshake(stream v1.SourceTransform_SourceTransformFnS
 func (fs *Service) handleRequest(ctx context.Context, req *v1.SourceTransformRequest, responseCh chan<- *v1.SourceTransformResponse) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("panic inside handler: %v %v", r, string(debug.Stack()))
+			stack := string(debug.Stack())
+
+			log.Printf("panic inside handler: %v %v", r, stack)
 			st, _ := status.Newf(codes.Internal, "%s: %v", errTransformerPanic, r).WithDetails(&epb.DebugInfo{
-				Detail: string(debug.Stack()),
+				Detail: stack,
 			})
 			err = st.Err()
 		}

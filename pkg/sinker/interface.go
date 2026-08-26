@@ -31,7 +31,7 @@ type Sinker interface {
 	Sink(ctx context.Context, datumStreamCh <-chan Datum) Responses
 }
 
-// SinkerFunc is utility type used to convert a Sink function to a Sinker.
+// SinkerFunc is a utility type used to convert a Sink function to a Sinker.
 type SinkerFunc func(ctx context.Context, datumStreamCh <-chan Datum) Responses
 
 // Sink implements the function of sink function.

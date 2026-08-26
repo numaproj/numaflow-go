@@ -3,12 +3,15 @@ package mapstreamer
 import "fmt"
 
 var (
+	// DROP is the tag value indicating a dropped message.
 	DROP = fmt.Sprintf("%U__DROP__", '\\') // U+005C__DROP__
+	// NACK is the tag value indicating a negatively acknowledged message.
 	NACK = fmt.Sprintf("%U__NACK__", '\\') // U+005C__NACK__
+	// FAIL is the tag value indicating a failed message.
 	FAIL = fmt.Sprintf("%U__FAIL__", '\\') // U+005C__FAIL__
 )
 
-// Message is used to wrap the data return by MapStream functions
+// Message is used to wrap the data returned by map stream functions.
 type Message struct {
 	value       []byte
 	keys        []string
@@ -71,6 +74,7 @@ func (m Message) NackOptions() *NackOptions {
 	return m.nackOptions
 }
 
+// Messages is a list of Message values returned from map stream handlers.
 type Messages []Message
 
 // MessagesBuilder returns an empty instance of Messages

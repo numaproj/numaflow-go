@@ -14,9 +14,11 @@ import (
 	sinksdk "github.com/numaproj/numaflow-go/pkg/sinker"
 )
 
-var sideInputName = "myticker"
-var sideInputContent string
-var sideInputMutex sync.Mutex
+var (
+	sideInputName    = "myticker"
+	sideInputContent string
+	sideInputMutex   sync.Mutex
+)
 
 // This redis UDSink is created for numaflow e2e tests. This handle function assumes that
 // a redis instance listening on address redis:6379 has already be up and running.

@@ -23,7 +23,7 @@ const (
 	serverInfoFilePath    = "/var/run/numaflow/sessionreducer-server-info"
 )
 
-// Service implements the proto gen server interface and contains the sesionreduce operation handler.
+// Service implements the proto gen server interface and contains the session reduce operation handler.
 type Service struct {
 	sessionreducepb.UnimplementedSessionReduceServer
 	creatorHandle SessionReducerCreator

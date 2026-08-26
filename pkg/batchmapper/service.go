@@ -171,9 +171,11 @@ func (fs *Service) receiveRequests(ctx context.Context, stream mappb.Map_MapFnSe
 func (fs *Service) processData(ctx context.Context, stream mappb.Map_MapFnServer, datumStreamCh chan Datum) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("panic inside batch map handler: %v %v", r, string(debug.Stack()))
+			stack := string(debug.Stack())
+
+			log.Printf("panic inside batch map handler: %v %v", r, stack)
 			st, _ := status.Newf(codes.Internal, "%s: %v", errBatchMapHandlerPanic, r).WithDetails(&epb.DebugInfo{
-				Detail: string(debug.Stack()),
+				Detail: stack,
 			})
 			err = st.Err()
 		}

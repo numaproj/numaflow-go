@@ -11,7 +11,7 @@ import (
 	"github.com/numaproj/numaflow-go/pkg/sessionreducer"
 )
 
-// Sum is a simple session reducer which computes sum of events in a session.
+// Sum is a simple session reducer which computes the sum of events in a session.
 type Sum struct {
 	sum *atomic.Int32
 }

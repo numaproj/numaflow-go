@@ -8,7 +8,7 @@ import (
 	"github.com/numaproj/numaflow-go/pkg/sourcetransformer"
 )
 
-// AssignEventTime is a source transformer that assigns event time to the message.
+// MetadataEventTime is a source transformer that assigns event time to the message.
 type MetadataEventTime struct {
 }
 

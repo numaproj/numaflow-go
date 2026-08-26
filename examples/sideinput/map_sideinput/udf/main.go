@@ -28,9 +28,11 @@ import (
 	"github.com/numaproj/numaflow-go/pkg/sideinput"
 )
 
-var sideInputName = "myticker"
-var sideInputData []byte
-var mu sync.RWMutex
+var (
+	sideInputName = "myticker"
+	sideInputData []byte
+	mu            sync.RWMutex
+)
 
 func mapFn(_ context.Context, _ []string, d mapper.Datum) mapper.Messages {
 	msg := d.Value()

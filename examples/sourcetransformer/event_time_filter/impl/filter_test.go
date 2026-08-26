@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	functionsdk "github.com/numaproj/numaflow-go/pkg/mapper"
 	"github.com/numaproj/numaflow-go/pkg/sourcetransformer"
 
 	"github.com/stretchr/testify/assert"
@@ -27,11 +26,15 @@ func (d beforeYear2022Datum) Headers() map[string]string {
 	return map[string]string{}
 }
 
-type withinYear2022Datum struct{}
-
-func (d withinYear2022Datum) ID() string {
-	return "id"
+func (d beforeYear2022Datum) UserMetadata() *sourcetransformer.UserMetadata {
+	return nil
 }
+
+func (d beforeYear2022Datum) SystemMetadata() *sourcetransformer.SystemMetadata {
+	return nil
+}
+
+type withinYear2022Datum struct{}
 
 func (d withinYear2022Datum) Value() []byte {
 	return []byte("test-data")
@@ -45,6 +48,14 @@ func (d withinYear2022Datum) Watermark() time.Time {
 }
 func (d withinYear2022Datum) Headers() map[string]string {
 	return map[string]string{}
+}
+
+func (d withinYear2022Datum) UserMetadata() *sourcetransformer.UserMetadata {
+	return nil
+}
+
+func (d withinYear2022Datum) SystemMetadata() *sourcetransformer.SystemMetadata {
+	return nil
 }
 
 type afterYear2022Datum struct{}
@@ -63,13 +74,21 @@ func (d afterYear2022Datum) Headers() map[string]string {
 	return map[string]string{}
 }
 
-func Test_FilterEventTime(t *testing.T) {
+func (d afterYear2022Datum) UserMetadata() *sourcetransformer.UserMetadata {
+	return nil
+}
+
+func (d afterYear2022Datum) SystemMetadata() *sourcetransformer.SystemMetadata {
+	return nil
+}
+
+func TestFilterEventTime(t *testing.T) {
 	testKeys := []string{"test-key"}
 	janFirst2022 := time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC)
 	janFirst2023 := time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)
 	tests := []struct {
 		name           string
-		input          functionsdk.Datum
+		input          sourcetransformer.Datum
 		expectedOutput sourcetransformer.Messages
 	}{
 		{

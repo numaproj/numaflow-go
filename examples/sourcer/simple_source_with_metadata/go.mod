@@ -1,4 +1,4 @@
-module simple_source
+module simple_source_with_metadata
 
 go 1.22
 

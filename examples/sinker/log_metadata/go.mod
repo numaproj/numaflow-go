@@ -1,4 +1,4 @@
-module log_sink
+module log_metadata
 
 go 1.22
 
@@ -6,7 +6,7 @@ toolchain go1.23.1
 
 replace github.com/numaproj/numaflow-go => ../../..
 
-require github.com/numaproj/numaflow-go v0.10.2
+require github.com/numaproj/numaflow-go v0.10.1
 
 require (
 	golang.org/x/net v0.29.0 // indirect

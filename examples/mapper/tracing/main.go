@@ -4,15 +4,15 @@
 // `sys_metadata["tracing_udf"]` (W3C traceparent + optional tracestate) before
 // calling the UDF. This example shows how to:
 //
-//   1. Initialise an OTLP gRPC tracer in the UDF process so it can export spans.
-//   2. Extract the platform parent context from the message's system metadata.
-//   3. Create a child span (`user.work`) under the platform's `numaflow.{topology}.map`
-//      span so user-defined work shows up nested in the same trace.
+//  1. Initialise an OTLP gRPC tracer in the UDF process so it can export spans.
+//  2. Extract the platform parent context from the message's system metadata.
+//  3. Create a child span (`user.work`) under the platform's `numaflow.{topology}.map`
+//     span so user-defined work shows up nested in the same trace.
 //
 // Required environment variables (set by the Pipeline/MonoVertex containerTemplate):
 //
-//   OTEL_EXPORTER_OTLP_TRACES_ENDPOINT  (or the generic OTEL_EXPORTER_OTLP_ENDPOINT)
-//   OTEL_SERVICE_NAME                   (optional; defaults to "numaflow-udf")
+//	OTEL_EXPORTER_OTLP_TRACES_ENDPOINT  (or the generic OTEL_EXPORTER_OTLP_ENDPOINT)
+//	OTEL_SERVICE_NAME                   (optional; defaults to "numaflow-udf")
 //
 // When neither endpoint variable is set the tracer init is a no-op and the
 // example still runs as a plain pass-through map.

@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-// Message is used to wrap the data return by Map functions
+// Message is used to wrap the data returned by accumulate functions.
 type Message struct {
 	value     []byte
 	keys      []string

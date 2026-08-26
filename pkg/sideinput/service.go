@@ -12,8 +12,8 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	sideinputpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sideinput/v1"
 	"github.com/numaproj/numaflow-go/internal/shared"
+	sideinputpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sideinput/v1"
 )
 
 const (
@@ -44,7 +44,8 @@ func (fs *Service) RetrieveSideInput(ctx context.Context, _ *emptypb.Empty) (res
 	// handle panic
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("panic inside sideinput handler: %v %v", r, string(debug.Stack()))
+			stack := string(debug.Stack())
+			log.Printf("panic inside sideinput handler: %v %v", r, stack)
 			fs.once.Do(func() {
 				select {
 				case fs.shutdownCh <- struct{}{}:
@@ -54,7 +55,7 @@ func (fs *Service) RetrieveSideInput(ctx context.Context, _ *emptypb.Empty) (res
 				}
 			})
 			st, _ := status.Newf(codes.Internal, "%s: %v", errSideInputHandlerPanic, r).WithDetails(&epb.DebugInfo{
-				Detail: string(debug.Stack()),
+				Detail: stack,
 			})
 			err = st.Err()
 		}

@@ -1,4 +1,4 @@
-module cat
+module cat_metadata
 
 go 1.24.1
 

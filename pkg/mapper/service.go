@@ -169,9 +169,11 @@ func (fs *Service) performHandshake(stream mappb.Map_MapFnServer) error {
 func (fs *Service) handleRequest(ctx context.Context, req *mappb.MapRequest, responseCh chan<- *mappb.MapResponse) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("panic inside map handler: %v %v", r, string(debug.Stack()))
+			stack := string(debug.Stack())
+
+			log.Printf("panic inside map handler: %v %v", r, stack)
 			st, _ := status.Newf(codes.Internal, "%s: %v", errMapHandlerPanic, r).WithDetails(&epb.DebugInfo{
-				Detail: string(debug.Stack()),
+				Detail: stack,
 			})
 			err = st.Err()
 		}

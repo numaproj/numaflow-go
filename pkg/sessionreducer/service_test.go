@@ -1487,7 +1487,7 @@ func TestService_SessionReduceFn(t *testing.T) {
 				return
 			}
 
-			//sort and compare, since order of the output doesn't matter
+			// Sort and compare, since order of the output doesn't matter
 			sort.Slice(result, func(i, j int) bool {
 				return string(result[i].Result.Value) < string(result[j].Result.Value)
 			})

@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	"simple_source/impl"
+	"simple_source_with_metadata/impl"
 
 	"github.com/numaproj/numaflow-go/pkg/sourcer"
 )

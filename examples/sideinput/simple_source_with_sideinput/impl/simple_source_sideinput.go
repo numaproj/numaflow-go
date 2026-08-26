@@ -15,11 +15,11 @@ import (
 	sourcesdk "github.com/numaproj/numaflow-go/pkg/sourcer"
 )
 
-var sideInputMutex sync.Mutex
-
-// A global channel that will recev the data as soon as the file watcher sends it
-var globalChan = make(chan string)
-var contentValue string
+var (
+	sideInputMutex sync.Mutex
+	globalChan     = make(chan string)
+	contentValue   string
+)
 
 // SimpleSource is a simple source implementation.
 type SimpleSource struct {

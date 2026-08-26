@@ -39,6 +39,7 @@ func (m Message) UserMetadata() *UserMetadata {
 	return m.userMetadata
 }
 
+// Messages is a list of Message values returned from sink handlers.
 type Messages []Message
 
 // MessagesBuilder returns an empty instance of Messages

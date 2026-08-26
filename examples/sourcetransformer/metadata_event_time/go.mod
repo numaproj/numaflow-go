@@ -1,4 +1,4 @@
-module assign_event_time
+module metadata_event_time
 
 go 1.22
 

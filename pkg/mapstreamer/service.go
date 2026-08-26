@@ -136,9 +136,11 @@ outer:
 func (fs *Service) invokeHandler(ctx context.Context, req *mappb.MapRequest, messageCh chan<- Message) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("panic inside mapStream handler: %v %v", r, string(debug.Stack()))
+			stack := string(debug.Stack())
+
+			log.Printf("panic inside mapStream handler: %v %v", r, stack)
 			st, _ := status.Newf(codes.Internal, "%s: %v", errMapStreamHandlerPanic, r).WithDetails(&epb.DebugInfo{
-				Detail: string(debug.Stack()),
+				Detail: stack,
 			})
 			err = st.Err()
 			return

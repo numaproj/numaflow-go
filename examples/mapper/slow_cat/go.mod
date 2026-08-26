@@ -1,4 +1,4 @@
-module even_odd
+module slow_cat
 
 go 1.22
 

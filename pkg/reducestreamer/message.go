@@ -2,11 +2,10 @@ package reducestreamer
 
 import "fmt"
 
-var (
-	DROP = fmt.Sprintf("%U__DROP__", '\\') // U+005C__DROP__
-)
+// DROP is the tag value indicating a dropped message.
+var DROP = fmt.Sprintf("%U__DROP__", '\\') // U+005C__DROP__
 
-// Message is used to wrap the data return by reduceStream function
+// Message is used to wrap the data returned by reduce stream functions.
 type Message struct {
 	value []byte
 	keys  []string
