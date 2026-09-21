@@ -60,7 +60,7 @@ func _int(v interface{}) int {
 	case []byte:
 		i, err := strconv.Atoi(string(w))
 		if err != nil {
-			panic(fmt.Errorf("cannot convert %q an int", v))
+			panic(fmt.Errorf("cannot convert %q to an int", v))
 		}
 		return i
 	case string:

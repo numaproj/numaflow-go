@@ -10,10 +10,10 @@ import (
 
 	"google.golang.org/grpc"
 
+	"github.com/numaproj/numaflow-go/internal/shared"
 	numaflow "github.com/numaproj/numaflow-go/pkg"
 	sourcepb "github.com/numaproj/numaflow-go/pkg/apis/proto/source/v1"
 	"github.com/numaproj/numaflow-go/pkg/info"
-	"github.com/numaproj/numaflow-go/internal/shared"
 )
 
 type server struct {

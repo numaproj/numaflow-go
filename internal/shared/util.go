@@ -13,10 +13,12 @@ import (
 )
 
 const (
-	uds                = "unix"
+	uds = "unix"
+	// EnvUDContainerType is the environment variable that identifies the UDF container type.
 	EnvUDContainerType = "NUMAFLOW_UD_CONTAINER_TYPE"
 )
 
+// ContainerType returns the UDF container type from the environment, or "unknown-container" if unset.
 var ContainerType = func() string {
 	if val, exists := os.LookupEnv(EnvUDContainerType); exists {
 		return val
@@ -24,6 +26,7 @@ var ContainerType = func() string {
 	return "unknown-container"
 }()
 
+// PrepareServer writes server info when configured, prepares the socket address, and starts listening.
 func PrepareServer(sockAddr string, infoFilePath string, serverInfo *info.ServerInfo) (net.Listener, error) {
 	// If serverInfo is not provided, then create a default server info instance.
 	if serverInfo == nil {
@@ -50,6 +53,7 @@ func PrepareServer(sockAddr string, infoFilePath string, serverInfo *info.Server
 	return lis, nil
 }
 
+// CreateGRPCServer creates a gRPC server with the given max message size.
 func CreateGRPCServer(maxMessageSize int) *grpc.Server {
 	return grpc.NewServer(
 		grpc.MaxRecvMsgSize(maxMessageSize),
@@ -57,9 +61,10 @@ func CreateGRPCServer(maxMessageSize int) *grpc.Server {
 	)
 }
 
+// StopGRPCServer stops the gRPC server gracefully, forcing shutdown after a timeout.
 func StopGRPCServer(grpcServer *grpc.Server) {
 	// Stop stops the gRPC server gracefully.
-	// wait for the server to stop gracefully for 30 seconds
+	// wait for the server to stop gracefully for 15 seconds
 	// if it is not stopped, stop it forcefully
 	stopped := make(chan struct{})
 	go func() {

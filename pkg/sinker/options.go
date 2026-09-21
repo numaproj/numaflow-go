@@ -12,7 +12,7 @@ type options struct {
 	serverInfoFilePath string
 }
 
-// Option is the interface to apply options.
+// Option configures server startup options.
 type Option func(*options)
 
 func defaultOptions() *options {
@@ -42,7 +42,7 @@ func WithMaxMessageSize(size int) Option {
 	}
 }
 
-// WithSockAddr start the sinkServer with the given sock addr. This is mainly used for testing purpose.
+// WithSockAddr starts the server on the given socket address. This is mainly used for testing purposes.
 func WithSockAddr(addr string) Option {
 	return func(opts *options) {
 		opts.sockAddr = addr

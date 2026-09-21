@@ -18,6 +18,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/numaproj/numaflow-go/internal/metadata"
+	"github.com/numaproj/numaflow-go/internal/nackoptions"
 	"github.com/numaproj/numaflow-go/internal/shared"
 	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/sourcetransform/v1"
 )
@@ -169,9 +170,11 @@ func (fs *Service) performHandshake(stream v1.SourceTransform_SourceTransformFnS
 func (fs *Service) handleRequest(ctx context.Context, req *v1.SourceTransformRequest, responseCh chan<- *v1.SourceTransformResponse) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("panic inside handler: %v %v", r, string(debug.Stack()))
+			stack := string(debug.Stack())
+
+			log.Printf("panic inside handler: %v %v", r, stack)
 			st, _ := status.Newf(codes.Internal, "%s: %v", errTransformerPanic, r).WithDetails(&epb.DebugInfo{
-				Detail: string(debug.Stack()),
+				Detail: stack,
 			})
 			err = st.Err()
 		}
@@ -189,11 +192,12 @@ func (fs *Service) handleRequest(ctx context.Context, req *v1.SourceTransformReq
 	var elements []*v1.SourceTransformResponse_Result
 	for _, m := range messages.Items() {
 		elements = append(elements, &v1.SourceTransformResponse_Result{
-			Keys:      m.Keys(),
-			Value:     m.Value(),
-			Tags:      m.Tags(),
-			EventTime: timestamppb.New(m.EventTime()),
-			Metadata:  metadata.UserMetadataToProto(m.UserMetadata()),
+			Keys:        m.Keys(),
+			Value:       m.Value(),
+			Tags:        m.Tags(),
+			EventTime:   timestamppb.New(m.EventTime()),
+			Metadata:    metadata.UserMetadataToProto(m.UserMetadata()),
+			NackOptions: nackoptions.ToProto(m.NackOptions()),
 		})
 	}
 	resp := &v1.SourceTransformResponse{
@@ -207,4 +211,3 @@ func (fs *Service) handleRequest(ctx context.Context, req *v1.SourceTransformReq
 	}
 	return nil
 }
-

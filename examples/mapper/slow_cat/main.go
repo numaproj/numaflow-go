@@ -10,7 +10,7 @@ import (
 	"github.com/numaproj/numaflow-go/pkg/mapper"
 )
 
-const DEFAULT_SLEEP_SECONDS = 10
+const DefaultSleepSeconds = 10
 
 type SlowCat struct {
 	sleepSeconds int
@@ -32,14 +32,14 @@ func getSleepSeconds() int {
 
 	// sleep time is configured according to environment variable (or default if not configured)
 
-	sleepSeconds := DEFAULT_SLEEP_SECONDS
+	sleepSeconds := DefaultSleepSeconds
 	secondsString := os.Getenv("SLEEP_SECONDS")
 	if secondsString == "" {
-		log.Printf("SLEEP_SECONDS environment variable not set, using default %d seconds\n", DEFAULT_SLEEP_SECONDS)
+		log.Printf("SLEEP_SECONDS environment variable not set, using default %d seconds\n", DefaultSleepSeconds)
 	} else {
 		val, err := strconv.Atoi(secondsString)
 		if err != nil {
-			log.Printf("SLEEP_SECONDS environment variable %q not an int, using default %d seconds\n", secondsString, DEFAULT_SLEEP_SECONDS)
+			log.Printf("SLEEP_SECONDS environment variable %q not an int, using default %d seconds\n", secondsString, DefaultSleepSeconds)
 		} else {
 			sleepSeconds = val
 			log.Printf("Using SLEEP_SECONDS value %d\n", sleepSeconds)

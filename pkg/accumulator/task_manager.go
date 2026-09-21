@@ -25,6 +25,10 @@ type accumulateTask struct {
 	inputCh         chan Datum
 	outputCh        chan Message
 	latestWatermark time.Time
+	// closeWindow is the KeyedWindow carried by the CLOSE request.
+	// It is nil on the shutdown path (CloseAll), where the EOF
+	// falls back to a synthesized window.
+	closeWindow *v1.KeyedWindow
 }
 
 // uniqueKey returns the unique key for the accumulate task to be used in the task manager to identify the task.
@@ -81,15 +85,22 @@ func (atm *accumulatorTaskManager) CreateTask(request *v1.AccumulatorRequest) {
 					return
 				case output, ok := <-task.outputCh:
 					if !ok {
-						// send EOF response to the response channel
-						atm.responseCh <- &v1.AccumulatorResponse{
-							EOF: true,
-							Window: &v1.KeyedWindow{
+						// Echo the CLOSE request's window in the EOF response.
+						// On the shutdown path (CloseAll, no CLOSE received), fall
+						// back to a synthesized window built from the latest watermark.
+						eofWindow := task.closeWindow
+						if eofWindow == nil {
+							eofWindow = &v1.KeyedWindow{
 								Keys:  task.keys,
 								Slot:  "slot-0",
 								Start: timestamppb.New(time.UnixMilli(0)),
 								End:   timestamppb.New(task.latestWatermark),
-							},
+							}
+						}
+						// send EOF response to the response channel
+						atm.responseCh <- &v1.AccumulatorResponse{
+							EOF:    true,
+							Window: eofWindow,
 						}
 						return
 					}
@@ -111,7 +122,7 @@ func (atm *accumulatorTaskManager) CreateTask(request *v1.AccumulatorRequest) {
 							Headers:   output.headers,
 							Id:        output.id,
 						},
-						// this a global window (hence ever expanding). the End timestamp is used for WAL GC.
+						// this is a global window (hence ever expanding). the End timestamp is used for WAL GC.
 						Window: &v1.KeyedWindow{
 							Start: timestamppb.New(time.UnixMilli(0)),
 							// window end time is considered the latest watermark, based on the window end time, the compaction happens
@@ -130,9 +141,11 @@ func (atm *accumulatorTaskManager) CreateTask(request *v1.AccumulatorRequest) {
 
 		defer func() {
 			if r := recover(); r != nil {
-				log.Printf("panic inside accumulator handler: %v %v", r, string(debug.Stack()))
+				stack := string(debug.Stack())
+
+				log.Printf("panic inside accumulator handler: %v %v", r, stack)
 				st, _ := status.Newf(codes.Internal, "%s: %v", errAccumulatorPanic, r).WithDetails(&epb.DebugInfo{
-					Detail: string(debug.Stack()),
+					Detail: stack,
 				})
 				err = st.Err()
 			}
@@ -185,6 +198,8 @@ func (atm *accumulatorTaskManager) CloseTask(request *v1.AccumulatorRequest) {
 		log.Panicf("task not found for key: %s", key)
 	}
 
+	// stash the CLOSE window so the EOF response echoes it back
+	task.closeWindow = kw
 	close(task.inputCh)
 	delete(atm.tasks, task.uniqueKey())
 }

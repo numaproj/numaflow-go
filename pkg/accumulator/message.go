@@ -9,7 +9,7 @@ var (
 	DROP = fmt.Sprintf("%U__DROP__", '\\') // U+005C__DROP__
 )
 
-// Message is used to wrap the data return by Map functions
+// Message is used to wrap the data returned by accumulate functions.
 type Message struct {
 	value     []byte
 	keys      []string

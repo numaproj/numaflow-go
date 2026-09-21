@@ -18,6 +18,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/numaproj/numaflow-go/internal/metadata"
+	"github.com/numaproj/numaflow-go/internal/nackoptions"
 	"github.com/numaproj/numaflow-go/internal/shared"
 	sourcepb "github.com/numaproj/numaflow-go/pkg/apis/proto/source/v1"
 )
@@ -54,7 +55,7 @@ func (fs *Service) ReadFn(stream sourcepb.Source_ReadFnServer) error {
 			if errors.Is(err, io.EOF) || errors.Is(err, context.Canceled) {
 				return nil
 			}
-			log.Printf("error processing read  requests: %v", err)
+			log.Printf("error processing read requests: %v", err)
 			fs.once.Do(func() {
 				select {
 				case fs.shutdownCh <- struct{}{}:
@@ -89,11 +90,7 @@ func (fs *Service) performReadHandshake(stream sourcepb.Source_ReadFnServer) err
 			Sot: true,
 		},
 	}
-	if err := stream.Send(handshakeResponse); err != nil {
-		return err
-	}
-
-	return nil
+	return stream.Send(handshakeResponse)
 }
 
 // recvWithContext wraps stream.Recv() to respect context cancellation for ReadFn.
@@ -136,9 +133,11 @@ func (fs *Service) receiveReadRequests(ctx context.Context, stream sourcepb.Sour
 		// handle panic
 		defer func() {
 			if r := recover(); r != nil {
-				log.Printf("panic inside source read handler: %v %v", r, string(debug.Stack()))
+				stack := string(debug.Stack())
+
+				log.Printf("panic inside source read handler: %v %v", r, stack)
 				st, _ := status.Newf(codes.Internal, "%s: %v", errSourcePanic, r).WithDetails(&epb.DebugInfo{
-					Detail: string(debug.Stack()),
+					Detail: stack,
 				})
 				err = st.Err()
 				return
@@ -158,10 +157,7 @@ func (fs *Service) receiveReadRequests(ctx context.Context, stream sourcepb.Sour
 		return fs.processReadData(groupCtx, stream, messageCh)
 	})
 
-	if err := eg.Wait(); err != nil {
-		return err
-	}
-	return nil
+	return eg.Wait()
 }
 
 // processReadData processes the read data and sends it to the client.
@@ -198,16 +194,12 @@ readLoop:
 			}
 		}
 	}
-	err := stream.Send(&sourcepb.ReadResponse{
+	return stream.Send(&sourcepb.ReadResponse{
 		Status: &sourcepb.ReadResponse_Status{
 			Eot:  true,
 			Code: 0,
 		},
 	})
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // ackRequest implements the AckRequest interface and is used in the ack handler.
@@ -260,11 +252,7 @@ func (fs *Service) performAckHandshake(stream sourcepb.Source_AckFnServer) error
 			Sot: true,
 		},
 	}
-	if err := stream.Send(handshakeResponse); err != nil {
-		return err
-	}
-
-	return nil
+	return stream.Send(handshakeResponse)
 }
 
 // recvWithContext wraps stream.Recv() to respect context cancellation for AckFn.
@@ -292,7 +280,8 @@ func recvWithContextAck(ctx context.Context, stream sourcepb.Source_AckFnServer)
 func (fs *Service) receiveAckRequests(ctx context.Context, stream sourcepb.Source_AckFnServer) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("panic inside source ack handler: %v %v", r, string(debug.Stack()))
+			stack := string(debug.Stack())
+			log.Printf("panic inside source ack handler: %v %v", r, stack)
 			fs.once.Do(func() {
 				select {
 				case fs.shutdownCh <- struct{}{}:
@@ -302,7 +291,7 @@ func (fs *Service) receiveAckRequests(ctx context.Context, stream sourcepb.Sourc
 				}
 			})
 			st, _ := status.Newf(codes.Internal, "%s: %v", errSourcePanic, r).WithDetails(&epb.DebugInfo{
-				Detail: string(debug.Stack()),
+				Detail: stack,
 			})
 			err = st.Err()
 		}
@@ -341,27 +330,34 @@ func (fs *Service) receiveAckRequests(ctx context.Context, stream sourcepb.Sourc
 }
 
 func (fs *Service) NackFn(ctx context.Context, req *sourcepb.NackRequest) (response *sourcepb.NackResponse, err error) {
-	response = nil
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("panic inside source nack handler: %v %v", r, string(debug.Stack()))
+			stack := string(debug.Stack())
+			log.Printf("panic inside source nack handler: %v %v", r, stack)
 			fs.once.Do(func() {
 				fs.shutdownCh <- struct{}{}
 			})
 			st, _ := status.Newf(codes.Internal, "%s: %v", errSourcePanic, r).WithDetails(&epb.DebugInfo{
-				Detail: string(debug.Stack()),
+				Detail: stack,
 			})
 			err = st.Err()
 		}
 	}()
 
-	offsets := make([]Offset, len(req.Request.GetOffsets()))
-	for i, offset := range req.Request.GetOffsets() {
-		offsets[i] = NewOffset(offset.GetOffset(), offset.GetPartitionId())
+	var nackOffsets []NackOffset
+	for _, nackOffset := range req.Request {
+		for _, offset := range nackOffset.Offsets {
+			nackOffsets = append(nackOffsets,
+				NackOffset{
+					NewOffset(offset.GetOffset(), offset.GetPartitionId()),
+					nackoptions.FromProto(nackOffset.NackOptions),
+				},
+			)
+		}
 	}
 
 	nackRequest := nackRequest{
-		offsets: offsets,
+		offsets: nackOffsets,
 	}
 	fs.Source.Nack(ctx, &nackRequest)
 
@@ -414,10 +410,10 @@ func (r *readRequest) Count() uint64 {
 }
 
 type nackRequest struct {
-	offsets []Offset
+	offsets []NackOffset
 }
 
-func (n *nackRequest) Offsets() []Offset {
+func (n *nackRequest) Offsets() []NackOffset {
 	return n.offsets
 }
 

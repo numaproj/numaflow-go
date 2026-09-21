@@ -17,7 +17,7 @@ func (s *SumReducerCreator) Create() reducer.Reducer {
 	return &Sum{}
 }
 
-// Sum is a reducer that sum up the values for the given keys
+// Sum is a reducer that sums up the values for the given keys.
 type Sum struct {
 	sum int
 }

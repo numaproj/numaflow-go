@@ -16,6 +16,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/numaproj/numaflow-go/internal/metadata"
+	"github.com/numaproj/numaflow-go/internal/nackoptions"
 	"github.com/numaproj/numaflow-go/internal/shared"
 	mappb "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1"
 )
@@ -168,9 +169,11 @@ func (fs *Service) performHandshake(stream mappb.Map_MapFnServer) error {
 func (fs *Service) handleRequest(ctx context.Context, req *mappb.MapRequest, responseCh chan<- *mappb.MapResponse) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("panic inside map handler: %v %v", r, string(debug.Stack()))
+			stack := string(debug.Stack())
+
+			log.Printf("panic inside map handler: %v %v", r, stack)
 			st, _ := status.Newf(codes.Internal, "%s: %v", errMapHandlerPanic, r).WithDetails(&epb.DebugInfo{
-				Detail: string(debug.Stack()),
+				Detail: stack,
 			})
 			err = st.Err()
 		}
@@ -188,10 +191,11 @@ func (fs *Service) handleRequest(ctx context.Context, req *mappb.MapRequest, res
 	var elements []*mappb.MapResponse_Result
 	for _, m := range messages.Items() {
 		elements = append(elements, &mappb.MapResponse_Result{
-			Keys:     m.Keys(),
-			Value:    m.Value(),
-			Tags:     m.Tags(),
-			Metadata: metadata.UserMetadataToProto(m.UserMetadata()),
+			Keys:        m.Keys(),
+			Value:       m.Value(),
+			Tags:        m.Tags(),
+			Metadata:    metadata.UserMetadataToProto(m.UserMetadata()),
+			NackOptions: nackoptions.ToProto(m.NackOptions()),
 		})
 	}
 	resp := &mappb.MapResponse{
@@ -205,4 +209,3 @@ func (fs *Service) handleRequest(ctx context.Context, req *mappb.MapRequest, res
 	}
 	return nil
 }
-

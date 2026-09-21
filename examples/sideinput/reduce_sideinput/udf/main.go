@@ -37,14 +37,16 @@ func (s *SumReducerCreator) Create() reducer.Reducer {
 	return &Sum{}
 }
 
-// Sum is a reducer that sum up the values for the given keys
+// Sum is a reducer that sums up the values for the given keys.
 type Sum struct {
 	sum int
 }
 
-var sideInputName = "myticker"
-var sideInputData []byte
-var mu sync.RWMutex
+var (
+	sideInputName = "myticker"
+	sideInputData []byte
+	mu            sync.RWMutex
+)
 
 func (s *Sum) Reduce(ctx context.Context, keys []string, reduceCh <-chan reducer.Datum, md reducer.Metadata) reducer.Messages {
 	mu.RLock()

@@ -15,8 +15,9 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	mappb "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1"
+	"github.com/numaproj/numaflow-go/internal/nackoptions"
 	"github.com/numaproj/numaflow-go/internal/shared"
+	mappb "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1"
 )
 
 const (
@@ -67,7 +68,7 @@ func (fs *Service) MapFn(stream mappb.Map_MapFnServer) error {
 			if errors.Is(err, context.Canceled) || errors.Is(err, io.EOF) {
 				return nil
 			}
-			
+
 			fs.once.Do(func() {
 				log.Printf("Stopping the BatchMapFn with err, %s", err)
 				select {
@@ -170,9 +171,11 @@ func (fs *Service) receiveRequests(ctx context.Context, stream mappb.Map_MapFnSe
 func (fs *Service) processData(ctx context.Context, stream mappb.Map_MapFnServer, datumStreamCh chan Datum) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("panic inside batch map handler: %v %v", r, string(debug.Stack()))
+			stack := string(debug.Stack())
+
+			log.Printf("panic inside batch map handler: %v %v", r, stack)
 			st, _ := status.Newf(codes.Internal, "%s: %v", errBatchMapHandlerPanic, r).WithDetails(&epb.DebugInfo{
-				Detail: string(debug.Stack()),
+				Detail: stack,
 			})
 			err = st.Err()
 		}
@@ -184,9 +187,10 @@ func (fs *Service) processData(ctx context.Context, stream mappb.Map_MapFnServer
 		var elements []*mappb.MapResponse_Result
 		for _, resp := range batchResp.Items() {
 			elements = append(elements, &mappb.MapResponse_Result{
-				Keys:  resp.Keys(),
-				Value: resp.Value(),
-				Tags:  resp.Tags(),
+				Keys:        resp.Keys(),
+				Value:       resp.Value(),
+				Tags:        resp.Tags(),
+				NackOptions: nackoptions.ToProto(resp.NackOptions()),
 			})
 		}
 		singleRequestResp := &mappb.MapResponse{

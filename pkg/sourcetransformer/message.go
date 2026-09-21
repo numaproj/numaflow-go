@@ -5,17 +5,25 @@ import (
 	"time"
 )
 
-var DROP = fmt.Sprintf("%U__DROP__", '\\') // U+005C__DROP__
+var (
+	// DROP is the tag value indicating a dropped message.
+	DROP = fmt.Sprintf("%U__DROP__", '\\') // U+005C__DROP__
+	// NACK is the tag value indicating a negatively acknowledged message.
+	NACK = fmt.Sprintf("%U__NACK__", '\\') // U+005C__NACK__
+	// FAIL is the tag value indicating a failed message.
+	FAIL = fmt.Sprintf("%U__FAIL__", '\\') // U+005C__FAIL__
+)
 
-// Message is used to wrap the data return by SourceTransformer functions.
-// Compared with Message of other UDFs, source transformer Message contains one more field,
-// the event time, usually extracted from the payload.
+// Message is used to wrap the data returned by source transformer functions.
+// Unlike the Message type in other UDFs, the source transformer Message contains one more field:
+// event time, usually extracted from the payload.
 type Message struct {
 	value        []byte
 	eventTime    time.Time
 	keys         []string
 	tags         []string
 	userMetadata *UserMetadata
+	nackOptions  *NackOptions
 }
 
 // NewMessage creates a Message with eventTime and value
@@ -69,6 +77,25 @@ func MessageToDrop(eventTime time.Time) Message {
 	return Message{eventTime: eventTime, value: []byte{}, tags: []string{DROP}}
 }
 
+// MessageToNack creates a Message that negatively acknowledges the input message,
+// requesting redelivery. eventTime is required (the watermark still advances).
+// opts may be nil; when set it carries redelivery options.
+func MessageToNack(eventTime time.Time, opts *NackOptions) Message {
+	return Message{eventTime: eventTime, value: []byte{}, tags: []string{NACK}, nackOptions: opts}
+}
+
+// MessageToFail creates a Message that marks the input message as failed,
+// causing numaflow-core to retry it. eventTime is required (the watermark still advances).
+func MessageToFail(eventTime time.Time) Message {
+	return Message{eventTime: eventTime, value: []byte{}, tags: []string{FAIL}}
+}
+
+// NackOptions returns the message's nack options (nil if not a nack message).
+func (m Message) NackOptions() *NackOptions {
+	return m.nackOptions
+}
+
+// Messages is a list of Message values returned from source transformer handlers.
 type Messages []Message
 
 // MessagesBuilder returns an empty instance of Messages

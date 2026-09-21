@@ -17,6 +17,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/numaproj/numaflow-go/internal/metadata"
+	"github.com/numaproj/numaflow-go/internal/nackoptions"
 	"github.com/numaproj/numaflow-go/internal/shared"
 	commonpb "github.com/numaproj/numaflow-go/pkg/apis/proto/common"
 	sinkpb "github.com/numaproj/numaflow-go/pkg/apis/proto/sink/v1"
@@ -94,7 +95,7 @@ func (fs *Service) IsReady(context.Context, *emptypb.Empty) (*sinkpb.ReadyRespon
 	return &sinkpb.ReadyResponse{Ready: true}, nil
 }
 
-// SinkFn applies a sink function to a every element.
+// SinkFn applies a sink function to every element.
 func (fs *Service) SinkFn(stream sinkpb.Sink_SinkFnServer) error {
 	ctx := stream.Context()
 
@@ -222,9 +223,11 @@ func (fs *Service) receiveRequests(ctx context.Context, stream sinkpb.Sink_SinkF
 func (fs *Service) processData(ctx context.Context, stream sinkpb.Sink_SinkFnServer, datumStreamCh chan Datum) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("panic inside sink handler: %v %v", r, string(debug.Stack()))
+			stack := string(debug.Stack())
+
+			log.Printf("panic inside sink handler: %v %v", r, stack)
 			st, _ := status.Newf(codes.Internal, "%s: %v", errSinkHandlerPanic, r).WithDetails(&epb.DebugInfo{
-				Detail: string(debug.Stack()),
+				Detail: stack,
 			})
 			err = st.Err()
 		}
@@ -259,6 +262,12 @@ func (fs *Service) processData(ctx context.Context, stream sinkpb.Sink_SinkFnSer
 					Keys:     msg.OnSuccessMessage.Keys(),
 					Metadata: sinkUserMetadataToProto(msg.OnSuccessMessage.UserMetadata()),
 				},
+			})
+		} else if msg.Nack {
+			resultList = append(resultList, &sinkpb.SinkResponse_Result{
+				Id:          msg.ID,
+				Status:      sinkpb.Status_NACK,
+				NackOptions: nackoptions.ToProto(msg.NackOptions),
 			})
 		} else {
 			resultList = append(resultList, &sinkpb.SinkResponse_Result{

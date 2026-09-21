@@ -2,24 +2,29 @@ package sinker
 
 // Response is the processing result of each message
 type Response struct {
-	// ID corresponds the ID in the message.
+	// ID corresponds to the ID in the message.
 	ID string `json:"id"`
-	// Successful or not. If it's false, "err" is expected to be present.
+	// Success indicates whether processing succeeded. If false, Err is expected to be set.
 	Success bool `json:"success"`
 	// Err represents the error message when "success" is false.
 	Err string `json:"err,omitempty"`
-	// Fallback is true if the message to be sent to the fallback sink.
+	// Fallback is true if the message should be sent to the fallback sink.
 	Fallback bool `json:"fallback,omitempty"`
-	// OnSuccess is true if the message to be sent to the onSuccess sink.
+	// OnSuccess is true if the message should be sent to the onSuccess sink.
 	OnSuccess bool `json:"on_success,omitempty"`
-	// Serve is true if the message to be sent to serving store.
+	// Serve is true if the message should be sent to the serving store.
 	Serve bool `json:"serve,omitempty"`
 	// ServeResponse is the response that will be sent to the serving store.
 	ServeResponse []byte `json:"serve_reponse,omitempty"`
 	// OnSuccessMessage is the message to be sent to the onSuccess sink.
 	OnSuccessMessage Message `json:"on_success_message,omitempty"`
+	// Nack is true if the message should be negatively acknowledged (redelivered).
+	Nack bool `json:"nack,omitempty"`
+	// NackOptions carries optional redelivery options when Nack is true.
+	NackOptions *NackOptions `json:"nack_options,omitempty"`
 }
 
+// Responses is a list of Response values returned from sink handlers.
 type Responses []Response
 
 // ResponsesBuilder returns an empty instance of Responses
@@ -66,4 +71,11 @@ func ResponseOnSuccess(id string, onSuccessMessage Message) Response {
 // This indicates that the message should be sent to the serving store.
 func ResponseServe(id string, result []byte) Response {
 	return Response{ID: id, Serve: true, ServeResponse: result}
+}
+
+// ResponseNack creates a Response with the Nack field set to true.
+// This indicates the message should be negatively acknowledged and redelivered.
+// opts may be nil; when set it carries redelivery options.
+func ResponseNack(id string, opts *NackOptions) Response {
+	return Response{ID: id, Nack: true, NackOptions: opts}
 }

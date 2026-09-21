@@ -7,8 +7,8 @@ import (
 	"runtime/debug"
 	"strings"
 
-	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/reduce/v1"
 	"github.com/numaproj/numaflow-go/internal/shared"
+	v1 "github.com/numaproj/numaflow-go/pkg/apis/proto/reduce/v1"
 	epb "google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -16,7 +16,7 @@ import (
 
 var errReduceHandlerPanic = fmt.Errorf("UDF_EXECUTION_ERROR(%s)", shared.ContainerType)
 
-// reduceTask represents a task for a performing reduceStream operation.
+// reduceTask represents a task for performing a reduce operation.
 type reduceTask struct {
 	keys    []string
 	window  *v1.Window
@@ -101,9 +101,11 @@ func (rtm *reduceTaskManager) CreateTask(request *v1.ReduceRequest) error {
 			close(task.doneCh)
 
 			if r := recover(); r != nil {
-				log.Printf("panic inside reduce handler: %v %v", r, string(debug.Stack()))
+				stack := string(debug.Stack())
+
+				log.Printf("panic inside reduce handler: %v %v", r, stack)
 				st, _ := status.Newf(codes.Internal, "%s: %v", errReduceHandlerPanic, r).WithDetails(&epb.DebugInfo{
-					Detail: string(debug.Stack()),
+					Detail: stack,
 				})
 				// Non-blocking send - if channel is full or closed, we don't care since one panic is enough to trigger shutdown
 				select {
@@ -111,7 +113,7 @@ func (rtm *reduceTaskManager) CreateTask(request *v1.ReduceRequest) error {
 				case <-rtm.ctx.Done():
 					// Context is cancelled, don't try to send error
 				default:
-					// Channel is full or closed, its fine since we only need one panic to trigger shutdown
+					// Channel is full or closed, it's fine since we only need one panic to trigger shutdown
 				}
 			}
 		}()

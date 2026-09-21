@@ -2,11 +2,10 @@ package reducer
 
 import "fmt"
 
-var (
-	DROP = fmt.Sprintf("%U__DROP__", '\\') // U+005C__DROP__
-)
+// DROP is the tag value indicating a dropped message.
+var DROP = fmt.Sprintf("%U__DROP__", '\\') // U+005C__DROP__
 
-// Message is used to wrap the data return by reduce function
+// Message is used to wrap the data returned by reduce functions.
 type Message struct {
 	value []byte
 	keys  []string
@@ -51,6 +50,7 @@ func (m Message) Tags() []string {
 	return m.tags
 }
 
+// Messages is a list of Message values returned from reduce handlers.
 type Messages []Message
 
 // MessagesBuilder returns an empty instance of Messages

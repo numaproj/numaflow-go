@@ -11,7 +11,7 @@ import (
 
 var counts sync.Map
 
-const SUCCESS_ITERATION = 3
+const SuccessIteration = 3
 
 // This imitates a function which fails the first 2 times it sees a message, but then
 // succeeds on the third time.
@@ -31,7 +31,7 @@ func mapFn(_ context.Context, keys []string, d _map.Datum) _map.Messages {
 	}
 	counts.Store(msg, newCounts)
 	fmt.Printf("count for %q=%d\n", msg, newCounts)
-	if newCounts >= SUCCESS_ITERATION {
+	if newCounts >= SuccessIteration {
 		// imitate successful outgoing message here
 		counts.Delete(msg)
 		return _map.MessagesBuilder().Append(_map.NewMessage(msgBytes))

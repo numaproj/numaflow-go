@@ -6,10 +6,10 @@ import (
 	"time"
 )
 
-// create default partition id from the environment variable "NUMAFLOW_REPLICA"
+// Creates the default partition ID from the environment variable "NUMAFLOW_REPLICA".
 var defaultPartitionId, _ = strconv.Atoi(os.Getenv("NUMAFLOW_REPLICA"))
 
-// Message is used to wrap the data return by UDSource
+// Message is used to wrap the data returned by the user-defined source.
 type Message struct {
 	value        []byte
 	offset       Offset
@@ -72,6 +72,7 @@ func (m Message) EventTime() time.Time {
 	return m.eventTime
 }
 
+// Offset identifies a message position within a source partition.
 type Offset struct {
 	value       []byte
 	partitionId int32

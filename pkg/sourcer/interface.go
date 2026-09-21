@@ -47,6 +47,12 @@ type AckRequest interface {
 
 // NackRequest is the interface of nack request.
 type NackRequest interface {
-	// Offsets returns the offsets to be negatively acknowledged.
-	Offsets() []Offset
+	Offsets() []NackOffset
+}
+
+type NackOffset struct {
+	// Offset returns the offset to be negatively acknowledged.
+	Offset Offset
+	// NackOptions returns the optional redelivery options (nil if unset).
+	NackOptions *NackOptions
 }

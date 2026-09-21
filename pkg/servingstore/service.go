@@ -14,8 +14,8 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	servingpb "github.com/numaproj/numaflow-go/pkg/apis/proto/serving/v1"
 	"github.com/numaproj/numaflow-go/internal/shared"
+	servingpb "github.com/numaproj/numaflow-go/pkg/apis/proto/serving/v1"
 )
 
 const (
@@ -42,9 +42,11 @@ func (s *Service) Put(ctx context.Context, request *servingpb.PutRequest) (*serv
 	g.Go(func() error {
 		defer func() {
 			if r := recover(); r != nil {
-				log.Printf("panic inside serving put handler: %v %v", r, string(debug.Stack()))
+				stack := string(debug.Stack())
+
+				log.Printf("panic inside serving put handler: %v %v", r, stack)
 				st, _ := status.Newf(codes.Internal, "%s: %v", errServingStorePanic, r).WithDetails(&epb.DebugInfo{
-					Detail: string(debug.Stack()),
+					Detail: stack,
 				})
 				g.Go(func() error { return st.Err() })
 			}
@@ -82,9 +84,11 @@ func (s *Service) Get(ctx context.Context, request *servingpb.GetRequest) (*serv
 	g.Go(func() error {
 		defer func() {
 			if r := recover(); r != nil {
-				log.Printf("panic inside serving get handler: %v %v", r, string(debug.Stack()))
+				stack := string(debug.Stack())
+
+				log.Printf("panic inside serving get handler: %v %v", r, stack)
 				st, _ := status.Newf(codes.Internal, "%s: %v", errServingStorePanic, r).WithDetails(&epb.DebugInfo{
-					Detail: string(debug.Stack()),
+					Detail: stack,
 				})
 				g.Go(func() error { return st.Err() })
 			}
