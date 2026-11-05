@@ -41,26 +41,31 @@ func newEotTransform() *eotTransform {
 	}
 }
 
-func (t *eotTransform) shouldFail() bool {
-	if t.failAfterMessages > 0 && t.processed.Load() >= t.failAfterMessages {
-		return true
-	}
-	if t.failAfterSeconds > 0 && time.Since(t.start) >= time.Duration(t.failAfterSeconds)*time.Second {
-		return true
-	}
-	return false
-}
-
 func (t *eotTransform) Transform(_ context.Context, keys []string, d sourcetransformer.Datum) sourcetransformer.Messages {
-	if t.shouldFail() {
-		// Empty response (not MessageToDrop) triggers eot_received_from_transformer.
-		return sourcetransformer.MessagesBuilder()
-	}
-
-	t.processed.Add(1)
-	return sourcetransformer.MessagesBuilder().Append(
+	// Empty response (not MessageToDrop) triggers eot_received_from_transformer.
+	fail := sourcetransformer.MessagesBuilder()
+	ok := sourcetransformer.MessagesBuilder().Append(
 		sourcetransformer.NewMessage(d.Value(), d.EventTime()).WithKeys(keys),
 	)
+
+	if t.failAfterSeconds > 0 && time.Since(t.start) >= time.Duration(t.failAfterSeconds)*time.Second {
+		return fail
+	}
+
+	if t.failAfterMessages > 0 {
+		// Transform can run concurrently; CAS so we don't overshoot the limit.
+		for {
+			n := t.processed.Load()
+			if n >= t.failAfterMessages {
+				return fail
+			}
+			if t.processed.CompareAndSwap(n, n+1) {
+				return ok
+			}
+		}
+	}
+
+	return ok
 }
 
 func main() {

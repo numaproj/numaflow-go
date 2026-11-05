@@ -2,7 +2,7 @@
 
 A user-defined sink that works normally at first, then produces an EOT failure after a configurable delay or message count. Intended for progressive-rollout / critical-error AnalysisTemplate e2e tests.
 
-After the trigger, each batch is drained without responses so numaflow records `eot_received_from_sink`.
+After the trigger, individual datums are drained without responses so numaflow records `eot_received_from_sink`.
 
 ## Configuration
 

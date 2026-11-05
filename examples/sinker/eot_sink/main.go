@@ -15,7 +15,7 @@ const defaultFailAfterSeconds = 60
 
 // eotSink is a sinker that works normally during a warm-up period so the
 // vertex can pass health / readiness checks, then starts producing an EOT
-// failure by draining each batch without responding. That causes numaflow to
+// failure by skipping responses for individual datums. That causes numaflow to
 // see EOT before all expected responses have arrived
 // (monovtx_critical_error_total{reason="eot_received_from_sink"} /
 // forwarder_critical_error_total{reason="eot_received_from_sink"}).
@@ -53,15 +53,12 @@ func (s *eotSink) shouldFail() bool {
 
 func (s *eotSink) Sink(ctx context.Context, datumStreamCh <-chan sinksdk.Datum) sinksdk.Responses {
 	result := sinksdk.ResponsesBuilder()
-	if s.shouldFail() {
-		// Drain the batch without responding so the SDK still sends EOT while
-		// responses are missing for every datum.
-		for range datumStreamCh {
-		}
-		return result
-	}
-
 	for d := range datumStreamCh {
+		if s.shouldFail() {
+			// Intentionally skip the response for this datum while still
+			// draining the channel so the SDK can send EOT with missing replies.
+			continue
+		}
 		result = result.Append(sinksdk.ResponseOK(d.ID()))
 		s.processed.Add(1)
 	}
