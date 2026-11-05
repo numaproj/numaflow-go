@@ -55,12 +55,15 @@ func (fs *Service) MapFn(stream mappb.Map_MapFnServer) error {
 		datumStreamCh := make(chan Datum)
 		g, groupCtx := errgroup.WithContext(ctx)
 
+		// eotReceived records whether the current batch was terminated by a client EOT request.
+		var eotReceived bool
+
 		g.Go(func() error {
-			return fs.receiveRequests(groupCtx, stream, datumStreamCh)
+			return fs.receiveRequests(groupCtx, stream, datumStreamCh, &eotReceived)
 		})
 
 		g.Go(func() error {
-			return fs.processData(groupCtx, stream, datumStreamCh)
+			return fs.processData(groupCtx, stream, datumStreamCh, &eotReceived)
 		})
 
 		// Wait for the goroutines to finish
@@ -129,7 +132,7 @@ func recvWithContext(ctx context.Context, stream mappb.Map_MapFnServer) (*mappb.
 }
 
 // receiveRequests receives the requests from the client and writes them to the datumStreamCh channel.
-func (fs *Service) receiveRequests(ctx context.Context, stream mappb.Map_MapFnServer, datumStreamCh chan<- Datum) error {
+func (fs *Service) receiveRequests(ctx context.Context, stream mappb.Map_MapFnServer, datumStreamCh chan<- Datum, eotReceived *bool) error {
 	defer close(datumStreamCh)
 
 	for {
@@ -147,6 +150,7 @@ func (fs *Service) receiveRequests(ctx context.Context, stream mappb.Map_MapFnSe
 		}
 
 		if req.Status != nil && req.Status.Eot {
+			*eotReceived = true
 			break
 		}
 
@@ -168,7 +172,7 @@ func (fs *Service) receiveRequests(ctx context.Context, stream mappb.Map_MapFnSe
 }
 
 // processData invokes the batch mapper to process the data and sends the response back to the client.
-func (fs *Service) processData(ctx context.Context, stream mappb.Map_MapFnServer, datumStreamCh chan Datum) (err error) {
+func (fs *Service) processData(ctx context.Context, stream mappb.Map_MapFnServer, datumStreamCh chan Datum, eotReceived *bool) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			stack := string(debug.Stack())
@@ -206,6 +210,11 @@ func (fs *Service) processData(ctx context.Context, stream mappb.Map_MapFnServer
 			log.Println("BatchMapFn: Got an error while Send() on stream", err)
 			return err
 		}
+	}
+
+	// Only emit the server end-of-transmission when the batch was terminated by a client EOT request.
+	if !*eotReceived {
+		return nil
 	}
 
 	select {
