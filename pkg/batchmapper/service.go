@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"github.com/numaproj/numaflow-go/internal/metadata"
 	"github.com/numaproj/numaflow-go/internal/nackoptions"
 	"github.com/numaproj/numaflow-go/internal/shared"
 	mappb "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1"
@@ -150,14 +151,17 @@ func (fs *Service) receiveRequests(ctx context.Context, stream mappb.Map_MapFnSe
 			break
 		}
 
-		datum := &handlerDatum{
-			id:        req.GetId(),
-			value:     req.GetRequest().GetValue(),
-			keys:      req.GetRequest().GetKeys(),
-			eventTime: req.GetRequest().GetEventTime().AsTime(),
-			watermark: req.GetRequest().GetWatermark().AsTime(),
-			headers:   req.GetRequest().GetHeaders(),
-		}
+		request := req.GetRequest()
+		datum := NewHandlerDatum(
+			request.GetValue(),
+			request.GetEventTime().AsTime(),
+			request.GetWatermark().AsTime(),
+			request.GetHeaders(),
+			req.GetId(),
+			request.GetKeys(),
+			metadata.UserMetadataFromProto(request.GetMetadata()),
+			metadata.SystemMetadataFromProto(request.GetMetadata()),
+		)
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
@@ -190,6 +194,7 @@ func (fs *Service) processData(ctx context.Context, stream mappb.Map_MapFnServer
 				Keys:        resp.Keys(),
 				Value:       resp.Value(),
 				Tags:        resp.Tags(),
+				Metadata:    metadata.UserMetadataToProto(resp.UserMetadata()),
 				NackOptions: nackoptions.ToProto(resp.NackOptions()),
 			})
 		}

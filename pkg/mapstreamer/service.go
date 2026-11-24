@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"github.com/numaproj/numaflow-go/internal/metadata"
 	"github.com/numaproj/numaflow-go/internal/nackoptions"
 	"github.com/numaproj/numaflow-go/internal/shared"
 	mappb "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1"
@@ -147,7 +148,14 @@ func (fs *Service) invokeHandler(ctx context.Context, req *mappb.MapRequest, mes
 		}
 	}()
 	streamReq := req.GetRequest()
-	hd := NewHandlerDatum(streamReq.GetValue(), streamReq.GetEventTime().AsTime(), streamReq.GetWatermark().AsTime(), streamReq.GetHeaders())
+	hd := NewHandlerDatum(
+		streamReq.GetValue(),
+		streamReq.GetEventTime().AsTime(),
+		streamReq.GetWatermark().AsTime(),
+		streamReq.GetHeaders(),
+		metadata.UserMetadataFromProto(streamReq.GetMetadata()),
+		metadata.SystemMetadataFromProto(streamReq.GetMetadata()),
+	)
 	fs.MapperStream.MapStream(ctx, req.GetRequest().GetKeys(), hd, messageCh)
 	return nil
 }
@@ -174,6 +182,7 @@ func (fs *Service) writeResponseToClient(ctx context.Context, stream mappb.Map_M
 						Keys:        message.Keys(),
 						Value:       message.Value(),
 						Tags:        message.Tags(),
+						Metadata:    metadata.UserMetadataToProto(message.UserMetadata()),
 						NackOptions: nackoptions.ToProto(message.NackOptions()),
 					},
 				},

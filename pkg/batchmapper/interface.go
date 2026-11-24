@@ -19,6 +19,10 @@ type Datum interface {
 	Id() string
 	// Keys returns the keys associated with a given datum
 	Keys() []string
+	// UserMetadata returns the user metadata of the message.
+	UserMetadata() *UserMetadata
+	// SystemMetadata returns the system metadata of the message.
+	SystemMetadata() *SystemMetadata
 }
 
 // BatchMapper is the interface for a Batch Map mode where the user is given a list
