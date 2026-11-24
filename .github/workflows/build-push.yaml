@@ -27,6 +27,7 @@ jobs:
           "examples/sideinput/sink_sideinput", "examples/sinker/redis_sink", "examples/sideinput/map_sideinput/udf",
           "examples/sideinput/reduce_sideinput/udf", "examples/batchmapper/batchmap_flatmap",
           "examples/sinker/serve", "examples/servingstore/redis-store", "examples/accumulator/streamsorter", "examples/sinker/failure_sink",
+          "examples/sinker/eot_sink", "examples/sourcetransformer/eot_transform",
           "examples/mapper/cat", "examples/mapper/filter", "examples/sourcetransformer/filter", "examples/sourcetransformer/time_extraction_filter",
           "examples/sourcetransformer/event_time_extractor"
         ]
