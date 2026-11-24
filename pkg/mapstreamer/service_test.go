@@ -18,6 +18,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
 
+	"github.com/numaproj/numaflow-go/pkg/apis/proto/common"
 	proto "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -102,8 +103,9 @@ func TestService_MapFn(t *testing.T) {
 			want: &proto.MapResponse{
 				Results: []*proto.MapResponse_Result{
 					{
-						Keys:  []string{"client_test"},
-						Value: []byte(`test`),
+						Keys:     []string{"client_test"},
+						Value:    []byte(`test`),
+						Metadata: &common.Metadata{},
 					},
 				},
 			},
@@ -129,7 +131,8 @@ func TestService_MapFn(t *testing.T) {
 			want: &proto.MapResponse{
 				Results: []*proto.MapResponse_Result{
 					{
-						Value: []byte(`test`),
+						Value:    []byte(`test`),
+						Metadata: &common.Metadata{},
 					},
 				},
 			},
@@ -154,8 +157,9 @@ func TestService_MapFn(t *testing.T) {
 			want: &proto.MapResponse{
 				Results: []*proto.MapResponse_Result{
 					{
-						Tags:  []string{DROP},
-						Value: nil,
+						Tags:     []string{DROP},
+						Value:    nil,
+						Metadata: &common.Metadata{},
 					},
 				},
 			},
@@ -187,6 +191,66 @@ func TestService_MapFn(t *testing.T) {
 			assert.Equal(t, got.Results, tt.want.Results)
 		})
 	}
+}
+
+func TestService_MapFn_Metadata(t *testing.T) {
+	var traceparent string
+	var sysGroups int
+	var userValue string
+	svc := &Service{
+		MapperStream: MapStreamerFunc(func(ctx context.Context, keys []string, datum Datum, messageCh chan<- Message) {
+			defer close(messageCh)
+			if sys := datum.SystemMetadata(); sys != nil {
+				traceparent = string(sys.Value("tracing_udf", "traceparent"))
+				sysGroups = len(sys.Groups())
+			}
+			if user := datum.UserMetadata(); user != nil {
+				userValue = string(user.Value("app", "k"))
+			}
+			msg := NewMessage(datum.Value())
+			if userValue != "" {
+				echoed := NewUserMetadata()
+				echoed.AddKV("app", "k", []byte(userValue))
+				msg = msg.WithUserMetadata(echoed)
+			}
+			messageCh <- msg
+		}),
+	}
+
+	conn := newTestServer(t, func(server *grpc.Server) {
+		proto.RegisterMapServer(server, svc)
+	})
+
+	client := proto.NewMapClient(conn)
+	stream, err := client.MapFn(context.Background())
+	require.NoError(t, err)
+
+	doHandshake(t, stream)
+
+	err = stream.Send(&proto.MapRequest{
+		Request: &proto.MapRequest_Request{
+			Keys:  []string{"client"},
+			Value: []byte("test"),
+			Metadata: &common.Metadata{
+				SysMetadata: map[string]*common.KeyValueGroup{
+					"tracing_udf": {KeyValue: map[string][]byte{"traceparent": []byte("00-trace-span-01")}},
+				},
+				UserMetadata: map[string]*common.KeyValueGroup{
+					"app": {KeyValue: map[string][]byte{"k": []byte("v")}},
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	got, err := stream.Recv()
+	require.NoError(t, err)
+	require.Len(t, got.Results, 1)
+	assert.Equal(t, []byte("v"), got.Results[0].GetMetadata().GetUserMetadata()["app"].GetKeyValue()["k"])
+	assert.Empty(t, got.Results[0].GetMetadata().GetSysMetadata())
+	assert.Equal(t, "00-trace-span-01", traceparent)
+	assert.Equal(t, 1, sysGroups)
+	assert.Equal(t, "v", userValue)
 }
 
 func doHandshake(t *testing.T, stream proto.Map_MapFnClient) {
@@ -243,8 +307,9 @@ func TestService_MapFn_SingleMessage_MultipleResponses(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		expectedResults[i] = []*proto.MapResponse_Result{
 			{
-				Keys:  []string{"client_test"},
-				Value: []byte(fmt.Sprintf("response_%d", i)),
+				Keys:     []string{"client_test"},
+				Value:    []byte(fmt.Sprintf("response_%d", i)),
+				Metadata: &common.Metadata{},
 			},
 		}
 	}
@@ -317,8 +382,9 @@ func TestService_MapFn_Multiple_Messages(t *testing.T) {
 	for i := 0; i < msgCount; i++ {
 		expectedResults[i] = []*proto.MapResponse_Result{
 			{
-				Keys:  []string{"client_test"},
-				Value: []byte(fmt.Sprintf("test_%d", i)),
+				Keys:     []string{"client_test"},
+				Value:    []byte(fmt.Sprintf("test_%d", i)),
+				Metadata: &common.Metadata{},
 			},
 		}
 	}
@@ -478,8 +544,9 @@ func TestService_MapFn_MultipleRequestsAndResponses(t *testing.T) {
 		for j := 0; j < 3; j++ {
 			expectedResults[i*3+j] = []*proto.MapResponse_Result{
 				{
-					Keys:  []string{"client_test"},
-					Value: []byte(fmt.Sprintf("response_%d_for_test_%d", j, i)),
+					Keys:     []string{"client_test"},
+					Value:    []byte(fmt.Sprintf("response_%d_for_test_%d", j, i)),
+					Metadata: &common.Metadata{},
 				},
 			}
 		}

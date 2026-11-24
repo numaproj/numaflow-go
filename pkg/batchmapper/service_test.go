@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/numaproj/numaflow-go/pkg/apis/proto/common"
 	mappb "github.com/numaproj/numaflow-go/pkg/apis/proto/map/v1"
 )
 
@@ -148,8 +149,9 @@ func TestService_BatchMapFn(t *testing.T) {
 				{
 					Results: []*mappb.MapResponse_Result{
 						{
-							Keys:  []string{"client_test"},
-							Value: []byte(`test1`),
+							Keys:     []string{"client_test"},
+							Value:    []byte(`test1`),
+							Metadata: emptyResultMetadata(),
 						},
 					},
 					Id: "test1",
@@ -157,8 +159,9 @@ func TestService_BatchMapFn(t *testing.T) {
 				{
 					Results: []*mappb.MapResponse_Result{
 						{
-							Keys:  []string{"client_test"},
-							Value: []byte(`test2`),
+							Keys:     []string{"client_test"},
+							Value:    []byte(`test2`),
+							Metadata: emptyResultMetadata(),
 						},
 					},
 					Id: "test2",
@@ -216,8 +219,9 @@ func TestService_BatchMapFn(t *testing.T) {
 				{
 					Results: []*mappb.MapResponse_Result{
 						{
-							Keys:  []string{"client_test"},
-							Value: []byte(`test1`),
+							Keys:     []string{"client_test"},
+							Value:    []byte(`test1`),
+							Metadata: emptyResultMetadata(),
 						},
 					},
 					Id: "test1",
@@ -225,8 +229,9 @@ func TestService_BatchMapFn(t *testing.T) {
 				{
 					Results: []*mappb.MapResponse_Result{
 						{
-							Keys:  []string{"client_test"},
-							Value: []byte(`test2`),
+							Keys:     []string{"client_test"},
+							Value:    []byte(`test2`),
+							Metadata: emptyResultMetadata(),
 						},
 					},
 					Id: "test2",
@@ -388,4 +393,100 @@ func TestService_BatchMapFn_Fail(t *testing.T) {
 	// result[0] = handshake, result[1] = the failed message, result[2] = eot
 	require.Len(t, result[1].Results, 1)
 	assert.Equal(t, []string{FAIL}, result[1].Results[0].Tags)
+}
+
+func emptyResultMetadata() *common.Metadata {
+	return &common.Metadata{
+		SysMetadata:  map[string]*common.KeyValueGroup{},
+		UserMetadata: map[string]*common.KeyValueGroup{},
+	}
+}
+
+func TestService_BatchMapFn_Metadata(t *testing.T) {
+	type seen struct {
+		id          string
+		traceparent string
+		sysGroups   int
+		userValue   string
+	}
+	var got []seen
+	fs := &Service{
+		BatchMapper: BatchMapperFunc(func(ctx context.Context, datums <-chan Datum) BatchResponses {
+			br := BatchResponsesBuilder()
+			for d := range datums {
+				sys := d.SystemMetadata()
+				user := d.UserMetadata()
+				entry := seen{id: d.Id()}
+				if sys != nil {
+					entry.traceparent = string(sys.Value("tracing_udf", "traceparent"))
+					entry.sysGroups = len(sys.Groups())
+				}
+				if user != nil {
+					entry.userValue = string(user.Value("app", "k"))
+				}
+				got = append(got, entry)
+				msg := NewMessage(d.Value())
+				if entry.userValue != "" {
+					echoed := NewUserMetadata()
+					echoed.AddKV("app", "k", []byte(entry.userValue))
+					msg = msg.WithUserMetadata(echoed)
+				}
+				r := NewBatchResponse(d.Id())
+				r = r.Append(msg)
+				br = br.Append(r)
+			}
+			return br
+		}),
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	defer cancel()
+	inputCh := make(chan *mappb.MapRequest, 4)
+	outputCh := make(chan *mappb.MapResponse)
+	result := make([]*mappb.MapResponse, 0)
+	stream := NewBatchBatchMapStreamFnServerTest(ctx, inputCh, outputCh)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() { defer wg.Done(); _ = fs.MapFn(stream); close(outputCh) }()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for msg := range outputCh {
+			result = append(result, msg)
+		}
+	}()
+	for _, val := range []*mappb.MapRequest{
+		{Handshake: &mappb.Handshake{Sot: true}},
+		{
+			Request: &mappb.MapRequest_Request{
+				Keys:  []string{"k"},
+				Value: []byte("with-parent"),
+				Metadata: &common.Metadata{
+					SysMetadata: map[string]*common.KeyValueGroup{
+						"tracing_udf": {KeyValue: map[string][]byte{"traceparent": []byte("00-trace-span-01")}},
+					},
+					UserMetadata: map[string]*common.KeyValueGroup{
+						"app": {KeyValue: map[string][]byte{"k": []byte("v")}},
+					},
+				},
+			},
+			Id: "with-parent",
+		},
+		{Request: &mappb.MapRequest_Request{Keys: []string{"k"}, Value: []byte("no-parent")}, Id: "no-parent"},
+		{Request: &mappb.MapRequest_Request{}, Status: &mappb.TransmissionStatus{Eot: true}},
+	} {
+		inputCh <- val
+	}
+	close(inputCh)
+	wg.Wait()
+
+	require.Equal(t, []seen{
+		{id: "with-parent", traceparent: "00-trace-span-01", sysGroups: 1, userValue: "v"},
+		{id: "no-parent", traceparent: "", sysGroups: 0},
+	}, got)
+	require.GreaterOrEqual(t, len(result), 3)
+	assert.Equal(t, []byte("v"), result[1].Results[0].GetMetadata().GetUserMetadata()["app"].GetKeyValue()["k"])
+	assert.Empty(t, result[1].Results[0].GetMetadata().GetSysMetadata())
+	assert.Empty(t, result[2].Results[0].GetMetadata().GetUserMetadata())
+	assert.Empty(t, result[2].Results[0].GetMetadata().GetSysMetadata())
 }
